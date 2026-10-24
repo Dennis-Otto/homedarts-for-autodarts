@@ -22,7 +22,7 @@ Everything about HomeDarts for Autodarts, the Home Assistant integration for Aut
 
 - [Games and rules](games.md): every game at a glance, four ways to start one, matches, the match summary, teams, handicaps, the bull-off, tournaments and the rules of X01, the Cricket games, the party games and the training games
 - [Scoreboard at the board](scoreboard.md): a tablet or TV next to the board: setup, landscape and portrait, the new game screen, tournaments, the caller and idle mode
-- [Statistics and players](statistics.md): training sessions, personal bests, the heatmap and dart positions, where to aim, progress over time, doubles, player profiles, achievements, trends and grouping, the leaderboard, the weekly report, the training calendar and exports
+- [Statistics and players](statistics.md): training sessions, personal bests, the heatmap and dart positions, where to aim, progress over time, doubles, player profiles, achievements, trends and grouping, the leaderboard, the weekly report, the training calendar, exports and backups
 - [Automations](automations.md): fifteen blueprints, their settings, board events and ready-to-use examples
 - [Online matches](online-matches.md): busts, won legs and matches of online matches as board events, with the browser extension Tools for Autodarts *(experimental)*
 

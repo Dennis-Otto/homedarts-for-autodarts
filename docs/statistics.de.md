@@ -237,8 +237,22 @@ response_variable: export
 
 Exporte enthalten Spielernamen. Standardmäßig landen sie in `homedarts/exports` im Medienordner, der eine Anmeldung braucht; herunterladen dürfen sie nur Administratoren. Ein eigener Ordner muss einer sein, in den Home Assistant schreiben darf (`www`, ein Medienordner oder ein Ordner aus `allowlist_external_dirs`), und darf nicht versteckt sein. Höchstens 20 Exporte werden pro Stunde geschrieben. Dateien in `www` liefert Home Assistant unter `/local/` ohne Anmeldung an jeden aus, der Home Assistant erreicht und den Dateinamen kennt; lösche Exporte dort also, wenn du sie nicht mehr brauchst.
 
+## Backups
+
+Ein Board behält seine Zahlen, wenn es gelöscht wird: Bevor Home Assistant seine Speicher löscht, schreibt HomeDarts ein Backup von allem, was das Board gespeichert hat, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten, dem Wochenbericht und dem Kalender. Fügst du das Board wieder hinzu, bietet eine Reparatur an, alles zurückzuholen.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/de/board-backup-dark.png">
+  <img src="images/de/board-backup-light.png" alt="Wie ein Board seine Daten behält, wenn es gelöscht wird: Bevor ein gelöschtes Board seine Speicher verliert, schreibt HomeDarts ein Backup nach homedarts/backups im Medienordner, die neuesten fünf je Board; homedarts.backup schreibt eins auf Wunsch. Ein wieder hinzugefügtes Board mit derselben Board-ID bietet das neueste Backup mit einer Reparatur an. homedarts.restore mit Ersetzen holt die Speicher zurück, wie sie waren; mit Zusammenführen kommen die Spieler eines anderen Boards mit ihren Zahlen, Abzeichen und ihrem Kalender dazu, und dasselbe Backup ändert beim zweiten Mal nichts" width="620">
+</picture>
+
+- **Wo:** in `homedarts/backups/<Board-ID>` im Medienordner, `/media/homedarts/backups/…` unter Home Assistant OS, der wie bei den Exporten eine Anmeldung braucht. Die neuesten fünf Backups jedes Boards bleiben. Backups enthalten Spielernamen.
+- **Auf Wunsch:** [`homedarts.backup`](entities.de.md#board-sichern-homedartsbackup) schreibt ein Backup, etwa bevor du etwas ausprobierst, und gibt seinen Pfad und einen Download-Link zurück.
+- **Wieder da:** Ein Board, das mit derselben Board-ID und noch ohne gespeicherte Daten wieder hinzugefügt wird, zeigt die Reparatur *Ein Backup von … ist vorhanden*. Bestätigst du sie, lädt das Board mit seinem neuesten Backup mit Spielerdaten neu; ignorierst du sie, fängt es neu an. [`homedarts.restore`](entities.de.md#backup-wiederherstellen-homedartsrestore) stellt jedes Backup wieder her, auch in einer Automation oder einem Skript.
+- **Zwei Boards, ein Spieler:** Jedes Board führt eine eigene Statistik. `homedarts.restore` mit `mode: merge` fügt die Spieler aus dem Backup eines anderen Boards diesem Board hinzu. Ein Name in beliebiger Groß- und Kleinschreibung ist derselbe Spieler, dessen Darts, Legs, Matches, Checkouts, Doubles, Wochentrends und Abzeichen sich addieren, mit den besseren persönlichen Bestwerten beider Boards. Die Sessions und Matches aus dem Kalender des anderen Boards kommen zu denen dieses Boards dazu. Was nur zu diesem Board gehört, bleibt, etwa das laufende Spiel und seine Einstellungen, und ein schon zusammengeführtes Backup ändert beim zweiten Mal nichts. Die Spieler eines Boards werden einmal je Quell-Board zusammengeführt, sodass kein Dart doppelt zählt. Bevor eine Wiederherstellung schreibt, sichert das Board, was es enthält.
+
 ## Deine Daten
 
 - **Nur lokal.** Sessions, Spiele und Turniere, Bestleistungen, Profile mit Fortschritt, Abzeichen und Dart-Positionen, der Wochenbericht und der Kalender liegen im Ordner `.storage` von Home Assistant und verlassen dein Zuhause nie. [Was wo gespeichert wird](how-it-works.de.md#gespeicherte-daten).
 - **Diagnosedaten** schwärzen Spielernamen und Board-Details, du kannst sie also einem Fehlerbericht anhängen.
-- **Neu anfangen:** *Neue Session* startet eine neue Trainingssession; [`homedarts.delete_player`](entities.de.md#spielerprofil-löschen-homedartsdelete_player) vergisst einen Spieler. Löschst du das Board unter **Einstellungen → Geräte & Dienste**, werden alle seine gespeicherten Daten gelöscht.
+- **Neu anfangen:** *Neue Session* startet eine neue Trainingssession; [`homedarts.delete_player`](entities.de.md#spielerprofil-löschen-homedartsdelete_player) vergisst einen Spieler. Löschst du das Board unter **Einstellungen → Geräte & Dienste**, werden seine gespeicherten Daten gelöscht, nach einem [Backup](#backups).
