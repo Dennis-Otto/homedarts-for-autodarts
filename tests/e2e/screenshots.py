@@ -2963,7 +2963,8 @@ def fullscreen_scoreboard(page: Page) -> None:
         "r.querySelector('.scoreboard.fullscreen .fullscreen-toggle[aria-pressed=true]')",
         SCOREBOARD,
     )
-    board.wait_for_timeout(800)
+    # The numbers grow with the screen that the scoreboard now fills.
+    ready(board)
     page_shot(board, "scoreboard-fullscreen")
     context.close()
     end_match(page)
