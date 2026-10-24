@@ -278,7 +278,7 @@ The camera entities relay the live stream of Board Manager 2 to at most two view
 
 ### Stored data
 
-Everything the integration keeps lives in Home Assistant's `.storage` folder, never in the cloud, and is deleted together with the integration. A store that cannot be read stops the setup of the board instead of starting it empty, so nothing overwrites it: after a read error, Home Assistant tries again; a store written by a newer version of the integration, or one that cannot be restored, keeps the board from starting until you install that version again or restore a backup. Parts that a newer version stored stay when an older one saves.
+Everything the integration keeps lives in Home Assistant's `.storage` folder, never in the cloud, and is deleted together with the board, after a [backup](statistics.md#backups) of it. A store that cannot be read stops the setup of the board instead of starting it empty, so nothing overwrites it: after a read error, Home Assistant tries again; a store written by a newer version of the integration, or one that cannot be restored, keeps the board from starting until you install that version again or restore a backup. Parts that a newer version stored stay when an older one saves.
 
 | Store | Contents |
 | --- | --- |
@@ -286,7 +286,7 @@ Everything the integration keeps lives in Home Assistant's `.storage` folder, ne
 | `homedarts.<entry>.report` | The running week and the last weekly report |
 | `homedarts.<entry>.journal` | The sessions and matches of the training calendar, 365 days, at most 3,000 of each |
 
-Highlight photos and exports are files you create on purpose. They stay in the media folder and the export folder when the integration is deleted.
+Before a board is deleted, its three stores go into a backup in `homedarts/backups/<board ID>` of the media folder, the newest five per board, which a board added again with the same board ID offers to restore. Highlight photos, exports and backups are files. They stay in the media folder and the export folder when the integration is deleted.
 
 ### Taken over from the former name
 

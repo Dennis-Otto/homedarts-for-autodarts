@@ -988,6 +988,21 @@
     "export_limit": {
       "message": "In het afgelopen uur zijn {count} exports geschreven, meer schrijft de integratie niet. Probeer het later opnieuw."
     },
+    "backup_failed": {
+      "message": "De back-up kon niet worden weggeschreven: {error}"
+    },
+    "backup_file": {
+      "message": "De back-up {file} moet een JSON-bestand buiten verborgen mappen zijn, in een map waaruit Home Assistant mag lezen: www, de mediamappen en de mappen uit allowlist_external_dirs."
+    },
+    "backup_invalid": {
+      "message": "{file} is geen back-up van HomeDarts, of hij is beschadigd."
+    },
+    "backup_newer": {
+      "message": "De back-up {file} komt van een nieuwere versie van de integratie. Installeer die versie of een latere om hem terug te zetten."
+    },
+    "restore_failed": {
+      "message": "De back-up kon niet worden teruggezet: {error}"
+    },
     "unknown_game": {
       "message": "Geen spel heet ‘{game}’. Noem een van de oefenspellen, zoals 501, Cricket of Around the Clock."
     },
@@ -1224,6 +1239,21 @@
         }
       }
     },
+    "backup_available": {
+      "title": "Er is een back-up van {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "De back-up terugzetten",
+            "description": "{board} is toegevoegd zonder opgeslagen gegevens, en er is een back-up van een bord met dezelfde bord-ID van {date}, zoals de back-up die werd geschreven toen het bord werd verwijderd.\n\nTerugzetten? Het bord laadt opnieuw met de training, de spellen, de spelersprofielen met hun voortgang en badges, de persoonlijke records en de kalender van de back-up; wat het sinds het toevoegen heeft opgeslagen, wordt vervangen. Om opnieuw te beginnen, negeer je deze melding."
+          }
+        },
+        "abort": {
+          "board_unavailable": "Het bord is niet meer ingesteld.",
+          "restore_failed": "De back-up kon niet worden teruggezet. De actie homedarts.restore zet hem terug en zegt waarom het mislukt."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Sommige automatiseringen, scripts of dashboards gebruiken nog de oude naam",
       "description": "HomeDarts for Autodarts heeft je borden overgenomen. Deze gebruiken nog acties of kaarten van de integratie onder haar oude naam, Autodarts, die niet meer bestaan:\n\n{items}\n\nVervang in hun acties `autodarts.` door `homedarts.`, bijvoorbeeld `homedarts.start_game`, en in de typen van de kaarten `custom:autodarts` door `custom:homedarts`. Negeer deze reparatie daarna."
@@ -1368,6 +1398,34 @@
         "folder": {
           "name": "Map",
           "description": "Optioneel. Een map ten opzichte van de configuratiemap, of een absoluut pad, waarin Home Assistant mag schrijven: www, een mediamap of een map uit allowlist_external_dirs. Bestanden in www zijn zonder aanmelding bereikbaar via /local/. Zonder map: homedarts/exports in de mediamap."
+        }
+      }
+    },
+    "backup": {
+      "name": "Een back-up van een bord maken",
+      "description": "Schrijft alles wat het bord opslaat, met de training, de spellen, de spelersprofielen met hun voortgang en badges, de persoonlijke records, het weekrapport en de kalender, naar een back-upbestand in homedarts/backups in de mediamap, en geeft het pad en een downloadlink terug. De nieuwste vijf back-ups van elk bord blijven bewaard. Alleen voor beheerders; automatiseringen kunnen de actie ook gebruiken.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Bord",
+          "description": "Alleen nodig bij meer dan één bord."
+        }
+      }
+    },
+    "restore": {
+      "name": "Een back-up terugzetten",
+      "description": "Zet een back-up van homedarts.backup terug, of de back-up die werd geschreven toen een bord werd verwijderd. Het bord laadt daarvoor opnieuw. Alleen voor beheerders; automatiseringen kunnen de actie ook gebruiken.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Bord",
+          "description": "Het bord dat de back-up krijgt. Alleen nodig bij meer dan één bord."
+        },
+        "file": {
+          "name": "Back-upbestand",
+          "description": "De back-up, ten opzichte van de configuratiemap of als absoluut pad, zoals /media/homedarts/backups/…, in een map waaruit Home Assistant mag lezen: www, een mediamap of een map uit allowlist_external_dirs."
+        },
+        "mode": {
+          "name": "Modus",
+          "description": "Vervangen: het bord slaat op wat de back-up bevat, en wat het eerder opsloeg is weg. Samenvoegen: de profielen, de voortgang, de badges en de wedstrijden van de spelers uit een back-up van een ander bord, de sessies en wedstrijden van zijn kalender en zijn betere persoonlijke records komen bij dit bord; een al samengevoegde back-up verandert de tweede keer niets."
         }
       }
     },
@@ -1744,6 +1802,12 @@
         "matches": "Oefenwedstrijden",
         "profiles": "Spelersprofielen",
         "all": "Alles"
+      }
+    },
+    "restore_mode": {
+      "options": {
+        "replace": "Vervangen",
+        "merge": "Samenvoegen"
       }
     },
     "tournament_format": {

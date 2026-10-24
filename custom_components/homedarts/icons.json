@@ -424,6 +424,12 @@
     "export": {
       "service": "mdi:file-export-outline"
     },
+    "backup": {
+      "service": "mdi:content-save-outline"
+    },
+    "restore": {
+      "service": "mdi:backup-restore"
+    },
     "save_highlight": {
       "service": "mdi:camera-plus-outline"
     },

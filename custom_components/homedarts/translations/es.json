@@ -988,6 +988,21 @@
     "export_limit": {
       "message": "En la última hora se escribieron {count} exportaciones, el máximo de la integración. Inténtalo de nuevo más tarde."
     },
+    "backup_failed": {
+      "message": "No se ha podido guardar la copia de seguridad: {error}"
+    },
+    "backup_file": {
+      "message": "La copia de seguridad {file} debe ser un archivo JSON fuera de carpetas ocultas, en una carpeta en la que Home Assistant permite leer: www, las carpetas multimedia y las carpetas de allowlist_external_dirs."
+    },
+    "backup_invalid": {
+      "message": "{file} no es una copia de seguridad de HomeDarts, o está dañada."
+    },
+    "backup_newer": {
+      "message": "La copia de seguridad {file} procede de una versión más reciente de la integración. Instala esa versión o una posterior para restaurarla."
+    },
+    "restore_failed": {
+      "message": "No se ha podido restaurar la copia de seguridad: {error}"
+    },
     "unknown_game": {
       "message": "Ningún juego se llama «{game}». Nombra uno de los juegos de práctica, como 501, Cricket o Around the Clock."
     },
@@ -1224,6 +1239,21 @@
         }
       }
     },
+    "backup_available": {
+      "title": "Hay una copia de seguridad de {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restaurar la copia de seguridad",
+            "description": "{board} se añadió sin datos guardados, y hay una copia de seguridad de una diana con el mismo ID de diana del {date}, como la que se guardó al eliminar la diana.\n\n¿Restaurarla? La diana se recarga con el entrenamiento, los juegos, los perfiles de jugador con su progreso e insignias, los récords personales y el calendario de la copia de seguridad; lo que ha guardado desde que se añadió se reemplaza. Para empezar de cero, ignora este aviso."
+          }
+        },
+        "abort": {
+          "board_unavailable": "La diana ya no está configurada.",
+          "restore_failed": "No se ha podido restaurar la copia de seguridad. La acción homedarts.restore la restaura y explica por qué falla."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Algunas automatizaciones, scripts o paneles aún usan el nombre antiguo",
       "description": "HomeDarts for Autodarts ha transferido tus dianas. Estos elementos aún usan acciones o tarjetas de la integración con su nombre antiguo, Autodarts, que ya no existen:\n\n{items}\n\nEn sus acciones, sustituye `autodarts.` por `homedarts.`, por ejemplo `homedarts.start_game`, y en los tipos de las tarjetas `custom:autodarts` por `custom:homedarts`. Después ignora esta reparación."
@@ -1368,6 +1398,34 @@
         "folder": {
           "name": "Carpeta",
           "description": "Opcional. Una carpeta relativa a la carpeta de configuración, o una ruta absoluta, en la que Home Assistant permite escribir: www, una carpeta multimedia o una carpeta de allowlist_external_dirs. Los archivos de www están disponibles en /local/ sin iniciar sesión. Sin carpeta: homedarts/exports en la carpeta multimedia."
+        }
+      }
+    },
+    "backup": {
+      "name": "Hacer una copia de seguridad de una diana",
+      "description": "Guarda todo lo que almacena la diana, con el entrenamiento, los juegos, los perfiles de jugador con su progreso e insignias, los récords personales, el informe semanal y el calendario, en un archivo de copia de seguridad en homedarts/backups de la carpeta multimedia, y devuelve su ruta y un enlace de descarga. Se conservan las cinco copias más recientes de cada diana. Solo para administradores; las automatizaciones también pueden usarla.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "Solo es necesaria si tienes más de una diana."
+        }
+      }
+    },
+    "restore": {
+      "name": "Restaurar una copia de seguridad",
+      "description": "Recupera una copia de seguridad de homedarts.backup, o la que se guardó al eliminar una diana. La diana se recarga para ello. Solo para administradores; las automatizaciones también pueden usarla.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "La diana que recibe la copia de seguridad. Solo es necesaria si tienes más de una diana."
+        },
+        "file": {
+          "name": "Archivo de copia de seguridad",
+          "description": "La copia de seguridad, relativa a la carpeta de configuración o como ruta absoluta, por ejemplo /media/homedarts/backups/…, en una carpeta en la que Home Assistant permite leer: www, una carpeta multimedia o una carpeta de allowlist_external_dirs."
+        },
+        "mode": {
+          "name": "Modo",
+          "description": "Reemplazar: la diana guarda lo que contiene la copia de seguridad, y lo que guardaba antes desaparece. Combinar: los perfiles, el progreso, las insignias y los partidos de los jugadores de una copia de seguridad de otra diana, las sesiones y partidos de su calendario y sus mejores récords personales se añaden a esta diana; una copia ya combinada no cambia nada la segunda vez."
         }
       }
     },
@@ -1744,6 +1802,12 @@
         "matches": "Partidos",
         "profiles": "Perfiles de jugador",
         "all": "Todo"
+      }
+    },
+    "restore_mode": {
+      "options": {
+        "replace": "Reemplazar",
+        "merge": "Combinar"
       }
     },
     "tournament_format": {

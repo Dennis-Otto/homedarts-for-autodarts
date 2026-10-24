@@ -1,0 +1,10 @@
+flowchart TB
+  accTitle: How a board keeps its data when it is deleted
+  accDescr: Before a deleted board loses its stores, HomeDarts writes a backup to homedarts/backups in the media folder, the newest five per board; homedarts.backup writes one on request. A board added again with the same board ID offers the newest backup with a repair. homedarts.restore with replace brings the stores back as they were; with merge, the players of another board with their numbers, badges and calendar join this board, and the same backup merged twice changes nothing.
+  DELETE["Board deleted<br/>in Devices &amp; services"] --> BACKUP["Backup in<br/>homedarts/backups,<br/>the newest five per board"]
+  ACTION["homedarts.backup"] --> BACKUP
+  BACKUP --> AGAIN["Board added again<br/>with the same board ID"]
+  AGAIN --> REPAIR["Repair: a backup<br/>is available"]
+  REPAIR --> REPLACE["homedarts.restore, replace:<br/>the stores as they were"]
+  BACKUP --> MERGE["homedarts.restore, merge:<br/>the players of another board join"]
+  MERGE --> ONCE["Merged once,<br/>the second time changes nothing"]

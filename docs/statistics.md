@@ -237,8 +237,22 @@ response_variable: export
 
 Exports contain player names. By default they go to `homedarts/exports` in the media folder, which needs a login; only administrators download them. A folder of your own must be one where Home Assistant allows writing (`www`, a media folder or a folder listed in `allowlist_external_dirs`) and must not be hidden. At most 20 exports are written in an hour. Files in `www` are served at `/local/` without a login to anyone who can reach Home Assistant and knows the file name, so delete exports there that you no longer need.
 
+## Backups
+
+A board keeps its numbers when it is deleted: before Home Assistant deletes its stores, HomeDarts writes a backup of everything the board stored, with the training, the games, the player profiles with their progress and badges, the personal bests, the weekly report and the calendar. Add the board again, and a repair offers to bring it all back.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/board-backup-dark.png">
+  <img src="images/en/board-backup-light.png" alt="How a board keeps its data when it is deleted: Before a deleted board loses its stores, HomeDarts writes a backup to homedarts/backups in the media folder, the newest five per board; homedarts.backup writes one on request. A board added again with the same board ID offers the newest backup with a repair. homedarts.restore with replace brings the stores back as they were; with merge, the players of another board with their numbers, badges and calendar join this board, and the same backup merged twice changes nothing" width="620">
+</picture>
+
+- **Where:** in `homedarts/backups/<board ID>` of the media folder, `/media/homedarts/backups/…` on Home Assistant OS, which needs a login like the exports. The newest five backups of every board stay. Backups contain player names.
+- **On request:** [`homedarts.backup`](entities.md#back-up-a-board-homedartsbackup) writes a backup, for example before you try something out, and returns its path and a download link.
+- **Back again:** a board added again with the same board ID and nothing stored yet shows the repair *A backup of … is available*. Confirm it, and the board reloads with its backup; ignore it to start anew. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restores any backup, also in an automation or a script.
+- **Two boards, one player:** every board keeps statistics of its own. `homedarts.restore` with `mode: merge` adds the players of a backup of another board to this board. A name in any upper and lower case is the same player, whose darts, legs, matches, checkouts, doubles, weekly trends and badges add up, with the better personal bests of both. The sessions and matches of the other board's calendar join this board's. What belongs to this board alone stays, such as the game in progress and its settings, and a backup merged once changes nothing the second time.
+
 ## Your data
 
 - **Local only.** Sessions, games and tournaments, personal bests, profiles with their progress, badges and dart positions, the weekly report and the calendar are stored in Home Assistant's `.storage` folder and never leave your home. [What is stored where](how-it-works.md#stored-data).
 - **Diagnostics** redact player names and board details, so you can attach them to a bug report.
-- **Start over:** *New session* starts a new training session; [`homedarts.delete_player`](entities.md#delete-a-player-profile-homedartsdelete_player) forgets one player. Deleting the board in **Settings → Devices & services** deletes all of its stored data.
+- **Start over:** *New session* starts a new training session; [`homedarts.delete_player`](entities.md#delete-a-player-profile-homedartsdelete_player) forgets one player. Deleting the board in **Settings → Devices & services** deletes its stored data, after a [backup](#backups) of it.

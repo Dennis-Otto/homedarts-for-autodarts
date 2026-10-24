@@ -54,6 +54,8 @@ Ja. Jedes Board ist ein eigener Eintrag und ein eigenes Gerät, mit eigenen Enti
 
 Ein Vereinsabend kann auch [ein Turnier auf mehreren Boards zugleich](games.de.md#ein-turnier-auf-mehreren-boards) spielen, jedes Board mit einem eigenen Match.
 
+Wer auf zwei Boards wirft, hat auf jedem ein Profil. [`homedarts.restore`](entities.de.md#backup-wiederherstellen-homedartsrestore) mit `mode: merge` fügt das Backup eines Boards dem anderen hinzu, und die Zahlen des Spielers addieren sich. [Backups](statistics.de.md#backups)
+
 ## Bildschirme und Sprachen
 
 ### Kann ich die Anzeigetafel auf einem Fernseher oder einem Fire-Tablet zeigen?
@@ -72,7 +74,11 @@ Im lokalen Betrieb nichts. Nur was du wählst, spricht mit dem Internet: Die Boa
 
 ### Wo liegt meine Statistik?
 
-Im eigenen Speicher von Home Assistant, nie in der Cloud: die Trainingssessions, das Übungsspiel, die Bestleistungen, die Spielerprofile mit ihren Matches und der Trainingskalender mit einem Jahr an Sessions und Matches. Löschst du das Board, wird all das mitgelöscht; [`homedarts.export`](entities.de.md#trainingsdaten-exportieren-homedartsexport) sichert vorher eine Kopie. [Gespeicherte Daten](how-it-works.de.md#gespeicherte-daten)
+Im eigenen Speicher von Home Assistant, nie in der Cloud: die Trainingssessions, das Übungsspiel, die Bestleistungen, die Spielerprofile mit ihren Matches und der Trainingskalender mit einem Jahr an Sessions und Matches. Löschst du das Board, wird all das nach einem [Backup](statistics.de.md#backups) gelöscht, und [`homedarts.export`](entities.de.md#trainingsdaten-exportieren-homedartsexport) schreibt es für eine Tabellenkalkulation heraus. [Gespeicherte Daten](how-it-works.de.md#gespeicherte-daten)
+
+### Ich habe mein Board gelöscht. Ist meine Statistik weg?
+
+Nein. Bevor ein Board gelöscht wird, schreibt HomeDarts ein Backup von allem, was es gespeichert hat, nach `homedarts/backups` im Medienordner. Füge das Board wieder hinzu, und die Reparatur *Ein Backup von … ist vorhanden* holt alles zurück; [`homedarts.restore`](entities.de.md#backup-wiederherstellen-homedartsrestore) stellt jedes Backup wieder her. [Backups](statistics.de.md#backups)
 
 ## Updates und Umstieg
 

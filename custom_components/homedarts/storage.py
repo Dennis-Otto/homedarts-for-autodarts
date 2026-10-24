@@ -89,7 +89,10 @@ class BoardStore:
         self._data = data
         # Whether the stores were restored; nothing is saved before.
         self.loaded = False
-        # Top-level parts of the training store this release does not know.
+        # Whether the training store was empty, as for a board added anew.
+        self.empty = False
+        # Top-level parts of the training store the games do not own: those of
+        # a newer release, and the backups merged into it (backup.py).
         self._unknown: dict[str, Any] = {}
         self._dirty = False
 
@@ -122,6 +125,7 @@ class BoardStore:
             if key not in known
         }
         self.loaded = True
+        self.empty = saved is None
         if saved is None:
             self.save_later()
 

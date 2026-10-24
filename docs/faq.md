@@ -54,6 +54,8 @@ Yes. Every board is an entry and a device of its own, with its own entities, gam
 
 A club evening can also play [one tournament on several boards at once](games.md#a-tournament-on-several-boards), each board with a match of its own.
 
+A player who throws on two boards has a profile on each. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) with `mode: merge` adds a backup of one board to the other, and the player's numbers add up. [Backups](statistics.md#backups)
+
 ## Screens and languages
 
 ### Can I show the scoreboard on a TV or a Fire tablet?
@@ -72,7 +74,11 @@ Nothing, in local mode. Only what you choose talks to the internet: the board se
 
 ### Where are my statistics kept?
 
-In Home Assistant's own storage, never in the cloud: the training sessions, the practice game, the personal bests, the player profiles with their matches, and the training calendar with a year of sessions and matches. Deleting the board deletes them too; [`homedarts.export`](entities.md#export-training-data-homedartsexport) saves a copy first. [Stored data](how-it-works.md#stored-data)
+In Home Assistant's own storage, never in the cloud: the training sessions, the practice game, the personal bests, the player profiles with their matches, and the training calendar with a year of sessions and matches. Deleting the board deletes them after a [backup](statistics.md#backups) of them, and [`homedarts.export`](entities.md#export-training-data-homedartsexport) writes them out for a spreadsheet. [Stored data](how-it-works.md#stored-data)
+
+### I deleted my board. Are my statistics gone?
+
+No. Before a board is deleted, HomeDarts writes a backup of everything it stored to `homedarts/backups` in the media folder. Add the board again, and the repair *A backup of … is available* brings it all back; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restores any backup. [Backups](statistics.md#backups)
 
 ## Updates and switching
 

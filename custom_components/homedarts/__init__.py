@@ -8,7 +8,11 @@ from contextlib import suppress
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryError,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -17,6 +21,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from . import takeover
+from .backup import ISSUE as BACKUP_AVAILABLE
+from .backup import async_backup, async_offer_backup
 from .button import V1_BUTTONS
 from .card import (
     async_add_card_resources,
@@ -108,6 +114,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: AutodartsConfigEntry) ->
         raise ConfigEntryError(
             translation_domain=DOMAIN, translation_key="no_local_address"
         )
+    if local.store.empty:
+        # Added again after it was deleted, perhaps: its backup is offered.
+        await async_offer_backup(hass, entry)
     # A board that is switched off does not stop the setup: the entities of
     # training and games work without it, and the others recover with the board.
     runtime = entry.runtime_data = AutodartsRuntimeData(local)
@@ -228,14 +237,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: AutodartsConfigEntry) -
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: AutodartsConfigEntry) -> None:
-    """Deleting the integration also deletes its local training session, and
-    deleting its last board the dashboard resources of the cards. The other
+    """Deleting a board deletes its stores once a backup of them is written,
+    and deleting its last board the dashboard resources of the cards. The other
     boards of a tournament on several boards play on without it."""
     store = TrainingStore(hass, entry.entry_id)
     board_deleted(hass, entry.entry_id, await store.async_load())
-    await store.async_remove()
-    await BoardReports.async_remove(hass, entry.entry_id)
+    try:
+        await async_backup(hass, entry, removed=True)
+    except HomeAssistantError:
+        # Nothing is lost: the stores stay where they are.
+        _LOGGER.warning(
+            "No backup of %s could be written, so its stored data stays in "
+            "the .storage folder of Home Assistant",
+            entry.title,
+            exc_info=True,
+        )
+    else:
+        await store.async_remove()
+        await BoardReports.async_remove(hass, entry.entry_id)
     _delete_issues(hass, entry)
+    ir.async_delete_issue(hass, DOMAIN, f"{BACKUP_AVAILABLE}_{entry.entry_id}")
     # An ignored board loads nothing; a disabled one can come back.
     if all(
         other.entry_id == entry.entry_id
