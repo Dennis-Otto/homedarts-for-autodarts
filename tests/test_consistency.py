@@ -517,7 +517,7 @@ def e2e_pattern(name: str = "tested") -> re.Pattern[str]:
     """The paths whose change runs the end-to-end tests in a pull request: the Home
     Assistant tests ("tested") or the live demo ("demo")."""
     steps = E2E_WORKFLOW["jobs"]["changes"]["steps"]
-    (run,) = [step["run"] for step in steps if "run" in step]
+    (run,) = [step["run"] for step in steps if step.get("id") == "files"]
     patterns = re.findall(rf"^{name}='(.+)'$", run, re.M)
     assert len(patterns) == 1, patterns
     return re.compile(patterns[0])

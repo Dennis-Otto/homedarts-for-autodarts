@@ -909,7 +909,11 @@ def report_of(root: Path, language: str, images: list[dict], unchanged: int) -> 
 def write_comment(
     root: Path, env: dict[str, str], conclusion: str
 ) -> tuple[subprocess.CompletedProcess[str], str, str]:
-    (script,) = [step["run"] for step in COMMENT if "run" in step]
+    (script,) = [
+        step["run"]
+        for step in COMMENT
+        if step.get("name") == "Write the comment from the reports of the check"
+    ]
     result = subprocess.run(
         ["bash", "-c", script],
         env={**env, "CONCLUSION": conclusion},
