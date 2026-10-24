@@ -699,7 +699,8 @@
               "online_match_left": "En línea: partido abandonado",
               "weekly_report": "Informe semanal",
               "achievement_unlocked": "Logro desbloqueado",
-              "visit_undone": "Tirada deshecha"
+              "visit_undone": "Tirada deshecha",
+              "player_renamed": "Jugador renombrado"
             }
           },
           "achievement": {
@@ -812,7 +813,10 @@
       "message": "No hay ningún perfil de jugador llamado {name}."
     },
     "player_in_tournament": {
-      "message": "{name} juega en el torneo. Termina el torneo antes de eliminar al jugador."
+      "message": "{name} juega en el torneo. Termina el torneo antes de renombrar, fusionar o eliminar al jugador."
+    },
+    "merge_in_play": {
+      "message": "{name} y {other} juegan los dos el partido en curso. Fusiónalos cuando termine."
     },
     "board_access_denied": {
       "message": "Board Manager ha denegado el acceso. Normalmente no necesita inicio de sesión; comprueba los proxies y cortafuegos entre Home Assistant y la diana."
@@ -1555,6 +1559,24 @@
         "player": {
           "name": "Jugador",
           "description": "El nombre del jugador, sin distinguir entre mayúsculas y minúsculas."
+        }
+      }
+    },
+    "rename_player": {
+      "name": "Renombrar jugador",
+      "description": "Da un nombre nuevo a un perfil de jugador y conserva todo lo que va con él: estadísticas, insignias, récords, el historial de partidos, los cara a cara, el calendario y el vínculo con una persona. Un nombre que ya tiene otro perfil fusiona los dos perfiles en uno, como si un solo jugador hubiera lanzado todos los dardos. Un jugador del torneo en curso conserva su nombre. Solo para administradores; las automatizaciones también pueden usarla.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "Solo es necesaria si tienes más de una diana."
+        },
+        "player": {
+          "name": "Jugador",
+          "description": "El nombre del jugador, sin distinguir entre mayúsculas y minúsculas."
+        },
+        "new_name": {
+          "name": "Nombre nuevo",
+          "description": "El nombre nuevo, de 20 caracteres como máximo. También vale otra forma de escribir el mismo nombre, como Sam en lugar de sam; el nombre de otro perfil fusiona los dos."
         }
       }
     },

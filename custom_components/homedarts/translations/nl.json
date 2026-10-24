@@ -699,7 +699,8 @@
               "online_match_left": "Online: wedstrijd verlaten",
               "weekly_report": "Weekrapport",
               "achievement_unlocked": "Prestatie ontgrendeld",
-              "visit_undone": "Beurt ongedaan gemaakt"
+              "visit_undone": "Beurt ongedaan gemaakt",
+              "player_renamed": "Speler hernoemd"
             }
           },
           "achievement": {
@@ -812,7 +813,10 @@
       "message": "Er is geen spelersprofiel met de naam {name}."
     },
     "player_in_tournament": {
-      "message": "{name} speelt mee in het toernooi. Stop het toernooi voordat je de speler verwijdert."
+      "message": "{name} speelt mee in het toernooi. Stop het toernooi voordat je de speler hernoemt, samenvoegt of verwijdert."
+    },
+    "merge_in_play": {
+      "message": "{name} en {other} spelen allebei de lopende wedstrijd. Voeg ze samen als die voorbij is."
     },
     "board_access_denied": {
       "message": "Board Manager weigert de toegang. Normaal is er geen aanmelding nodig; controleer proxy's en firewalls tussen Home Assistant en het bord."
@@ -1555,6 +1559,24 @@
         "player": {
           "name": "Speler",
           "description": "De spelersnaam; hoofdletters en kleine letters maken niet uit."
+        }
+      }
+    },
+    "rename_player": {
+      "name": "Speler hernoemen",
+      "description": "Geeft een spelersprofiel een nieuwe naam en behoudt alles wat erbij hoort: statistieken, badges, records, de wedstrijdgeschiedenis, onderlinge duels, de kalender en de koppeling met een persoon. Een naam die een ander profiel al heeft, voegt de twee profielen samen tot één, alsof één speler alle darts had gegooid. Een speler van het lopende toernooi houdt zijn naam. Alleen voor beheerders; automatiseringen kunnen de actie ook gebruiken.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Bord",
+          "description": "Alleen nodig bij meer dan één bord."
+        },
+        "player": {
+          "name": "Speler",
+          "description": "De spelersnaam; hoofdletters en kleine letters maken niet uit."
+        },
+        "new_name": {
+          "name": "Nieuwe naam",
+          "description": "De nieuwe naam, hoogstens 20 tekens. Een andere schrijfwijze van dezelfde naam, zoals Sam voor sam, kan ook; de naam van een ander profiel voegt de twee samen."
         }
       }
     },

@@ -1,5 +1,6 @@
 // The players card in a browser DOM: profiles, head-to-head records, recent matches and escaping.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { $, $$, loadCards, makeHass, mount, settle, text, update, window } from "./dom.mjs";
@@ -386,4 +387,300 @@ test("the export button speaks German", () => {
   const hass = makeHass({ language: "de", states: { ...profiles(ALEX), ...lastMatch({}) }, user: ADMIN });
   const card = mount("homedarts-players-card", hass, { export: true });
   assert.equal(text(card, ".export"), "Exportieren");
+});
+
+// Renaming, merging and deleting a profile: a menu on each profile, for administrators, and a
+// dialog that asks before each action.
+const SAM = { name: "Sam", legs_played: 1, legs_won: 1, matches_played: 1, matches_won: 1 };
+const press = (target, key) =>
+  target.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true, composed: true, cancelable: true }));
+const tap = (target) => target.dispatchEvent(new window.PointerEvent("pointerdown", { bubbles: true, composed: true }));
+const menuButton = (card, name) => $$(card, "[data-manage]").find((button) => button.dataset.manage === name);
+const items = (card) => $$(card, ".manage-menu [role=menuitem]");
+const focused = (card) => card.shadowRoot.activeElement;
+const submit = (card) => $(card, ".manage-form").dispatchEvent(new window.Event("submit", { cancelable: true }));
+const typed = (input, value) => {
+  input.value = value;
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+};
+
+function manage(card, name, action) {
+  menuButton(card, name).click();
+  items(card)
+    .find((item) => item.dataset.action === action)
+    .click();
+  return $(card, ".manage-dialog");
+}
+
+test("only administrators get the menu of a profile", () => {
+  for (const user of [{ ...ADMIN, is_admin: false }, undefined]) {
+    const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user });
+    assert.deepEqual($$(card, "[data-manage]"), []);
+    assert.equal($(card, ".manage-dialog"), null);
+  }
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  const button = menuButton(card, "Alex");
+  assert.equal(button.getAttribute("aria-label"), "Manage Alex");
+  assert.equal(button.getAttribute("aria-haspopup"), "menu");
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+  assert.equal($(card, ".profile-name span").textContent, "Alex");
+  assert.equal($(card, ".manage-menu"), null);
+});
+
+test("the menu of a profile opens with a click or the arrows and goes with Escape, Tab or a tap elsewhere", () => {
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  menuButton(card, "Alex").click();
+  assert.equal(menuButton(card, "Alex").getAttribute("aria-expanded"), "true");
+  const menu = $(card, ".manage-menu");
+  assert.equal(menu.getAttribute("role"), "menu");
+  assert.equal(menu.getAttribute("aria-label"), "Manage Alex");
+  assert.deepEqual(
+    items(card).map((item) => [item.textContent, item.tabIndex]),
+    [
+      ["Rename", -1],
+      ["Merge into …", -1],
+      ["Delete", -1],
+    ]
+  );
+  assert.equal(focused(card), items(card)[0]);
+  // The arrows go round, Home and End to either end; other keys do nothing.
+  for (const [key, index] of [
+    ["ArrowDown", 1],
+    ["End", 2],
+    ["ArrowDown", 0],
+    ["ArrowUp", 2],
+    ["Home", 0],
+    ["a", 0],
+  ]) {
+    press(focused(card), key);
+    assert.equal(focused(card), items(card)[index], key);
+  }
+  press(focused(card), "Escape");
+  assert.equal($(card, ".manage-menu"), null);
+  assert.equal(focused(card), menuButton(card, "Alex"));
+  // The up arrow opens it at its last action; the arrows of an open menu's button keep it.
+  press(menuButton(card, "Alex"), "ArrowUp");
+  assert.equal(focused(card), items(card)[2]);
+  press(menuButton(card, "Alex"), "ArrowDown");
+  assert.equal(items(card).length, 3);
+  press(menuButton(card, "Alex"), "x");
+  press(items(card)[0], "Tab");
+  assert.equal($(card, ".manage-menu"), null);
+  assert.equal(focused(card), menuButton(card, "Alex"));
+  press(menuButton(card, "Lea"), "ArrowDown");
+  assert.equal(menuButton(card, "Lea").getAttribute("aria-expanded"), "true");
+  // A key or a click elsewhere in the profiles is no action.
+  press($(card, ".profile dd"), "ArrowDown");
+  $(card, ".profile dd").click();
+  assert.equal(items(card).length, 3);
+  // Another profile's button opens its menu; the same button closes it.
+  menuButton(card, "Alex").click();
+  assert.equal(menuButton(card, "Lea").getAttribute("aria-expanded"), "false");
+  menuButton(card, "Alex").click();
+  assert.equal($(card, ".manage-menu"), null);
+  // A tap inside the menu keeps it, a tap elsewhere closes it.
+  menuButton(card, "Alex").click();
+  tap(items(card)[1]);
+  tap(menuButton(card, "Alex"));
+  assert.equal(items(card).length, 3);
+  tap($(card, ".title"));
+  assert.equal($(card, ".manage-menu"), null);
+  tap($(card, ".title"));
+});
+
+test("one profile has nothing to merge into, and a preview opens no menu", () => {
+  const { card, hass } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  menuButton(card, "Lea").click();
+  // A profile that goes away takes its open menu along.
+  card.hass = update(hass, profiles(ALEX));
+  assert.equal($(card, ".manage-menu"), null);
+  menuButton(card, "Alex").click();
+  assert.deepEqual(
+    items(card).map((item) => item.dataset.action),
+    ["rename", "delete"]
+  );
+  menuButton(card, "Alex").click();
+  card.preview = true;
+  menuButton(card, "Alex").click();
+  assert.equal($(card, ".manage-menu"), null);
+});
+
+test("renaming asks for the new name, says when it joins another profile and calls the action", async () => {
+  const { requests, callWS } = connection(null);
+  const { card, hass } = setup(
+    { ...profiles(ALEX, LEA), ...lastMatch({}) },
+    {},
+    { callWS, user: ADMIN, device: { primary_config_entry: "entry-1" } }
+  );
+  const dialog = manage(card, "Alex", "rename");
+  assert.equal(dialog.open, true);
+  assert.equal($(card, ".manage-menu"), null);
+  assert.equal(dialog.getAttribute("aria-labelledby"), "manage-title");
+  assert.equal(dialog.querySelector("#manage-title").textContent, "Rename Alex");
+  const input = dialog.querySelector("input");
+  assert.equal(focused(card), input);
+  assert.equal(input.value, "Alex");
+  assert.equal(input.closest("label").textContent, "New name");
+  const hint = dialog.querySelector(".manage-hint");
+  const kept = "Statistics, badges, records and the link to a person keep the new name.";
+  assert.equal(hint.textContent, kept);
+  typed(input, " LEA ");
+  assert.equal(hint.textContent, "Lea has a profile already: both become one profile, as if one player had thrown every dart.");
+  for (const value of ["ALEX", "Al"]) {
+    typed(input, value);
+    assert.equal(hint.textContent, kept);
+  }
+  const confirm = dialog.querySelector(".manage-confirm");
+  assert.equal(confirm.textContent, "Rename");
+  assert.equal(confirm.classList.contains("confirm"), false);
+  // Without a name, nothing happens.
+  input.value = "  ";
+  submit(card);
+  assert.deepEqual(requests, []);
+  input.value = " Al ";
+  submit(card);
+  assert.equal(confirm.disabled, true);
+  submit(card);
+  await settle();
+  assert.deepEqual(requests, [
+    {
+      type: "call_service",
+      domain: "homedarts",
+      service: "rename_player",
+      service_data: { player: "Alex", new_name: "Al", config_entry_id: "entry-1" },
+    },
+  ]);
+  assert.equal(dialog.open, false);
+  // The keyboard comes back to the menu button once the profiles show the new name.
+  const later = update(hass, lastMatch({ matches: [] }));
+  card.hass = later;
+  card.hass = update(later, profiles({ ...ALEX, name: "Al" }, LEA));
+  assert.equal(focused(card), menuButton(card, "Al"));
+});
+
+test("merging offers the other players and calls the action with the one that keeps the profile", async () => {
+  const { requests, callWS } = connection(null);
+  const { card } = setup({ ...profiles(ALEX, LEA, SAM), ...lastMatch({}) }, {}, { callWS, user: ADMIN });
+  const dialog = manage(card, "Alex", "merge");
+  assert.equal(dialog.querySelector("h2").textContent, "Merge Alex into …");
+  const select = dialog.querySelector("select");
+  assert.equal(focused(card), select);
+  assert.equal(select.closest("label").textContent.startsWith("Player who keeps the profile"), true);
+  assert.deepEqual(
+    [...select.options].map((option) => option.textContent),
+    ["Lea", "Sam"]
+  );
+  assert.match(dialog.querySelector(".manage-body p").textContent, /^The statistics, badges and records of Alex go/);
+  const confirm = dialog.querySelector(".manage-confirm");
+  assert.equal(confirm.textContent, "Merge");
+  assert.equal(confirm.classList.contains("confirm"), true);
+  select.value = "Sam";
+  select.dispatchEvent(new window.Event("input", { bubbles: true }));
+  submit(card);
+  await settle();
+  assert.deepEqual(
+    requests.map((request) => [request.service, request.service_data]),
+    [["rename_player", { player: "Alex", new_name: "Sam" }]]
+  );
+  assert.equal(dialog.open, false);
+});
+
+test("deleting asks first, starts on Cancel and calls the action", async () => {
+  const { requests, callWS } = connection(null);
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { callWS, user: ADMIN });
+  const dialog = manage(card, "Lea", "delete");
+  assert.equal(dialog.querySelector("h2").textContent, "Delete Lea?");
+  assert.match(dialog.querySelector(".manage-body").textContent, /This cannot be undone\.$/);
+  assert.equal(focused(card), dialog.querySelector(".manage-cancel"));
+  assert.equal(dialog.querySelector(".manage-confirm").textContent, "Delete");
+  submit(card);
+  await settle();
+  assert.deepEqual(
+    requests.map((request) => [request.service, request.service_data]),
+    [["delete_player", { name: "Lea" }]]
+  );
+  assert.equal(dialog.open, false);
+});
+
+test("Cancel closes the dialog and the keyboard goes back to the menu button", () => {
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  const dialog = manage(card, "Alex", "rename");
+  dialog.querySelector(".manage-cancel").click();
+  assert.equal(dialog.open, false);
+  assert.equal(focused(card), menuButton(card, "Alex"));
+  // A dialog closed from elsewhere brings the keyboard back, too.
+  manage(card, "Alex", "rename");
+  menuButton(card, "Lea").focus();
+  dialog.close();
+  assert.equal(focused(card), menuButton(card, "Alex"));
+});
+
+test("a refused action keeps the dialog open with the reason", async () => {
+  const answers = [
+    () => Promise.reject({ code: "service_validation_error", message: "Lea and Alex both play the match being played." }),
+    () => Promise.reject({}),
+    () => Promise.reject(),
+  ];
+  const callWS = () => answers.shift()();
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { callWS, user: ADMIN });
+  const dialog = manage(card, "Lea", "merge");
+  const error = dialog.querySelector(".manage-error");
+  assert.equal(error.getAttribute("role"), "alert");
+  assert.equal(error.hidden, true);
+  const reasons = [];
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    submit(card);
+    await settle();
+    reasons.push(error.hidden ? null : error.textContent);
+  }
+  assert.deepEqual(reasons, [
+    "Lea and Alex both play the match being played.",
+    "That did not work. Try again.",
+    "That did not work. Try again.",
+  ]);
+  assert.equal(dialog.open, true);
+  assert.equal(dialog.querySelector(".manage-confirm").disabled, false);
+  // The next dialog starts without the reason of the last one.
+  dialog.close();
+  manage(card, "Lea", "delete");
+  assert.equal(error.hidden, true);
+});
+
+test("the menu and its dialog speak German", () => {
+  const hass = makeHass({ language: "de", states: { ...profiles(ALEX, LEA), ...lastMatch({}) }, user: ADMIN });
+  const card = mount("homedarts-players-card", hass, {});
+  assert.equal(menuButton(card, "Alex").getAttribute("aria-label"), "Alex verwalten");
+  const dialog = manage(card, "Alex", "merge");
+  assert.equal(dialog.querySelector("h2").textContent, "Alex zusammenführen mit …");
+  assert.equal(dialog.querySelector(".manage-cancel").textContent, "Abbrechen");
+  assert.equal(dialog.querySelector(".manage-confirm").textContent, "Zusammenführen");
+});
+
+// axe-core, the engine of the accessibility check in a real browser, runs its rules that need
+// no layout here too: the roles of the menu and its items, the names of buttons and fields.
+test("the open menu and its dialog pass axe-core's WCAG 2.1 A and AA rules", async () => {
+  window.eval(readFileSync(new URL("../../node_modules/axe-core/axe.min.js", import.meta.url), "utf8"));
+  const audit = async (element) => {
+    const result = await window.axe.run(element, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] });
+    // Arrays of the page's window, made arrays of the tests.
+    return { violations: Array.from(result.violations, (rule) => rule.id), passes: Array.from(result.passes, (rule) => rule.id) };
+  };
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  menuButton(card, "Alex").click();
+  const menu = await audit($(card, "ha-card"));
+  assert.deepEqual(menu.violations, []);
+  for (const rule of ["aria-required-children", "aria-required-parent", "aria-allowed-attr", "button-name"]) {
+    assert.ok(menu.passes.includes(rule), rule);
+  }
+  menuButton(card, "Alex").click();
+  for (const action of ["rename", "merge", "delete"]) {
+    const dialog = manage(card, "Alex", action);
+    const checked = await audit(dialog);
+    assert.deepEqual(checked.violations, [], action);
+    assert.ok(checked.passes.includes("button-name"), action);
+    // The new name is a field with a label, the player to merge into a list with one.
+    const field = { rename: "label", merge: "select-name" }[action];
+    if (field) assert.ok(checked.passes.includes(field), action);
+    dialog.close();
+  }
 });

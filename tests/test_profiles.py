@@ -1,10 +1,19 @@
 """Player profiles, the match history and head-to-head records."""
 
+from datetime import timedelta
+
 import pytest
 from homeassistant.core import split_entity_id, valid_entity_id
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from custom_components.homedarts.practice import PracticeGame
-from custom_components.homedarts.profiles import MATCH_HISTORY, Profiles, _person
+from custom_components.homedarts.profiles import (
+    MATCH_HISTORY,
+    Profile,
+    Profiles,
+    _person,
+)
 
 from .local_helpers import NOW, throw
 from .test_teams_and_handicap import teams
@@ -229,3 +238,159 @@ def test_a_profile_links_a_person_as_home_assistant_checks_entity_ids(value):
         and split_entity_id(value)[0] == "person"
     )
     assert _person(value) == (value if valid else None)
+
+
+def test_a_renamed_profile_keeps_its_numbers_matches_and_head_to_head():
+    practice = named(501, "Sammy", "Lea")
+    throw(practice, "T20", "T20", "T20")
+    win_leg(practice)
+    profiles = practice.profiles
+    profiles.link("Sammy", "person.sam")
+    before = by_name(practice)["Sammy"]
+    assert profiles.rename(" SAMMY ", "Sam") is False
+    after = by_name(practice)["Sam"]
+    assert after == {**before, "name": "Sam"}
+    assert "sammy" not in profiles.players and profiles.spelled("sam") == "Sam"
+    snapshot = profiles.snapshot()
+    assert snapshot["head_to_head"] == [{"players": ["Lea", "Sam"], "wins": [1, 0]}]
+    assert [entry["name"] for entry in snapshot["matches"][0]["players"]] == [
+        "Sam",
+        "Lea",
+    ]
+
+
+def test_a_new_spelling_of_the_same_name_renames_the_profile():
+    practice = named(301, "sam", "Lea")
+    win_leg(practice)
+    profiles = practice.profiles
+    assert profiles.rename("sam", "  Sam ") is False
+    assert set(by_name(practice)) == {"Sam", "Lea"}
+    assert profiles.snapshot()["head_to_head"] == [
+        {"players": ["Lea", "Sam"], "wins": [0, 1]}
+    ]
+    assert profiles.matches[0]["players"][0]["name"] == "Sam"
+
+
+def test_renaming_needs_a_profile_and_a_name():
+    profiles = Profiles()
+    profiles.link("Sam", "person.sam")
+    assert profiles.rename("Nobody", "Sam") is None
+    assert profiles.rename("Sam", " {#} ") is None
+    assert list(profiles.players) == ["sam"]
+
+
+def test_a_merge_adds_two_profiles_up_and_keeps_one_person():
+    profiles = Profiles()
+    sam = profiles.players["sam"] = Profile(
+        name="Sam",
+        legs_played=4,
+        legs_won=2,
+        x01_darts=60,
+        x01_points=1000,
+        highest_visit=140,
+        highest_checkout=40,
+        best_mpr=2.5,
+        fewest_darts={"501": 18},
+        doubles={"D20": [4, 1]},
+        last_played="2026-10-01T20:00:00+00:00",
+    )
+    profiles.players["sammy"] = Profile(
+        name="Sammy",
+        legs_played=1,
+        legs_won=1,
+        x01_darts=15,
+        x01_points=501,
+        highest_visit=180,
+        highest_checkout=121,
+        best_mpr=1.5,
+        fewest_darts={"501": 15, "301": 9},
+        doubles={"D20": [2, 2], "D16": [1, 0]},
+        last_played="2026-10-02T20:00:00+00:00",
+        person="person.sam",
+    )
+    profiles.head_to_head = {
+        "kim\x00sam": [1, 2],
+        "kim\x00sammy": [3, 4],
+        "lea\x00sammy": [5, 6],
+        "sam\x00sammy": [7, 8],
+    }
+    assert profiles.rename("Sammy", "Sam") is True
+    assert list(profiles.players) == ["sam"] and profiles.players["sam"] is sam
+    assert (sam.legs_played, sam.legs_won, sam.x01_darts, sam.x01_points) == (
+        5,
+        3,
+        75,
+        1501,
+    )
+    assert (sam.highest_visit, sam.highest_checkout, sam.best_mpr) == (180, 121, 2.5)
+    assert sam.fewest_darts == {"501": 15, "301": 9}
+    assert sam.doubles == {"D20": [6, 3], "D16": [1, 0]}
+    assert sam.last_played == "2026-10-02T20:00:00+00:00"
+    # The target has no person, so it takes the other one's.
+    assert sam.person == "person.sam"
+    # The wins against the same player add up, those against each other go.
+    assert profiles.head_to_head == {"kim\x00sam": [4, 6], "lea\x00sam": [5, 6]}
+    profiles.players["alex"] = Profile(name="Alex", person="person.alex")
+    assert profiles.rename("Sam", "alex") is True
+    alex = profiles.players["alex"]
+    assert (alex.name, alex.person) == ("alex", "person.alex")
+    assert profiles.head_to_head == {"alex\x00kim": [6, 4], "alex\x00lea": [6, 5]}
+
+
+# Doubles, legs and matches of one player, under one of two names.
+DOUBLE_ATTEMPTS = st.lists(
+    st.tuples(st.sampled_from(["D20", "D16", "BULL"]), st.booleans()), max_size=3
+)
+LEGS = st.fixed_dictionaries(
+    {
+        "darts": st.integers(0, 60),
+        "points": st.integers(0, 501),
+        "first9_points": st.integers(0, 180),
+        "first9_darts": st.integers(0, 9),
+        "at_double": st.integers(0, 6),
+        "checkout": st.integers(0, 170),
+        "marks": st.integers(0, 40),
+        "won": st.booleans(),
+        "double_out": st.booleans(),
+        "team": st.booleans(),
+    }
+)
+STEPS = st.lists(
+    st.tuples(
+        st.booleans(),
+        st.one_of(
+            st.tuples(st.just("visit"), st.integers(0, 180)),
+            st.tuples(st.just("doubles"), DOUBLE_ATTEMPTS),
+            st.tuples(st.just("leg"), st.sampled_from([501, 301, "cricket"]), LEGS),
+            st.tuples(st.just("match"), st.booleans()),
+        ),
+    ),
+    max_size=25,
+)
+
+
+def played(steps, names: tuple[str, str]) -> Profiles:
+    """The profiles after every step, each for one of two names; one player,
+    Kim, plays every match against them."""
+    profiles = Profiles()
+    for minute, (second, (kind, *values)) in enumerate(steps):
+        name, now = names[second], NOW + timedelta(minutes=minute)
+        if kind == "visit":
+            profiles.visit(name, values[0], now)
+        elif kind == "doubles":
+            profiles.doubles(name, values[0], now)
+        elif kind == "leg":
+            profiles.leg(values[0], [{**values[1], "name": name}], now)
+        else:
+            players = [{"name": name, "legs": 1}, {"name": "Kim", "legs": 0}]
+            profiles.match(501, players, 0 if values[0] else 1, 1, 1, now=now)
+    return profiles
+
+
+@settings(max_examples=200, deadline=None)
+@given(STEPS)
+def test_a_merge_gives_the_totals_of_one_name_that_threw_every_dart(steps):
+    merged = played(steps, ("Sam", "Sammy"))
+    merged.rename("Sammy", "Sam")
+    alone = played(steps, ("Sam", "Sam"))
+    assert merged.snapshot() == alone.snapshot()

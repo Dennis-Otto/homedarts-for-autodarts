@@ -358,27 +358,33 @@ class WeeklyReport:
         return True
 
     def forget(self, name: str) -> None:
-        """Remove a player's name from the bests of this and the last week.
+        """Remove a player's name from the bests of this and the last week."""
+        self.rename(name, None)
+
+    def rename(self, name: str, new_name: str | None) -> None:
+        """A player's bests of this and the last week under a new name, or
+        under none; a player renamed into another one holds the other one's
+        bests too, so they take the new spelling as well.
 
         The bests are replaced, never changed: the sensor and the event
         weekly_report published the last week's report, and the sensor sees a
         change only against the report it published.
         """
-        key = name.strip().casefold()
+        keys = {name.strip().casefold(), (new_name or name).strip().casefold()}
 
-        def unnamed(bests: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        def renamed(bests: list[dict[str, Any]]) -> list[dict[str, Any]]:
             return [
-                {**best, "name": None}
-                if (best.get("name") or "").strip().casefold() == key
+                {**best, "name": new_name}
+                if (best.get("name") or "").strip().casefold() in keys
                 else best
                 for best in bests
             ]
 
-        self.bests = unnamed(self.bests)
+        self.bests = renamed(self.bests)
         if self.last:
             self.last = {
                 **self.last,
-                "personal_bests": unnamed(self.last["personal_bests"]),
+                "personal_bests": renamed(self.last["personal_bests"]),
             }
 
 
@@ -491,7 +497,7 @@ class BoardReports:
         self._journal_dirty = True
         self._journal_store.async_delay_save(self.journal.stored, SAVE_DELAY)
 
-    # -- undo and deleted players ----------------------------------------------
+    # -- undo, deleted and renamed players -------------------------------------
 
     def checkpoint(self) -> dict[str, Any]:
         """The report and the journal before a visit counts, to undo it."""
@@ -509,6 +515,14 @@ class BoardReports:
         the calendar keeps the matches as they were played."""
         self.report.forget(name)
         self._save_report()
+
+    def rename(self, name: str, new_name: str) -> None:
+        """A renamed player's new name in the personal bests of the report and
+        in the matches of the calendar."""
+        self.report.rename(name, new_name)
+        self._save_report()
+        if self.journal.rename(name, new_name):
+            self._save_journal()
 
     def snapshot(self) -> dict[str, Any]:
         """The running week for the sensor, with the last week's report."""

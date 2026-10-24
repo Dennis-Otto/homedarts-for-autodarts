@@ -19,6 +19,7 @@ ADMIN_ACTIONS = {
     "export": {"what": "profiles"},
     "link_player": {"player": "Alex", "person": "person.alex"},
     "unlink_player": {"player": "Alex"},
+    "rename_player": {"player": "Alex", "new_name": "Al"},
 }
 
 

@@ -5,7 +5,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.homedarts.const import DOMAIN
 
-from .local_helpers import board, entity_id, setup_local, state, switch
+from .local_helpers import board, entity_id, record, setup_local, state, switch
 from .test_practice_setup import select_game, set_number, throw
 
 D20 = ("D20", 20, 2)
@@ -79,3 +79,75 @@ async def test_profiles_the_last_match_and_deleting_a_player(hass, aioclient_moc
     # The match history keeps the names.
     last = hass.states.get(entity_id(hass, "sensor", "last_match"))
     assert last.attributes["winner"] == "Alex"
+
+
+async def test_renaming_and_merging_players(hass, aioclient_mock):
+    """The action renames a player everywhere, merges two names of one player,
+    announces it and explains what it cannot do."""
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    coordinator = entry.runtime_data.local
+    for index, name in enumerate(("Sammy", "Lea")):
+        coordinator.games.practice.set_name(index, name)
+    await select_game(hass, "501")
+    await set_number(hass, "practice_players", 2)
+    coordinator.games.practice.players[0].remaining = 40
+    await throw(hass, coordinator, D20)
+    events = record(hass, coordinator)
+
+    async def rename(player: str, new_name: str) -> None:
+        await hass.services.async_call(
+            DOMAIN,
+            "rename_player",
+            {"player": player, "new_name": new_name},
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+    with pytest.raises(ServiceValidationError) as error:
+        await rename("Sammy", "LEA")
+    assert error.value.translation_key == "merge_in_play"
+    assert error.value.translation_placeholders == {"name": "Sammy", "other": "Lea"}
+    with pytest.raises(ServiceValidationError) as error:
+        await rename("Nobody", "Sam")
+    assert error.value.translation_key == "unknown_player"
+    with pytest.raises(ServiceValidationError) as error:
+        await rename("Sammy", "Sam #1")
+    assert error.value.translation_key == "invalid_player_name"
+    # The same name again is no change and no event.
+    await rename("sammy", "Sammy")
+    assert events == []
+
+    await rename(" sammy", "Sam")
+    assert events == [
+        (
+            "player_renamed",
+            {"old": "Sammy", "new": "Sam", "merged": False, "source": "training"},
+        )
+    ]
+    profiles = hass.states.get(entity_id(hass, "sensor", "player_profiles"))
+    assert {player["name"] for player in profiles.attributes["players"]} == {
+        "Sam",
+        "Lea",
+    }
+    last = hass.states.get(entity_id(hass, "sensor", "last_match"))
+    assert last.attributes["head_to_head"] == [
+        {"players": ["Lea", "Sam"], "wins": [0, 1]}
+    ]
+    assert coordinator.games.records.bests["highest_checkout"]["name"] == "Sam"
+    assert coordinator.games.practice.names[:2] == ["Sam", "Lea"]
+    assert [
+        player["name"] for player in coordinator.reports.journal.matches[-1]["players"]
+    ] == ["Sam", "Lea"]
+
+    # Once Lea rests, Sam and Lea become one player; the event says so.
+    await set_number(hass, "practice_players", 1)
+    events.clear()
+    await rename("Lea", "Sam")
+    assert events[0][1]["merged"] is True
+    profiles = hass.states.get(entity_id(hass, "sensor", "player_profiles"))
+    (sam,) = profiles.attributes["players"]
+    assert (sam["name"], sam["legs_played"], sam["matches_played"]) == ("Sam", 2, 2)
+    last = hass.states.get(entity_id(hass, "sensor", "last_match"))
+    assert last.attributes["head_to_head"] == []
+    event = hass.states.get(entity_id(hass, "event", "board_events"))
+    assert "player_renamed" in event.attributes["event_types"]

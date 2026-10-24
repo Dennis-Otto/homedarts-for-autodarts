@@ -478,6 +478,19 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._async_changed()
         return deleted
 
+    async def async_rename_player(self, name: str, new_name: str) -> None:
+        """Rename a player profile or merge it into another, see
+        BoardGames.rename_player, and announce it with player_renamed; the same
+        name again is no change. A merged player's aim model is worked out anew
+        from the darts of both."""
+        with refusals():
+            renamed = self.games.rename_player(name, new_name, dt_util.now())
+        if renamed["old"] == renamed["new"]:
+            return
+        await self._async_changed()
+        self._schedule_aim()
+        self._emit("player_renamed", renamed, "training")
+
     async def async_link_player(self, name: str, person: str | None) -> bool:
         """Link a player to a person, or unlink with None; False when that fails."""
         profiles = self.games.practice.profiles

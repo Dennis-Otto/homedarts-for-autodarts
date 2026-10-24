@@ -27,7 +27,7 @@ from .manual import ManualDarts
 from .modes import VisitRefused
 from .moments import stamp
 from .practice import PracticeGame
-from .profiles import valid_name
+from .profiles import clean_name, valid_name
 from .progress import Progress
 from .quality import DetectionQuality
 from .records import PersonalRecords
@@ -92,6 +92,8 @@ class Reports(Protocol):
     def rewind(self, checkpoint: dict[str, Any]) -> None: ...
 
     def forget(self, name: str) -> None: ...
+
+    def rename(self, name: str, new_name: str) -> None: ...
 
 
 @dataclass
@@ -652,6 +654,37 @@ class BoardGames:
             self.progress.forget(name)
             self._reports.forget(name)
         return deleted
+
+    def rename_player(self, name: str, new_name: str, now: datetime) -> dict[str, Any]:
+        """Give a player profile a new name wherever the games keep a name: the
+        profile, the progress and the badges, the records, the report and the
+        calendar, the player slots and the tournaments. A name that another
+        profile has already merges the two players into that profile, as if
+        one name had thrown every dart. A player of the tournament being
+        played keeps the name, and two names that both play the match being
+        played cannot merge. The old and the new name, and whether the
+        profiles merged, for the event player_renamed."""
+        profiles = self.practice.profiles
+        spelled, old = clean_name(new_name), profiles.spelled(name)
+        if clean_name(name).casefold() not in profiles.players:
+            raise ActionRefused("unknown_player", name=name.strip())
+        if not spelled:
+            raise ActionRefused("invalid_player_name")
+        # The profile's own spelling, so every store finds the name the way
+        # the profile keeps it, also for a name with characters no name has.
+        if self.host is not None:
+            self.host.tournament.check(old)
+        self.tournament.check(old)
+        if not self.practice.rename_player(old, spelled):
+            raise ActionRefused(
+                "merge_in_play", name=old, other=profiles.spelled(spelled)
+            )
+        merged = profiles.rename(old, spelled) is True
+        self.tournament.rename(old, spelled)
+        self.progress.rename(old, spelled, profiles, now)
+        self.records.rename(old, spelled)
+        self._reports.rename(old, spelled)
+        return {"old": old, "new": spelled, "merged": merged}
 
     def start_game(
         self,

@@ -315,6 +315,15 @@ class DartLog:
         self._spread = None
         self.version += 1
 
+    def join(self, earlier: DartLog) -> None:
+        """Put the darts of another log before these, as thrown earlier; the
+        newest stay, as many as the log keeps."""
+        darts = [*earlier.darts, *self.darts]
+        self.darts.clear()
+        self.darts.extend(darts)
+        self._spread = None
+        self.version += 1
+
     def positions(self) -> list[list[float]]:
         """Normalised positions like the visit sensor's, for the cards."""
         return [[round(x, 3), round(y, 3)] for x, y, _ in self.darts]
