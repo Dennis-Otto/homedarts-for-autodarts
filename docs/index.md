@@ -85,7 +85,7 @@ HomeDarts for Autodarts is an unofficial community project, not affiliated with 
 
     ---
 
-    Board events for every dart, visit, takeout, bust, won leg and match. Fifteen blueprints: light show, score display, dart and practice callers, highlight photos, reports, alerts, routines, games started and darts entered by voice, and answers from Assist about your darts.
+    Board events for every dart, visit, takeout, bust, won leg and match, the start and end of every game. Sixteen blueprints: light show, walk-on music, score display, dart and practice callers, highlight photos, reports, alerts, routines, games started and darts entered by voice, and answers from Assist about your darts.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -146,7 +146,7 @@ How HomeDarts compares with the Autodarts app and its browser extension, with da
 - :material-bullseye-arrow: [**Games and rules**](games.md): every game at a glance, four ways to start one, matches, teams, handicaps, the bull-off and tournaments
 - :material-television: [**Scoreboard at the board**](scoreboard.md): a tablet or TV next to the board, landscape and portrait, the new game screen, the caller and idle mode
 - :material-chart-line: [**Statistics and players**](statistics.md): sessions, personal bests, heatmaps, where to aim, progress, profiles, achievements and the leaderboard
-- :material-home-automation: [**Automations**](automations.md): fifteen blueprints, their settings, board events and ready-to-use examples
+- :material-home-automation: [**Automations**](automations.md): sixteen blueprints, their settings, board events and ready-to-use examples
 - :material-play-network: [**Online matches**](online-matches.md): busts, won legs and matches of online matches as board events, with Tools for Autodarts *(experimental)*
 
 ## Reference

@@ -38,7 +38,7 @@ HomeDarts for Autodarts ist eine kostenlose Open-Source-Integration, die ein Aut
 | Spielen | Bis zu vier Spieler oder zwei Teams zu zweit, Handicap-Startpunkte, ein Bot von Stufe 20 bis 120, Turniere für drei bis 32 Spieler |
 | Anzeigetafel | Eine Vollbild-Ansicht für Tablet oder Fernseher, mit Spielauswahl, Korrekturen, Caller und Ruhemodus |
 | Statistik | Bestleistungen, Trefferbilder der echten Dart-Positionen, Trends, Erfolge, Bestenliste, Wochenbericht und Exporte |
-| Zuhause | Sieben Dashboard-Karten, ein automatisches Dashboard und fünfzehn Blueprints, etwa eine Licht-Show beim 180er |
+| Zuhause | Sieben Dashboard-Karten, ein automatisches Dashboard und sechzehn Blueprints, etwa eine Licht-Show beim 180er |
 | Sprachen | Englisch, Deutsch, Niederländisch, Französisch und Spanisch |
 | Qualität | 100 % Testabdeckung, in Docker gegen beide Board-Manager-Generationen getestet; alle Regeln der Home-Assistant-Qualitätsskala bis Platin (Selbsteinschätzung) |
 | Voraussetzungen | Home Assistant ab 2026.8 mit HACS; die getesteten Setups stehen unter [Unterstützte Geräte](README.de.md#unterstützte-geräte) |
@@ -85,7 +85,7 @@ Alle Screenshots der Dokumentation liegen in [`docs/images/de`](https://github.c
 | Auf der Anzeigetafel | In Home Assistant |
 | --- | --- |
 | <img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301, drei Legs pro Satz, Double-Out und die Start-Taste" width="100%"> | <img src="images/de/players-card.png" alt="Spielerkarte mit den Profilen von Alex, Sam und Kim mit ihren Bildern, ihren Averages und Bestleistungen, dem direkten Vergleich von Alex und Sam und den letzten Matches" width="100%"> |
-| <img src="images/de/match-summary.png" alt="Anzeigetafel, nachdem Alex Sam in 301 mit 2 : 1 geschlagen hat: die Match-Zusammenfassung mit Legs, 3-Dart-Average, First 9, Checkout-Quote, höchstem Checkout, 180ern, 140+, 100+, bestem Leg, Darts aufs Double und Darts beider Spieler" width="100%"> | <img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den fünfzehn HomeDarts-Blueprints, von der Warnung bei Board-Problemen bis zum Wochenbericht, und ihren Dateinamen" width="100%"> |
+| <img src="images/de/match-summary.png" alt="Anzeigetafel, nachdem Alex Sam in 301 mit 2 : 1 geschlagen hat: die Match-Zusammenfassung mit Legs, 3-Dart-Average, First 9, Checkout-Quote, höchstem Checkout, 180ern, 140+, 100+, bestem Leg, Darts aufs Double und Darts beider Spieler" width="100%"> | <img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von der Warnung bei Board-Problemen bis zum Wochenbericht, und ihren Dateinamen" width="100%"> |
 
 ## Deine Spiele streamen
 
@@ -148,7 +148,7 @@ Ich spiele an einem Autodarts-Board und wollte das ganze Spiel in Home Assistant
 
 - **Lokal und in Echtzeit.** Die Integration spricht mit dem Board Manager auf dem Board-PC in deinem Netzwerk: kein Autodarts-Konto, keine Cloud, nichts verlässt dein Zuhause.
 - **Ein Dartautomat für zu Hause.** X01, sechs Cricket-Spiele, neun Party- und acht Trainingsspiele, ein Bot von Stufe 20 bis 120 und Turniere, auf einer Anzeigetafel im Vollbild für Tablet oder Fernseher, mit Caller.
-- **Jeder Dart für deine Automationen.** Ereignisse für jeden Dart, jede Aufnahme, jedes Überwerfen, Leg und Match, sieben Dashboard-Karten und fünfzehn Blueprints, von der Licht-Show beim 180er bis zum Wochenbericht. Die Statistik mit Trefferbildern bleibt in deinem Home Assistant.
+- **Jeder Dart für deine Automationen.** Ereignisse für jeden Dart, jede Aufnahme, jedes Überwerfen, Leg und Match, sieben Dashboard-Karten und sechzehn Blueprints, von der Licht-Show beim 180er bis zum Wochenbericht. Die Statistik mit Trefferbildern bleibt in deinem Home Assistant.
 
 **Erst ausprobieren:** Die [Live-Demo](https://dennis-otto.github.io/homedarts-for-autodarts/demo/index.html?lang=de) spielt die Karten in deinem Browser, ganz ohne Installation. Kein Autodarts-Board? Sie zählt auch Darts, die du auf einem Tastenfeld eingibst.
 

@@ -1,0 +1,22 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: When a game starts and when it ends
+  accDescr: A game starts once it is set up, whichever way: the lobby of the scoreboard card, a voice command, homedarts.start_game, the Game select, New match, the next match of a tournament, or the first dart after a finished match; game_started tells the game, the mode, the players and their names. It ends once: won when the darts of the winning visit are pulled, stopped when the game is switched off, replaced when another game or a changed setting starts a new match, or idle when the training session ends after its idle time; game_ended tells the reason and the winner. A game that goes on after the idle end or after its winning visit was undone starts again as resumed.
+  SETUP["Lobby, voice, homedarts.start_game,<br/>Game select, New match,<br/>a tournament's next match,<br/>the first dart after a match"] --> STARTED(["game_started<br/>game, mode, players, names"])
+  STARTED --> PLAY["The game is played"]
+  PLAY -- "darts of the winning visit pulled" --> WON(["game_ended: won,<br/>with the winner"])
+  PLAY -- "switched off" --> STOPPED(["game_ended: stopped"])
+  PLAY -- "another game or a setting" --> REPLACED(["game_ended: replaced"])
+  PLAY -- "idle end of the session" --> IDLE(["game_ended: idle"])
+  REPLACED --> STARTED
+  IDLE -- "the next dart" --> RESUMED(["game_started, resumed"])
+  WON -- "winning visit undone" --> RESUMED
+  RESUMED --> PLAY
+  classDef start fill:#2563eb2e,stroke:#2563eb,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class STARTED,RESUMED start
+  class WON,STOPPED,REPLACED,IDLE done

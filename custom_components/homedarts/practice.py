@@ -325,6 +325,9 @@ class PracticeGame:
         self.summary: dict[str, Any] | None = None
         # When the first dart of the match landed, for the training calendar.
         self.match_started: str | None = None
+        # Raised with every new match, so that a game is told from the one
+        # before it, after a restart too; see lifecycle.py.
+        self.serial = 0
         # Every training game, with its results of every session.
         self.drills: dict[str, Drill] = {kind: make_drill(kind) for kind in DRILLS}
         self.profiles = Profiles()
@@ -495,6 +498,8 @@ class PracticeGame:
         )
         started = saved.get("match_started")
         self.match_started = started if isinstance(started, str) else None
+        serial = saved.get("serial")
+        self.serial = serial if type(serial) is int and serial >= 0 else 0
 
     def stored(self) -> dict[str, Any]:
         own = self.mode.stored()
@@ -541,6 +546,7 @@ class PracticeGame:
             "tallies": [tally.stored() for tally in self.tallies],
             "summary": copy.deepcopy(self.summary),
             "match_started": self.match_started,
+            "serial": self.serial,
         }
 
     # -- settings --------------------------------------------------------------
@@ -862,6 +868,7 @@ class PracticeGame:
         """Everybody starts from zero legs and sets; player 1 throws first,
         unless a bull-off decides it."""
         self._resume()
+        self.serial += 1
         self.players = [Player() for _ in self.players]
         self.tallies = [Tally() for _ in self.players]
         self.match_started = None
@@ -983,6 +990,38 @@ class PracticeGame:
         if not self.mode.playing:
             return None
         return self._name(self.bulling.thrower if self.bulling else self.current)
+
+    def lineup(self) -> dict[str, Any]:
+        """The game set up on the board as game_started tells it: the game, the
+        players by seat with their names, the start scores in X01, the format,
+        and the seat and the level of the bot. A training game is for player 1
+        alone."""
+        training = self.drill is not None
+        seats = 1 if training else len(self.players)
+        bot = self.bot_seat
+        return {
+            "game": self.drill if training else self.kind,
+            "players": seats,
+            "names": [self._name(index) for index in range(seats)],
+            "start_scores": [self.mode.start(index) for index in range(seats)]
+            if self.game
+            else None,
+            "legs": None if training else self.legs_to_win,
+            "sets": None if training else self.sets_to_win,
+            "bot_player": None if bot is None else bot + 1,
+            "bot_level": None if bot is None else self.bot_level,
+        }
+
+    def victor(self) -> dict[str, Any]:
+        """Who won the match, as game_ended tells it: the name of the player or
+        of their team, none for the bot or a player without one, and the seat."""
+        if self.winner is None:
+            return {"winner": None, "player": None}
+        who = self._who(self.winner)
+        return {
+            "winner": who.get("team_name") or who["name"],
+            "player": self.winner + 1,
+        }
 
     def _who(self, index: int) -> dict[str, Any]:
         who = {

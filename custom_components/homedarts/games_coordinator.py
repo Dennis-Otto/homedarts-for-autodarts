@@ -652,7 +652,10 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @callback
     def _moved(self) -> None:
         """Another board of a tournament on several boards changed the games of
-        this board: save and show them."""
+        this board: save and show them, and announce the game it started or
+        ended."""
+        for kind, attributes, source in self.games.follow_game(dt_util.now()):
+            self._emit(kind, attributes, source)
         self.store.save_later()
         self.data = {**(self.data or {}), **self.games.snapshots()}
         self.async_update_listeners()

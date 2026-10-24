@@ -85,7 +85,7 @@ HomeDarts for Autodarts ist ein inoffizielles Community-Projekt ohne Verbindung 
 
     ---
 
-    Board-Ereignisse für jeden Dart, jede Aufnahme, Entnahme, jedes Überwerfen, gewonnene Leg und Match. Fünfzehn Blueprints: Lichtshow, Spielstand-Anzeige, Dart- und Übungs-Caller, Highlight-Fotos, Berichte, Warnungen, Routinen, Spielstart und Darts per Sprache sowie Antworten von Assist zu deinen Darts.
+    Board-Ereignisse für jeden Dart, jede Aufnahme, Entnahme, jedes Überwerfen, gewonnene Leg und Match, Beginn und Ende jedes Spiels. Sechzehn Blueprints: Lichtshow, Walk-on-Musik, Spielstand-Anzeige, Dart- und Übungs-Caller, Highlight-Fotos, Berichte, Warnungen, Routinen, Spielstart und Darts per Sprache sowie Antworten von Assist zu deinen Darts.
 
     [:octicons-arrow-right-24: Automationen](automations.de.md)
 
@@ -146,7 +146,7 @@ Wie sich HomeDarts mit der Autodarts-App und ihrer Browser-Erweiterung, mit dart
 - :material-bullseye-arrow: [**Spiele und Regeln**](games.de.md): alle Spiele im Überblick, vier Wege, eines zu starten, Matches, Teams, Handicaps, das Ausbullen und Turniere
 - :material-television: [**Anzeigetafel am Board**](scoreboard.de.md): ein Tablet oder Fernseher neben dem Board, Quer- und Hochformat, Spielauswahl, Caller und Ruhemodus
 - :material-chart-line: [**Statistik und Spieler**](statistics.de.md): Sessions, Bestleistungen, Trefferbilder, wohin zielen, Fortschritt, Profile, Erfolge und Bestenliste
-- :material-home-automation: [**Automationen**](automations.de.md): fünfzehn Blueprints, ihre Einstellungen, Board-Ereignisse und fertige Beispiele
+- :material-home-automation: [**Automationen**](automations.de.md): sechzehn Blueprints, ihre Einstellungen, Board-Ereignisse und fertige Beispiele
 - :material-play-network: [**Online-Matches**](online-matches.de.md): Überwerfen, gewonnene Legs und Matches von Online-Matches als Board-Ereignisse, mit Tools for Autodarts *(experimentell)*
 
 ## Nachschlagen

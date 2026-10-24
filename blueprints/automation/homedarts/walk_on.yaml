@@ -1,0 +1,265 @@
+blueprint:
+  name: "HomeDarts: walk-on music"
+  description: >-
+    Plays the walk-on song of every player when a game starts, like the
+    walk-ons of the professionals on stage, and the song of the winner after
+    the match. One player after the other, in the order of their seats, each
+    song plays for the seconds you choose; the first dart ends the walk-ons.
+    A game that is stopped or replaced meanwhile stops the music.
+
+
+    The songs are a pack in `homedarts/voices` of the media folder, by default
+    `walk-ons`, named after the players as the sounds of a voice pack are:
+    `alex.mp3` for Alex, `bot.mp3` for the bot and `default.mp3` for everybody
+    without a song of their own. A player with several songs, such as
+    `alex.mp3` and `alex+2.mp3`, gets one of them at random. A player without
+    a song walks on in silence when there is no `default.mp3`.
+
+
+    Needs version 2.1.0 or later of the integration, which announces the start
+    and the end of every game.
+
+
+    [Settings and examples in the guide](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#walk-on-music)
+  domain: automation
+  author: Dennis Otto
+  source_url: https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/blueprints/automation/homedarts/walk_on.yaml
+  homeassistant:
+    min_version: "2026.8.0"
+  input:
+    board:
+      name: Board
+      icon: mdi:bullseye-arrow
+      input:
+        board_events:
+          name: Board events
+          description: The "Events" entity of your Autodarts board.
+          selector:
+            entity:
+              filter:
+                - integration: homedarts
+                  domain: event
+    music:
+      name: Music
+      icon: mdi:music
+      input:
+        speakers:
+          name: Speakers
+          description: The media players that play the songs.
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: media_player
+        song_pack:
+          name: Song pack
+          description: >-
+            The folder of the songs in `homedarts/voices` of the media folder,
+            for example `/media/homedarts/voices/walk-ons/alex.mp3` for the
+            song of Alex in the pack `walk-ons`.
+          default: walk-ons
+          selector:
+            text: {}
+        walk_on_seconds:
+          name: Seconds per walk-on
+          description: >-
+            How long the song of each player plays before the song of the next
+            one, or the end of the walk-ons. The first dart ends them at once.
+          default: 20
+          selector:
+            number:
+              min: 3
+              max: 120
+              step: 1
+              mode: slider
+              unit_of_measurement: s
+    winner:
+      name: Winner
+      icon: mdi:trophy
+      collapsed: true
+      input:
+        winner_song:
+          name: Song of the winner
+          description: >-
+            Plays the song of the winner once the darts of the winning visit
+            are pulled.
+          default: true
+          selector:
+            boolean: {}
+        winner_seconds:
+          name: Seconds for the winner
+          description: How long the song of the winner plays; 0 plays it to its end.
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 300
+              step: 1
+              mode: slider
+              unit_of_measurement: s
+    games:
+      name: Games
+      icon: mdi:dart
+      collapsed: true
+      input:
+        modes:
+          name: Walk-ons for
+          description: >-
+            The games with walk-on music. A training game, such as Around the
+            Clock, has none unless you choose it.
+          default:
+            - practice
+            - match
+            - party
+            - tournament
+          selector:
+            select:
+              multiple: true
+              options:
+                - label: A game alone
+                  value: practice
+                - label: A match of several players or against the bot
+                  value: match
+                - label: A party game
+                  value: party
+                - label: A match of a tournament
+                  value: tournament
+                - label: A training game
+                  value: training
+
+# A new start or end replaces the run: the walk-ons of the game set up last
+# play, and an end stops them.
+mode: restart
+
+triggers:
+  - trigger: event.received
+    target:
+      entity_id: !input board_events
+    options:
+      event_type:
+        - game_started
+        - game_ended
+
+variables:
+  song_pack: !input song_pack
+  walk_on_seconds: !input walk_on_seconds
+  winner_song: !input winner_song
+  winner_seconds: !input winner_seconds
+  modes: !input modes
+  # Read from the triggering state: the next event may already have replaced it.
+  kind: "{{ trigger.to_state.attributes.get('event_type', '') }}"
+  reason: "{{ trigger.to_state.attributes.get('reason', '') }}"
+  # Whether walk-ons or the song of a winner play, which an end stops.
+  playing: "{{ this is not none and this['attributes'].get('current', 0) | int(0) > 0 }}"
+  # The songs to look for, seat by seat: the player's own, then the default.
+  # The bot's song is bot.mp3.
+  walk_ons: >-
+    {% set event = trigger.to_state.attributes %}
+    {%- set bot = event.get('bot_player') | int(0) %}
+    {%- set ns = namespace(songs=[]) %}
+    {%- for name in event.get('names') or [] %}
+    {%- set own = 'bot' if loop.index == bot else (name or '') | string | lower | trim %}
+    {%- set ns.songs = ns.songs + [([own] if own | length in range(1, 65) else []) + ['default']] %}
+    {%- endfor %}
+    {{ ns.songs }}
+  winner: >-
+    {% set event = trigger.to_state.attributes %}
+    {%- set seat = event.get('player') | int(0) %}
+    {%- set names = event.get('names') or [] %}
+    {%- set own = 'bot' if seat > 0 and seat == event.get('bot_player') | int(0)
+       else ((names[seat - 1] if 0 < seat <= names | count else '') or '') | string | lower | trim %}
+    {{ ([own] if own | length in range(1, 65) else []) + ['default'] }}
+  # A pack name the action refuses leaves the songs out, as no folder can have it.
+  pack_valid: "{{ (song_pack | string | trim | length) in range(1, 65) }}"
+
+conditions:
+  - alias: A game with walk-on music
+    condition: template
+    value_template: "{{ trigger.to_state.attributes.get('mode') in modes }}"
+
+actions:
+  - choose:
+      - alias: The walk-ons of a game that starts
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ kind == 'game_started' and pack_valid
+                 and not trigger.to_state.attributes.get('resumed', false) }}
+        sequence:
+          - repeat:
+              for_each: "{{ walk_ons }}"
+              sequence:
+                - variables:
+                    song: {}
+                # A pack without the song, or no such pack, plays nothing.
+                - action: homedarts.voice_sound
+                  continue_on_error: true
+                  data:
+                    pack: "{{ song_pack | string | trim }}"
+                    keys: "{{ repeat.item }}"
+                  response_variable: song
+                - if: "{{ song.get('media_content_id', '') != '' }}"
+                  then:
+                    - action: media_player.play_media
+                      continue_on_error: true
+                      target:
+                        entity_id: !input speakers
+                      data:
+                        media_content_id: "{{ song.media_content_id }}"
+                        media_content_type: music
+                    - wait_for_trigger:
+                        - trigger: event.received
+                          target:
+                            entity_id: !input board_events
+                          options:
+                            event_type:
+                              - dart_detected
+                      timeout:
+                        seconds: "{{ walk_on_seconds }}"
+                      continue_on_timeout: true
+                    - action: media_player.media_stop
+                      continue_on_error: true
+                      target:
+                        entity_id: !input speakers
+                    - if: "{{ wait.trigger is not none }}"
+                      then:
+                        - stop: The first dart ends the walk-ons.
+      - alias: The song of the winner
+        conditions:
+          - condition: template
+            value_template: "{{ kind == 'game_ended' and reason == 'won' and winner_song and pack_valid }}"
+        sequence:
+          - variables:
+              song: {}
+          - action: homedarts.voice_sound
+            continue_on_error: true
+            data:
+              pack: "{{ song_pack | string | trim }}"
+              keys: "{{ winner }}"
+            response_variable: song
+          - if: "{{ song.get('media_content_id', '') != '' }}"
+            then:
+              - action: media_player.play_media
+                continue_on_error: true
+                target:
+                  entity_id: !input speakers
+                data:
+                  media_content_id: "{{ song.media_content_id }}"
+                  media_content_type: music
+              - if: "{{ winner_seconds | int(0) > 0 }}"
+                then:
+                  - delay:
+                      seconds: "{{ winner_seconds }}"
+                  - action: media_player.media_stop
+                    continue_on_error: true
+                    target:
+                      entity_id: !input speakers
+      - alias: A game that ends otherwise stops its walk-ons
+        conditions:
+          - condition: template
+            value_template: "{{ kind == 'game_ended' and reason != 'won' and playing }}"
+        sequence:
+          - action: media_player.media_stop
+            continue_on_error: true
+            target:
+              entity_id: !input speakers

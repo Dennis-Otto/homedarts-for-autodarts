@@ -11,7 +11,7 @@ INHERIT: .github/mkdocs-blueprint.yml
 # below. It is the name of the integration, which names Autodarts, so that the
 # website is found with it, and it is not the website of Autodarts itself.
 site_name: "HomeDarts for Autodarts"
-site_description: "HomeDarts for Autodarts, the Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and fifteen blueprints, games started by voice. No cloud account needed."
+site_description: "HomeDarts for Autodarts, the Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and sixteen blueprints, games started by voice. No cloud account needed."
 site_url: https://dennis-otto.github.io/homedarts-for-autodarts/
 repo_url: https://github.com/Dennis-Otto/homedarts-for-autodarts
 repo_name: Dennis-Otto/homedarts-for-autodarts
@@ -91,7 +91,7 @@ plugins:
         build: true
         site_name: "HomeDarts for Autodarts"
         copyright: "© 2026 Trkal und Mitwirkende von HACSAutodarts; 2026 Dennis Otto<br>HomeDarts for Autodarts ist eine inoffizielle Integration der Community, nicht mit Autodarts verbunden."
-        site_description: "HomeDarts for Autodarts, die Home-Assistant-Integration für Autodarts-Boards und jede Dartscheibe: lokale Echtzeit-Steuerung des Boards, X01, Cricket, Party- und Trainingsspiele, Turniere und ein Bot, Spielerstatistik mit Trefferbildern, sieben Dashboard-Karten und fünfzehn Blueprints, Spiele per Sprache starten. Kein Cloud-Konto nötig."
+        site_description: "HomeDarts for Autodarts, die Home-Assistant-Integration für Autodarts-Boards und jede Dartscheibe: lokale Echtzeit-Steuerung des Boards, X01, Cricket, Party- und Trainingsspiele, Turniere und ein Bot, Spielerstatistik mit Trefferbildern, sieben Dashboard-Karten und sechzehn Blueprints, Spiele per Sprache starten. Kein Cloud-Konto nötig."
         nav_translations:
           Home: Start
           Get started: Erste Schritte

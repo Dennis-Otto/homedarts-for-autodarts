@@ -2576,6 +2576,35 @@ async def test_light_show_moments(hass):
     ]
 
 
+async def test_light_show_sets_the_scene_when_a_game_starts(hass):
+    light = async_mock_service(hass, "test", "light")
+    hass.states.async_set(EVENTS, "unknown")
+    await automate(
+        hass,
+        "light_show",
+        {
+            "board_events": EVENTS,
+            "game_start_actions": [
+                {
+                    "action": "test.light",
+                    "data": {"moment": "{{ moment }}", "who": "{{ who }}"},
+                }
+            ],
+        },
+    )
+    started = {"game": 501, "mode": "match", "players": 2, "names": ["Alex", None]}
+    await fire_all(
+        hass,
+        [
+            # A game with the bot is no moment of the bot.
+            ("game_started", {**started, "bot_player": 2, "bot_level": 60}),
+            ("game_ended", {**started, "reason": "stopped"}),
+            ("game_started", {**started, "resumed": True}),
+        ],
+    )
+    assert [call.data for call in light] == [{"moment": "game_start", "who": ""}] * 2
+
+
 async def test_light_show_restores_the_lights_and_pauses_the_detection(hass, freezer):
     light = async_mock_service(hass, "test", "light")
     snapshot = async_mock_service(hass, "scene", "create")
@@ -3473,6 +3502,166 @@ async def test_score_display_follows_the_real_board(hass, aioclient_mock, freeze
         ]
         await pass_time(hass, freezer, idle)
     assert awtrix_screens(publish)[len(screens) + 4 :] == [None]
+
+
+# -- walk-on music ----------------------------------------------------------------------
+
+
+WALK_ON = {"board_events": EVENTS, "speakers": ["media_player.dartroom"]}
+# Alex, Kim and the bot set up a match.
+LINEUP = {
+    "game": 501,
+    "mode": "match",
+    "players": 3,
+    "names": ["Alex", "Kim", None],
+    "bot_player": 3,
+    "bot_level": 60,
+    "resumed": False,
+}
+
+
+def walk_on_pack(hass, tmp_path, *files: str) -> tuple[list, list]:
+    """Walk-on songs in the pack walk-ons of the media folder, the actions of the
+    integration that find them, and the songs the speakers play and stop."""
+    pack = tmp_path / "media" / "homedarts" / "voices" / "walk-ons"
+    pack.mkdir(parents=True)
+    for file in files:
+        (pack / file).write_bytes(b"ID3")
+    hass.config.media_dirs = {"local": str(tmp_path / "media")}
+    async_setup_services(hass)
+    hass.states.async_set(EVENTS, "unknown")
+    return (
+        async_mock_service(hass, "media_player", "play_media"),
+        async_mock_service(hass, "media_player", "media_stop"),
+    )
+
+
+async def song_waits(hass, seconds: float) -> None:
+    """Let a run find the song in the media folder, which the executor reads,
+    and reach the wait of its walk-on."""
+    for _ in range(100):
+        try:
+            await until_waiting(hass, seconds)
+        except AssertionError:
+            await hass.async_add_executor_job(lambda: None)
+        else:
+            return
+    raise AssertionError(f"no walk-on of {seconds} s started")
+
+
+async def walk_on(hass, freezer, seconds: float = 20) -> None:
+    """The walk-on of a player plays to its end."""
+    await song_waits(hass, seconds)
+    await pass_time(hass, freezer, seconds)
+
+
+def songs(calls) -> list[str]:
+    """The files of the walk-on pack the speakers played."""
+    prefix = "media-source://media_source/local/homedarts/voices/walk-ons/"
+    assert all(call.data["media_content_type"] == "music" for call in calls)
+    assert all(call.data["entity_id"] == ["media_player.dartroom"] for call in calls)
+    return [call.data["media_content_id"].removeprefix(prefix) for call in calls]
+
+
+async def test_walk_on_plays_the_song_of_every_player_in_turn(hass, tmp_path, freezer):
+    play, stop = walk_on_pack(hass, tmp_path, "alex.mp3", "Bot.mp3", "default.mp3")
+    await automate(hass, "walk_on", WALK_ON)
+    fire(hass, "game_started", **LINEUP)
+    await song_waits(hass, 20)
+    # The next song follows within the same run, which a wait for the end of
+    # the run would not let through.
+    for _ in range(2):
+        freezer.tick(timedelta(seconds=20))
+        async_fire_time_changed(hass)
+        await song_waits(hass, 20)
+    await pass_time(hass, freezer, 20)
+    # Kim has no song of her own.
+    assert songs(play) == ["alex.mp3", "default.mp3", "Bot.mp3"]
+    assert len(stop) == 3
+    await pass_time(hass, freezer, 60)
+    assert (len(play), len(stop)) == (3, 3)
+
+
+async def test_walk_on_ends_at_the_first_dart(hass, tmp_path, freezer):
+    play, stop = walk_on_pack(hass, tmp_path, "alex.mp3", "kim.mp3")
+    await automate(hass, "walk_on", {**WALK_ON, "walk_on_seconds": 30})
+    fire(hass, "game_started", **LINEUP)
+    await song_waits(hass, 30)
+    fire(hass, "dart_detected", segment="T20", score=60, dart_index=1)
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 60)
+    assert (songs(play), len(stop)) == (["alex.mp3"], 1)
+
+
+async def test_walk_on_stays_silent_without_a_song_and_does_not_fail(
+    hass, tmp_path, freezer, caplog
+):
+    """A player without a song, a pack without the songs, or no pack at all."""
+    play, stop = walk_on_pack(hass, tmp_path, "kim.mp3")
+    await saved(hass, "walk_on", WALK_ON)
+    fire(hass, "game_started", **LINEUP)
+    await walk_on(hass, freezer)
+    await pass_time(hass, freezer, 60)
+    assert (songs(play), len(stop)) == (["kim.mp3"], 1)
+    await saved(hass, "walk_on", {**WALK_ON, "song_pack": "nobody"})
+    fire(hass, "game_started", **LINEUP)
+    for _ in range(5):
+        await hass.async_add_executor_job(lambda: None)
+        await hass.async_block_till_done()
+    assert (len(play), len(stop)) == (1, 1)
+    assert "Error" not in caplog.text
+
+
+async def test_walk_on_plays_the_song_of_the_winner(hass, tmp_path, freezer):
+    play, stop = walk_on_pack(hass, tmp_path, "alex.mp3", "bot.mp3", "default.mp3")
+    await saved(hass, "walk_on", WALK_ON)
+    won = {**LINEUP, "reason": "won", "winner": "Alex", "player": 1}
+    # The bot wins with its own song, Kim with the default one.
+    for player in (1, 3, 2):
+        fire(hass, "game_ended", **{**won, "player": player})
+        await walk_on(hass, freezer, 30)
+    assert songs(play) == ["alex.mp3", "bot.mp3", "default.mp3"]
+    assert len(stop) == 3
+    # A song to its end, and no song of the winner.
+    await saved(hass, "walk_on", {**WALK_ON, "winner_seconds": 0})
+    fire(hass, "game_ended", **won)
+    for _ in range(5):
+        await hass.async_add_executor_job(lambda: None)
+        await hass.async_block_till_done()
+    await pass_time(hass, freezer, 60)
+    assert (len(play), len(stop)) == (4, 3)
+    await saved(hass, "walk_on", {**WALK_ON, "winner_song": False})
+    fire(hass, "game_ended", **won)
+    await hass.async_block_till_done()
+    assert len(play) == 4
+
+
+async def test_walk_on_stops_with_a_game_that_ends_otherwise(hass, tmp_path):
+    play, stop = walk_on_pack(hass, tmp_path, "default.mp3")
+    await automate(hass, "walk_on", WALK_ON)
+    fire(hass, "game_started", **LINEUP)
+    await song_waits(hass, 20)
+    fire(hass, "game_ended", **{**LINEUP, "reason": "stopped"})
+    await hass.async_block_till_done()
+    assert (len(play), len(stop)) == (1, 1)
+    # Nothing plays, so nothing stops.
+    fire(hass, "game_ended", **{**LINEUP, "reason": "replaced"})
+    await hass.async_block_till_done()
+    assert len(stop) == 1
+
+
+async def test_walk_on_leaves_out_games_without_walk_ons(hass, tmp_path):
+    play, _ = walk_on_pack(hass, tmp_path, "default.mp3")
+    await automate(hass, "walk_on", WALK_ON)
+    await fire_all(
+        hass,
+        [
+            ("game_started", {**LINEUP, "mode": "training", "game": "bobs_27"}),
+            # A game that goes on, after the idle time or an undone visit.
+            ("game_started", {**LINEUP, "resumed": True}),
+        ],
+    )
+    assert play == []
 
 
 # -- examples of the documentation -------------------------------------------------------

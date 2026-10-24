@@ -678,6 +678,8 @@
               "leg_won": "Manche gagnée",
               "match_won": "Match gagné",
               "turn_changed": "Changement de joueur",
+              "game_started": "Partie démarrée",
+              "game_ended": "Partie terminée",
               "drill_finished": "Jeu d'entraînement terminé",
               "checkout_attempt": "Tentative de finish",
               "personal_best": "Record personnel",
@@ -719,6 +721,28 @@
               "bobs_27": "Bob's 27",
               "streak": "Série",
               "darts_thrown": "Fléchettes lancées"
+            }
+          },
+          "mode": {
+            "name": "Mode",
+            "state": {
+              "practice": "Entraînement solo",
+              "match": "Match",
+              "party": "Jeu de soirée",
+              "training": "Jeu d'entraînement",
+              "tournament": "Tournoi"
+            }
+          },
+          "reason": {
+            "name": "Raison",
+            "state": {
+              "manual": "À la main",
+              "new_session": "Nouvelle session",
+              "first_dart": "Première fléchette",
+              "idle": "Inactivité",
+              "won": "Gagnée",
+              "stopped": "Arrêtée",
+              "replaced": "Remplacée"
             }
           }
         }
