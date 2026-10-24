@@ -250,7 +250,7 @@ The blueprint needs version 1.12.4 or later of the integration, which brings `ho
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Board events | | The *Events* entity of your board. |
-| Actions when a game starts | none | Run when a [game starts](entities.md#games-that-start-and-end), however it was set up, for example the scene for playing; also when a game goes on after the idle end of the training session. `who` is empty. |
+| Actions when a game starts | none | Run when a [game starts](entities.md#games-that-start-and-end), however it was set up, for example the scene for playing; also when a game goes on after the idle end of the training session or after its winning visit was undone. `who` is empty. |
 | Actions for a 180 | none | Run the moment the third dart of a 180 lands. |
 | High finish from | 100 | A practice leg won with a checkout of at least this score is a high finish. |
 | Actions for a high finish | none | Run for a high finish, instead of the actions for a won leg. |
@@ -284,7 +284,7 @@ The actions can use `moment` (`game_start`, `maximum`, `high_finish`, `bust`, `l
 | Board events | | The *Events* entity of your board. |
 | Speakers | | The media players that play the songs. |
 | Song pack | `walk-ons` | The folder of the songs in `homedarts/voices` of the media folder, for example `/media/homedarts/voices/walk-ons/alex.mp3` for the song of Alex. |
-| Seconds per walk-on | 20 | How long the song of each player plays before the song of the next one. The first dart ends the walk-ons at once. |
+| Seconds per walk-on | 20 | How long the song of each player plays before the song of the next one. The first dart, or the first visit entered as its score, ends the walk-ons at once. |
 | Song of the winner | on | Plays the song of the winner once the darts of the winning visit are pulled. |
 | Seconds for the winner | 30 | How long the song of the winner plays; 0 plays it to its end. |
 | Walk-ons for | a game alone, a match, a party game, a match of a tournament | The games with walk-on music, by their `mode`: `practice`, `match`, `party`, `tournament` and `training`. A training game such as Around the Clock has none unless you choose it. |
@@ -296,7 +296,7 @@ Put a song for each player into the song pack, named after the player as the sou
   <img src="images/en/walk-on-light.png" alt="How the walk-on music plays: When a game starts, the blueprint looks for the song of each player in the song pack, in the order of the seats: the player's own song, such as alex.mp3, bot.mp3 for the bot, or default.mp3. Each song plays for the seconds per walk-on; a player without a song walks on in silence. The first dart ends the walk-ons at once. A game that is stopped or replaced stops the music. When the darts of the winning visit are pulled, the song of the winner plays." width="560">
 </picture>
 
-The walk-ons follow the [`game_started` and `game_ended` events](entities.md#games-that-start-and-end): they play for every game however it starts, from the lobby of the [scoreboard](scoreboard.md), by voice, with `homedarts.start_game` or for the next match of a tournament, and not again for a game that goes on after the idle end of the training session. A player without a song walks on in silence when there is no `default.mp3`, and a song pack that does not exist leaves the whole walk-on silent; neither stops the automation. Walk-on music needs version 2.1.0 or later of the integration.
+The walk-ons follow the [`game_started` and `game_ended` events](entities.md#games-that-start-and-end): they play for every game however it starts, from the lobby of the [scoreboard](scoreboard.md), by voice, with `homedarts.start_game` or for the next match of a tournament, and not again for a game that goes on after the idle end of the training session or after its winning visit was undone. A game that starts with its first dart after a finished match is under way already and has no walk-ons. A player without a song walks on in silence when there is no `default.mp3`, and a song pack that does not exist leaves the whole walk-on silent; neither stops the automation. Walk-on music needs version 2.1.0 or later of the integration.
 
 ### Score display
 

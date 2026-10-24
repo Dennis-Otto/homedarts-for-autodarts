@@ -64,7 +64,8 @@ blueprint:
           name: Seconds per walk-on
           description: >-
             How long the song of each player plays before the song of the next
-            one, or the end of the walk-ons. The first dart ends them at once.
+            one, or the end of the walk-ons. The first dart, or the first visit
+            entered as its score, ends them at once.
           default: 20
           selector:
             number:
@@ -184,7 +185,8 @@ actions:
           - condition: template
             value_template: >-
               {{ kind == 'game_started' and pack_valid
-                 and not trigger.to_state.attributes.get('resumed', false) }}
+                 and not trigger.to_state.attributes.get('resumed', false)
+                 and not trigger.to_state.attributes.get('underway', false) }}
         sequence:
           - repeat:
               for_each: "{{ walk_ons }}"
@@ -214,6 +216,8 @@ actions:
                           options:
                             event_type:
                               - dart_detected
+                              - visit_thrown
+                              - visit_completed
                       timeout:
                         seconds: "{{ walk_on_seconds }}"
                       continue_on_timeout: true
@@ -223,7 +227,7 @@ actions:
                         entity_id: !input speakers
                     - if: "{{ wait.trigger is not none }}"
                       then:
-                        - stop: The first dart ends the walk-ons.
+                        - stop: The first dart or visit ends the walk-ons.
       - alias: The song of the winner
         conditions:
           - condition: template

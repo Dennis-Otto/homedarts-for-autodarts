@@ -167,6 +167,12 @@ class BoardGames:
         self.tournament.restore(stored.get("tournament"))
         self.practice.hold = self.tournament.waiting
         self.life.restore(stored.get("lifecycle"))
+        if isinstance(saved, dict) and "lifecycle" not in saved:
+            self.life.adopt(
+                self.practice,
+                self.tournament.running and not self.tournament.waiting,
+                stamp(now),
+            )
 
     def stored(self) -> dict[str, Any]:
         """Training sessions, the practice game, personal bests, the players'

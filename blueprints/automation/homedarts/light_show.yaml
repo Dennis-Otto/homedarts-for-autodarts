@@ -62,7 +62,8 @@ blueprint:
             Run when a game is set up on the board, however it is started: a
             match, a party or a training game, or the next match of a
             tournament, for example the scene for playing. Also when a game
-            goes on after the idle end of the training session. Needs version
+            goes on after the idle end of the training session or after its
+            winning visit was undone. Needs version
             2.1.0 or later of the integration.
           default: []
           selector:

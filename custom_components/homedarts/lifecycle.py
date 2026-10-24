@@ -55,8 +55,6 @@ class GameLifecycle:
         self.game: dict[str, Any] = {}
         # Why the game ended, see REASONS; None while it is played.
         self.ended: str | None = None
-        # A store from before the lifecycle: the game it has started then.
-        self._adopt = False
 
     @property
     def running(self) -> bool:
@@ -64,11 +62,9 @@ class GameLifecycle:
         return self.serial is not None and self.ended is None
 
     def restore(self, saved: object) -> None:
-        """The lifecycle as stored. A store without one, from before it, takes
-        the game on the board as announced, so the update announces nothing."""
+        """The lifecycle as stored; one that is missing or broken starts anew."""
         if not isinstance(saved, dict):
-            self._adopt = True
-            return
+            saved = {}
         serial, ended, game = saved.get("serial"), saved.get("ended"), saved.get("game")
         self.serial = serial if type(serial) is int and serial >= 0 else None
         self.ended = ended if ended in REASONS else None
@@ -77,6 +73,15 @@ class GameLifecycle:
             if isinstance(game, dict)
             else {}
         )
+
+    def adopt(self, practice: PracticeGame, tournament: bool, now: str) -> None:
+        """A store from before the lifecycle: take the game it has on the board
+        as announced, so the update announces nothing. An empty store, that of
+        a new board, adopts nothing: its first game starts as usual."""
+        set_up = practice.kind is not None or practice.drill is not None
+        self.serial = practice.serial if set_up else None
+        self.ended = None if practice.winner is None else "won"
+        self.game = self._details(practice, tournament, now) if set_up else {}
 
     def stored(self) -> dict[str, Any]:
         return {"serial": self.serial, "ended": self.ended, "game": dict(self.game)}
@@ -99,12 +104,6 @@ class GameLifecycle:
         """
         set_up = practice.kind is not None or practice.drill is not None
         serial = practice.serial if set_up else None
-        if self._adopt:
-            self._adopt = False
-            self.serial = serial
-            self.ended = None if practice.winner is None else "won"
-            self.game = self._details(practice, tournament, now) if set_up else {}
-            return []
         same = serial is not None and serial == self.serial
         events: list[Event] = []
         if self.running:
@@ -148,7 +147,13 @@ class GameLifecycle:
         # state it wrote.
         return (
             "game_started",
-            {**practice.lineup(), "mode": details["mode"], "resumed": resumed},
+            {
+                **practice.lineup(),
+                "mode": details["mode"],
+                "resumed": resumed,
+                # Started by its first dart: the match is under way already.
+                "underway": practice.match_started is not None,
+            },
         )
 
     def _end(self, reason: str, victor: dict[str, Any] | None = None) -> Event:

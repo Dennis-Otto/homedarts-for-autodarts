@@ -3517,6 +3517,7 @@ LINEUP = {
     "bot_player": 3,
     "bot_level": 60,
     "resumed": False,
+    "underway": False,
 }
 
 
@@ -3593,6 +3594,20 @@ async def test_walk_on_ends_at_the_first_dart(hass, tmp_path, freezer):
     assert (songs(play), len(stop)) == (["alex.mp3"], 1)
 
 
+async def test_walk_on_ends_at_the_first_visit_entered_as_its_score(
+    hass, tmp_path, freezer
+):
+    """A visit from the keypad or by voice comes without darts."""
+    play, stop = walk_on_pack(hass, tmp_path, "alex.mp3", "kim.mp3")
+    await automate(hass, "walk_on", {**WALK_ON, "walk_on_seconds": 30})
+    fire(hass, "game_started", **LINEUP)
+    await song_waits(hass, 30)
+    fire(hass, "visit_completed", total=140, player=1)
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 60)
+    assert (songs(play), len(stop)) == (["alex.mp3"], 1)
+
+
 async def test_walk_on_stays_silent_without_a_song_and_does_not_fail(
     hass, tmp_path, freezer, caplog
 ):
@@ -3659,6 +3674,8 @@ async def test_walk_on_leaves_out_games_without_walk_ons(hass, tmp_path):
             ("game_started", {**LINEUP, "mode": "training", "game": "bobs_27"}),
             # A game that goes on, after the idle time or an undone visit.
             ("game_started", {**LINEUP, "resumed": True}),
+            # A game started by its first dart, after a finished match.
+            ("game_started", {**LINEUP, "underway": True}),
         ],
     )
     assert play == []

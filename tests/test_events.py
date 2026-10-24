@@ -96,6 +96,7 @@ def test_a_game_set_up_in_one_step_starts_once():
         "bot_player": None,
         "bot_level": None,
         "resumed": False,
+        "underway": False,
     }
     # Further steps and the darts of the game start nothing.
     assert changed(games) == []
@@ -133,6 +134,7 @@ def test_every_kind_of_game_tells_its_mode():
         "bot_player": None,
         "bot_level": None,
         "resumed": False,
+        "underway": False,
     }
 
 
@@ -153,9 +155,10 @@ def test_a_won_match_ends_once_the_darts_of_its_winning_visit_are_pulled():
     # The result stays; the first dart after it starts the next match.
     assert changed(games) == []
     announced, _ = play(games, board(S20))
-    assert [(kind, details["resumed"]) for kind, details in lifecycle(announced)] == [
-        ("game_started", False)
-    ]
+    assert [
+        (kind, details["resumed"], details["underway"])
+        for kind, details in lifecycle(announced)
+    ] == [("game_started", False, True)]
 
 
 def test_the_winner_of_a_team_match_is_the_team():
@@ -315,6 +318,25 @@ def test_a_store_from_before_the_events_takes_its_game_as_started():
     assert changed(restored) == []
     events = changed(restored, restored.practice.new_match)
     assert [kind for kind, _ in events] == ["game_started"]
+
+
+def test_the_first_change_after_loading_a_store_starts_its_game():
+    """A new board, or one whose PC is still booting: a game set up in Home
+    Assistant before the first dart starts as usual."""
+    fresh = new_games()
+    fresh.restore(None, NOW)
+    details = started(fresh, 301, names=["Alex", "Kim"])
+    assert (details["names"], details["underway"]) == (["Alex", "Kim"], False)
+    # A store from before the events, whose first step is a new match.
+    games = new_games()
+    started(games, 301, names=["Alex", "Kim"])
+    saved = games.stored()
+    del saved["lifecycle"]
+    restored = new_games()
+    restored.restore(saved, NOW)
+    events = changed(restored, restored.practice.new_match)
+    assert [kind for kind, _ in events] == ["game_ended", "game_started"]
+    assert events[0][1] == ended("replaced", game=301)
 
 
 def test_a_broken_lifecycle_in_the_store_starts_anew():

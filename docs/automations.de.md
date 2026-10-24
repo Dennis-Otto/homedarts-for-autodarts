@@ -252,7 +252,7 @@ Der Blueprint braucht Version 1.12.4 oder neuer der Integration, die `homedarts.
 | Einstellung | Standard | Was sie bewirkt |
 | --- | --- | --- |
 | Board events | | Die Entität *Ereignisse* deines Boards. |
-| Actions when a game starts | keine | Laufen, wenn ein [Spiel beginnt](entities.de.md#spiele-die-beginnen-und-enden), wie auch immer es eingerichtet wurde, etwa die Szene zum Spielen; auch wenn ein Spiel nach dem Leerlauf-Ende der Trainingssession weitergeht. `who` ist leer. |
+| Actions when a game starts | keine | Laufen, wenn ein [Spiel beginnt](entities.de.md#spiele-die-beginnen-und-enden), wie auch immer es eingerichtet wurde, etwa die Szene zum Spielen; auch wenn ein Spiel nach dem Leerlauf-Ende der Trainingssession oder nach einer zurückgenommenen Siegaufnahme weitergeht. `who` ist leer. |
 | Actions for a 180 | keine | Laufen, sobald der dritte Dart einer 180 landet. |
 | High finish from | 100 | Ein Übungsleg, das mit einem Checkout ab diesen Punkten gewonnen wird, ist ein High Finish. |
 | Actions for a high finish | keine | Laufen bei einem High Finish, statt der Aktionen für ein gewonnenes Leg. |
@@ -286,7 +286,7 @@ Die Aktionen können `moment` (`game_start`, `maximum`, `high_finish`, `bust`, `
 | Board events | | Die Entität *Ereignisse* deines Boards. |
 | Speakers | | Die Mediaplayer, die die Songs spielen. |
 | Song pack | `walk-ons` | Der Ordner der Songs in `homedarts/voices` des Medienordners, etwa `/media/homedarts/voices/walk-ons/alex.mp3` für den Song von Alex. |
-| Seconds per walk-on | 20 | Wie lange der Song jedes Spielers spielt, bevor der Song des nächsten kommt. Der erste Dart beendet die Walk-ons sofort. |
+| Seconds per walk-on | 20 | Wie lange der Song jedes Spielers spielt, bevor der Song des nächsten kommt. Der erste Dart, oder die erste als Punktzahl eingegebene Aufnahme, beendet die Walk-ons sofort. |
 | Song of the winner | an | Spielt den Song des Siegers, sobald die Darts der Siegaufnahme gezogen sind. |
 | Seconds for the winner | 30 | Wie lange der Song des Siegers spielt; 0 spielt ihn bis zum Ende. |
 | Walk-ons for | ein Spiel allein, ein Match, ein Partyspiel, ein Match eines Turniers | Die Spiele mit Walk-on-Musik, nach ihrem `mode`: `practice`, `match`, `party`, `tournament` und `training`. Ein Trainingsspiel wie Around the Clock hat keine, außer du wählst es. |
@@ -298,7 +298,7 @@ Leg für jeden Spieler einen Song in das Song-Paket, benannt nach dem Spieler, s
   <img src="images/de/walk-on-light.png" alt="Wie die Walk-on-Musik spielt: Wenn ein Spiel beginnt, sucht der Blueprint im Song-Paket den Song jedes Spielers, in der Reihenfolge der Plätze: den eigenen Song, etwa alex.mp3, bot.mp3 für den Bot oder default.mp3. Jeder Song spielt die Sekunden pro Walk-on; ein Spieler ohne Song läuft still ein. Der erste Dart beendet die Walk-ons sofort. Ein Spiel, das gestoppt oder ersetzt wird, stoppt die Musik. Wenn die Darts der Siegaufnahme gezogen sind, spielt der Song des Siegers." width="560">
 </picture>
 
-Die Walk-ons folgen den [Ereignissen `game_started` und `game_ended`](entities.de.md#spiele-die-beginnen-und-enden): Sie spielen für jedes Spiel, wie auch immer es beginnt, aus der Lobby der [Anzeigetafel](scoreboard.de.md), per Sprache, mit `homedarts.start_game` oder für das nächste Match eines Turniers, und nicht noch einmal für ein Spiel, das nach dem Leerlauf-Ende der Trainingssession weitergeht. Ein Spieler ohne Song läuft still ein, wenn es keine `default.mp3` gibt, und ein Song-Paket, das es nicht gibt, lässt den ganzen Walk-on still; beides hält die Automation nicht an. Walk-on-Musik braucht Version 2.1.0 oder neuer der Integration.
+Die Walk-ons folgen den [Ereignissen `game_started` und `game_ended`](entities.de.md#spiele-die-beginnen-und-enden): Sie spielen für jedes Spiel, wie auch immer es beginnt, aus der Lobby der [Anzeigetafel](scoreboard.de.md), per Sprache, mit `homedarts.start_game` oder für das nächste Match eines Turniers, und nicht noch einmal für ein Spiel, das nach dem Leerlauf-Ende der Trainingssession oder nach einer zurückgenommenen Siegaufnahme weitergeht. Ein Spiel, das mit seinem ersten Dart nach einem beendeten Match beginnt, läuft schon und hat keine Walk-ons. Ein Spieler ohne Song läuft still ein, wenn es keine `default.mp3` gibt, und ein Song-Paket, das es nicht gibt, lässt den ganzen Walk-on still; beides hält die Automation nicht an. Walk-on-Musik braucht Version 2.1.0 oder neuer der Integration.
 
 ### Score display
 
