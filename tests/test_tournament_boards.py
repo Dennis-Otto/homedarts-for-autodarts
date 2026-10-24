@@ -339,6 +339,10 @@ def test_a_player_of_a_tournament_on_another_board_stays():
     with pytest.raises(ActionRefused) as error:
         guest.delete_player("Kim")
     assert error.value.key == "player_in_tournament"
+    guest.practice.profiles.link("Kim", "person.kim")
+    with pytest.raises(ActionRefused) as error:
+        guest.rename_player("Kim", "Kimberly", NOW)
+    assert error.value.key == "player_in_tournament"
 
 
 def test_boards_find_each_other_again_after_a_restart():

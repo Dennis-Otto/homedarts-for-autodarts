@@ -165,6 +165,31 @@ def test_a_deleted_player_leaves_the_records_without_a_name():
     assert records.stored()["latest"] is None
 
 
+def test_a_renamed_player_takes_the_records_along():
+    records = PersonalRecords()
+    leg = {
+        "game": 501,
+        "name": "Sammy",
+        "darts": 18,
+        "checkout": 40,
+        "double_out": True,
+    }
+    records.observe("leg_won", leg, MONDAY)
+    records.observe("leg_won", {**leg, "name": "sam", "checkout": 60}, MONDAY)
+    records.observe("leg_won", {**leg, "name": "Kim", "darts": 15}, MONDAY)
+    records.rename(" SAMMY ", "Sam")
+    bests = records.stored()["bests"]
+    # Records of the name merged into keep the new spelling, too.
+    assert bests["highest_checkout"]["name"] == "Sam"
+    assert bests["fewest_darts_501"]["name"] == "Kim"
+    assert records.stored()["latest"]["name"] == "Kim"
+    records.rename("Kim", "Kimberly")
+    assert records.stored()["latest"]["name"] == "Kimberly"
+    records.latest = None
+    records.rename("Nobody", "Somebody")
+    assert records.stored()["latest"] is None
+
+
 def test_an_undone_visit_takes_back_its_bests_but_not_its_darts():
     records, day = PersonalRecords(), MONDAY.date()
     records.set_goal(3, day)

@@ -697,7 +697,8 @@
               "online_match_left": "Online: Match verlassen",
               "weekly_report": "Wochenbericht",
               "achievement_unlocked": "Erfolg freigeschaltet",
-              "visit_undone": "Aufnahme zurückgenommen"
+              "visit_undone": "Aufnahme zurückgenommen",
+              "player_renamed": "Spieler umbenannt"
             }
           },
           "achievement": {
@@ -788,7 +789,10 @@
       "message": "Es gibt kein Spielerprofil mit dem Namen {name}."
     },
     "player_in_tournament": {
-      "message": "{name} spielt im Turnier mit. Beende das Turnier, bevor du den Spieler löschst."
+      "message": "{name} spielt im Turnier mit. Beende das Turnier, bevor du den Spieler umbenennst, zusammenführst oder löschst."
+    },
+    "merge_in_play": {
+      "message": "{name} und {other} spielen beide im laufenden Match. Führe sie zusammen, wenn es vorbei ist."
     },
     "board_access_denied": {
       "message": "Der Board Manager verweigert den Zugriff. Er braucht normalerweise keine Anmeldung; prüfe Proxys und Firewalls zwischen Home Assistant und dem Board."
@@ -1531,6 +1535,24 @@
         "player": {
           "name": "Spieler",
           "description": "Der Spielername, in beliebiger Groß- und Kleinschreibung."
+        }
+      }
+    },
+    "rename_player": {
+      "name": "Spieler umbenennen",
+      "description": "Gibt einem Spielerprofil einen neuen Namen und behält alles, was dazugehört: Statistik, Abzeichen, Bestleistungen, den Match-Verlauf, die direkten Vergleiche, den Kalender und die Verknüpfung mit einer Person. Ein Name, den schon ein anderes Profil hat, führt die beiden Profile zu einem zusammen, als hätte ein Spieler alle Darts geworfen. Ein Spieler des laufenden Turniers behält seinen Namen. Nur für Administratoren; Automationen können sie ebenfalls nutzen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "Nur bei mehreren Boards nötig."
+        },
+        "player": {
+          "name": "Spieler",
+          "description": "Der Spielername, in beliebiger Groß- und Kleinschreibung."
+        },
+        "new_name": {
+          "name": "Neuer Name",
+          "description": "Der neue Name, höchstens 20 Zeichen. Auch eine neue Schreibweise desselben Namens geht, etwa Sam für sam; der Name eines anderen Profils führt die beiden zusammen."
         }
       }
     },

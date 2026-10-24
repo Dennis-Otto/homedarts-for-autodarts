@@ -10,6 +10,8 @@ from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from custom_components.homedarts.games import (
     ActionRefused,
@@ -18,9 +20,10 @@ from custom_components.homedarts.games import (
 )
 from custom_components.homedarts.moments import parse_moment, stamp
 
-from .local_helpers import BULL, S20, T20, board
+from .local_helpers import BULL, MISS, S20, T20, board
 
 NOW = datetime(2026, 10, 1, 20, 0, tzinfo=UTC)
+D20 = ("D20", 20, 2)
 GAMES = Path(__file__).parents[1] / "custom_components" / "homedarts" / "games.py"
 
 
@@ -32,6 +35,7 @@ class Reports:
         self.booked: list[str] = []
         self.rewound: list[dict] = []
         self.forgotten: list[str] = []
+        self.renamed: list[tuple[str, str]] = []
 
     def observe(self, events, now, booked=None):
         assert now == NOW
@@ -46,6 +50,9 @@ class Reports:
 
     def forget(self, name):
         self.forgotten.append(name)
+
+    def rename(self, name, new_name):
+        self.renamed.append((name, new_name))
 
 
 def takeout():
@@ -363,6 +370,123 @@ def test_a_deleted_player_is_forgotten_everywhere():
     assert "Alex" not in games.practice.names
     assert games.delete_player("Alex") is False
     assert games._reports.forgotten == ["Alex"]
+
+
+def test_a_renamed_player_keeps_everything_in_every_store():
+    games = match("Sammy", "Kim")
+    visit(games, T20, T20, T20)
+    visit(games, S20)
+    games.practice.players[0].remaining = 40
+    visit(games, D20)
+    profiles = games.practice.profiles
+    profiles.link("Sammy", "person.sam")
+    games.tournament.setup.players = ["Sammy", "Kim", "Lea"]
+    profile = profiles.players["sammy"].summary()
+    progress = games.progress.players["sammy"].stored()
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Sammy"
+    assert profiles.snapshot()["head_to_head"][0]["players"] == ["Kim", "Sammy"]
+    renamed = games.rename_player(" sammy ", "Sam", NOW)
+    assert renamed == {"old": "Sammy", "new": "Sam", "merged": False}
+    assert profiles.players["sam"].summary() == {**profile, "name": "Sam"}
+    assert profiles.players["sam"].person == "person.sam"
+    assert games.progress.players["sam"].stored() == {**progress, "name": "Sam"}
+    assert "maximum" in games.progress.players["sam"].badges
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Sam"
+    assert profiles.snapshot()["head_to_head"][0]["players"] == ["Kim", "Sam"]
+    assert profiles.matches[0]["players"][0]["name"] == "Sam"
+    assert games._reports.renamed == [("Sammy", "Sam")]
+    assert games.tournament.setup.players == ["Sam", "Kim", "Lea"]
+    assert games.practice.names[:2] == ["Sam", "Kim"]
+
+
+def test_a_name_with_characters_no_name_has_renames_the_profile_everywhere():
+    games = match("Sam", "Kim")
+    visit(games, T20, T20, T20)
+    visit(games, S20)
+    games.practice.players[0].remaining = 40
+    visit(games, D20)
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Sam"
+    games.start_game(501, names=["Kim"])
+    renamed = games.rename_player("Sam#", "Samuel", NOW)
+    assert renamed == {"old": "Sam", "new": "Samuel", "merged": False}
+    assert "sam" not in games.progress.players
+    assert games.progress.players["samuel"].counters["darts"] >= 3
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Samuel"
+    assert games._reports.renamed == [("Sam", "Samuel")]
+
+
+def test_a_rename_needs_a_profile_a_name_and_not_both_names_in_play():
+    games = match("Sam", "Sammy")
+    visit(games, T20, T20, T20)
+    visit(games, S20, S20, S20)
+    assert refusal(lambda: games.rename_player("Nobody", "Kim", NOW)) == (
+        "unknown_player",
+        {"name": "Nobody"},
+    )
+    assert refusal(lambda: games.rename_player("Sammy", " {#} ", NOW)) == (
+        "invalid_player_name",
+        {},
+    )
+    assert refusal(lambda: games.rename_player("sammy", "SAM", NOW)) == (
+        "merge_in_play",
+        {"name": "Sammy", "other": "Sam"},
+    )
+    assert set(games.practice.profiles.players) == {"sam", "sammy"}
+    # Once Sammy rests, the two become one.
+    games.start_game(501, names=["Sam"])
+    renamed = games.rename_player("sammy", "SAM", NOW)
+    assert renamed == {"old": "Sammy", "new": "SAM", "merged": True}
+    assert list(games.practice.profiles.players) == ["sam"]
+    sam = games.practice.profiles.players["sam"]
+    assert (sam.name, sam.highest_visit) == ("SAM", 180)
+    assert games.progress.players["sam"].counters["darts"] == 6
+
+
+# A match of 301 for one of two names: the visits of its player, each one to
+# three darts; legs that end and visits that bust count as they fall.
+MATCHES = st.lists(
+    st.tuples(
+        st.booleans(),
+        st.lists(
+            st.lists(
+                st.sampled_from([T20, S20, BULL, MISS, D20]), min_size=1, max_size=3
+            ),
+            min_size=1,
+            max_size=5,
+        ),
+    ),
+    min_size=1,
+    max_size=5,
+)
+
+
+def thrown(matches, names: tuple[str, str]) -> BoardGames:
+    games = BoardGames(Reports(), NOW, random.Random(1))
+    for second, visits in matches:
+        games.start_game(301, names=[names[second]])
+        play(games, board())
+        for darts in visits:
+            visit(games, *darts)
+    return games
+
+
+@settings(max_examples=60, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@given(MATCHES)
+def test_merged_names_count_as_one_name_that_threw_every_dart(matches):
+    """Profiles, progress, badges and records after a merge are those of one
+    player who threw every dart under one name."""
+    merged = thrown(matches, ("Sam", "Sammy"))
+    if "sammy" in merged.practice.profiles.players:
+        merged.rename_player("Sammy", "Sam", NOW)
+    alone = thrown(matches, ("Sam", "Sam"))
+    profiles = merged.practice.profiles.stored()
+    assert profiles == alone.practice.profiles.stored()
+    progress, single = merged.progress.stored(), alone.progress.stored()
+    # The newest badge is the one unlocked last, which depends on the order.
+    progress.pop("latest")
+    single.pop("latest")
+    assert progress == single
+    assert merged.records.stored() == alone.records.stored()
 
 
 @pytest.mark.parametrize(

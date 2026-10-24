@@ -1,6 +1,8 @@
 """Progress of named players: visits, legs, training games, weeks, streaks and badges."""
 
+import copy
 import random
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 
 from custom_components.homedarts.achievements import ACHIEVEMENTS, CATALOGUE
@@ -8,6 +10,7 @@ from custom_components.homedarts.practice import PracticeGame
 from custom_components.homedarts.profiles import Profile, Profiles
 from custom_components.homedarts.progress import (
     COUNTERS,
+    PLAYER_DARTS,
     TREND_WEEKS,
     WEEK_FIELDS,
     PlayerProgress,
@@ -615,3 +618,183 @@ def test_the_bots_seat_is_nobodys_seat():
     assert [(details["name"], details["player"]) for _, details in events] == [
         ("Sam", None)
     ]
+
+
+def test_a_renamed_player_keeps_progress_and_badges():
+    game, progress = practice(501, "Sammy"), Progress()
+    play(game, progress, "T20", "T20", "T20")
+    before = progress.players["sammy"].stored()
+    game.profiles.rename("Sammy", "Sam")
+    progress.rename(" sammy ", "Sam", game.profiles, NOW)
+    assert list(progress.players) == ["sam"]
+    assert progress.players["sam"].stored() == {**before, "name": "Sam"}
+    assert progress.latest["name"] == "Sam"
+    assert progress.achievements(game.profiles)["players"][0]["name"] == "Sam"
+    # A name without progress, or a new spelling of one without any, is no change.
+    progress.rename("Nobody", "Kim", game.profiles, NOW)
+    progress.rename("Sammy", "SAM", game.profiles, NOW)
+    assert [player.name for player in progress.players.values()] == ["SAM"]
+
+
+def progress_of(name: str, **values) -> PlayerProgress:
+    player = PlayerProgress(name)
+    for key, value in values.items():
+        setattr(player, key, value)
+    return player
+
+
+def sums(**fields) -> list[int]:
+    week = [0] * len(WEEK_FIELDS)
+    for field, value in fields.items():
+        week[WEEK_FIELDS.index(field)] = value
+    return week
+
+
+def test_a_merge_adds_up_the_progress_of_both_names():
+    monday = datetime(2026, 9, 21).date()
+    weeks = [(monday - timedelta(weeks=ago)).isoformat() for ago in range(14)]
+    sam = progress_of(
+        "Sam",
+        hits=Counter({"T20": 3, "S1": 1}),
+        weeks={
+            weeks[0]: sums(darts=30, highest_checkout=40, best_501=18, best_mpr=250),
+            **{week: sums(darts=1) for week in weeks[1:11]},
+        },
+        counters={
+            **dict.fromkeys(COUNTERS, 0),
+            "darts": 30,
+            "maximums": 1,
+            "high_finish": 40,
+            "around_the_clock": 0,
+            "bobs_27": 120,
+        },
+        badges={"maximum": ["2026-09-20T20:00:00+00:00"]},
+    )
+    sammy = progress_of(
+        "Sammy",
+        hits=Counter({"T20": 1, "D16": 2}),
+        weeks={
+            weeks[0]: sums(darts=12, highest_checkout=121, best_501=0, best_mpr=100),
+            weeks[12]: sums(darts=2),
+            weeks[13]: sums(darts=3),
+        },
+        counters={
+            **dict.fromkeys(COUNTERS, 0),
+            "darts": 12,
+            "maximums": 9,
+            "high_finish": 121,
+            "around_the_clock": 70,
+            "bobs_27": 80,
+        },
+        badges={
+            "maximum": ["2026-09-01T20:00:00+00:00", "2026-09-10T20:00:00+00:00"],
+            "streak": ["2026-09-02T20:00:00+00:00"],
+        },
+    )
+    sam.absorb(sammy)
+    assert sam.hits == {"T20": 4, "S1": 1, "D16": 2}
+    this_week = sam.weeks[weeks[0]]
+    assert [this_week[WEEK_FIELDS.index(field)] for field in BESTS_AND_DARTS] == [
+        42,
+        121,
+        18,
+        250,
+    ]
+    # The newest twelve of the thirteen weeks of both stay, as after a restart.
+    assert sorted(sam.weeks) == sorted([*weeks[:11], weeks[12]])
+    counters = sam.counters
+    assert (counters["darts"], counters["maximums"], counters["high_finish"]) == (
+        42,
+        10,
+        121,
+    )
+    assert (counters["around_the_clock"], counters["bobs_27"]) == (70, 120)
+    # Each tier keeps the date it was first unlocked.
+    assert sam.badges == {
+        "maximum": ["2026-09-01T20:00:00+00:00", "2026-09-10T20:00:00+00:00"],
+        "streak": ["2026-09-02T20:00:00+00:00"],
+    }
+    sam.absorb(progress_of("Sam", badges={"maximum": ["2026-08-01T20:00:00+00:00"]}))
+    assert sam.badges["maximum"] == [
+        "2026-08-01T20:00:00+00:00",
+        "2026-09-10T20:00:00+00:00",
+    ]
+
+
+BESTS_AND_DARTS = ("darts", "highest_checkout", "best_501", "best_mpr")
+
+
+def streaks(first: tuple, second: tuple) -> tuple:
+    """The streak, best streak and last day of two names of one player as one;
+    each name as its streak, best streak and days before NOW of its last day."""
+    today = NOW.date()
+
+    def player(streak, best, ago):
+        day = None if ago is None else today - timedelta(days=ago)
+        return progress_of("Sam", streak=streak, best_streak=best, last_day=day)
+
+    merged = player(*first)
+    merged.absorb(player(*second))
+    ago = None if merged.last_day is None else (today - merged.last_day).days
+    return merged.streak, merged.best_streak, ago
+
+
+def test_the_training_days_of_both_names_make_one_streak():
+    # Days 0 to 2 ago and days 3 and 4 ago meet: five days in a row.
+    assert streaks((3, 3, 0), (2, 6, 3)) == (5, 6, 0)
+    assert streaks((2, 2, 3), (3, 3, 0)) == (5, 5, 0)
+    # Days that overlap count once.
+    assert streaks((3, 3, 0), (2, 2, 1)) == (3, 3, 0)
+    # A gap of a day keeps the streak of the newer one.
+    assert streaks((3, 3, 0), (2, 4, 4)) == (3, 4, 0)
+    # A name without darts keeps the other one's streak.
+    assert streaks((0, 0, None), (2, 3, 1)) == (2, 3, 1)
+    assert streaks((2, 3, 1), (0, 0, None)) == (2, 3, 1)
+    assert streaks((0, 0, None), (0, 0, None)) == (0, 0, None)
+
+
+def test_the_darts_of_the_name_that_threw_last_come_last():
+    def player(day_ago, *aims):
+        name = progress_of("Sam", last_day=NOW.date() - timedelta(days=day_ago))
+        for aim in aims:
+            name.log.add(around(aim, 0, 0)[:2], aim)
+        return name
+
+    older, newer = player(2, "T20", "T19"), player(0, "D16")
+    older.absorb(newer)
+    assert [aim for *_, aim in older.log.darts] == ["T20", "T19", "D16"]
+    assert older.log.aim_stale
+    newer, older = player(0, "D16"), player(2, "T20", "T19")
+    newer.absorb(older)
+    assert [aim for *_, aim in newer.log.darts] == ["T20", "T19", "D16"]
+    # The log keeps its newest darts.
+    full = player(0, *["T20"] * PLAYER_DARTS)
+    full.absorb(player(1, "T19"))
+    assert len(full.log) == PLAYER_DARTS and full.log.darts[0][2] == "T20"
+
+
+def test_tiers_that_both_names_reach_together_unlock_quietly():
+    profiles, progress = Profiles(), Progress()
+    for name in ("Sam", "Sammy"):
+        profiles.players[name.casefold()] = Profile(name=name)
+        progress.players[name.casefold()] = progress_of(
+            name, counters={**dict.fromkeys(COUNTERS, 0), "darts": 600}
+        )
+    profiles.rename("Sammy", "Sam")
+    progress.enabled = False
+    disabled = Progress()
+    disabled.enabled = False
+    disabled.players = {
+        key: copy.deepcopy(player) for key, player in progress.players.items()
+    }
+    disabled.rename("Sammy", "Sam", profiles, NOW)
+    assert disabled.players["sam"].badges == {}
+    progress.enabled = True
+    progress.rename("Sammy", "Sam", profiles, NOW)
+    assert progress.players["sam"].badges == {"darts_thrown": [NOW.isoformat()]}
+    assert progress.latest == {
+        "name": "Sam",
+        "achievement": "darts_thrown",
+        "tier": 1,
+        "date": NOW.isoformat(),
+    }

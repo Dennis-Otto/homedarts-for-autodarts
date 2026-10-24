@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: What renaming a player does
+  accDescr: homedarts.rename_player, or Rename and Merge into in the menu of a profile on the players card, first checks the player. Without a profile of the player, while the player plays in the tournament being played, or when both names play the match being played, a message says why and nothing changes. A new name that no other profile has renames the profile everywhere, also a new spelling of the same name. The name of another profile merges the two into one profile, as if one player had thrown every dart. Both end with the event player_renamed.
+  START(["homedarts.rename_player<br/>or the menu of a profile"]) --> KNOWN{"Is there a profile<br/>of the player?"}
+  KNOWN -- "no" --> REFUSED["A message says why,<br/>and nothing changes"]
+  KNOWN -- "yes" --> TOURNAMENT{"Does the player play in<br/>the tournament being played?"}
+  TOURNAMENT -- "yes" --> REFUSED
+  TOURNAMENT -- "no" --> OTHER{"Does another profile<br/>have the new name?"}
+  OTHER -- "no" --> RENAME["Rename everywhere: profile, badges,<br/>records, history, calendar, seats"]
+  OTHER -- "yes" --> PLAYING{"Do both names play<br/>the match being played?"}
+  PLAYING -- "yes" --> REFUSED
+  PLAYING -- "no" --> MERGE["One profile: the counts add up,<br/>the better bests and the first badges stay"]
+  RENAME --> EVENT(["player_renamed:<br/>old, new, merged"])
+  MERGE --> EVENT
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class EVENT done
+  class REFUSED failed

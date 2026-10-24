@@ -697,7 +697,8 @@
               "online_match_left": "En ligne\u00a0: match quitté",
               "weekly_report": "Rapport hebdomadaire",
               "achievement_unlocked": "Succès débloqué",
-              "visit_undone": "Volée annulée"
+              "visit_undone": "Volée annulée",
+              "player_renamed": "Joueur renommé"
             }
           },
           "achievement": {
@@ -788,7 +789,10 @@
       "message": "Il n'existe aucun profil de joueur nommé {name}."
     },
     "player_in_tournament": {
-      "message": "{name} participe au tournoi. Terminez le tournoi avant de supprimer ce joueur."
+      "message": "{name} participe au tournoi. Terminez le tournoi avant de renommer, de fusionner ou de supprimer ce joueur."
+    },
+    "merge_in_play": {
+      "message": "{name} et {other} jouent tous les deux le match en cours. Fusionnez-les quand il est terminé."
     },
     "board_access_denied": {
       "message": "Board Manager a refusé l'accès. Il ne nécessite normalement aucune connexion\u00a0; vérifiez les proxys et les pare-feu entre Home Assistant et la cible."
@@ -1531,6 +1535,24 @@
         "player": {
           "name": "Joueur",
           "description": "Le nom du joueur, sans distinction entre majuscules et minuscules."
+        }
+      }
+    },
+    "rename_player": {
+      "name": "Renommer un joueur",
+      "description": "Donne un nouveau nom à un profil de joueur et conserve tout ce qui va avec\u00a0: statistiques, badges, records, historique des matchs, face-à-face, calendrier et lien avec une personne. Un nom qu'un autre profil porte déjà fusionne les deux profils en un seul, comme si un seul joueur avait lancé toutes les fléchettes. Un joueur du tournoi en cours garde son nom. Réservée aux administrateurs\u00a0; les automatisations peuvent aussi l'utiliser.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "Nécessaire uniquement avec plusieurs cibles."
+        },
+        "player": {
+          "name": "Joueur",
+          "description": "Le nom du joueur, sans distinction entre majuscules et minuscules."
+        },
+        "new_name": {
+          "name": "Nouveau nom",
+          "description": "Le nouveau nom, 20\u00a0caractères au plus. Une autre écriture du même nom, comme Sam pour sam, convient aussi\u00a0; le nom d'un autre profil fusionne les deux."
         }
       }
     },

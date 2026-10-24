@@ -697,7 +697,8 @@
               "online_match_left": "Online: match left",
               "weekly_report": "Weekly report",
               "achievement_unlocked": "Achievement unlocked",
-              "visit_undone": "Visit undone"
+              "visit_undone": "Visit undone",
+              "player_renamed": "Player renamed"
             }
           },
           "achievement": {
@@ -788,7 +789,10 @@
       "message": "There is no player profile named {name}."
     },
     "player_in_tournament": {
-      "message": "{name} plays in the tournament. Stop the tournament before you delete the player."
+      "message": "{name} plays in the tournament. Stop the tournament before you rename, merge or delete the player."
+    },
+    "merge_in_play": {
+      "message": "{name} and {other} both play the match being played. Merge them when it is over."
     },
     "board_access_denied": {
       "message": "Board Manager refused access. It normally needs no login; check proxies and firewalls between Home Assistant and the board."
@@ -1531,6 +1535,24 @@
         "player": {
           "name": "Player",
           "description": "The player name, in any upper and lower case."
+        }
+      }
+    },
+    "rename_player": {
+      "name": "Rename player",
+      "description": "Gives a player profile a new name and keeps everything that goes with it: statistics, badges, records, the match history, head-to-head records, the calendar and the link to a person. A name that another profile has already merges the two profiles into one, as if one player had thrown every dart. A player of the tournament being played keeps the name. For administrators; automations can use it, too.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "Only needed with more than one board."
+        },
+        "player": {
+          "name": "Player",
+          "description": "The player name, in any upper and lower case."
+        },
+        "new_name": {
+          "name": "New name",
+          "description": "The new name, at most 20 characters. A new spelling of the same name, such as Sam for sam, works too; the name of another profile merges the two."
         }
       }
     },

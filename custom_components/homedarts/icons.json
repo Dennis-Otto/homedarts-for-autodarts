@@ -445,6 +445,9 @@
     "unlink_player": {
       "service": "mdi:account-cancel"
     },
+    "rename_player": {
+      "service": "mdi:account-edit"
+    },
     "start_tournament": {
       "service": "mdi:tournament"
     },

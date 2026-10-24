@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Was das Umbenennen eines Spielers tut
+  accDescr: homedarts.rename_player, oder Umbenennen und Zusammenführen mit im Menü eines Profils auf der Spielerkarte, prüft zuerst den Spieler. Ohne Profil des Spielers, solange der Spieler im laufenden Turnier mitspielt, oder wenn beide Namen im laufenden Match spielen, sagt eine Meldung warum, und nichts ändert sich. Ein neuer Name, den kein anderes Profil hat, benennt das Profil überall um, auch eine neue Schreibweise desselben Namens. Der Name eines anderen Profils führt die beiden zu einem Profil zusammen, als hätte ein Spieler alle Darts geworfen. Beides endet mit dem Ereignis player_renamed.
+  START(["homedarts.rename_player<br/>oder das Menü eines Profils"]) --> KNOWN{"Gibt es ein Profil<br/>des Spielers?"}
+  KNOWN -- "nein" --> REFUSED["Eine Meldung sagt warum,<br/>und nichts ändert sich"]
+  KNOWN -- "ja" --> TOURNAMENT{"Spielt der Spieler im<br/>laufenden Turnier mit?"}
+  TOURNAMENT -- "ja" --> REFUSED
+  TOURNAMENT -- "nein" --> OTHER{"Hat ein anderes Profil<br/>den neuen Namen?"}
+  OTHER -- "nein" --> RENAME["Überall umbenennen: Profil, Abzeichen,<br/>Bestleistungen, Verlauf, Kalender, Plätze"]
+  OTHER -- "ja" --> PLAYING{"Spielen beide Namen<br/>im laufenden Match?"}
+  PLAYING -- "ja" --> REFUSED
+  PLAYING -- "nein" --> MERGE["Ein Profil: Die Zahlen addieren sich,<br/>die besseren Bestleistungen und die ersten Abzeichen bleiben"]
+  RENAME --> EVENT(["player_renamed:<br/>old, new, merged"])
+  MERGE --> EVENT
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class EVENT done
+  class REFUSED failed

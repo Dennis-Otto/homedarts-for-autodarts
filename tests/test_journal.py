@@ -285,6 +285,19 @@ def test_an_undone_visit_takes_its_match_back_from_the_journal():
     assert journal.matches == [] and journal.last_match() is None
 
 
+def test_a_renamed_player_keeps_the_matches_of_the_calendar():
+    players = [{"name": "Sammy", "legs": 2}, {"name": "sam", "legs": 0}]
+    journal = journal_with(matches=[match(-2), match(-10, players=players)])
+    assert journal.rename(" SAMMY ", "Sam") is True
+    assert [
+        [player["name"] for player in entry["players"]] for entry in journal.matches
+    ] == [
+        ["Sam", "Sam"],
+        ["Alex", "Sam"],
+    ]
+    assert journal.rename("Nobody", "Kim") is False
+
+
 def test_events_last_at_least_a_minute_and_matches_start_with_their_first_dart():
     journal = TrainingJournal()
     journal.sync(

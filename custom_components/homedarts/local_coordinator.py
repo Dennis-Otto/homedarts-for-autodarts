@@ -122,6 +122,7 @@ EVENT_TYPES = [
     "achievement_unlocked",
     *TOURNAMENT_EVENTS,
     "visit_undone",
+    "player_renamed",
     # Moments of online matches, from the browser extension Tools for Autodarts.
     *ONLINE_EVENT_TYPES,
 ]
