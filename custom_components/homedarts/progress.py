@@ -62,6 +62,10 @@ PROFILE_FIELDS = {
     "legs": "legs_played",
     "legs_won": "legs_won",
 }
+# The bests among the sums of a week and the counters, where 0 is none: the
+# fewest darts, and the highest values besides those of a week.
+FEWEST = ("best_501", "around_the_clock")
+HIGHEST = ("high_finish", "bobs_27")
 COUNTERS = (
     "darts",
     "maximums",
@@ -108,6 +112,16 @@ def _day(value: object) -> date | None:
         return date.fromisoformat(value) if isinstance(value, str) else None
     except ValueError:
         return None
+
+
+def _merged(field: str, mine: int, theirs: int) -> int:
+    """A sum of a week or a counter from two boards. A best, where 0 is none,
+    is the better one: the fewer darts, else the higher value."""
+    if field in FEWEST and mine and theirs:
+        return min(mine, theirs)
+    if field in (*BESTS, *FEWEST, *HIGHEST):
+        return max(mine, theirs)
+    return mine + theirs
 
 
 def _profile_counts(profiles: Profiles) -> dict[str, list[int]]:
@@ -228,6 +242,35 @@ class PlayerProgress:
             streak = (newer.last_day - start).days + 1
         self.streak, self.last_day = streak, newer.last_day
         self.best_streak = max(best, streak)
+
+    def merge(self, other: PlayerProgress) -> None:
+        """Add what the same player threw on another board: the sums of every
+        week, the hits and the counters add up, the bests among them and the
+        longest streak are the better of both, and each tier of a badge counts
+        from the day it was first unlocked. The positions of the other board
+        come before those of this one, which stay the newest."""
+        self.hits.update(other.hits)
+        log = DartLog(PLAYER_DARTS)
+        for x, y, aim in (*other.log.darts, *self.log.darts):
+            log.add((x, y), aim)
+        self.log = log
+        for week, theirs in other.weeks.items():
+            ours = self.weeks.setdefault(week, [0] * len(WEEK_FIELDS))
+            for index, (mine, value) in enumerate(zip(ours, theirs, strict=True)):
+                ours[index] = _merged(WEEK_FIELDS[index], mine, value)
+        self.weeks = dict(sorted(self.weeks.items())[-TREND_WEEKS:])
+        for key, count in other.counters.items():
+            self.counters[key] = _merged(key, self.counters[key], count)
+        self.best_streak = max(self.best_streak, other.best_streak)
+        if other.last_day and (not self.last_day or other.last_day > self.last_day):
+            self.streak, self.last_day = other.streak, other.last_day
+        for key, theirs_dates in other.badges.items():
+            ours_dates = self.badges.get(key, [])
+            longer = max(ours_dates, theirs_dates, key=len)
+            self.badges[key] = [
+                *map(min, ours_dates, theirs_dates),
+                *longer[min(len(ours_dates), len(theirs_dates)) :],
+            ]
 
     def stored(self) -> dict[str, Any]:
         return {
@@ -575,6 +618,18 @@ class Progress:
         self.latest = checkpoint["latest"]
 
     # -- storage ---------------------------------------------------------------
+
+    def merge(self, other: Progress, profiles: Profiles, now: datetime) -> None:
+        """Take over the progress of the players of another board, after the
+        profiles took over theirs; the badges that the numbers of both boards
+        reach together unlock quietly."""
+        for key, theirs in other.players.items():
+            if key in self.players:
+                self.players[key].merge(theirs)
+            else:
+                self.players[key] = theirs
+        if self.enabled:
+            self._unlock(profiles, now)
 
     def stored(self) -> dict[str, Any]:
         return {

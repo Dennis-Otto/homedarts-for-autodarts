@@ -1,0 +1,10 @@
+flowchart TB
+  accTitle: Wie ein Board seine Daten behält, wenn es gelöscht wird
+  accDescr: Bevor ein gelöschtes Board seine Speicher verliert, schreibt HomeDarts ein Backup nach homedarts/backups im Medienordner, die neuesten fünf je Board; homedarts.backup schreibt eins auf Wunsch. Ein wieder hinzugefügtes Board mit derselben Board-ID bietet das neueste Backup mit einer Reparatur an. homedarts.restore mit Ersetzen holt die Speicher zurück, wie sie waren; mit Zusammenführen kommen die Spieler eines anderen Boards mit ihren Zahlen, Abzeichen und ihrem Kalender dazu, und dasselbe Backup ändert beim zweiten Mal nichts.
+  DELETE["Board gelöscht unter<br/>Geräte &amp; Dienste"] --> BACKUP["Backup in<br/>homedarts/backups,<br/>die neuesten fünf je Board"]
+  ACTION["homedarts.backup"] --> BACKUP
+  BACKUP --> AGAIN["Board wieder hinzugefügt,<br/>mit derselben Board-ID"]
+  AGAIN --> REPAIR["Reparatur: Ein Backup<br/>ist vorhanden"]
+  REPAIR --> REPLACE["homedarts.restore, Ersetzen:<br/>die Speicher, wie sie waren"]
+  BACKUP --> MERGE["homedarts.restore, Zusammenführen:<br/>die Spieler eines anderen Boards kommen dazu"]
+  MERGE --> ONCE["Einmal zusammengeführt,<br/>beim zweiten Mal ändert sich nichts"]

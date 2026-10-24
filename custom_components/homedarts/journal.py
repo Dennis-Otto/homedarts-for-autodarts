@@ -8,6 +8,7 @@ further back.
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -475,6 +476,21 @@ class TrainingJournal:
         ]
 
     # -- storage -------------------------------------------------------------------
+
+    def merge(self, other: TrainingJournal) -> None:
+        """Take over the sessions and matches of another board that this one
+        does not have, in the order they ended; the newest stay."""
+        for entries, theirs in (
+            (self.sessions, other.sessions),
+            (self.matches, other.matches),
+        ):
+            known = {json.dumps(entry, sort_keys=True) for entry in entries}
+            for entry in theirs:
+                if (key := json.dumps(entry, sort_keys=True)) not in known:
+                    known.add(key)
+                    entries.append(entry)
+            entries.sort(key=lambda entry: _utc(entry["ended"]))
+            del entries[:-JOURNAL_SIZE]
 
     def stored(self) -> dict[str, Any]:
         return {

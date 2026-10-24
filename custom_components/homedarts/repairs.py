@@ -1,5 +1,6 @@
-"""Repairs the integration can fix itself: calibrate, follow a moved board, or
-replace a changed blueprint with the one of the release."""
+"""Repairs the integration can fix itself: calibrate, follow a moved board,
+replace a changed blueprint with the one of the release, or restore the backup
+of a board added again."""
 
 from __future__ import annotations
 
@@ -17,6 +18,8 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from yarl import URL
 
+from .backup import ISSUE as BACKUP_AVAILABLE
+from .backup import async_restore
 from .const import CONF_BOARD_ID, CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN
 from .errors import AutodartsApiError
 from .local_api import AutodartsLocalClient
@@ -171,6 +174,42 @@ class BlueprintEditedFlow(RepairsFlow):
         return self.async_create_entry(data={})
 
 
+class BackupFlow(RepairsFlow):
+    """A backup of a board added again: restore it once confirmed, or keep the
+    board as it is by ignoring the repair."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        return await self.async_step_confirm()
+
+    async def async_step_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        if user_input is None:
+            return self.async_show_form(
+                step_id="confirm",
+                description_placeholders={
+                    key: str(self._data.get(key, "")) for key in ("board", "date")
+                },
+            )
+        entry = self.hass.config_entries.async_get_entry(
+            str(self._data.get("entry_id", ""))
+        )
+        if entry is None:
+            return self.async_abort(reason="board_unavailable")
+        try:
+            await async_restore(
+                self.hass, entry, str(self._data.get("file", "")), "replace"
+            )
+        except HomeAssistantError:
+            return self.async_abort(reason="restore_failed")
+        return self.async_create_entry(data={})
+
+
 class RestartFlow(RepairsFlow):
     """Restart Home Assistant, which unloads the integration under its former
     name once its boards are taken over and its folder is gone."""
@@ -201,6 +240,8 @@ async def async_create_fix_flow(
         return CalibrationFlow(str(data.get("entry_id", "")))
     if issue_id.startswith(BLUEPRINT_EDITED):
         return BlueprintEditedFlow(data)
+    if issue_id.startswith(BACKUP_AVAILABLE):
+        return BackupFlow(data)
     if issue_id == ISSUE_RESTART:
         return RestartFlow()
     # Only the issues above are fixable; any other one has nothing to confirm.

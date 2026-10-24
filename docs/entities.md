@@ -555,7 +555,7 @@ These sensors are *off* while the detection is stopped, starting, stopping or ca
 
 ## Actions
 
-Every logged-in user can play with the actions. `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.save_highlight` and `homedarts.generate_voice_pack` change or write out the players' data or write files and are for administrators: a user who is no administrator, such as the user of a wall tablet, gets an error. Automations run them, and so do scripts that an administrator or an automation starts.
+Every logged-in user can play with the actions. `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.backup`, `homedarts.restore`, `homedarts.save_highlight` and `homedarts.generate_voice_pack` change or write out the players' data or write files and are for administrators: a user who is no administrator, such as the user of a wall tablet, gets an error. Automations run them, and so do scripts that an administrator or an automation starts.
 
 ### Start a practice game: `homedarts.start_game`
 
@@ -787,6 +787,43 @@ The response has `path` (the file), `url` (its `/local/` address when the folder
 > **Privacy:** exports contain player names. The media folder, where they go by default, needs a login. Files in `www` are served at `/local/` **without a login** to anyone who can reach Home Assistant and knows the file name; the random part of the name keeps it from being guessed. Export to `www` only on purpose, and delete exports there that you no longer need.
 
 The action fails with a clear message when the folder is not allowed, when 20 exports were written in the last hour, or when the file cannot be written.
+
+### Back up a board: `homedarts.backup`
+
+Writes everything the board stores to a backup file and returns where it is: the training with its sessions, the games, the player profiles with their progress, badges and dart positions, the personal bests, the tournament, the weekly report and the calendar. A board writes one by itself before it is deleted, see [Backups](statistics.md#backups). For administrators; automations can use it, too.
+
+| Field | Values | Description |
+| --- | --- | --- |
+| `config_entry_id` | HomeDarts entry | Only needed with more than one board. A board that does not start, for example because its store cannot be read, can be backed up, too |
+
+```yaml
+action: homedarts.backup
+response_variable: backup
+```
+
+The response has `path` (the file in `homedarts/backups/<board ID>` of the media folder, `/media/homedarts/backups/…` on Home Assistant OS), `download` (an address below `/api/` from which administrators download the file until Home Assistant restarts, as for exports), `id` and `created`. A backup is one JSON file named after the board and the time, such as `kitchen-board-20261024-201500.json`. The newest five of every board stay, and older ones are deleted. Backups contain player names, so they go to the media folder, which needs a login.
+
+### Restore a backup: `homedarts.restore`
+
+Brings a backup back into a board, which reloads for it. For administrators; automations can use it, too.
+
+| Field | Values | Description |
+| --- | --- | --- |
+| `file` | path | The backup, relative to the configuration folder or as an absolute path, in a folder where Home Assistant allows reading: `www`, a media folder or a folder of `allowlist_external_dirs`. Hidden folders such as `.storage`, control characters and paths that `..` or a symbolic link lead elsewhere are refused. Required |
+| `mode` | `replace` (default), `merge` | `replace`: the board stores what the backup holds, and what it stored before is gone. `merge`: the players of a backup of another board join this board, see below |
+| `config_entry_id` | HomeDarts entry | The board that gets the backup; only needed with more than one board. A board that does not start, for example because its store comes from a newer version, can get a backup, too |
+
+```yaml
+action: homedarts.restore
+data:
+  file: /media/homedarts/backups/board-id/kitchen-board-20261024-201500.json
+  mode: merge
+response_variable: restored
+```
+
+**Merge** combines a player's numbers from two boards. A name in any upper and lower case is the same player: the legs, matches, darts, points, checkouts, doubles, weekly sums, hits and dart positions add up, the bests are the better of both, and badges unlock for what both boards reach together. The last matches, the head-to-head records, the finished sessions and the sessions and matches of the calendar join this board's, each once. The board's personal bests take those of the backup that beat them. What belongs to this board alone stays as it is: the game in progress and its settings, the running training session, the drills, the tournament, the daily goal and the running week of the weekly report. A backup merged once changes nothing the second time. The players of a board merge once per source board, because their darts would count twice otherwise: a backup of this board, a second backup of a board merged before, and a backup of a board that has this board or one merged into it already are refused. Merge each other board once, for example when you move to a new board.
+
+Before either mode writes, the board backs up what it holds, so a restore into the wrong board can be undone with that backup; a board without player data writes none. The response has `mode`, `changed` (`false` for a backup merged before), `previous` (the path of that backup, or `null`), and the `id`, `created` and `board` of the backup. The action fails with a clear message when the file is not allowed or is no backup, when the backup comes from a newer version of the integration, or when the board cannot be written. A backup from an older version is migrated as the board loads it.
 
 ### Save a highlight photo: `homedarts.save_highlight`
 

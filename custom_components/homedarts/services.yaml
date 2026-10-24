@@ -215,6 +215,36 @@ export:
       selector:
         text:
 
+backup:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
+
+restore:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
+    file:
+      required: true
+      example: "/media/homedarts/backups/board-id/autodarts-board-20261024-201500.json"
+      selector:
+        text:
+    mode:
+      required: false
+      default: replace
+      selector:
+        select:
+          translation_key: restore_mode
+          options:
+            - replace
+            - merge
+
 save_highlight:
   fields:
     camera:

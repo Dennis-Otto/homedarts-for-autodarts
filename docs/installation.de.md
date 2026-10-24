@@ -126,7 +126,7 @@ Bis Version 1.18 hieß diese Integration Autodarts, mit der Domain `autodarts`; 
 
 ## Entfernen
 
-1. Öffne **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts**, im Menü des Boards (⋮) wählst du **Löschen**. Dabei wird auch alles gelöscht, was die Integration für das Board gespeichert hat: die Trainingssessions, das Übungsspiel, die Bestleistungen, die Spielerprofile mit Match-Verlauf und Doubles, der Wochenbericht, der Trainingskalender und die Reparaturhinweise. Sichere vorher, was du behalten willst, mit [`homedarts.export`](entities.de.md#trainingsdaten-exportieren-homedartsexport). Highlight-Fotos und Exporte bleiben, wo sie sind.
+1. Öffne **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts**, im Menü des Boards (⋮) wählst du **Löschen**. Dabei wird auch alles gelöscht, was die Integration für das Board gespeichert hat: die Trainingssessions, das Übungsspiel, die Bestleistungen, die Spielerprofile mit Match-Verlauf und Doubles, der Wochenbericht, der Trainingskalender und die Reparaturhinweise. Vorher schreibt HomeDarts ein [Backup](statistics.de.md#backups) davon nach `homedarts/backups` im Medienordner, `/media/homedarts/backups` unter Home Assistant OS: Fügst du das Board wieder hinzu, bietet eine Reparatur an, es wiederherzustellen. Highlight-Fotos, Exporte und Backups bleiben, wo sie sind.
 2. Um den Code zu deinstallieren, öffnest du **HomeDarts for Autodarts** in HACS und wählst **Entfernen**. Bei einer manuellen Installation löschst du `config/custom_components/homedarts`.
 3. Starte Home Assistant neu. Die Dashboard-Karten verschwinden mit der Integration. Entferne Karten und Automationen, die sie verwenden.
 

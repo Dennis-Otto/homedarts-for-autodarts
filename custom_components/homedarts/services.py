@@ -9,7 +9,7 @@ import re
 from collections.abc import Awaitable, Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import ATTR_CONFIG_ENTRY_ID
 from homeassistant.core import (
     HomeAssistant,
@@ -27,6 +27,7 @@ from homeassistant.helpers.service import (
 )
 from homeassistant.helpers.translation import async_get_translations
 
+from .backup import RESTORE_MODES, async_backup, async_restore
 from .board import RADIUS_MM, bed_name, segment_at
 from .bot import valid_level
 from .calls import speaks
@@ -85,6 +86,8 @@ SERVICE_START_GAME = "start_game"
 SERVICE_DELETE_PLAYER = "delete_player"
 SERVICE_RENAME_PLAYER = "rename_player"
 SERVICE_EXPORT = "export"
+SERVICE_BACKUP = "backup"
+SERVICE_RESTORE = "restore"
 SERVICE_START_TOURNAMENT = "start_tournament"
 SERVICE_STOP_TOURNAMENT = "stop_tournament"
 SERVICE_NEXT_TOURNAMENT_MATCH = "next_tournament_match"
@@ -281,6 +284,17 @@ EXPORT_SCHEMA = vol.Schema(
 )
 
 
+BACKUP_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string})
+RESTORE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        # A backup of a board, relative to the configuration folder or absolute.
+        vol.Required("file"): vol.All(cv.string, vol.Length(min=1, max=4096)),
+        vol.Optional("mode", default="replace"): vol.In(RESTORE_MODES),
+    }
+)
+
+
 def _text(value: Any) -> str:
     """A player or a label as text: a template renders a name such as 180, None
     or [1] as a number, as nothing or as a list, which must not fail the call."""
@@ -359,6 +373,22 @@ def _coordinator(
             translation_domain=DOMAIN, translation_key="several_boards"
         )
     return boards[0]
+
+
+def _entry(hass: HomeAssistant, entry_id: str | None) -> ConfigEntry:
+    """The given board, or the only one, loaded or not: a backup reads the
+    stores of a board that does not start, and a restore writes them."""
+    if entry_id:
+        entry = hass.config_entries.async_get_entry(entry_id)
+        if entry is None or entry.domain != DOMAIN:
+            raise _invalid("unknown_board", board=_echo(entry_id, 40))
+        return entry
+    entries = hass.config_entries.async_entries(DOMAIN, include_ignore=False)
+    if not entries:
+        raise _invalid("no_board")
+    if len(entries) > 1:
+        raise _invalid("several_boards")
+    return entries[0]
 
 
 def _board(hass: HomeAssistant, value: str) -> AutodartsGamesCoordinator:
@@ -757,6 +787,33 @@ def async_setup_services(hass: HomeAssistant) -> None:
         schema=EXPORT_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+    async def backup(call: ServiceCall) -> ServiceResponse:
+        return await async_backup(
+            hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+        )
+
+    async def restore(call: ServiceCall) -> ServiceResponse:
+        return await async_restore(
+            hass,
+            _entry(hass, call.data.get(ATTR_CONFIG_ENTRY_ID)),
+            call.data["file"],
+            call.data["mode"],
+        )
+
+    # A backup holds the players' data, and a restore replaces it.
+    for service, handler, schema in (
+        (SERVICE_BACKUP, backup, BACKUP_SCHEMA),
+        (SERVICE_RESTORE, restore, RESTORE_SCHEMA),
+    ):
+        async_register_admin_service(
+            hass,
+            DOMAIN,
+            service,
+            handler,
+            schema=schema,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
 
     async def link_player(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))

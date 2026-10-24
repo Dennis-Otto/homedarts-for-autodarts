@@ -123,6 +123,20 @@ class PersonalRecords:
         self.goal = _count(saved.get("goal"), DAILY_GOAL_MAX)
         self.goal_day = _day(saved.get("goal_day"))
 
+    def merge(self, other: PersonalRecords) -> None:
+        """Take over the bests of another board that beat those of this one,
+        and its longest streak; the streak, the darts of the day and the daily
+        goal stay those of this board."""
+        for record, best in other.bests.items():
+            ours = self.bests.get(record)
+            if ours is None or (
+                best["value"] > ours["value"]
+                if RECORDS[record]
+                else best["value"] < ours["value"]
+            ):
+                self.bests[record] = dict(best)
+        self.best_streak = max(self.best_streak, other.best_streak)
+
     def stored(self) -> dict[str, Any]:
         return {
             "bests": {record: dict(best) for record, best in self.bests.items()},

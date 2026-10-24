@@ -992,6 +992,24 @@
     "export_limit": {
       "message": "{count} exports were written in the last hour, as many as the integration writes. Try again later."
     },
+    "backup_failed": {
+      "message": "The backup could not be written: {error}"
+    },
+    "backup_file": {
+      "message": "The backup {file} must be a JSON file outside hidden folders, in a folder where Home Assistant allows reading: www, the media folders and the folders listed in allowlist_external_dirs."
+    },
+    "backup_invalid": {
+      "message": "{file} is no backup of HomeDarts, or it is damaged."
+    },
+    "backup_newer": {
+      "message": "The backup {file} comes from a newer version of the integration. Install that version or a later one to restore it."
+    },
+    "backup_merged_board": {
+      "message": "The backup {file} holds darts this board has already: it is a backup of this board, a second backup of a board merged into it before, or one that brings along a board or a backup merged into it. Merging it would count them twice. Merge each other board once, or restore with replace."
+    },
+    "restore_failed": {
+      "message": "The backup could not be restored: {error}"
+    },
     "unknown_game": {
       "message": "No game is called \"{game}\". Name one of the practice games, such as 501, Cricket or Around the Clock."
     },
@@ -1228,6 +1246,21 @@
         }
       }
     },
+    "backup_available": {
+      "title": "A backup of {board} is available",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restore the backup",
+            "description": "{board} was added with nothing stored yet, and there is a backup of a board with the same board ID from {date}, such as the one written when the board was deleted.\n\nRestore it? The board reloads with the training, the games, the player profiles with their progress and badges, the personal bests and the calendar of the backup; what it stored since it was added is replaced. If it stored player data since, that is backed up first. To start anew, ignore this notice."
+          }
+        },
+        "abort": {
+          "board_unavailable": "The board is no longer set up.",
+          "restore_failed": "The backup could not be restored. The action homedarts.restore restores it and says why it fails."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Some automations, scripts or dashboards still use the old name",
       "description": "HomeDarts for Autodarts took over your boards. These still use actions or cards of the integration under its old name, Autodarts, which no longer exist:\n\n{items}\n\nIn their actions, replace `autodarts.` with `homedarts.`, for example `homedarts.start_game`, and in the types of the cards `custom:autodarts` with `custom:homedarts`. Then ignore this repair."
@@ -1372,6 +1405,34 @@
         "folder": {
           "name": "Folder",
           "description": "Optional. A folder relative to the configuration folder, or an absolute path, where Home Assistant allows writing: www, a media folder or a folder listed in allowlist_external_dirs. Files in www are available at /local/ without a login. Without a folder: homedarts/exports in the media folder."
+        }
+      }
+    },
+    "backup": {
+      "name": "Back up a board",
+      "description": "Writes everything the board stores, with the training, the games, the player profiles, their progress and badges, the personal bests, the weekly report and the calendar, to a backup file in homedarts/backups in the media folder, and returns its path and a download link. The newest five backups of every board stay. For administrators; automations can use it, too.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "Only needed with more than one board."
+        }
+      }
+    },
+    "restore": {
+      "name": "Restore a backup",
+      "description": "Brings back a backup of homedarts.backup, or the one written when a board was deleted. The board reloads for it. For administrators; automations can use it, too.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "The board that gets the backup. Only needed with more than one board."
+        },
+        "file": {
+          "name": "Backup file",
+          "description": "The backup, relative to the configuration folder or as an absolute path, such as /media/homedarts/backups/…, in a folder where Home Assistant allows reading: www, a media folder or a folder listed in allowlist_external_dirs."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Replace: the board stores what the backup holds, and what it stored before is gone. Merge: the profiles, progress, badges and matches of the players of a backup of another board, the sessions and matches of its calendar and its better personal bests are added to this board; a backup merged once changes nothing the second time. The players of a board merge once per source board: a backup of this board, or a second backup of a board merged before, is refused. Before either, what the board holds is backed up, so a restore can be undone."
         }
       }
     },
@@ -1766,6 +1827,12 @@
         "matches": "Practice matches",
         "profiles": "Player profiles",
         "all": "Everything"
+      }
+    },
+    "restore_mode": {
+      "options": {
+        "replace": "Replace",
+        "merge": "Merge"
       }
     },
     "tournament_format": {

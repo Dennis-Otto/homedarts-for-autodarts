@@ -992,6 +992,24 @@
     "export_limit": {
       "message": "In der letzten Stunde wurden {count} Exporte geschrieben, mehr schreibt die Integration nicht. Versuche es später erneut."
     },
+    "backup_failed": {
+      "message": "Das Backup konnte nicht geschrieben werden: {error}"
+    },
+    "backup_file": {
+      "message": "Das Backup {file} muss eine JSON-Datei außerhalb versteckter Ordner sein, in einem Ordner, aus dem Home Assistant lesen darf: www, die Medienordner und die Ordner aus allowlist_external_dirs."
+    },
+    "backup_invalid": {
+      "message": "{file} ist kein Backup von HomeDarts, oder es ist beschädigt."
+    },
+    "backup_newer": {
+      "message": "Das Backup {file} stammt aus einer neueren Version der Integration. Installiere diese oder eine spätere Version, um es wiederherzustellen."
+    },
+    "backup_merged_board": {
+      "message": "Das Backup {file} enthält Darts, die dieses Board schon hat: Es ist ein Backup dieses Boards, ein zweites Backup eines schon zusammengeführten Boards oder eines, das ein hier zusammengeführtes Board oder Backup mitbringt. Zusammengeführt würden sie doppelt zählen. Führe jedes andere Board einmal zusammen, oder stelle mit Ersetzen wieder her."
+    },
+    "restore_failed": {
+      "message": "Das Backup konnte nicht wiederhergestellt werden: {error}"
+    },
     "unknown_game": {
       "message": "Kein Spiel heißt „{game}“. Nenne eines der Übungsspiele, etwa 501, Cricket oder Around the Clock."
     },
@@ -1228,6 +1246,21 @@
         }
       }
     },
+    "backup_available": {
+      "title": "Ein Backup von {board} ist vorhanden",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Backup wiederherstellen",
+            "description": "{board} wurde ohne gespeicherte Daten hinzugefügt, und es gibt ein Backup eines Boards mit derselben Board-ID vom {date}, etwa das beim Löschen des Boards geschriebene.\n\nWiederherstellen? Das Board lädt neu, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten und dem Kalender des Backups; was es seit dem Hinzufügen gespeichert hat, wird ersetzt. Hat es seitdem Spielerdaten gespeichert, werden diese zuerst gesichert. Um neu anzufangen, ignoriere diesen Hinweis."
+          }
+        },
+        "abort": {
+          "board_unavailable": "Das Board ist nicht mehr eingerichtet.",
+          "restore_failed": "Das Backup konnte nicht wiederhergestellt werden. Die Aktion homedarts.restore stellt es wieder her und nennt den Grund, wenn es nicht klappt."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Einige Automationen, Skripte oder Dashboards nutzen noch den alten Namen",
       "description": "HomeDarts for Autodarts hat deine Boards übernommen. Diese nutzen noch Aktionen oder Karten der Integration unter ihrem alten Namen Autodarts, die es nicht mehr gibt:\n\n{items}\n\nErsetze in ihren Aktionen `autodarts.` durch `homedarts.`, etwa `homedarts.start_game`, und in den Typen der Karten `custom:autodarts` durch `custom:homedarts`. Ignoriere diese Reparatur danach."
@@ -1372,6 +1405,34 @@
         "folder": {
           "name": "Ordner",
           "description": "Optional. Ein Ordner relativ zum Konfigurationsordner oder ein absoluter Pfad, in den Home Assistant schreiben darf: www, ein Medienordner oder ein Ordner aus allowlist_external_dirs. Dateien in www sind ohne Anmeldung unter /local/ erreichbar. Ohne Ordner: homedarts/exports im Medienordner."
+        }
+      }
+    },
+    "backup": {
+      "name": "Board sichern",
+      "description": "Schreibt alles, was das Board speichert, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten, dem Wochenbericht und dem Kalender, in eine Backup-Datei in homedarts/backups im Medienordner und gibt ihren Pfad und einen Download-Link zurück. Die neuesten fünf Backups jedes Boards bleiben. Nur für Administratoren; Automationen können sie ebenfalls nutzen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "Nur bei mehr als einem Board nötig."
+        }
+      }
+    },
+    "restore": {
+      "name": "Backup wiederherstellen",
+      "description": "Holt ein Backup von homedarts.backup zurück, oder das, das beim Löschen eines Boards geschrieben wurde. Das Board lädt dafür neu. Nur für Administratoren; Automationen können sie ebenfalls nutzen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "Das Board, das das Backup bekommt. Nur bei mehr als einem Board nötig."
+        },
+        "file": {
+          "name": "Backup-Datei",
+          "description": "Das Backup, relativ zum Konfigurationsordner oder als absoluter Pfad, etwa /media/homedarts/backups/…, in einem Ordner, aus dem Home Assistant lesen darf: www, ein Medienordner oder ein Ordner aus allowlist_external_dirs."
+        },
+        "mode": {
+          "name": "Modus",
+          "description": "Ersetzen: Das Board speichert, was das Backup enthält, und was es vorher gespeichert hat, ist weg. Zusammenführen: Die Profile, der Fortschritt, die Abzeichen und die Matches der Spieler aus dem Backup eines anderen Boards, die Sessions und Matches seines Kalenders und seine besseren persönlichen Bestwerte kommen zu diesem Board dazu; ein schon zusammengeführtes Backup ändert beim zweiten Mal nichts. Die Spieler eines Boards werden einmal je Quell-Board zusammengeführt: Ein Backup dieses Boards oder ein zweites Backup eines schon zusammengeführten Boards wird abgelehnt. Vor beidem wird gesichert, was das Board enthält, damit sich eine Wiederherstellung rückgängig machen lässt."
         }
       }
     },
@@ -1766,6 +1827,12 @@
         "matches": "Übungsmatches",
         "profiles": "Spielerprofile",
         "all": "Alles"
+      }
+    },
+    "restore_mode": {
+      "options": {
+        "replace": "Ersetzen",
+        "merge": "Zusammenführen"
       }
     },
     "tournament_format": {

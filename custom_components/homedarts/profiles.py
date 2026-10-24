@@ -20,6 +20,8 @@ from .moments import stamp
 
 # The X01 start scores; a leg from another start sets no fewest darts.
 GAMES = (101, 301, 501, 701, 901, 1001)
+# The bests of a profile, the highest of which counts.
+BESTS = ("highest_visit", "highest_checkout", "best_mpr")
 
 MATCH_HISTORY = 20
 NAME_LENGTH = 20
@@ -111,6 +113,22 @@ class Profile:
         stats = DoubleStats()
         stats.counts = self.doubles
         return stats
+
+    def merge(self, other: Profile) -> None:
+        """Add the numbers the same player threw on another board: the counts
+        add up, the bests are the better of both."""
+        for key, value in asdict(other).items():
+            if key in BESTS:
+                setattr(self, key, max(getattr(self, key), value))
+            elif type(value) is int:
+                setattr(self, key, getattr(self, key) + value)
+        for game, darts in other.fewest_darts.items():
+            self.fewest_darts[game] = min(self.fewest_darts.get(game, darts), darts)
+        for double, (attempts, hits) in other.doubles.items():
+            count = self.doubles.setdefault(double, [0, 0])
+            count[0] += attempts
+            count[1] += hits
+        self.last_played = max(self.last_played or "", other.last_played or "") or None
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -414,6 +432,30 @@ class Profiles:
         return True
 
     # -- storage ---------------------------------------------------------------
+
+    def merge(self, other: Profiles) -> None:
+        """Take over the players, matches and head-to-head records of another
+        board. A name is the same player in any upper and lower case, and a
+        person stays with the player linked to it here."""
+        persons = {profile.person for profile in self.players.values()}
+        for key, theirs in other.players.items():
+            if theirs.person in persons:
+                theirs.person = None
+            if key in self.players:
+                self.players[key].merge(theirs)
+                self.players[key].person = self.players[key].person or theirs.person
+            else:
+                self.players[key] = theirs
+        known = [*self.matches, *other.matches]
+        self.matches = sorted(
+            [match for index, match in enumerate(known) if match not in known[:index]],
+            key=lambda match: match["ended"],
+            reverse=True,
+        )[:MATCH_HISTORY]
+        for pair, (first, second) in other.head_to_head.items():
+            wins = self.head_to_head.setdefault(pair, [0, 0])
+            wins[0] += first
+            wins[1] += second
 
     def stored(self) -> dict[str, Any]:
         return {

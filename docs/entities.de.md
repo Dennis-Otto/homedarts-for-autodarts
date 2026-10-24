@@ -555,7 +555,7 @@ Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese
 
 ## Aktionen
 
-Mit den Aktionen kann jeder angemeldete Benutzer spielen. `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.save_highlight` und `homedarts.generate_voice_pack` ändern die Daten der Spieler, geben sie heraus oder schreiben Dateien und sind Administratoren vorbehalten: Ein Benutzer ohne Administratorrechte, etwa der eines Wandtablets, bekommt eine Fehlermeldung. Automationen führen sie aus, ebenso Skripte, die ein Administrator oder eine Automation startet.
+Mit den Aktionen kann jeder angemeldete Benutzer spielen. `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.backup`, `homedarts.restore`, `homedarts.save_highlight` und `homedarts.generate_voice_pack` ändern die Daten der Spieler, geben sie heraus oder schreiben Dateien und sind Administratoren vorbehalten: Ein Benutzer ohne Administratorrechte, etwa der eines Wandtablets, bekommt eine Fehlermeldung. Automationen führen sie aus, ebenso Skripte, die ein Administrator oder eine Automation startet.
 
 ### Übungsspiel starten: `homedarts.start_game`
 
@@ -787,6 +787,43 @@ Die Antwort enthält `path` (die Datei), `url` (ihre `/local/`-Adresse, wenn der
 > **Datenschutz:** Exporte enthalten Spielernamen. Der Medienordner, in dem sie standardmäßig landen, braucht eine Anmeldung. Dateien in `www` liefert Home Assistant unter `/local/` **ohne Anmeldung** an jeden aus, der Home Assistant erreicht und den Dateinamen kennt; der zufällige Teil des Namens macht ihn unerratbar. Exportiere nur bewusst nach `www` und lösche Exporte dort, die du nicht mehr brauchst.
 
 Die Aktion bricht mit einer klaren Meldung ab, wenn der Ordner nicht erlaubt ist, wenn in der letzten Stunde schon 20 Exporte geschrieben wurden oder wenn die Datei nicht geschrieben werden kann.
+
+### Board sichern: `homedarts.backup`
+
+Schreibt alles, was das Board speichert, in eine Backup-Datei und gibt zurück, wo sie liegt: das Training mit seinen Sessions, die Spiele, die Spielerprofile mit Fortschritt, Abzeichen und Dart-Positionen, die persönlichen Bestwerte, das Turnier, den Wochenbericht und den Kalender. Ein Board schreibt selbst eines, bevor es gelöscht wird, siehe [Backups](statistics.de.md#backups). Für Administratoren; Automationen können sie ebenfalls nutzen.
+
+| Feld | Werte | Beschreibung |
+| --- | --- | --- |
+| `config_entry_id` | HomeDarts-Eintrag | Nur bei mehr als einem Board nötig. Auch ein Board, das nicht startet, etwa weil sich sein Speicher nicht lesen lässt, kann gesichert werden |
+
+```yaml
+action: homedarts.backup
+response_variable: backup
+```
+
+Die Antwort enthält `path` (die Datei in `homedarts/backups/<Board-ID>` im Medienordner, `/media/homedarts/backups/…` unter Home Assistant OS), `download` (eine Adresse unter `/api/`, unter der Administratoren die Datei bis zum Neustart von Home Assistant herunterladen, wie bei Exporten), `id` und `created`. Ein Backup ist eine JSON-Datei, benannt nach dem Board und der Uhrzeit, etwa `kitchen-board-20261024-201500.json`. Die neuesten fünf jedes Boards bleiben, ältere werden gelöscht. Backups enthalten Spielernamen und landen deshalb im Medienordner, der eine Anmeldung braucht.
+
+### Backup wiederherstellen: `homedarts.restore`
+
+Holt ein Backup in ein Board zurück, das dafür neu lädt. Für Administratoren; Automationen können sie ebenfalls nutzen.
+
+| Feld | Werte | Beschreibung |
+| --- | --- | --- |
+| `file` | Pfad | Das Backup, relativ zum Konfigurationsordner oder als absoluter Pfad, in einem Ordner, aus dem Home Assistant lesen darf: `www`, ein Medienordner oder ein Ordner aus `allowlist_external_dirs`. Versteckte Ordner wie `.storage`, Steuerzeichen und Pfade, die `..` oder ein symbolischer Link woandershin führen, werden abgelehnt. Pflichtfeld |
+| `mode` | `replace` (Standard), `merge` | `replace`: Das Board speichert, was das Backup enthält, und was es vorher gespeichert hat, ist weg. `merge`: Die Spieler aus dem Backup eines anderen Boards kommen zu diesem Board dazu, siehe unten |
+| `config_entry_id` | HomeDarts-Eintrag | Das Board, das das Backup bekommt; nur bei mehr als einem Board nötig. Auch ein Board, das nicht startet, etwa weil sein Speicher aus einer neueren Version stammt, kann ein Backup bekommen |
+
+```yaml
+action: homedarts.restore
+data:
+  file: /media/homedarts/backups/board-id/kitchen-board-20261024-201500.json
+  mode: merge
+response_variable: restored
+```
+
+**Zusammenführen** vereint die Zahlen eines Spielers von zwei Boards. Ein Name in beliebiger Groß- und Kleinschreibung ist derselbe Spieler: Legs, Matches, Darts, Punkte, Checkouts, Doubles, Wochensummen, Treffer und Dart-Positionen addieren sich, die Bestwerte sind die besseren beider Boards, und Abzeichen werden für das freigeschaltet, was beide Boards zusammen erreichen. Die letzten Matches, die direkten Vergleiche, die beendeten Sessions und die Sessions und Matches des Kalenders kommen zu denen dieses Boards dazu, jedes einmal. Die persönlichen Bestwerte des Boards übernehmen die des Backups, die sie übertreffen. Was nur zu diesem Board gehört, bleibt, wie es ist: das laufende Spiel und seine Einstellungen, die laufende Trainingssession, die Drills, das Turnier, das Tagesziel und die laufende Woche des Wochenberichts. Ein schon zusammengeführtes Backup ändert beim zweiten Mal nichts. Die Spieler eines Boards werden einmal je Quell-Board zusammengeführt, weil ihre Darts sonst doppelt zählen: Ein Backup dieses Boards, ein zweites Backup eines schon zusammengeführten Boards und ein Backup eines Boards, das dieses Board oder ein hier zusammengeführtes schon enthält, werden abgelehnt. Führe jedes andere Board einmal zusammen, etwa beim Umzug auf ein neues Board.
+
+Bevor einer der beiden Modi schreibt, sichert das Board, was es enthält, sodass sich eine Wiederherstellung ins falsche Board mit diesem Backup rückgängig machen lässt; ein Board ohne Spielerdaten schreibt keins. Die Antwort enthält `mode`, `changed` (`false` für ein schon zusammengeführtes Backup), `previous` (den Pfad dieses Backups oder `null`) sowie `id`, `created` und `board` des Backups. Die Aktion bricht mit einer klaren Meldung ab, wenn die Datei nicht erlaubt oder kein Backup ist, wenn das Backup aus einer neueren Version der Integration stammt oder wenn das Board nicht geschrieben werden kann. Ein Backup aus einer älteren Version wird migriert, wenn das Board es lädt.
 
 ### Highlight-Foto speichern: `homedarts.save_highlight`
 

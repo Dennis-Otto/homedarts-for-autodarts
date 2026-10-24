@@ -278,7 +278,7 @@ Die Kamera-Entitäten geben den Livestream von Board Manager 2 an höchstens zwe
 
 ### Gespeicherte Daten
 
-Alles, was die Integration speichert, liegt im Ordner `.storage` von Home Assistant, nie in der Cloud, und wird mit der Integration gelöscht. Ein Speicher, der sich nicht lesen lässt, stoppt die Einrichtung des Boards, statt es leer zu starten, damit nichts ihn überschreibt: Nach einem Lesefehler versucht Home Assistant es erneut; ein Speicher einer neueren Version der Integration oder einer, der sich nicht wiederherstellen lässt, hält das Board an, bis du diese Version wieder installierst oder ein Backup wiederherstellst. Teile, die eine neuere Version gespeichert hat, bleiben, wenn eine ältere speichert.
+Alles, was die Integration speichert, liegt im Ordner `.storage` von Home Assistant, nie in der Cloud, und wird mit dem Board gelöscht, nach einem [Backup](statistics.de.md#backups). Ein Speicher, der sich nicht lesen lässt, stoppt die Einrichtung des Boards, statt es leer zu starten, damit nichts ihn überschreibt: Nach einem Lesefehler versucht Home Assistant es erneut; ein Speicher einer neueren Version der Integration oder einer, der sich nicht wiederherstellen lässt, hält das Board an, bis du diese Version wieder installierst oder ein Backup wiederherstellst. Teile, die eine neuere Version gespeichert hat, bleiben, wenn eine ältere speichert.
 
 | Speicher | Inhalt |
 | --- | --- |
@@ -286,7 +286,7 @@ Alles, was die Integration speichert, liegt im Ordner `.storage` von Home Assist
 | `homedarts.<entry>.report` | Die laufende Woche und der letzte Wochenbericht |
 | `homedarts.<entry>.journal` | Sessions und Matches des Trainingskalenders, 365 Tage, höchstens je 3.000 |
 
-Highlight-Fotos und Exporte sind Dateien, die du bewusst anlegst. Sie bleiben im Medienordner und im Exportordner, wenn die Integration gelöscht wird.
+Bevor ein Board gelöscht wird, kommen seine drei Speicher in ein Backup in `homedarts/backups/<Board-ID>` im Medienordner, die neuesten fünf je Board, das ein wieder hinzugefügtes Board mit derselben Board-ID zum Wiederherstellen anbietet. Highlight-Fotos, Exporte und Backups sind Dateien. Sie bleiben im Medienordner und im Exportordner, wenn die Integration gelöscht wird.
 
 ### Vom früheren Namen übernommen
 

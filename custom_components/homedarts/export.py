@@ -83,11 +83,40 @@ class ExportFolderError(ValueError):
     """The folder is hidden, or Home Assistant does not allow writing there."""
 
 
-def default_folder(config: Config) -> Path:
-    """homedarts/exports of the media folder the media browser shows first."""
+def media_folder(config: Config, folder: Path) -> Path:
+    """A folder inside the media folder the media browser shows first."""
     media = config.media_dirs
     root = media.get("local") or next(iter(media.values()), config.path("media"))
-    return Path(root) / DEFAULT_FOLDER
+    return Path(root) / folder
+
+
+def default_folder(config: Config) -> Path:
+    """homedarts/exports of the media folder the media browser shows first."""
+    return media_folder(config, DEFAULT_FOLDER)
+
+
+def allowed_path(config: Config, path: str | Path) -> Path:
+    """A path relative to the configuration folder, or absolute, resolved, so
+    that neither .. nor a symbolic link leads elsewhere, and in no hidden folder
+    of the configuration folder or of allowlist_external_dirs; runs in the
+    executor."""
+    if isinstance(path, str) and not path.isprintable():
+        raise ExportFolderError(path)
+    try:
+        base = Path(config.config_dir).resolve()
+        target = (base / path).resolve()
+        roots = [
+            base,
+            *(Path(folder).resolve() for folder in config.allowlist_external_dirs),
+        ]
+    except (OSError, RuntimeError, ValueError) as err:
+        raise ExportFolderError(str(path)) from err
+    for root in roots:
+        if target.is_relative_to(root) and any(
+            part.startswith(".") for part in target.relative_to(root).parts
+        ):
+            raise ExportFolderError(str(path))
+    return target
 
 
 def export_folder(config: Config, folder: str | None) -> Path:
@@ -98,22 +127,7 @@ def export_folder(config: Config, folder: str | None) -> Path:
     be hidden and must be one where Home Assistant allows writing: www, the
     media folders and the folders of allowlist_external_dirs.
     """
-    if folder is not None and not folder.isprintable():
-        raise ExportFolderError(folder)
-    try:
-        base = Path(config.config_dir).resolve()
-        target = (base / folder if folder else default_folder(config)).resolve()
-        roots = [
-            base,
-            *(Path(path).resolve() for path in config.allowlist_external_dirs),
-        ]
-    except (OSError, RuntimeError, ValueError) as err:
-        raise ExportFolderError(folder) from err
-    for root in roots:
-        if target.is_relative_to(root) and any(
-            part.startswith(".") for part in target.relative_to(root).parts
-        ):
-            raise ExportFolderError(folder)
+    target = allowed_path(config, folder or default_folder(config))
     # Home Assistant checks the folder of a file that does not exist yet.
     if not config.is_allowed_path(str(target / "export")):
         raise ExportFolderError(folder)
@@ -121,7 +135,8 @@ def export_folder(config: Config, folder: str | None) -> Path:
 
 
 class ExportDownloadView(HomeAssistantView):
-    """Downloads of this run's exports, for administrators and their signed paths."""
+    """Downloads of this run's exports and backups, for administrators and their
+    signed paths."""
 
     url = DOWNLOAD_URL
     name = "api:homedarts:export"
@@ -137,7 +152,7 @@ class ExportDownloadView(HomeAssistantView):
         )
 
 
-def _remember(hass: HomeAssistant, path: Path) -> str:
+def offer_download(hass: HomeAssistant, path: Path) -> str:
     """Offer the file for download and return its address."""
     if EXPORTS not in hass.data:
         hass.data[EXPORTS] = {}
@@ -344,7 +359,7 @@ async def async_export(
     return {
         "path": str(path),
         "url": url,
-        "download": _remember(hass, path),
+        "download": offer_download(hass, path),
         "format": file_format,
         "what": what,
         "rows": {table: len(rows) for table, rows in data.items()},

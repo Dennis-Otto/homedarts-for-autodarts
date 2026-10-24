@@ -992,6 +992,24 @@
     "export_limit": {
       "message": "{count} exports ont été écrits au cours de la dernière heure, le maximum pour l'intégration. Réessayez plus tard."
     },
+    "backup_failed": {
+      "message": "Impossible d'écrire la sauvegarde\u00a0: {error}"
+    },
+    "backup_file": {
+      "message": "La sauvegarde {file} doit être un fichier JSON hors des dossiers cachés, dans un dossier où Home Assistant autorise la lecture\u00a0: www, les dossiers multimédia et les dossiers de allowlist_external_dirs."
+    },
+    "backup_invalid": {
+      "message": "{file} n'est pas une sauvegarde de HomeDarts, ou elle est endommagée."
+    },
+    "backup_newer": {
+      "message": "La sauvegarde {file} provient d'une version plus récente de l'intégration. Installez cette version ou une version ultérieure pour la restaurer."
+    },
+    "backup_merged_board": {
+      "message": "La sauvegarde {file} contient des fléchettes que cette cible a déjà\u00a0: c'est une sauvegarde de cette cible, une deuxième sauvegarde d'une cible déjà fusionnée, ou une sauvegarde qui apporte une cible ou une sauvegarde déjà fusionnée ici. Fusionnées, elles compteraient deux fois. Fusionnez chaque autre cible une seule fois, ou restaurez avec remplacer."
+    },
+    "restore_failed": {
+      "message": "Impossible de restaurer la sauvegarde\u00a0: {error}"
+    },
     "unknown_game": {
       "message": "Aucun jeu ne s'appelle «\u00a0{game}\u00a0». Nommez un des jeux d'entraînement, par exemple 501, Cricket ou Around the Clock."
     },
@@ -1228,6 +1246,21 @@
         }
       }
     },
+    "backup_available": {
+      "title": "Une sauvegarde de {board} est disponible",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restaurer la sauvegarde",
+            "description": "{board} a été ajoutée sans données enregistrées, et il existe une sauvegarde d'une cible avec le même identifiant de cible du {date}, comme celle écrite lors de la suppression de la cible.\n\nLa restaurer\u00a0? La cible se recharge avec l'entraînement, les jeux, les profils de joueurs avec leur progression et leurs badges, les records personnels et le calendrier de la sauvegarde\u00a0; ce qu'elle a enregistré depuis son ajout est remplacé. Si elle a enregistré des données de joueurs depuis, elles sont d'abord sauvegardées. Pour repartir de zéro, ignorez ce message."
+          }
+        },
+        "abort": {
+          "board_unavailable": "La cible n'est plus configurée.",
+          "restore_failed": "Impossible de restaurer la sauvegarde. L'action homedarts.restore la restaure et indique pourquoi elle échoue."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Des automatisations, scripts ou tableaux de bord utilisent encore l'ancien nom",
       "description": "HomeDarts for Autodarts a repris vos cibles. Ces éléments utilisent encore des actions ou des cartes de l'intégration sous son ancien nom, Autodarts, qui n'existent plus\u00a0:\n\n{items}\n\nDans leurs actions, remplacez `autodarts.` par `homedarts.`, par exemple `homedarts.start_game`, et dans les types des cartes `custom:autodarts` par `custom:homedarts`. Ignorez ensuite cette réparation."
@@ -1372,6 +1405,34 @@
         "folder": {
           "name": "Dossier",
           "description": "Facultatif. Un dossier relatif au dossier de configuration, ou un chemin absolu, dans lequel Home Assistant autorise l'écriture\u00a0: www, un dossier multimédia ou un dossier de allowlist_external_dirs. Les fichiers placés dans www sont accessibles sous /local/ sans connexion. Sans dossier\u00a0: homedarts/exports dans le dossier multimédia."
+        }
+      }
+    },
+    "backup": {
+      "name": "Sauvegarder une cible",
+      "description": "Enregistre tout ce que la cible conserve, avec l'entraînement, les jeux, les profils de joueurs avec leur progression et leurs badges, les records personnels, le rapport hebdomadaire et le calendrier, dans un fichier de sauvegarde dans homedarts/backups du dossier multimédia, et renvoie son chemin et un lien de téléchargement. Les cinq sauvegardes les plus récentes de chaque cible sont conservées. Réservée aux administrateurs\u00a0; les automatisations peuvent aussi l'utiliser.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "Nécessaire uniquement avec plusieurs cibles."
+        }
+      }
+    },
+    "restore": {
+      "name": "Restaurer une sauvegarde",
+      "description": "Restaure une sauvegarde de homedarts.backup, ou celle écrite lors de la suppression d'une cible. La cible se recharge pour cela. Réservée aux administrateurs\u00a0; les automatisations peuvent aussi l'utiliser.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "La cible qui reçoit la sauvegarde. Nécessaire uniquement avec plusieurs cibles."
+        },
+        "file": {
+          "name": "Fichier de sauvegarde",
+          "description": "La sauvegarde, relative au dossier de configuration ou sous forme de chemin absolu, par exemple /media/homedarts/backups/…, dans un dossier où Home Assistant autorise la lecture\u00a0: www, un dossier multimédia ou un dossier de allowlist_external_dirs."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Remplacer\u00a0: la cible conserve ce que contient la sauvegarde, et ce qu'elle conservait avant disparaît. Fusionner\u00a0: les profils, la progression, les badges et les parties des joueurs d'une sauvegarde d'une autre cible, les sessions et parties de son calendrier et ses meilleurs records personnels s'ajoutent à cette cible\u00a0; une sauvegarde déjà fusionnée ne change rien la deuxième fois. Les joueurs d'une cible se fusionnent une fois par cible d'origine\u00a0: une sauvegarde de cette cible, ou une deuxième sauvegarde d'une cible déjà fusionnée, est refusée. Avant l'un comme l'autre, ce que contient la cible est sauvegardé, pour qu'une restauration puisse être annulée."
         }
       }
     },
@@ -1766,6 +1827,12 @@
         "matches": "Parties",
         "profiles": "Profils de joueurs",
         "all": "Tout"
+      }
+    },
+    "restore_mode": {
+      "options": {
+        "replace": "Remplacer",
+        "merge": "Fusionner"
       }
     },
     "tournament_format": {
