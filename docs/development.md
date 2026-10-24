@@ -541,14 +541,25 @@ down; the scenario checks that no entry of Radio Browser exists. Only the demo o
 images loads the icons of the built-in integrations that the integrations page shows,
 through Home Assistant's own proxy from its CDN.
 
+Without sudo and Docker, Harden-Runner removes Docker with `apt-get` in the background
+while the first steps of the job run. A job that ends before `apt-get` does, such as
+*changes* of the end-to-end tests after ten seconds, leaves it behind, and the runner
+then hangs in *Cleaning up orphan processes* until the timeout of the job
+([#463](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/463)).
+So the last step of each of these jobs, before the explanation of the PR coach after a
+failure, is *Wait until Harden-Runner has removed Docker*, which runs after a failure
+too: it waits until neither `apt-get` nor `dpkg` runs, for two minutes at most, which
+costs a job that runs longer nothing.
+
 A host that a job doesn't list fails its step with an error such as a failed DNS lookup
 or a refused connection. The host itself appears as `domain not allowed: <host>` in the
 log of the job's last step, *Post Block every host that the job doesn't need*, and on
 the page of StepSecurity's insights that Harden-Runner links in its first step. A new host goes into `allowed-endpoints` of the job together with the step
 that needs it, with a comment that says why, and into `tests/test_workflow_network.py`.
 That test fails for a job of these workflows that it doesn't know, a host that a job
-doesn't need, a job back in audit mode, a job without containers that keeps sudo, and a
-job that may write and reaches more than GitHub. Harden-Runner filters the addresses of
+doesn't need, a job back in audit mode, a job without containers that keeps sudo, a job
+without sudo and Docker that doesn't wait for their removal, and a job that may write
+and reaches more than GitHub. Harden-Runner filters the addresses of
 the runner and of Docker's default network; the containers of the Compose networks get
 their addresses from its DNS, which resolves only the hosts of the job. The
 workflows that the blueprint keeps follow its own rules.

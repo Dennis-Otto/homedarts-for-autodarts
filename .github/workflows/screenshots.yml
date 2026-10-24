@@ -188,6 +188,18 @@ jobs:
           path: tests/e2e/artifacts/visual/report.json
           if-no-files-found: error
           retention-days: 3
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure
+      # (docs/development.md#network-of-the-jobs).
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
 
   # The games of the live demo, played by the integration in the Home Assistant of
   # the tests with its locked packages; Python comes from the runner's tool cache.
@@ -225,6 +237,18 @@ jobs:
           path: ${{ runner.temp }}/timeline/
           if-no-files-found: error
           retention-days: 1
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure
+      # (docs/development.md#network-of-the-jobs).
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
 
   pull-request:
     name: pull request
@@ -509,3 +533,15 @@ jobs:
               --title "$title" --body-file "$RUNNER_TEMP/body.md"
           fi
           gh pr merge "$branch" --repo "$GITHUB_REPOSITORY" --auto --squash
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure
+      # (docs/development.md#network-of-the-jobs).
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."

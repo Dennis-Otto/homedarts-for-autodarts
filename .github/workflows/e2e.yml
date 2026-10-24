@@ -109,6 +109,18 @@ jobs:
           if [[ -n "$demo_reason" ]]; then
             echo "$demo_reason" >> "$GITHUB_STEP_SUMMARY"
           fi
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure
+      # (docs/development.md#network-of-the-jobs).
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
 
   # The scenario of tests/e2e/run.sh, on each Board Manager and the oldest supported
   # Home Assistant, beside the browser jobs.
@@ -352,6 +364,18 @@ jobs:
           else
             echo "Nothing that the end-to-end tests run or mount changed; none had to run." >> "$GITHUB_STEP_SUMMARY"
           fi
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure
+      # (docs/development.md#network-of-the-jobs).
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
       # The PR coach needs .github/blueprint.py and the explanations, nothing else.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: failure()
