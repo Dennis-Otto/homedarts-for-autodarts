@@ -7567,12 +7567,12 @@ ${balancedCss(".profiles", 210, 10, 36)}
      in a list below it, for a mouse, a finger and the keyboard alike. */
   .profile { position: relative; }
   .profile-name .manage {
-    flex: 0 0 auto; margin: -6px -8px -6px auto; min-width: 36px; min-height: 36px; padding: 0;
+    flex: 0 0 auto; margin: -10px -10px -10px auto; min-width: 44px; min-height: 44px; padding: 0;
     border: 0; border-radius: 10px; background: none; font: inherit; font-size: 20px; line-height: 1;
     color: var(--ad-muted-text);
   }
   .manage-menu {
-    position: absolute; top: 44px; right: 8px; z-index: 2; display: flex; flex-direction: column;
+    position: absolute; top: 48px; right: 8px; z-index: 2; display: flex; flex-direction: column;
     min-width: 160px; padding: 6px 0; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
     background: var(--card-background-color, var(--ha-card-background, #fff));
     border: 1px solid var(--divider-color, rgba(127,127,127,.3));

@@ -626,18 +626,20 @@ class BoardGames:
             raise ActionRefused("unknown_player", name=name.strip())
         if not spelled:
             raise ActionRefused("invalid_player_name")
+        # The profile's own spelling, so every store finds the name the way
+        # the profile keeps it, also for a name with characters no name has.
         if self.host is not None:
-            self.host.tournament.check(name)
-        self.tournament.check(name)
-        if not self.practice.rename_player(name, spelled):
+            self.host.tournament.check(old)
+        self.tournament.check(old)
+        if not self.practice.rename_player(old, spelled):
             raise ActionRefused(
                 "merge_in_play", name=old, other=profiles.spelled(spelled)
             )
-        merged = profiles.rename(name, spelled) is True
-        self.tournament.rename(name, spelled)
-        self.progress.rename(name, spelled, profiles, now)
-        self.records.rename(name, spelled)
-        self._reports.rename(name, spelled)
+        merged = profiles.rename(old, spelled) is True
+        self.tournament.rename(old, spelled)
+        self.progress.rename(old, spelled, profiles, now)
+        self.records.rename(old, spelled)
+        self._reports.rename(old, spelled)
         return {"old": old, "new": spelled, "merged": merged}
 
     def start_game(

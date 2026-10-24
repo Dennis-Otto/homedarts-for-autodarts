@@ -93,7 +93,7 @@ Du kommst von Autodarts Local, einer anderen Integration für Autodarts oder dar
 
 - 3-Dart-Average, First-9-Average, Checkout- und Doppelquote
 - Ein Trefferbild jedes Feldes oder der echten Dart-Positionen, mit der Streuung in Millimetern
-- Spielerprofile mit Abzeichen in Bronze, Silber, Gold und Platin und eine Bestenliste
+- Spielerprofile mit Abzeichen in Bronze, Silber, Gold und Platin und eine Bestenliste; ein Profil lässt sich mit allen Zahlen umbenennen, und zwei Namen eines Spielers werden zu einem Profil
 
 <details>
 <summary>Trends, Berichte, Kalender und Exporte</summary>

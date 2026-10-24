@@ -394,9 +394,25 @@ def test_a_renamed_player_keeps_everything_in_every_store():
     assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Sam"
     assert profiles.snapshot()["head_to_head"][0]["players"] == ["Kim", "Sam"]
     assert profiles.matches[0]["players"][0]["name"] == "Sam"
-    assert games._reports.renamed == [(" sammy ", "Sam")]
+    assert games._reports.renamed == [("Sammy", "Sam")]
     assert games.tournament.setup.players == ["Sam", "Kim", "Lea"]
     assert games.practice.names[:2] == ["Sam", "Kim"]
+
+
+def test_a_name_with_characters_no_name_has_renames_the_profile_everywhere():
+    games = match("Sam", "Kim")
+    visit(games, T20, T20, T20)
+    visit(games, S20)
+    games.practice.players[0].remaining = 40
+    visit(games, D20)
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Sam"
+    games.start_game(501, names=["Kim"])
+    renamed = games.rename_player("Sam#", "Samuel", NOW)
+    assert renamed == {"old": "Sam", "new": "Samuel", "merged": False}
+    assert "sam" not in games.progress.players
+    assert games.progress.players["samuel"].counters["darts"] >= 3
+    assert games.records.stored()["bests"]["highest_checkout"]["name"] == "Samuel"
+    assert games._reports.renamed == [("Sam", "Samuel")]
 
 
 def test_a_rename_needs_a_profile_a_name_and_not_both_names_in_play():
