@@ -1000,6 +1000,9 @@
     "backup_newer": {
       "message": "La copia de seguridad {file} procede de una versión más reciente de la integración. Instala esa versión o una posterior para restaurarla."
     },
+    "backup_merged_board": {
+      "message": "La copia de seguridad {file} contiene dardos que esta diana ya tiene: es una copia de esta diana, una segunda copia de una diana ya combinada o una que trae una diana o una copia ya combinada en esta. Al combinarla contarían dos veces. Combina cada otra diana una sola vez, o restaura con reemplazar."
+    },
     "restore_failed": {
       "message": "No se ha podido restaurar la copia de seguridad: {error}"
     },
@@ -1245,7 +1248,7 @@
         "step": {
           "confirm": {
             "title": "Restaurar la copia de seguridad",
-            "description": "{board} se añadió sin datos guardados, y hay una copia de seguridad de una diana con el mismo ID de diana del {date}, como la que se guardó al eliminar la diana.\n\n¿Restaurarla? La diana se recarga con el entrenamiento, los juegos, los perfiles de jugador con su progreso e insignias, los récords personales y el calendario de la copia de seguridad; lo que ha guardado desde que se añadió se reemplaza. Para empezar de cero, ignora este aviso."
+            "description": "{board} se añadió sin datos guardados, y hay una copia de seguridad de una diana con el mismo ID de diana del {date}, como la que se guardó al eliminar la diana.\n\n¿Restaurarla? La diana se recarga con el entrenamiento, los juegos, los perfiles de jugador con su progreso e insignias, los récords personales y el calendario de la copia de seguridad; lo que ha guardado desde que se añadió se reemplaza. Si ha guardado datos de jugadores desde entonces, primero se guarda una copia de ellos. Para empezar de cero, ignora este aviso."
           }
         },
         "abort": {
@@ -1425,7 +1428,7 @@
         },
         "mode": {
           "name": "Modo",
-          "description": "Reemplazar: la diana guarda lo que contiene la copia de seguridad, y lo que guardaba antes desaparece. Combinar: los perfiles, el progreso, las insignias y los partidos de los jugadores de una copia de seguridad de otra diana, las sesiones y partidos de su calendario y sus mejores récords personales se añaden a esta diana; una copia ya combinada no cambia nada la segunda vez."
+          "description": "Reemplazar: la diana guarda lo que contiene la copia de seguridad, y lo que guardaba antes desaparece. Combinar: los perfiles, el progreso, las insignias y los partidos de los jugadores de una copia de seguridad de otra diana, las sesiones y partidos de su calendario y sus mejores récords personales se añaden a esta diana; una copia ya combinada no cambia nada la segunda vez. Los jugadores de una diana se combinan una vez por diana de origen: se rechaza una copia de esta diana o una segunda copia de una diana ya combinada. Antes de ambos, se guarda una copia de lo que contiene la diana, para poder deshacer la restauración."
         }
       }
     },

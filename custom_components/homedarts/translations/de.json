@@ -1000,6 +1000,9 @@
     "backup_newer": {
       "message": "Das Backup {file} stammt aus einer neueren Version der Integration. Installiere diese oder eine spätere Version, um es wiederherzustellen."
     },
+    "backup_merged_board": {
+      "message": "Das Backup {file} enthält Darts, die dieses Board schon hat: Es ist ein Backup dieses Boards, ein zweites Backup eines schon zusammengeführten Boards oder eines, das ein hier zusammengeführtes Board oder Backup mitbringt. Zusammengeführt würden sie doppelt zählen. Führe jedes andere Board einmal zusammen, oder stelle mit Ersetzen wieder her."
+    },
     "restore_failed": {
       "message": "Das Backup konnte nicht wiederhergestellt werden: {error}"
     },
@@ -1245,7 +1248,7 @@
         "step": {
           "confirm": {
             "title": "Backup wiederherstellen",
-            "description": "{board} wurde ohne gespeicherte Daten hinzugefügt, und es gibt ein Backup eines Boards mit derselben Board-ID vom {date}, etwa das beim Löschen des Boards geschriebene.\n\nWiederherstellen? Das Board lädt neu, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten und dem Kalender des Backups; was es seit dem Hinzufügen gespeichert hat, wird ersetzt. Um neu anzufangen, ignoriere diesen Hinweis."
+            "description": "{board} wurde ohne gespeicherte Daten hinzugefügt, und es gibt ein Backup eines Boards mit derselben Board-ID vom {date}, etwa das beim Löschen des Boards geschriebene.\n\nWiederherstellen? Das Board lädt neu, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten und dem Kalender des Backups; was es seit dem Hinzufügen gespeichert hat, wird ersetzt. Hat es seitdem Spielerdaten gespeichert, werden diese zuerst gesichert. Um neu anzufangen, ignoriere diesen Hinweis."
           }
         },
         "abort": {
@@ -1425,7 +1428,7 @@
         },
         "mode": {
           "name": "Modus",
-          "description": "Ersetzen: Das Board speichert, was das Backup enthält, und was es vorher gespeichert hat, ist weg. Zusammenführen: Die Profile, der Fortschritt, die Abzeichen und die Matches der Spieler aus dem Backup eines anderen Boards, die Sessions und Matches seines Kalenders und seine besseren persönlichen Bestwerte kommen zu diesem Board dazu; ein schon zusammengeführtes Backup ändert beim zweiten Mal nichts."
+          "description": "Ersetzen: Das Board speichert, was das Backup enthält, und was es vorher gespeichert hat, ist weg. Zusammenführen: Die Profile, der Fortschritt, die Abzeichen und die Matches der Spieler aus dem Backup eines anderen Boards, die Sessions und Matches seines Kalenders und seine besseren persönlichen Bestwerte kommen zu diesem Board dazu; ein schon zusammengeführtes Backup ändert beim zweiten Mal nichts. Die Spieler eines Boards werden einmal je Quell-Board zusammengeführt: Ein Backup dieses Boards oder ein zweites Backup eines schon zusammengeführten Boards wird abgelehnt. Vor beidem wird gesichert, was das Board enthält, damit sich eine Wiederherstellung rückgängig machen lässt."
         }
       }
     },

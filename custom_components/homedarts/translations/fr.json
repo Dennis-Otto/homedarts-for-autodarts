@@ -1000,6 +1000,9 @@
     "backup_newer": {
       "message": "La sauvegarde {file} provient d'une version plus récente de l'intégration. Installez cette version ou une version ultérieure pour la restaurer."
     },
+    "backup_merged_board": {
+      "message": "La sauvegarde {file} contient des fléchettes que cette cible a déjà\u00a0: c'est une sauvegarde de cette cible, une deuxième sauvegarde d'une cible déjà fusionnée, ou une sauvegarde qui apporte une cible ou une sauvegarde déjà fusionnée ici. Fusionnées, elles compteraient deux fois. Fusionnez chaque autre cible une seule fois, ou restaurez avec remplacer."
+    },
     "restore_failed": {
       "message": "Impossible de restaurer la sauvegarde\u00a0: {error}"
     },
@@ -1245,7 +1248,7 @@
         "step": {
           "confirm": {
             "title": "Restaurer la sauvegarde",
-            "description": "{board} a été ajoutée sans données enregistrées, et il existe une sauvegarde d'une cible avec le même identifiant de cible du {date}, comme celle écrite lors de la suppression de la cible.\n\nLa restaurer\u00a0? La cible se recharge avec l'entraînement, les jeux, les profils de joueurs avec leur progression et leurs badges, les records personnels et le calendrier de la sauvegarde\u00a0; ce qu'elle a enregistré depuis son ajout est remplacé. Pour repartir de zéro, ignorez ce message."
+            "description": "{board} a été ajoutée sans données enregistrées, et il existe une sauvegarde d'une cible avec le même identifiant de cible du {date}, comme celle écrite lors de la suppression de la cible.\n\nLa restaurer\u00a0? La cible se recharge avec l'entraînement, les jeux, les profils de joueurs avec leur progression et leurs badges, les records personnels et le calendrier de la sauvegarde\u00a0; ce qu'elle a enregistré depuis son ajout est remplacé. Si elle a enregistré des données de joueurs depuis, elles sont d'abord sauvegardées. Pour repartir de zéro, ignorez ce message."
           }
         },
         "abort": {
@@ -1425,7 +1428,7 @@
         },
         "mode": {
           "name": "Mode",
-          "description": "Remplacer\u00a0: la cible conserve ce que contient la sauvegarde, et ce qu'elle conservait avant disparaît. Fusionner\u00a0: les profils, la progression, les badges et les parties des joueurs d'une sauvegarde d'une autre cible, les sessions et parties de son calendrier et ses meilleurs records personnels s'ajoutent à cette cible\u00a0; une sauvegarde déjà fusionnée ne change rien la deuxième fois."
+          "description": "Remplacer\u00a0: la cible conserve ce que contient la sauvegarde, et ce qu'elle conservait avant disparaît. Fusionner\u00a0: les profils, la progression, les badges et les parties des joueurs d'une sauvegarde d'une autre cible, les sessions et parties de son calendrier et ses meilleurs records personnels s'ajoutent à cette cible\u00a0; une sauvegarde déjà fusionnée ne change rien la deuxième fois. Les joueurs d'une cible se fusionnent une fois par cible d'origine\u00a0: une sauvegarde de cette cible, ou une deuxième sauvegarde d'une cible déjà fusionnée, est refusée. Avant l'un comme l'autre, ce que contient la cible est sauvegardé, pour qu'une restauration puisse être annulée."
         }
       }
     },

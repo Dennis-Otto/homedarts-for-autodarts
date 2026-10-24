@@ -25,6 +25,7 @@ from custom_components.homedarts.backup import (
     BACKUP_VERSION,
     KEPT_BACKUPS,
     MERGED,
+    MERGED_BOARDS,
     STORES,
     BackupFileError,
     merge_stores,
@@ -196,6 +197,7 @@ async def test_deleting_the_board_removes_the_offer(
     hass, aioclient_mock, hass_storage, media
 ):
     entry = await setup_local(hass, aioclient_mock, state=board())
+    await play(hass, entry, "Alex")
     await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert backups(media)
@@ -364,6 +366,7 @@ async def test_a_backup_of_an_older_version_is_migrated(
     assert response == {
         "mode": "replace",
         "changed": True,
+        "previous": None,
         "id": "0123456789abcdef",
         "created": "2026-10-01T22:00:00+02:00",
         "board": "Kitchen",
@@ -627,11 +630,15 @@ def test_a_merge_into_an_empty_board_takes_the_players_over():
     # Without a weekly report of its own, the board takes the backup's.
     assert merged["report"] == {"started": "x"}
     # A backup with an empty training store adds nothing.
+    assert training[MERGED_BOARDS] == ["board-1"]
     again = merge_stores(
-        {**merged, "training": {**training, MERGED: "broken"}}, a_backup(), NOW
+        {**merged, "training": {**training, MERGED: "broken", MERGED_BOARDS: 1}},
+        {**a_backup(), "board_id": None},
+        NOW,
     )
     assert again is not None and again["report"] == {"started": "x"}
     assert again["training"][MERGED] == ["0123456789abcdef"]
+    assert again["training"][MERGED_BOARDS] == []
 
 
 def test_the_sessions_of_both_boards_newest_first_once():
@@ -857,3 +864,192 @@ def test_the_calendar_takes_the_sessions_of_both_boards_in_order():
         "2026-10-02",
         "2026-10-03",
     ]
+
+
+# -- no dart counts twice, and nothing is lost for good ---------------------------------
+
+
+async def test_a_board_does_not_merge_its_own_backup(
+    hass, aioclient_mock, hass_storage, media
+):
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    await play(hass, entry, "Alex")
+    file = (await call(hass, "backup"))["path"]
+    with pytest.raises(ServiceValidationError) as error:
+        await call(hass, "restore", file=file, mode="merge")
+    assert error.value.translation_key == "backup_merged_board"
+    assert error.value.translation_placeholders["file"] == file
+    await hass.async_block_till_done()
+    alex = entry.runtime_data.local.games.practice.profiles.players["alex"]
+    assert (alex.legs_won, alex.legs_played) == (1, 1)
+
+
+async def test_a_board_merges_another_board_once(
+    hass, aioclient_mock, hass_storage, two_boards, media
+):
+    first, second = two_boards
+    await play(hass, second, "Alex")
+    file = (await call(hass, "backup", config_entry_id=second.entry_id))["path"]
+    await call(hass, "restore", config_entry_id=first.entry_id, file=file, mode="merge")
+    await hass.async_block_till_done()
+    await play(hass, second, "Alex")
+    newer = (await call(hass, "backup", config_entry_id=second.entry_id))["path"]
+    with pytest.raises(ServiceValidationError) as error:
+        await call(
+            hass, "restore", config_entry_id=first.entry_id, file=newer, mode="merge"
+        )
+    assert error.value.translation_key == "backup_merged_board"
+    await hass.async_block_till_done()
+    alex = first.runtime_data.local.games.practice.profiles.players["alex"]
+    assert alex.legs_won == 1
+    assert await hass.config_entries.async_unload(first.entry_id)
+    training = stored(hass_storage, first.entry_id)["training"]["data"]
+    assert training[MERGED_BOARDS] == ["board-2"]
+
+
+def a_board(board_id: str | None, backup_id: str, **training) -> dict:
+    return {
+        **a_backup(training={"version": 1, "minor_version": 1, "data": training}),
+        "board_id": board_id,
+        "id": backup_id,
+    }
+
+
+@pytest.mark.parametrize(
+    ("ours", "theirs"),
+    [
+        # A backup of a board that has this board merged in.
+        ({}, a_board("c", "y", **{MERGED_BOARDS: ["a"]})),
+        # Both boards have the same third board merged in.
+        ({MERGED_BOARDS: ["c"]}, a_board("b", "y", **{MERGED_BOARDS: ["c"]})),
+        # Both boards have the same backup merged in, from a board without ID.
+        ({MERGED: ["x"]}, a_board(None, "y", **{MERGED: ["x"]})),
+    ],
+)
+def test_a_backup_that_brings_along_what_the_board_holds_is_refused(ours, theirs):
+    current = dict.fromkeys(STORES) | {"training": ours}
+    with pytest.raises(BackupFileError) as error:
+        merge_stores(current, theirs, NOW, "a")
+    assert error.value.key == "backup_merged_board"
+
+
+def test_merged_boards_and_backups_come_along():
+    current = dict.fromkeys(STORES) | {
+        "training": {MERGED: ["x"], MERGED_BOARDS: ["c"]}
+    }
+    theirs = a_board("b", "y", **{MERGED: ["z"], MERGED_BOARDS: ["d", "d"]})
+    merged = merge_stores(current, theirs, NOW, None)
+    assert merged is not None
+    assert merged["training"][MERGED] == ["x", "z", "y"]
+    assert merged["training"][MERGED_BOARDS] == ["c", "d", "b"]
+
+
+async def test_an_empty_board_deleted_again_keeps_the_backup_with_data(
+    hass, aioclient_mock, hass_storage, hass_client, media
+):
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    await play(hass, entry, "Alex", "Sam")
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    (first,) = backups(media)
+    for _ in range(KEPT_BACKUPS + 1):
+        again = await add_board(hass, aioclient_mock)
+        # The empty board saves its stores, and is deleted again.
+        assert await hass.config_entries.async_unload(again.entry_id)
+        assert stored(hass_storage, again.entry_id)["training"] is not None
+        await hass.config_entries.async_remove(again.entry_id)
+        await hass.async_block_till_done()
+    assert backups(media) == [first]
+    # A newer backup without player data, and a damaged one, are not offered.
+    empty = await add_board(hass, aioclient_mock)
+    file = Path((await call(hass, "backup"))["path"])
+    broken = write(file.parent, "{", "broken.json")
+    huge = write(file.parent, a_board("board-1", "huge", history=[{}]), "huge.json")
+    listed = write(file.parent, [], "listed.json")
+    for later, path in enumerate((file, Path(broken), Path(huge), Path(listed))):
+        os.utime(path, (2e9 + later, 2e9 + later))
+    with patch.object(backup, "MAX_BACKUP_BYTES", 100):
+        await backup.async_offer_backup(hass, empty)
+    issue = offer(hass, empty)
+    assert issue is not None and issue.data["file"] == str(first)
+    result = await fix(hass, hass_client, issue.issue_id)
+    assert result["type"] == "create_entry"
+    await hass.async_block_till_done()
+    profiles = empty.runtime_data.local.games.practice.profiles
+    assert set(profiles.players) == {"alex", "sam"}
+
+
+async def test_a_board_with_only_unreadable_backups_offers_none(
+    hass, aioclient_mock, media
+):
+    folder = media / "homedarts" / "backups" / "board-1"
+    write(folder, "{", "broken.json")
+    entry = await add_board(hass, aioclient_mock)
+    assert offer(hass, entry) is None
+
+
+async def test_a_restore_backs_up_what_the_board_held(
+    hass, aioclient_mock, hass_storage, media
+):
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    file = write(media, a_backup())
+    # A board without player data writes no backup first.
+    response = await call(hass, "restore", file=file)
+    assert response["previous"] is None
+    assert not backups(media)
+    await hass.async_block_till_done()
+    await play(hass, entry, "Alex")
+    response = await call(hass, "restore", file=file)
+    previous = Path(response["previous"])
+    assert previous.parent == media / "homedarts" / "backups" / "board-1"
+    saved = json.loads(previous.read_text(encoding="utf-8"))
+    names = saved["stores"]["training"]["data"]["practice"]["profiles"]["players"]
+    assert [player["name"] for player in names] == ["Alex"]
+    # The restore is undone with that backup.
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.local.games.practice.profiles.players
+    await call(hass, "restore", file=str(previous))
+    await hass.async_block_till_done()
+    assert entry.runtime_data.local.games.practice.profiles.players["alex"].legs_won
+
+
+@pytest.mark.parametrize(
+    "stores",
+    [
+        "broken",
+        {"training": "broken", "journal": {"data": "broken"}},
+        {"training": {"data": {"practice": {"profiles": {"players": []}}}}},
+    ],
+)
+def test_a_backup_without_player_data(stores):
+    assert not backup.has_data({"stores": stores})
+
+
+@pytest.mark.parametrize(
+    "stores",
+    [
+        {"training": {"data": {"progress": {"players": [{}]}}}},
+        {"training": {"data": {"records": {"bests": {"doubles": {}}}}}},
+        {"journal": {"data": {"sessions": [{}]}}},
+        {"journal": {"data": {"matches": [{}]}}},
+    ],
+)
+def test_a_backup_with_player_data(stores):
+    assert backup.has_data({"stores": stores})
+
+
+async def test_a_restore_whose_backup_fails_leaves_the_board_as_it_was(
+    hass, aioclient_mock, hass_storage, media
+):
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    await play(hass, entry, "Alex")
+    file = write(media, a_backup())
+    with (
+        patch.object(backup, "_write", side_effect=OSError("disk full")),
+        pytest.raises(HomeAssistantError) as error,
+    ):
+        await call(hass, "restore", file=file)
+    assert error.value.translation_key == "restore_failed"
+    await hass.async_block_till_done()
+    alex = entry.runtime_data.local.games.practice.profiles.players["alex"]
+    assert alex.legs_won == 1

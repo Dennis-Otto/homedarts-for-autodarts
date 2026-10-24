@@ -1000,6 +1000,9 @@
     "backup_newer": {
       "message": "The backup {file} comes from a newer version of the integration. Install that version or a later one to restore it."
     },
+    "backup_merged_board": {
+      "message": "The backup {file} holds darts this board has already: it is a backup of this board, a second backup of a board merged into it before, or one that brings along a board or a backup merged into it. Merging it would count them twice. Merge each other board once, or restore with replace."
+    },
     "restore_failed": {
       "message": "The backup could not be restored: {error}"
     },
@@ -1245,7 +1248,7 @@
         "step": {
           "confirm": {
             "title": "Restore the backup",
-            "description": "{board} was added with nothing stored yet, and there is a backup of a board with the same board ID from {date}, such as the one written when the board was deleted.\n\nRestore it? The board reloads with the training, the games, the player profiles with their progress and badges, the personal bests and the calendar of the backup; what it stored since it was added is replaced. To start anew, ignore this notice."
+            "description": "{board} was added with nothing stored yet, and there is a backup of a board with the same board ID from {date}, such as the one written when the board was deleted.\n\nRestore it? The board reloads with the training, the games, the player profiles with their progress and badges, the personal bests and the calendar of the backup; what it stored since it was added is replaced. If it stored player data since, that is backed up first. To start anew, ignore this notice."
           }
         },
         "abort": {
@@ -1425,7 +1428,7 @@
         },
         "mode": {
           "name": "Mode",
-          "description": "Replace: the board stores what the backup holds, and what it stored before is gone. Merge: the profiles, progress, badges and matches of the players of a backup of another board, the sessions and matches of its calendar and its better personal bests are added to this board; a backup merged once changes nothing the second time."
+          "description": "Replace: the board stores what the backup holds, and what it stored before is gone. Merge: the profiles, progress, badges and matches of the players of a backup of another board, the sessions and matches of its calendar and its better personal bests are added to this board; a backup merged once changes nothing the second time. The players of a board merge once per source board: a backup of this board, or a second backup of a board merged before, is refused. Before either, what the board holds is backed up, so a restore can be undone."
         }
       }
     },

@@ -15,10 +15,14 @@ upper and lower case being the same player: their numbers, matches, weekly
 sums, badges and the sessions and matches of the calendar, with the personal
 bests that beat those of this board. What belongs to this board alone stays,
 such as the game in progress and its settings, and a backup merged once is not
-merged again. A backup of a newer version than this release knows is refused.
+merged again. The players of a board merge once per source board: a backup of
+this board, a second backup of a board merged before, and a backup that holds
+what this board holds already are refused, because their darts would count
+twice. A backup of a newer version than this release knows is refused. Before
+a restore writes, what the board holds is backed up, so a restore can be undone.
 
 A board added again, with nothing stored yet and the board ID of a backup,
-offers the newest backup with a repair.
+offers the newest backup that holds player data with a repair.
 """
 
 from __future__ import annotations
@@ -34,7 +38,11 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.core_config import Config
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import (
+    HomeAssistantError,
+    ServiceValidationError,
+    UnsupportedStorageVersionError,
+)
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -65,6 +73,8 @@ RESTORE_MODES: Final = ("replace", "merge")
 STORES: Final = ("training", *REPORT_STORES)
 # In the training store: the backups merged into the board.
 MERGED: Final = "merged_backups"
+# In the training store: the board IDs of the boards merged into the board.
+MERGED_BOARDS: Final = "merged_boards"
 ISSUE: Final = "backup_available"
 
 
@@ -125,6 +135,28 @@ async def async_collect(
     }
 
 
+def has_data(backup: dict[str, Any]) -> bool:
+    """Whether a backup holds player data: profiles, progress, finished
+    sessions, personal bests, or sessions and matches of the calendar."""
+    stores = _part(backup, "stores")
+
+    def data(name: str) -> dict[str, Any]:
+        store = stores.get(name)
+        return _part(store, "data") if isinstance(store, dict) else {}
+
+    training, journal = data("training"), data("journal")
+    return any(
+        (
+            _list(_part(_part(training, "practice"), "profiles"), "players"),
+            _list(_part(training, "progress"), "players"),
+            _list(training, "history"),
+            _part(_part(training, "records"), "bests"),
+            _list(journal, "sessions"),
+            _list(journal, "matches"),
+        )
+    )
+
+
 def _write(folder: Path, name: str, backup: dict[str, Any]) -> Path:
     """Write the backup and remove the oldest beyond the newest five of the
     board; runs in the executor."""
@@ -150,13 +182,13 @@ async def async_backup(
 ) -> dict[str, Any] | None:
     """Write a backup of the board and describe it for the service response.
 
-    For a board being deleted, nothing is written while it has nothing stored.
+    For a board being deleted or restored into, nothing is written while it
+    holds no player data, so that an empty board added again and deleted again
+    neither becomes the newest backup nor pushes an older one out.
     """
     try:
         backup = await async_collect(hass, entry)
-        if removed and all(
-            store["data"] is None for store in backup["stores"].values()
-        ):
+        if removed and not has_data(backup):
             return None
         now = dt_util.now()
         name = f"{slugify(_board_name(entry), separator='-')}-{now:%Y%m%d-%H%M%S}"
@@ -297,24 +329,46 @@ def _merge_training(
     }
 
 
+def _boards(data: dict[str, Any]) -> list[str]:
+    """The board IDs of the boards merged into a board."""
+    return [item for item in _list(data, MERGED_BOARDS) if isinstance(item, str)]
+
+
 def merge_stores(
-    current: dict[str, Any], backup: dict[str, Any], now: datetime
+    current: dict[str, Any],
+    backup: dict[str, Any],
+    now: datetime,
+    board_id: str | None = None,
 ) -> dict[str, Any] | None:
     """The stores of the board with the backup merged in; None when the board
-    has it merged already."""
+    has it merged already.
+
+    A backup whose darts the board holds already, in part, is refused with
+    BackupFileError: one of this board, of a board merged before, or one that
+    brings along a board or a backup merged into this board.
+    """
     ours = current["training"] or {}
     merged = _ids(ours)
     if backup["id"] in merged:
         return None
     source = {name: store["data"] for name, store in backup["stores"].items()}
     theirs = source["training"] or {}
+    source_board = backup.get("board_id")
+    ours_boards = _boards(ours)
+    theirs_boards = [
+        *_boards(theirs),
+        *([source_board] if isinstance(source_board, str) else []),
+    ]
+    if (
+        (board_id is not None and board_id in theirs_boards)
+        or set(theirs_boards) & set(ours_boards)
+        or set(_ids(theirs)) & set(merged)
+    ):
+        raise BackupFileError("backup_merged_board")
     training = _merge_training(ours, theirs, now)
     # A backup of a board that has others merged in brings them along.
-    training[MERGED] = [
-        *merged,
-        *(item for item in _ids(theirs) if item not in merged),
-        backup["id"],
-    ]
+    training[MERGED] = [*merged, *_ids(theirs), backup["id"]]
+    training[MERGED_BOARDS] = [*ours_boards, *dict.fromkeys(theirs_boards)]
     journal, their_journal = TrainingJournal(), TrainingJournal()
     journal.restore(current["journal"])
     their_journal.restore(source["journal"])
@@ -333,10 +387,11 @@ def merge_stores(
 
 
 async def _async_write_stores(
-    hass: HomeAssistant, entry: ConfigEntry, backup: dict[str, Any], mode: str
-) -> bool:
-    """Write the stores of the backup, or merge it in; False when it was merged
-    before, which changes nothing."""
+    hass: HomeAssistant, entry: AutodartsConfigEntry, backup: dict[str, Any], mode: str
+) -> tuple[bool, dict[str, Any] | None]:
+    """Write the stores of the backup, or merge it in, after a backup of what
+    the board holds: whether that changed the board, False for a backup merged
+    before, and the backup written first, if any."""
     stores = _stores(hass, entry)
     written = backup["stores"]
     if mode == "merge":
@@ -344,9 +399,11 @@ async def _async_write_stores(
             name: await store.async_load()
             for name, store in zip(STORES, stores, strict=True)
         }
-        merged = merge_stores(current, backup, dt_util.now())
+        merged = merge_stores(
+            current, backup, dt_util.now(), entry.data.get(CONF_BOARD_ID)
+        )
         if merged is None:
-            return False
+            return False, None
         written = {
             name: {
                 "version": store.version,
@@ -355,6 +412,21 @@ async def _async_write_stores(
             }
             for name, store in zip(STORES, stores, strict=True)
         }
+    # What the board holds now, so that the restore can be undone.
+    try:
+        previous = await async_backup(hass, entry, removed=True)
+    except HomeAssistantError as err:
+        # A store of a newer version, which this release cannot read: the
+        # restore is what brings such a board back.
+        if not isinstance(err.__cause__, UnsupportedStorageVersionError):
+            raise
+        _LOGGER.warning(
+            "The stores of %s come from a newer version and are replaced "
+            "without a backup: %s",
+            entry.title,
+            err.__cause__,
+        )
+        previous = None
     for name, store in zip(STORES, stores, strict=True):
         saved = written[name]
         # Saved with the version it has, so that the board migrates it.
@@ -369,7 +441,7 @@ async def _async_write_stores(
             await target.async_remove()
         else:
             await target.async_save(saved["data"])
-    return True
+    return True, previous
 
 
 def _shown(file: str) -> str:
@@ -378,9 +450,13 @@ def _shown(file: str) -> str:
 
 
 async def async_restore(
-    hass: HomeAssistant, entry: ConfigEntry, file: str, mode: str
+    hass: HomeAssistant, entry: AutodartsConfigEntry, file: str, mode: str
 ) -> dict[str, Any]:
-    """Restore a backup into the board, which unloads for it and loads again."""
+    """Restore a backup into the board, which unloads for it and loads again.
+
+    What the board held before is backed up first; the response names that
+    backup as previous, or None when the board held no player data.
+    """
     versions = {
         name: store.version
         for name, store in zip(STORES, _stores(hass, entry), strict=True)
@@ -409,7 +485,13 @@ async def async_restore(
             translation_placeholders={"error": "the board does not unload"},
         )
     try:
-        changed = await _async_write_stores(hass, entry, backup, mode)
+        changed, previous = await _async_write_stores(hass, entry, backup, mode)
+    except BackupFileError as err:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key=err.key,
+            translation_placeholders={"file": _shown(file)},
+        ) from err
     except (HomeAssistantError, OSError) as err:
         raise HomeAssistantError(
             translation_domain=DOMAIN,
@@ -423,6 +505,7 @@ async def async_restore(
     return {
         "mode": mode,
         "changed": changed,
+        "previous": previous["path"] if previous else None,
         "id": backup["id"],
         "created": backup.get("created"),
         "board": backup.get("board"),
@@ -432,14 +515,25 @@ async def async_restore(
 # -- the offer of a board added again ----------------------------------------------
 
 
+def _holds_data(path: Path) -> bool:
+    """Whether the file is a backup with player data; runs in the executor."""
+    try:
+        if path.stat().st_size > MAX_BACKUP_BYTES:
+            return False
+        backup = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return False
+    return isinstance(backup, dict) and has_data(backup)
+
+
 def _newest(folder: Path) -> tuple[Path, float] | None:
-    """The newest backup in the folder and when it was written; runs in the
-    executor."""
+    """The newest backup in the folder that holds player data and when it was
+    written; runs in the executor."""
     found = [(path.stat().st_mtime, path) for path in folder.glob("*.json")]
-    if not found:
-        return None
-    modified, path = max(found)
-    return path, modified
+    for modified, path in sorted(found, reverse=True):
+        if _holds_data(path):
+            return path, modified
+    return None
 
 
 async def async_offer_backup(hass: HomeAssistant, entry: ConfigEntry) -> None:

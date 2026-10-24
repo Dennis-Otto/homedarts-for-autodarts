@@ -1000,6 +1000,9 @@
     "backup_newer": {
       "message": "De back-up {file} komt van een nieuwere versie van de integratie. Installeer die versie of een latere om hem terug te zetten."
     },
+    "backup_merged_board": {
+      "message": "De back-up {file} bevat darts die dit bord al heeft: het is een back-up van dit bord, een tweede back-up van een al samengevoegd bord, of een back-up die een hier samengevoegd bord of een hier samengevoegde back-up meebrengt. Samengevoegd zouden ze dubbel tellen. Voeg elk ander bord één keer samen, of zet terug met vervangen."
+    },
     "restore_failed": {
       "message": "De back-up kon niet worden teruggezet: {error}"
     },
@@ -1245,7 +1248,7 @@
         "step": {
           "confirm": {
             "title": "De back-up terugzetten",
-            "description": "{board} is toegevoegd zonder opgeslagen gegevens, en er is een back-up van een bord met dezelfde bord-ID van {date}, zoals de back-up die werd geschreven toen het bord werd verwijderd.\n\nTerugzetten? Het bord laadt opnieuw met de training, de spellen, de spelersprofielen met hun voortgang en badges, de persoonlijke records en de kalender van de back-up; wat het sinds het toevoegen heeft opgeslagen, wordt vervangen. Om opnieuw te beginnen, negeer je deze melding."
+            "description": "{board} is toegevoegd zonder opgeslagen gegevens, en er is een back-up van een bord met dezelfde bord-ID van {date}, zoals de back-up die werd geschreven toen het bord werd verwijderd.\n\nTerugzetten? Het bord laadt opnieuw met de training, de spellen, de spelersprofielen met hun voortgang en badges, de persoonlijke records en de kalender van de back-up; wat het sinds het toevoegen heeft opgeslagen, wordt vervangen. Heeft het sindsdien spelersgegevens opgeslagen, dan wordt daar eerst een back-up van gemaakt. Om opnieuw te beginnen, negeer je deze melding."
           }
         },
         "abort": {
@@ -1425,7 +1428,7 @@
         },
         "mode": {
           "name": "Modus",
-          "description": "Vervangen: het bord slaat op wat de back-up bevat, en wat het eerder opsloeg is weg. Samenvoegen: de profielen, de voortgang, de badges en de wedstrijden van de spelers uit een back-up van een ander bord, de sessies en wedstrijden van zijn kalender en zijn betere persoonlijke records komen bij dit bord; een al samengevoegde back-up verandert de tweede keer niets."
+          "description": "Vervangen: het bord slaat op wat de back-up bevat, en wat het eerder opsloeg is weg. Samenvoegen: de profielen, de voortgang, de badges en de wedstrijden van de spelers uit een back-up van een ander bord, de sessies en wedstrijden van zijn kalender en zijn betere persoonlijke records komen bij dit bord; een al samengevoegde back-up verandert de tweede keer niets. De spelers van een bord worden één keer per bronbord samengevoegd: een back-up van dit bord, of een tweede back-up van een al samengevoegd bord, wordt geweigerd. Vóór beide wordt een back-up gemaakt van wat het bord bevat, zodat een terugzetting ongedaan kan worden gemaakt."
         }
       }
     },
