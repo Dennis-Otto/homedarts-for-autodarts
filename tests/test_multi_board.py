@@ -92,6 +92,20 @@ async def test_actions_need_the_board_and_act_on_it_only(hass, two_boards):
     coordinator.async_receive("state", board())
     await hass.async_block_till_done()
     assert "alex" in coordinator.games.practice.profiles.players
+    for player, new_name in (("Alex", "Al"), ("Al", "Alex")):
+        await hass.services.async_call(
+            DOMAIN,
+            "rename_player",
+            {
+                "player": player,
+                "new_name": new_name,
+                "config_entry_id": second.entry_id,
+            },
+            blocking=True,
+        )
+        assert list(coordinator.games.practice.profiles.players) == [
+            new_name.casefold()
+        ]
     with pytest.raises(ServiceValidationError) as error:
         await hass.services.async_call(
             DOMAIN,

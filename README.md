@@ -105,7 +105,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 - 3-dart average, first 9 average, checkout and doubles rate
 - A heatmap of every bed or of the real dart positions, with the grouping in millimeters
 - An aim map: where each player scores the most points per dart with their own spread, the treble 20, the treble 19 or a spot near the bull
-- Player profiles with badges in bronze, silver, gold and platinum, and a leaderboard
+- Player profiles with badges in bronze, silver, gold and platinum, and a leaderboard; a profile is renamed with all its numbers, and two names of one player merge into one
 
 <details>
 <summary>Trends, reports, the calendar and exports</summary>

@@ -54,6 +54,11 @@ def _value(value: object) -> float | int | None:
     return value if math.isfinite(value) and value >= 0 else None
 
 
+def _key(name: str) -> str:
+    """A name as the same player in any upper and lower case."""
+    return name.strip().casefold()
+
+
 def _name(value: object) -> str | None:
     return value if isinstance(value, str) and value else None
 
@@ -258,10 +263,16 @@ class PersonalRecords:
 
     def forget(self, name: str) -> None:
         """Remove a player's name from the records; the values stay."""
-        key = name.strip().casefold()
+        self.rename(name, None)
+
+    def rename(self, name: str, new_name: str | None) -> None:
+        """The records of a player under a new name, or under none. A player
+        renamed into another one holds the other one's records too, so they
+        take the new spelling as well."""
+        keys = {_key(name), _key(new_name or name)}
         for best in [*self.bests.values(), *([self.latest] if self.latest else [])]:
-            if (best.get("name") or "").strip().casefold() == key:
-                best["name"] = None
+            if _key(best.get("name") or "") in keys:
+                best["name"] = new_name
 
     # -- state -----------------------------------------------------------------
 

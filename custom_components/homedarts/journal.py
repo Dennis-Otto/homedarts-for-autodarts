@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 from .cricket import CRICKET_GAMES
 from .party import PARTY_GAMES
 from .practice import PARTY_PLAYERS
+from .profiles import renamed_seats
 
 JOURNAL_DAYS = 365
 # At most this many sessions and as many matches, the newest.
@@ -384,6 +385,18 @@ class TrainingJournal:
         ):
             self.matches.pop()
         return len(self.matches) != before
+
+    def rename(self, name: str, new_name: str) -> bool:
+        """A renamed player's new name in the matches, also where a player
+        renamed into another one played under the other name; whether any
+        match changed."""
+        changed = False
+        for entry in self.matches:
+            players = renamed_seats(entry["players"], (name, new_name), new_name)
+            if players != entry["players"]:
+                entry["players"] = players
+                changed = True
+        return changed
 
     @staticmethod
     def _fresh(

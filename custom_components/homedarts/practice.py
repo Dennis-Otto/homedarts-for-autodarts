@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import copy
 import random
+from collections.abc import Collection
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
@@ -148,6 +149,28 @@ def valid_delay(value: object) -> bool:
     if isinstance(value, bool) or not isinstance(value, int | float):
         return False
     return 0 <= value <= MAX_DELAY
+
+
+def renamed_slots(
+    slots: list[str],
+    names: tuple[str, str],
+    new_name: str,
+    playing: Collection[int] = (),
+) -> list[str] | None:
+    """Player slots with a player's new name, for slots with either name in
+    any upper and lower case. A name is one player: the first of those slots
+    that plays keeps the new name, or the first of them, and the others give
+    it up. None when two of those slots play."""
+    keys = {name.strip().casefold() for name in names}
+    seats = [seat for seat, slot in enumerate(slots) if slot.casefold() in keys]
+    kept = [seat for seat in seats if seat in playing]
+    if len(kept) > 1:
+        return None
+    keep = [*kept, *seats][:1]
+    return [
+        new_name if seat in keep else "" if seat in seats else slot
+        for seat, slot in enumerate(slots)
+    ]
 
 
 def valid_settings(saved: object) -> dict[str, Any] | None:
@@ -828,6 +851,23 @@ class PracticeGame:
         self.names = cleared(self.names)
         if self.resume:
             self.resume["names"] = cleared(self.resume["names"])
+
+    def rename_player(self, name: str, new_name: str) -> bool:
+        """A player's new name in the player slots, also in the settings a
+        tournament left to come back to. A name is one player, as with
+        *Practice player N*: where the new name has a slot already, a seat in
+        play keeps the name and the other slot gives it up. False, and nothing
+        changes, when both names play the match."""
+        playing = {seat for seat in range(len(self.players)) if seat != self.bot_seat}
+        names = renamed_slots(self.names, (name, new_name), new_name, playing)
+        if names is None:
+            return False
+        self.names = names
+        if self.resume:
+            self.resume["names"] = renamed_slots(
+                self.resume["names"], (name, new_name), new_name
+            )
+        return True
 
     def settings(self) -> dict[str, Any]:
         """What players set up for a match, for a tournament to come back to:

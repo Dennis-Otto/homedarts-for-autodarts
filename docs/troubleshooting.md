@@ -74,7 +74,7 @@ Home Assistant shows these notices under **Settings → Repairs**:
 | *This board does not support the action* | The Board Manager has no such command, for example the camera streams on Board Manager 1. |
 | *Board Manager refused access* | See **Autodarts board refuses access** under [repairs](#repairs). |
 | *No Autodarts board with a local connection is loaded* | Every `homedarts` action needs a board that is connected locally and loaded. Check the entry under **Settings → Devices & services**. |
-| *Unauthorized* | `homedarts.delete_player`, `homedarts.export`, `homedarts.link_player` and `homedarts.unlink_player` delete or write out the players' data, so only administrators may run them, for example not the user of the screen at the board. Automations run them, too. |
+| *Unauthorized* | `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.export`, `homedarts.link_player` and `homedarts.unlink_player` delete or write out the players' data, so only administrators may run them, for example not the user of the screen at the board. Automations run them, too. |
 | *Several Autodarts boards are set up. Choose the board.* | With more than one board, choose the board in the action, the `config_entry_id` field in YAML. |
 | *Config entry … was not found*, *… does not belong to integration homedarts* or *… is not loaded* | The board chosen in the action was deleted, is another integration's entry or is not loaded. Choose the board again; a board that does not load shows why on its entry. |
 | *… is on the list of players more than once* | Every player needs a name of their own. Players without a name may appear more than once. |

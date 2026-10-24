@@ -44,6 +44,7 @@ Die Entität **Ereignisse** (etwa `event.autodarts_board_ereignisse` in einem de
 | `visit_thrown` | Der dritte Dart einer Aufnahme landet, solange die Darts noch im Board stecken; einmal pro Aufnahme | `score`, `darts` (3), `segments` (etwa `["T20", "T20", "S20"]`), `game`, `name`; `manual`, wenn ein Dart der Aufnahme von Hand eingegeben oder korrigiert wurde, `bot` bei einer Aufnahme des Bots; `call` |
 | `visit_completed` | Eine Aufnahme endet: bei der Entnahme, wenn nach einer verpassten Entnahme neue Darts folgen, wenn die Erkennung stoppt oder mit [`homedarts.next_player`](#weitergeben-homedartsnext_player) | `score`, `darts`, `segments`, `game`, `name`, `thrown` (`true`, wenn `visit_thrown` die Aufnahme schon gemeldet hat); `manual` und `bot` wie bei `visit_thrown`; `call` |
 | `visit_undone` | [`homedarts.undo_visit`](#aufnahme-zurücknehmen-homedartsundo_visit) nimmt die letzte Aufnahme zurück | `score`, `darts`, `segments` (die Darts, die wieder die aktuelle Aufnahme sind), `game`, `name` |
+| `player_renamed` | [`homedarts.rename_player`](#spieler-umbenennen-oder-zusammenführen-homedartsrename_player) benennt ein Spielerprofil um oder führt es mit einem anderen zusammen | `old` und `new`, die Namen davor und danach, und `merged`: `true`, wenn das Profil von `new` das von `old` übernommen hat |
 | `status_changed` | Der Erkennungsstatus ändert sich | `status` |
 | `session_started` | Eine Trainingssession beginnt: mit dem Schalter *Trainingssession*, der Taste *Neue Trainingssession* oder mit dem ersten Dart, wenn *Sessions automatisch starten* an ist | `started` und `reason` (`manual`, `new_session` oder `first_dart`) |
 | `session_ended` | Eine Trainingssession endet: mit dem Schalter, der Taste oder nach der Pause aus *Session-Timeout* | `reason` (`manual`, `new_session` oder `idle`), `started`, `ended`, `duration_minutes`, `darts`, `points`, `average`, `visits`, `highest_visit` und die übrigen Trainingssummen |
@@ -308,7 +309,7 @@ Jeder Spieler eines Übungsspiels mit Namen bekommt ein Profil mit Gesamtwerten.
 | Spielerprofile | Sensor, Spieler | Die Zahl der Profile. Attribut `players` mit, für jeden Spieler: `name`, `legs_played`, `legs_won`, `matches_played`, `matches_won`, `average`, `first_9_average`, `checkout_rate`, `mpr`, `highest_visit`, `highest_checkout`, `best_mpr`, `fewest_darts` (Startwert → wenigste Darts für ein gewonnenes Leg), `last_played` und `person` (die [verknüpfte Person](#spieler-mit-einer-person-verknüpfen-homedartslink_player) oder keine), dazu der [Fortschritt](#fortschritt-der-spieler) des Spielers: `darts_thrown`, `maximums`, `streak`, `best_streak`, `hits`, `spread`, `best_aim`, `expected_ppd` und `trend`. `highest_visit` ist die höchste X01-Aufnahme des Spielers; `highest_checkout` und `fewest_darts` kommen nur aus Legs mit Double-Out. Der Recorder speichert die Liste nicht. |
 | Letztes Match | Sensor, Zeitstempel | Wann das letzte Match mehrerer Spieler endete. Attribute: `game` und `winner` dieses Matches, `matches` mit den letzten 20 Matches (`ended`, `game`, `legs_to_win`, `sets_to_win`, `winner`, im Team-Match `winners` mit beiden Gewinnern, und `name`, `legs` und `sets` am Ende, `match_legs` sowie `average`, `mpr` oder `points` und im Team-Match `team` jedes Spielers) und `head_to_head` mit den Siegen jedes Paars benannter Gegner. Der Recorder speichert keine der Listen. |
 
-Die [Spielerkarte](cards.de.md#spielerkarte) zeigt alles davon. Um ein Profil zu entfernen, etwa nach einem Tippfehler im Namen, nutze [`homedarts.delete_player`](#spielerprofil-löschen-homedartsdelete_player).
+Die [Spielerkarte](cards.de.md#spielerkarte) zeigt alles davon, und ihr Menü benennt Profile für Administratoren um, führt sie zusammen und löscht sie. Einen Tippfehler im Namen oder einen Spieler unter zwei Namen behebst du mit [`homedarts.rename_player`](#spieler-umbenennen-oder-zusammenführen-homedartsrename_player), das alles behält; [`homedarts.delete_player`](#spielerprofil-löschen-homedartsdelete_player) entfernt ein Profil.
 
 **Spieler und Personen:** Verknüpfe einen Spieler mit [`homedarts.link_player`](#spieler-mit-einer-person-verknüpfen-homedartslink_player) mit einer Person von Home Assistant. Anzeigetafel, Spielerkarte und [Spielauswahl](cards.de.md#spielauswahl) zeigen dann das Bild der Person, und die Spielauswahl nennt die Spieler, die zu Hause sind, zuerst. Die Verknüpfung wird mit dem Profil gespeichert und übersteht Neustarts.
 
@@ -554,7 +555,7 @@ Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese
 
 ## Aktionen
 
-Mit den Aktionen kann jeder angemeldete Benutzer spielen. `homedarts.delete_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.save_highlight` und `homedarts.generate_voice_pack` ändern die Daten der Spieler, geben sie heraus oder schreiben Dateien und sind Administratoren vorbehalten: Ein Benutzer ohne Administratorrechte, etwa der eines Wandtablets, bekommt eine Fehlermeldung. Automationen führen sie aus, ebenso Skripte, die ein Administrator oder eine Automation startet.
+Mit den Aktionen kann jeder angemeldete Benutzer spielen. `homedarts.delete_player`, `homedarts.rename_player`, `homedarts.link_player`, `homedarts.unlink_player`, `homedarts.export`, `homedarts.save_highlight` und `homedarts.generate_voice_pack` ändern die Daten der Spieler, geben sie heraus oder schreiben Dateien und sind Administratoren vorbehalten: Ein Benutzer ohne Administratorrechte, etwa der eines Wandtablets, bekommt eine Fehlermeldung. Automationen führen sie aus, ebenso Skripte, die ein Administrator oder eine Automation startet.
 
 ### Übungsspiel starten: `homedarts.start_game`
 
@@ -888,6 +889,38 @@ Vergisst, welche Person ein Spieler ist. Die Statistik des Spielers bleibt. Nur 
 | `config_entry_id` | HomeDarts-Eintrag | Nur bei mehreren Boards nötig |
 
 Die Aktion bricht mit einer klaren Meldung ab, wenn es kein Profil mit diesem Namen gibt.
+
+### Spieler umbenennen oder zusammenführen: `homedarts.rename_player`
+
+Gibt einem Spielerprofil einen neuen Namen und behält alles, was dazugehört: Statistik und Bestleistungen, Fortschritt und Abzeichen, den Match-Verlauf und die direkten Vergleiche, die Matches des [Trainingskalenders](#trainingskalender), die [Bestleistungen](#bestleistungen-serie-und-tagesziel) des Boards und den [Wochenbericht](#wochenbericht), die Verknüpfung mit einer Person, die Spielernamen des Übungsspiels und die Spieler des nächsten und eines beendeten Turniers. Auch eine neue Schreibweise desselben Namens, etwa `Sam` für `sam`, benennt um. Nur für Administratoren; die [Spielerkarte](cards.de.md#spielerkarte) bietet es im Menü eines Profils an.
+
+Ein Name, den schon ein anderes Profil hat, **führt** die beiden Profile zu diesem einen **zusammen**, unter dem neuen Namen, als hätte ein Spieler alle Darts geworfen:
+
+- **Zahlen addieren sich,** etwa Legs, Matches, Darts, Punkte, 180er und die Versuche und Treffer auf jedes Doppel, ebenso die Summen jeder Woche der Trends.
+- **Die besseren Bestleistungen bleiben,** etwa die höchste Aufnahme und das höchste Checkout, die beste MPR und die wenigsten Darts pro Startwert.
+- **Abzeichen** behalten jede Stufe mit dem Datum, an dem sie zuerst erreicht wurde, und die Stufen, die beide Namen zusammen erreichen, werden still freigeschaltet, ohne Ansage. Die Trainingstage beider Namen ergeben eine Serie, wo sie aneinanderstoßen.
+- **Die Person** ist die des Profils, das seinen Namen behält, oder die des anderen, wenn es keine hat.
+- **Direkte Vergleiche** der beiden gegen denselben Spieler addieren sich; die der beiden gegeneinander verschwinden, denn niemand spielt gegen sich selbst. Ein Match der beiden gegeneinander zählt für das zusammengeführte Profil doppelt, einmal für jeden Namen.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/de/rename-player-dark.png">
+  <img src="images/de/rename-player-light.png" alt="Was das Umbenennen eines Spielers tut: homedarts.rename_player, oder Umbenennen und Zusammenführen mit im Menü eines Profils auf der Spielerkarte, prüft zuerst den Spieler. Ohne Profil des Spielers, solange der Spieler im laufenden Turnier mitspielt, oder wenn beide Namen im laufenden Match spielen, sagt eine Meldung warum, und nichts ändert sich. Ein neuer Name, den kein anderes Profil hat, benennt das Profil überall um, auch eine neue Schreibweise desselben Namens. Der Name eines anderen Profils führt die beiden zu einem Profil zusammen, als hätte ein Spieler alle Darts geworfen. Beides endet mit dem Ereignis player_renamed." width="480">
+</picture>
+
+| Feld | Werte | Beschreibung |
+| --- | --- | --- |
+| `player` | Text | Der Spielername, in beliebiger Groß- und Kleinschreibung; Pflichtfeld |
+| `new_name` | Text | Der neue Name, höchstens 20 Zeichen; der Name eines anderen Profils führt die beiden zusammen; Pflichtfeld |
+| `config_entry_id` | HomeDarts-Eintrag | Nur bei mehreren Boards nötig |
+
+```yaml
+action: homedarts.rename_player
+data:
+  player: Sammy
+  new_name: Sam
+```
+
+Jedes Umbenennen löst [`player_renamed`](#board-ereignisse) mit den Namen davor und danach aus, damit Automationen folgen können. Die Aktion bricht mit einer klaren Meldung ab, wenn es kein Profil mit diesem Namen gibt, wenn der neue Name geschweifte Klammern, ein Prozentzeichen, ein Rautezeichen oder Steuerzeichen enthält oder zu lang ist, solange der Spieler im laufenden Turnier mitspielt, und wenn beide Namen im laufenden Match spielen: Ein Spieler kann nicht zwei Plätze belegen, führe sie also nach dem Match zusammen.
 
 ### Turnier starten: `homedarts.start_tournament`
 

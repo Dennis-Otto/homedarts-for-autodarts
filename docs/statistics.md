@@ -164,7 +164,7 @@ Every named player of a practice game gets a profile with lifetime numbers: legs
 - **What counts:** every leg of X01, the Cricket games and the party games. X01 legs add the averages and the checkout rate, Cricket legs the marks per round. In a [team match](games.md#teams), both partners win the leg and the match; the checkout counts for the partner who threw it, and a team leg sets no fewest darts and no best marks per round.
 - **Match history:** the last 20 matches of several players, with every player's legs, sets and average.
 - **Tournaments** count like every match: their legs, matches and head-to-head records go into the profiles. [Tournaments](games.md#tournaments).
-- **A typo in a name?** Remove the profile with [`homedarts.delete_player`](entities.md#delete-a-player-profile-homedartsdelete_player), which also forgets the player's progress and badges and takes the name out of the personal bests and the weekly report. The match history keeps the name.
+- **A typo in a name?** Rename the profile in its menu on the [players card](cards.md#players-card), or with [`homedarts.rename_player`](entities.md#rename-or-merge-players-homedartsrename_player): the statistics, badges, records, the match history and the link to a person keep the new name. **One player under two names,** such as *Sam* and *Sammy*? Rename one to the other, or choose *Merge into …*, and the two become one profile, as if one name had thrown every dart. [`homedarts.delete_player`](entities.md#delete-a-player-profile-homedartsdelete_player) removes a profile with its progress and badges; the match history keeps the name.
 
 ## Achievements
 

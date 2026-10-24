@@ -1016,6 +1016,23 @@ def test_stopping_brings_the_settings_back_after_the_match_being_played():
     assert practice.settings() == {**before, "legs_to_win": 5}
 
 
+def test_a_renamed_player_keeps_the_seats_of_the_practice_game():
+    practice = casual_practice()
+    practice.resume = practice.settings()
+    # The bot plays the fourth seat, which keeps the name of who sat there.
+    assert practice.rename_player("eva", "Zoe") is True
+    assert practice.names[:4] == ["Zoe", "Mia", "Leo", ""]
+    assert practice.resume["names"][:4] == ["Zoe", "Mia", "Leo", ""]
+    # Two players of the match being played cannot become one.
+    assert practice.rename_player("Mia", "zoe") is False
+    assert practice.names[:3] == ["Zoe", "Mia", "Leo"]
+    assert practice.rename_player("LEO", "Leon") is True
+    assert practice.names[:3] == ["Zoe", "Mia", "Leon"]
+    practice.resume = None
+    assert practice.rename_player("Nobody", "Somebody") is True
+    assert practice.names[:3] == ["Zoe", "Mia", "Leon"]
+
+
 def test_stored_settings_to_come_back_to_are_checked():
     good = PracticeGame().settings()
     assert valid_settings(good) == good
@@ -1096,6 +1113,29 @@ def test_a_deleted_player_leaves_the_next_tournament_but_not_one_being_played():
     assert tournament.setup.players == ["Alex", "Kim"]
     tournament.forget("nobody")
     assert tournament.setup.players == ["Alex", "Kim"]
+
+
+def test_a_renamed_player_keeps_the_name_of_a_tournament_being_played():
+    practice = PracticeGame()
+    for index, name in enumerate(["Zoe", "Mia", "Leo", "Eva"]):
+        practice.set_name(index, name)
+    tournament = TournamentDirector()
+    tournament.start(practice, NOW, players=NAMES[:3], game="101")
+    with pytest.raises(ActionRefused) as error:
+        tournament.rename(" sam ", "Samuel")
+    assert error.value.key == "player_in_tournament"
+    # The players of the settings from before come back with their new names.
+    tournament.rename("ZOE", "Zoey")
+    tournament.rename("Mia", "zoey")
+    assert tournament.saved["names"] == ["zoey", "", "Leo", "Eva"] + [""] * 4
+    assert tournament.tournament.players == NAMES[:3]
+    play_out(tournament, practice)
+    # A finished tournament and the setup of the next one take the new name.
+    tournament.setup.players = ["Alex", "Sam", "Kim", "SAMMY"]
+    tournament.rename("Sam", "Samuel")
+    assert tournament.tournament.players == ["Alex", "Samuel", "Kim"]
+    tournament.rename("Sammy", "Samuel")
+    assert tournament.setup.players == ["Alex", "Samuel", "Kim"]
 
 
 def test_player_names_never_carry_template_characters():

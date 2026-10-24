@@ -10,6 +10,7 @@ also only from legs a player played alone, from one of the X01 start scores.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
@@ -22,6 +23,9 @@ GAMES = (101, 301, 501, 701, 901, 1001)
 
 MATCH_HISTORY = 20
 NAME_LENGTH = 20
+# The bests of a profile that a merge keeps the higher of; every other whole
+# number of a profile is a count that a merge adds up.
+HIGHEST = ("highest_visit", "highest_checkout")
 # Characters no player name contains: Home Assistant would render curly
 # brackets, percent and number signs as a template where a name goes into a
 # file name or a message, and control characters break both.
@@ -44,6 +48,20 @@ def clean_name(name: str) -> str:
 
 def _key(name: str) -> str:
     return clean_name(name).casefold()
+
+
+def renamed_seats(players: list[Any], names: Iterable[str], name: str) -> list[Any]:
+    """The players of a stored match, with the new name for those named one of
+    these names, in any upper and lower case."""
+    keys = {_key(other) for other in names}
+    return [
+        {**player, "name": name}
+        if isinstance(player, dict)
+        and isinstance(player.get("name"), str)
+        and _key(player["name"]) in keys
+        else player
+        for player in players
+    ]
 
 
 def _person(value: object) -> str | None:
@@ -113,6 +131,27 @@ class Profile:
             "last_played": self.last_played,
             "person": self.person,
         }
+
+    def absorb(self, other: Profile) -> None:
+        """Take over the numbers of another profile of the same player, as if
+        one name had thrown every dart: the counts add up, the better bests
+        stay, and the person is this profile's, or the other one's."""
+        for key, value in asdict(other).items():
+            if key in HIGHEST:
+                setattr(self, key, max(getattr(self, key), value))
+            elif type(value) is int:
+                setattr(self, key, getattr(self, key) + value)
+        self.best_mpr = max(self.best_mpr, other.best_mpr)
+        for game, darts in other.fewest_darts.items():
+            self.fewest_darts[game] = min(self.fewest_darts.get(game, darts), darts)
+        for double, (attempts, hits) in other.doubles.items():
+            mine = self.doubles.setdefault(double, [0, 0])
+            mine[0] += attempts
+            mine[1] += hits
+        self.last_played = max(
+            filter(None, (self.last_played, other.last_played)), default=None
+        )
+        self.person = self.person or other.person
 
     @classmethod
     def restored(cls, saved: dict[str, Any]) -> Profile | None:
@@ -304,6 +343,50 @@ class Profiles:
         for pair in [pair for pair in self.head_to_head if key in pair.split("\x00")]:
             del self.head_to_head[pair]
         return True
+
+    def rename(self, name: str, new_name: str) -> bool | None:
+        """Give a player a new name in the profile, the head-to-head records
+        and the matches of the history; a new spelling of the same name, such
+        as Sam for sam, is a new name too.
+
+        A name that another profile has already merges the player into that
+        profile, see Profile.absorb, under the new spelling: the head-to-head
+        records against the same players add up, and those of the two against
+        each other go, as no player plays against themselves. Returns whether
+        the profiles merged; None without a profile by that name or a new name.
+        """
+        old, spelled = _key(name), clean_name(new_name)
+        new = spelled.casefold()
+        if old not in self.players or not new:
+            return None
+        profile = self.players[old]
+        target = self.players.get(new) if new != old else None
+        kept = profile
+        if target is not None:
+            target.absorb(profile)
+            kept = target
+        kept.name = spelled
+        # The player keeps the place of the name that played first.
+        players: dict[str, Profile] = {}
+        for key, other in self.players.items():
+            if key in (old, new):
+                players.setdefault(new, kept)
+            else:
+                players[key] = other
+        self.players = players
+        records, self.head_to_head = self.head_to_head, {}
+        for pair, wins in records.items():
+            keys = [new if key == old else key for key in pair.split("\x00")]
+            if keys[0] == keys[1]:
+                continue
+            ordered = sorted(keys)
+            counts = wins if ordered == keys else wins[::-1]
+            merged = self.head_to_head.setdefault("\x00".join(ordered), [0, 0])
+            merged[0] += counts[0]
+            merged[1] += counts[1]
+        for match in self.matches:
+            match["players"] = renamed_seats(match["players"], (name, spelled), spelled)
+        return target is not None
 
     def link(self, name: str, person: str) -> bool:
         """Make a player a Home Assistant person; a person is one player only.

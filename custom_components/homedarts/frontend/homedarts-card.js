@@ -2195,6 +2195,35 @@ function gameName(t, game, fallback) {
   return (fallback && fallback(game)) || String(game ?? "");
 }
 
+// The actions of the profile menu of the players card, in their order, with the title of
+// the dialog that asks before each one and the words of the button that does it.
+const MANAGE_ACTIONS = {
+  rename: { title: "rename_title", button: "manage_rename" },
+  merge: { title: "merge_title", button: "merge_button" },
+  delete: { title: "delete_title", button: "manage_delete" },
+};
+const MANAGE_LABELS = { rename: "manage_rename", merge: "manage_merge", delete: "manage_delete" };
+
+// The button that opens the menu of a profile, and the menu while it is open: Merge into
+// only where there is another profile to merge into.
+function manageHtml(name, ui, others) {
+  const open = ui.menu === name;
+  const label = escapeHtml(fill(ui.t("manage_player"), { name }));
+  const button =
+    `<button type="button" class="manage" data-manage="${escapeHtml(name)}" data-focus="${escapeHtml(`manage:${name}`)}"` +
+    ` aria-haspopup="menu" aria-expanded="${open}" aria-label="${label}"><span aria-hidden="true">⋮</span></button>`;
+  if (!open) return button;
+  const items = Object.keys(MANAGE_ACTIONS)
+    .filter((action) => action !== "merge" || others)
+    .map(
+      (action) =>
+        `<button type="button" role="menuitem" tabindex="-1" data-action="${action}" data-focus="menu:${action}">` +
+        `${escapeHtml(ui.t(MANAGE_LABELS[action]))}</button>`
+    )
+    .join("");
+  return `${button}<div class="manage-menu" role="menu" aria-label="${label}">${items}</div>`;
+}
+
 function playersHtml(view, ui) {
   const { t, format, percent, date } = ui;
   const value = (number, digits = 0) => (number === null ? "–" : format(number, digits));
@@ -2215,7 +2244,7 @@ function playersHtml(view, ui) {
       ];
       return (
         `<div class="profile"><div class="profile-name">${avatarHtml(ui.avatar?.(player.name))}` +
-        `<span>${escapeHtml(player.name)}</span></div>` +
+        `<span>${escapeHtml(player.name)}</span>${ui.manage ? manageHtml(player.name, ui, view.players.length > 1) : ""}</div>` +
         `<div class="muted">${escapeHtml(
           `${t("profile_legs")} ${player.legsWon}/${player.legsPlayed} · ` +
             `${t("profile_matches")} ${player.matchesWon}/${player.matchesPlayed}`
@@ -7534,6 +7563,42 @@ ${balancedCss(".profiles", 210, 10, 36)}
     display: flex; align-items: center; min-width: 0; font-size: 17px; font-weight: 800; color: var(--primary-text-color);
   }
   .profile-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Building block, menu: a button with three dots opens the actions of what it sits on,
+     in a list below it, for a mouse, a finger and the keyboard alike. */
+  .profile { position: relative; }
+  .profile-name .manage {
+    flex: 0 0 auto; margin: -6px -8px -6px auto; min-width: 36px; min-height: 36px; padding: 0;
+    border: 0; border-radius: 10px; background: none; font: inherit; font-size: 20px; line-height: 1;
+    color: var(--ad-muted-text);
+  }
+  .manage-menu {
+    position: absolute; top: 44px; right: 8px; z-index: 2; display: flex; flex-direction: column;
+    min-width: 160px; padding: 6px 0; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    background: var(--card-background-color, var(--ha-card-background, #fff));
+    border: 1px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .manage-menu button {
+    min-height: 40px; padding: 0 16px; border: 0; background: none; text-align: start;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--primary-text-color);
+  }
+  .manage-menu [data-action="delete"] { color: var(--ad-error-text); }
+  /* The dialog that asks before a profile changes or goes. */
+  .manage-dialog {
+    width: min(420px, calc(100vw - 32px)); box-sizing: border-box; padding: 20px; border-radius: 16px;
+    border: 1px solid var(--divider-color, rgba(127,127,127,.3)); color: var(--primary-text-color);
+    background: var(--card-background-color, var(--ha-card-background, #fff));
+  }
+  .manage-dialog::backdrop { background: rgba(0,0,0,.45); }
+  .manage-dialog h2 { margin: 0 0 12px; font-size: 18px; }
+  .manage-dialog p { margin: 0 0 12px; font-size: 14px; }
+  .manage-field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .manage-field :is(input, select) {
+    min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; font: inherit;
+    font-size: max(16px, 1em); font-weight: 400; color: var(--primary-text-color); background: none;
+    border: 2px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .manage-field :is(input, select):focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+  .manage-error { color: var(--ad-error-text); }
   .profile-name .avatar { width: 1.6em; height: 1.6em; margin-right: .45em; }
   .profile dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; margin: 4px 0 0; }
   .profile dt { font-size: 12px; color: var(--ad-muted-text); }
@@ -10891,13 +10956,23 @@ function createElements(Base) {
                 <div class="muted count"></div>
                 ${
                   // The export is an action for administrators; others would only get an error.
-                  c.export && this._hass.user?.is_admin === true
+                  c.export && this._admin()
                     ? `<button class="action export">${t("export_button")}</button>`
                     : ""
                 }
               </header>
               <div class="message empty" hidden>${t("no_profiles")}</div>
               <div class="profiles"></div>
+              ${
+                // Renaming, merging and deleting a profile are actions for administrators, too.
+                this._admin()
+                  ? `<dialog class="manage-dialog" aria-labelledby="manage-title"><form class="manage-form">` +
+                    `<h2 id="manage-title"></h2><div class="manage-body"></div>` +
+                    `<p class="manage-error" role="alert" hidden></p><div class="controls">` +
+                    `<button type="button" class="action manage-cancel">${t("manage_cancel")}</button>` +
+                    `<button type="submit" class="action primary manage-confirm"></button></div></form></dialog>`
+                  : ""
+              }
               ${c.show_head_to_head ? section("h2h", "head_to_head") : ""}
               ${c.show_matches ? section("matches", "recent_matches") : ""}
               ${this._progressHtml(t)}
@@ -10916,8 +10991,11 @@ function createElements(Base) {
         matchesSection: root.querySelector(".matches-section"),
         matches: root.querySelector(".matches"),
         export: root.querySelector(".export"),
+        dialog: root.querySelector(".manage-dialog"),
       };
       this._el.export?.addEventListener("click", () => this._export());
+      this._menu = null;
+      if (this._el.dialog) this._buildManage();
       // The players whose badge gallery shows all its badges.
       this._openBadges = new Set();
       root.querySelector(".badges-list")?.addEventListener("click", (event) => {
@@ -10928,6 +11006,174 @@ function createElements(Base) {
       });
     }
 
+    _admin() {
+      return this._hass.user?.is_admin === true;
+    }
+
+    // The board's config entry, for the actions, which need it with several boards.
+    _entry() {
+      const device = this._hass.devices?.[this._deviceId];
+      const entry = device?.primary_config_entry || device?.config_entries?.[0];
+      return entry ? { config_entry_id: entry } : {};
+    }
+
+    // The menu of a profile and the dialog that asks before its action.
+    _buildManage() {
+      const { profiles, dialog } = this._el;
+      profiles.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-manage], [data-action]");
+        if (button?.dataset.manage !== undefined) this._toggleMenu(button.dataset.manage);
+        else if (button) this._openManage(button.dataset.action);
+      });
+      profiles.addEventListener("keydown", (event) => this._menuKey(event));
+      // A tap or a click anywhere else closes the menu.
+      this.shadowRoot.addEventListener("pointerdown", (event) => {
+        if (this._menu !== null && !event.target.closest(".manage-menu, [data-manage]")) this._toggleMenu(null);
+      });
+      dialog.querySelector(".manage-cancel").addEventListener("click", () => dialog.close());
+      dialog.querySelector(".manage-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        this._confirmManage();
+      });
+      dialog.addEventListener("input", () => this._renameHint());
+      // The keyboard comes back to the menu button of the player, also of a new name once
+      // the profiles show it.
+      dialog.addEventListener("close", () => {
+        const active = this.shadowRoot.activeElement;
+        if (dialog.contains(active)) active.blur();
+        this._focusLater = this._returnTo;
+        this._returnTo = null;
+        this._focusMenuButton();
+      });
+    }
+
+    // Opens the menu of a profile, or closes the one that is open with null or the same name.
+    _toggleMenu(name, focus = "first") {
+      if (this.preview) return;
+      const before = this._menu;
+      this._menu = name === before ? null : name;
+      this._update();
+      if (this._menu === null) {
+        withFocus(this._el.profiles, `manage:${before}`).focus();
+        return;
+      }
+      const items = this._menuItems();
+      items[focus === "last" ? items.length - 1 : 0].focus();
+    }
+
+    _focusMenuButton() {
+      const button = this._focusLater && withFocus(this._el.profiles, `manage:${this._focusLater}`);
+      if (!button) return;
+      this._focusLater = null;
+      button.focus();
+    }
+
+    _menuItems() {
+      return [...this._el.profiles.querySelectorAll(".manage-menu [role=menuitem]")];
+    }
+
+    // The keys of a menu button: the arrows open the menu, and in the menu they move from
+    // action to action; Escape closes it, and so does Tab, which goes on.
+    _menuKey(event) {
+      const name = event.target.dataset.manage;
+      if (name !== undefined) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (this._menu !== name) this._toggleMenu(name, event.key === "ArrowUp" ? "last" : "first");
+        }
+        return;
+      }
+      if (!event.target.closest(".manage-menu")) return;
+      const items = this._menuItems();
+      const index = items.indexOf(event.target);
+      const moves = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: items.length - 1 };
+      if (event.key in moves) {
+        event.preventDefault();
+        items[(moves[event.key] + items.length) % items.length].focus();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        this._toggleMenu(null);
+      } else if (event.key === "Tab") {
+        // The menu button keeps the place, and Tab goes on from there.
+        this._toggleMenu(null);
+      }
+    }
+
+    // The dialog of an action of the open menu: what it does, and the new name or the
+    // player to merge into.
+    _openManage(action) {
+      const name = this._menu;
+      const { dialog } = this._el;
+      const text = (key, values = {}) => escapeHtml(fill(this._t(key), { name, ...values }));
+      this._menu = null;
+      this._update();
+      this._managing = { action, name };
+      this._returnTo = name;
+      const others = playersView(this._state("profiles"), null)
+        .players.map((player) => player.name)
+        .filter((other) => nameKey(other) !== nameKey(name));
+      const body = {
+        rename:
+          `<label class="manage-field">${text("rename_label")}<input class="manage-input" type="text"` +
+          ` maxlength="${LOBBY_LIMITS.name}" autocomplete="off" required value="${escapeHtml(name)}"></label>` +
+          `<p class="muted manage-hint" aria-live="polite">${text("rename_hint")}</p>`,
+        merge:
+          `<label class="manage-field">${text("merge_label")}<select class="manage-input">` +
+          others.map((other) => `<option>${escapeHtml(other)}</option>`).join("") +
+          `</select></label><p>${text("merge_hint")}</p>`,
+        delete: `<p>${text("delete_hint")}</p>`,
+      }[action];
+      dialog.querySelector("h2").textContent = fill(this._t(MANAGE_ACTIONS[action].title), { name });
+      dialog.querySelector(".manage-body").innerHTML = body;
+      const confirm = dialog.querySelector(".manage-confirm");
+      confirm.textContent = this._t(MANAGE_ACTIONS[action].button);
+      // What cannot be undone is red, as the second tap of a button that asks first.
+      confirm.classList.toggle("confirm", action !== "rename");
+      confirm.disabled = false;
+      dialog.querySelector(".manage-error").hidden = true;
+      dialog.showModal();
+      (dialog.querySelector(".manage-input") || dialog.querySelector(".manage-cancel")).focus();
+    }
+
+    // Under the new name, whether it is another player's, whose profile it then joins.
+    _renameHint() {
+      const { action, name } = this._managing;
+      if (action !== "rename") return;
+      const hint = this._el.dialog.querySelector(".manage-hint");
+      const typed = nameKey(this._el.dialog.querySelector(".manage-input").value);
+      const other = playersView(this._state("profiles"), null).players.find(
+        (player) => nameKey(player.name) === typed && typed !== nameKey(name)
+      );
+      hint.textContent = other ? fill(this._t("rename_merges"), { other: other.name }) : this._t("rename_hint");
+    }
+
+    // The action the dialog asked for; its error stays in the dialog, in the words of the integration.
+    async _confirmManage() {
+      const { action, name } = this._managing;
+      const { dialog } = this._el;
+      const value = dialog.querySelector(".manage-input")?.value.trim();
+      const confirm = dialog.querySelector(".manage-confirm");
+      const error = dialog.querySelector(".manage-error");
+      if (confirm.disabled || (action !== "delete" && !value)) return;
+      const [service, data] =
+        action === "delete" ? ["delete_player", { name }] : ["rename_player", { player: name, new_name: value }];
+      confirm.disabled = true;
+      try {
+        await this._hass.callWS({
+          type: "call_service",
+          domain: "homedarts",
+          service,
+          service_data: { ...data, ...this._entry() },
+        });
+        this._returnTo = action === "delete" ? null : value;
+        dialog.close();
+      } catch (failure) {
+        error.textContent = failure?.message || this._t("manage_failed");
+        error.hidden = false;
+        confirm.disabled = false;
+      }
+    }
+
     // The action writes the file; it downloads through Home Assistant with the
     // user's login, also while Home Assistant does not serve the www folder.
     async _export() {
@@ -10935,8 +11181,6 @@ function createElements(Base) {
       if (this.preview || button.disabled) return;
       button.disabled = true;
       button.textContent = this._t("exporting");
-      const device = this._hass.devices?.[this._deviceId];
-      const entry = device?.primary_config_entry || device?.config_entries?.[0];
       try {
         const result = await this._hass.callWS({
           type: "call_service",
@@ -10945,7 +11189,7 @@ function createElements(Base) {
           service_data: {
             format: this._config.export_format === "json" ? "json" : "csv",
             what: "all",
-            ...(entry ? { config_entry_id: entry } : {}),
+            ...this._entry(),
           },
           return_response: true,
         });
@@ -10983,9 +11227,13 @@ function createElements(Base) {
       const view = playersView(this._state("profiles"), this._state("lastMatch"));
       el.count.textContent = view.players.length ? String(view.players.length) : "";
       el.empty.hidden = view.players.length > 0;
-      const html = playersHtml(view, this._ui());
+      // A menu stays open only while its profile is there.
+      if (!view.players.some((player) => player.name === this._menu)) this._menu = null;
+      const html = playersHtml(view, { ...this._ui(), manage: Boolean(this._el.dialog), menu: this._menu });
       el.profiles.className = `profiles balanced n${view.players.length}`;
       this._setHtml(el.profiles, html.players);
+      // Unless the keyboard went on meanwhile.
+      if (!this.shadowRoot.activeElement) this._focusMenuButton();
       if (el.h2hSection) {
         el.h2hSection.hidden = !view.headToHead.length;
         this._setHtml(el.h2h, html.headToHead);

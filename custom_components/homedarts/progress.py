@@ -76,8 +76,23 @@ COUNTERS = (
 )
 
 
+# The sums of a week and the counters that are bests, of which two names of
+# one player keep the higher, or the lower where fewer is better; 0 is none.
+HIGHER = frozenset(("highest_checkout", "best_mpr", "high_finish", "bobs_27"))
+FEWER = frozenset(("best_501", "around_the_clock"))
+
+
 def _key(name: str) -> str:
     return name.strip().casefold()
+
+
+def _joined(name: str, mine: int, other: int) -> int:
+    """A sum or a counter of two names of one player as one."""
+    if name in HIGHER:
+        return max(mine, other)
+    if name in FEWER:
+        return min(mine or other, other or mine)
+    return mine + other
 
 
 def _monday(day: date) -> date:
@@ -166,6 +181,53 @@ class PlayerProgress:
                 column = [value / 100 if value else None for value in column]
             trend[name] = column
         return trend
+
+    def absorb(self, other: PlayerProgress) -> None:
+        """Take over the progress of another name of the same player, as if
+        one name had thrown every dart: counts, hits and the sums of every
+        week add up, the bests stay, the darts of the one who threw last come
+        last, the training days make one streak where they meet, and each tier
+        of a badge keeps the date it was first unlocked."""
+        self.hits.update(other.hits)
+        newer, older = (other, self) if self._threw_before(other) else (self, other)
+        newer.log.join(older.log)
+        self.log = newer.log
+        for week, sums in other.weeks.items():
+            kept = self.weeks.setdefault(week, [0] * len(WEEK_FIELDS))
+            for name, index in WEEK.items():
+                kept[index] = _joined(name, kept[index], sums[index])
+        self.weeks = dict(sorted(self.weeks.items())[-TREND_WEEKS:])
+        for name, count in other.counters.items():
+            self.counters[name] = _joined(name, self.counters[name], count)
+        self._join_streaks(newer, older)
+        for key, dates in other.badges.items():
+            mine = self.badges.get(key, [])
+            longer, shorter = sorted((mine, dates), key=len, reverse=True)
+            self.badges[key] = [
+                min(when, shorter[tier]) if tier < len(shorter) else when
+                for tier, when in enumerate(longer)
+            ]
+
+    def _threw_before(self, other: PlayerProgress) -> bool:
+        """Whether the other player threw on a later day than this one."""
+        return other.last_day is not None and (
+            self.last_day is None or other.last_day > self.last_day
+        )
+
+    def _join_streaks(self, newer: PlayerProgress, older: PlayerProgress) -> None:
+        """The streak of the training days of two names of one player, of
+        which the newer threw last: the older one's days continue it where
+        they reach it."""
+        best = max(newer.best_streak, older.best_streak)
+        streak = newer.streak
+        if newer.last_day is not None and older.last_day is not None:
+            start = newer.last_day - timedelta(days=max(newer.streak, 1) - 1)
+            if older.last_day >= start - timedelta(days=1):
+                begun = older.last_day - timedelta(days=max(older.streak, 1) - 1)
+                start = min(start, begun)
+            streak = (newer.last_day - start).days + 1
+        self.streak, self.last_day = streak, newer.last_day
+        self.best_streak = max(best, streak)
 
     def stored(self) -> dict[str, Any]:
         return {
@@ -466,6 +528,29 @@ class Progress:
         self.players.pop(_key(name), None)
         if self.latest and _key(self.latest["name"]) == _key(name):
             self.latest = None
+
+    def rename(
+        self, name: str, new_name: str, profiles: Profiles, now: datetime
+    ) -> None:
+        """A player's progress under a new name, after the profiles renamed
+        the player; the progress of a name that has some already takes it
+        over, see PlayerProgress.absorb, and the tiers that the two reach
+        together unlock quietly."""
+        old, new = _key(name), _key(new_name)
+        keys = (old, new)
+        if self.latest and _key(self.latest["name"]) in keys:
+            self.latest = {**self.latest, "name": new_name}
+        player = self.players.pop(old, None)
+        target = self.players.get(new)
+        if target is None:
+            if player is None:
+                return
+            target = self.players[new] = player
+        elif player is not None:
+            target.absorb(player)
+            if self.enabled:
+                self._unlock(profiles, now)
+        target.name = new_name
 
     # -- undo ------------------------------------------------------------------
 

@@ -326,3 +326,30 @@ def test_a_deleted_player_leaves_the_published_report_as_it_was():
     assert report.last["personal_bests"] == [
         {"record": "highest_visit", "value": 100, "name": None}
     ]
+
+
+def test_a_renamed_player_takes_the_bests_of_the_report_along():
+    report = WeeklyReport()
+    report.begin(local("2026-09-30 12:00"))
+    for name in ("Sammy", "sam", "Kim"):
+        report.observe(
+            "personal_best",
+            {"record": "highest_visit", "value": 100, "name": name},
+            local("2026-09-30"),
+        )
+    published = report.rollover(local("2026-10-05 00:00"), 0)
+    kept = copy.deepcopy(published)
+    report.observe(
+        "personal_best",
+        {"record": "highest_visit", "value": 140, "name": "Sammy"},
+        local("2026-10-05 12:00"),
+    )
+    report.rename("sammy", "Sam")
+    assert [best["name"] for best in report.bests] == ["Sam"]
+    assert [best["name"] for best in report.last["personal_bests"]] == [
+        "Kim",
+        "Sam",
+        "Sam",
+    ]
+    assert published == kept and report.last is not published
+    WeeklyReport().rename("Sam", "Sammy")

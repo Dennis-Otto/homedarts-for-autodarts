@@ -83,6 +83,7 @@ else:
 
 SERVICE_START_GAME = "start_game"
 SERVICE_DELETE_PLAYER = "delete_player"
+SERVICE_RENAME_PLAYER = "rename_player"
 SERVICE_EXPORT = "export"
 SERVICE_START_TOURNAMENT = "start_tournament"
 SERVICE_STOP_TOURNAMENT = "stop_tournament"
@@ -257,6 +258,14 @@ UNLINK_PLAYER_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
         vol.Required("player"): PLAYER_NAME,
+    }
+)
+# The new name is checked in the handler, which says why a name cannot be one.
+RENAME_PLAYER_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        vol.Required("player"): PLAYER_NAME,
+        vol.Required("new_name"): vol.All(cv.string, vol.Strip, vol.Length(min=1)),
     }
 )
 
@@ -775,6 +784,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
     )
     async_register_admin_service(
         hass, DOMAIN, SERVICE_UNLINK_PLAYER, unlink_player, schema=UNLINK_PLAYER_SCHEMA
+    )
+
+    async def rename_player(call: ServiceCall) -> None:
+        coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+        _check_names([call.data["new_name"]])
+        await coordinator.async_rename_player(
+            call.data["player"], call.data["new_name"]
+        )
+
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_RENAME_PLAYER, rename_player, schema=RENAME_PLAYER_SCHEMA
     )
 
     async def start_tournament(call: ServiceCall) -> None:

@@ -335,6 +335,24 @@ unlink_player:
       selector:
         text:
 
+rename_player:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
+    player:
+      required: true
+      example: "Sammy"
+      selector:
+        text:
+    new_name:
+      required: true
+      example: "Sam"
+      selector:
+        text:
+
 start_tournament:
   fields:
     config_entry_id:

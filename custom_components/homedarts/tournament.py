@@ -59,6 +59,7 @@ from .practice import (
     MAX_LEGS,
     MAX_SETS,
     PracticeGame,
+    renamed_slots,
     valid_settings,
     valid_start,
 )
@@ -1239,7 +1240,8 @@ class TournamentDirector:
             practice.resume, self.saved = self.saved, None
 
     def check(self, name: str) -> None:
-        """A player of the tournament being played cannot be deleted."""
+        """A player of the tournament being played cannot be deleted or
+        renamed."""
         key = name.strip().casefold()
         tournament = self.tournament
         if self.running and tournament is not None:
@@ -1258,6 +1260,30 @@ class TournamentDirector:
             self.saved["names"] = [
                 "" if slot.casefold() == key else slot for slot in self.saved["names"]
             ]
+
+    def rename(self, name: str, new_name: str) -> None:
+        """A renamed player's new name in the setup of the next tournament, in
+        a finished tournament and in the player slots the practice game gets
+        back after the tournament; a player renamed into one who is in the
+        setup already is there once. A player of the tournament being played
+        keeps the name, and so does the tournament."""
+        self.check(name)
+        names = (name, new_name)
+        keys = {player.strip().casefold() for player in names}
+        players: list[str] = []
+        for player in self.setup.players:
+            if player.casefold() not in keys:
+                players.append(player)
+            elif new_name not in players:
+                players.append(new_name)
+        self.setup.players = players
+        if self.tournament is not None and not self.running:
+            self.tournament.players = [
+                new_name if player.casefold() in keys else player
+                for player in self.tournament.players
+            ]
+        if self.saved:
+            self.saved["names"] = renamed_slots(self.saved["names"], names, new_name)
 
     def next_match(
         self, practice: PracticeGame, now: datetime, board: str | None = None
