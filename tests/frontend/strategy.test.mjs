@@ -351,6 +351,7 @@ test("the dashboard's settings choose the scoreboard's caller, keypad, games and
       idle: false,
       lobby_games: ["501", "cricket"],
       idle_panels: [],
+      keep_awake: false,
       title: "Not an option",
       call_scores: null,
     },
@@ -366,6 +367,7 @@ test("the dashboard's settings choose the scoreboard's caller, keypad, games and
       corrections: false,
       idle: false,
       lobby_games: ["501", "cricket"],
+      keep_awake: false,
     });
   }
   // Without settings, or with settings that are not an object, the card keeps its own defaults.

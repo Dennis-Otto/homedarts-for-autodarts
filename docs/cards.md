@@ -244,7 +244,7 @@ show_system: false
 
 <img src="images/en/scoreboard-teams.png" alt="Scoreboard of a 501 team match: Alex and Kim with 45 left against Sam and Lea with 216, Sam at the board in bold with his average" width="760">
 
-The [automatic dashboard](#automatic-dashboard) has a *Scoreboard* view that shows the card across the whole screen. With `full_height`, the scoreboard is exactly one screen high: the numbers and tables grow and shrink with the room the banner, the visit and the keypad leave, so nothing has to be scrolled, from an 800 × 480 display to a TV. A portrait tablet shows two players one above the other, three or four two by two. On a phone, the full-height scoreboard leaves room for the browser's address bar. The guide [scoreboard at the board](scoreboard.md) shows how to set up a tablet or TV, the caller and idle mode step by step.
+The [automatic dashboard](#automatic-dashboard) has a *Scoreboard* view that shows the card across the whole screen. With `full_height`, the scoreboard is exactly one screen high: the numbers and tables grow and shrink with the room the banner, the visit and the keypad leave, so nothing has to be scrolled, from an 800 × 480 display to a TV. A portrait tablet shows two players one above the other, three or four two by two. On a phone, the full-height scoreboard leaves room for the browser's address bar. The full-screen button at the top right puts the scoreboard alone on the screen, without the bars of the browser and Home Assistant's header and sidebar, and keeps the screen on meanwhile; see [full screen](scoreboard.md#full-screen). The guide [scoreboard at the board](scoreboard.md) shows how to set up a tablet or TV, the caller and idle mode step by step.
 
 ### New game screen
 
@@ -336,6 +336,8 @@ Panels with nothing to show are skipped. A dart, a new game or a tap anywhere en
 | `full_height` | boolean | `false` | Fill the height of the screen, for a view in panel mode |
 | `show_visit` | boolean | `true` | Show the darts of the current visit |
 | `show_status` | boolean | `true` | Show the board status |
+| `fullscreen_button` | boolean | `true` | Show the [full-screen button](scoreboard.md#full-screen) at the top right, where the browser offers full screen: the scoreboard alone on the screen, without the bars of the browser and Home Assistant's header and sidebar |
+| `keep_awake` | boolean | `true` | Keep the screen on while the scoreboard is in full screen, where the browser allows it: over HTTPS and in the Companion app |
 | `caller` | boolean | `false` | Switch the caller on: the screen announces visits, what a player requires, busts and game shots |
 | `call_scores` | boolean | `true` | Call the score of every visit (Cricket: its marks) |
 | `call_checkouts` | boolean | `true` | Call what the next player requires when a checkout is possible |
@@ -496,7 +498,7 @@ For every board, the dashboard gets up to six views in its tabs and the stream o
 
 The game settings also have *Bull-off by distance* among the practice rules and *Tournament summary duration* among the tournament settings. Most games need none of them: the scoreboard's [new game screen](#new-game-screen) sets the game, the players and the rules.
 
-In YAML, the whole dashboard is one line; `device_id`, `title`, `scoreboard` and `overlay_view` are optional. `scoreboard` sets options of the scoreboard view's card: `caller`, `keypad`, `corrections`, `idle`, `lobby_games` and `idle_panels`, as described for the [scoreboard card](#scoreboard-card). `overlay_view` sets `overlay`, `overlay_layout` and `overlay_color` of the stream overlay. Options you leave out keep the card's defaults; the stream overlay is see-through.
+In YAML, the whole dashboard is one line; `device_id`, `title`, `scoreboard` and `overlay_view` are optional. `scoreboard` sets options of the scoreboard view's card: `caller`, `keypad`, `corrections`, `idle`, `lobby_games`, `idle_panels`, `fullscreen_button` and `keep_awake`, as described for the [scoreboard card](#scoreboard-card). `overlay_view` sets `overlay`, `overlay_layout` and `overlay_color` of the stream overlay. Options you leave out keep the card's defaults; the stream overlay is see-through.
 
 ```yaml
 strategy:

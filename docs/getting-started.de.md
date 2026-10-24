@@ -59,7 +59,7 @@ Die [Installationsanleitung](installation.de.md#board-hinzufügen) erklärt die 
 
 1. Öffne Home Assistant auf dem Tablet im Browser oder in der [Home-Assistant-App](https://companion.home-assistant.io/) und melde dich an. Ein eigener Benutzer ohne Administratorrechte verhindert, dass der Bildschirm deine Einstellungen ändert.
 2. Öffne das HomeDarts-Dashboard und dort die Ansicht *Anzeigetafel*.
-3. Schalte den Browser in den Vollbildmodus und lass das Tablet am Ladegerät eingeschaltet.
+3. Tippe auf die Vollbild-Taste oben rechts auf der Anzeigetafel: Sie füllt den Bildschirm und lässt ihn an. Wo der Browser ihn nicht anlassen kann, etwa unter einer Adresse mit `http://`, schalte die automatische Bildschirmabschaltung des Tablets aus; siehe [Vollbild](scoreboard.de.md#vollbild).
 
 Die [Anleitung zur Anzeigetafel](scoreboard.de.md#den-bildschirm-einrichten) beschreibt die Einzelheiten und die Optionen, etwa den Caller.
 

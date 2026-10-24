@@ -2938,6 +2938,37 @@ def stream_overlay(page: Page) -> None:
     end_match(page)
 
 
+def fullscreen_scoreboard(page: Page) -> None:
+    """The scoreboard of a landscape tablet after a tap on its full-screen button: alone
+    on the screen, without Home Assistant's header and sidebar, the button pressed."""
+    start_match(page, ["Alex", "Sam"], "501", legs=3)
+    context = own_context(page, viewport={"width": 1280, "height": 800})
+    board = context.new_page()
+    board.goto(f"{HA}/homedarts-auto/scoreboard")
+    wait_card(board, "r.querySelectorAll('.player').length === 2", SCOREBOARD, 60000)
+    throw_visits(
+        board,
+        [
+            [at("T20"), at("T20"), at("S20")],
+            [at("S20"), at("T19"), at("S7")],
+        ],
+    )
+    control({"event": "Throw detected", "throws": [at("T20")]})
+    wait_card(
+        board, "r.querySelectorAll('.visit .dart:not(.empty)').length === 1", SCOREBOARD
+    )
+    board.locator(SCOREBOARD).locator(".fullscreen-toggle").click()
+    wait_card(
+        board,
+        "r.querySelector('.scoreboard.fullscreen .fullscreen-toggle[aria-pressed=true]')",
+        SCOREBOARD,
+    )
+    board.wait_for_timeout(800)
+    page_shot(board, "scoreboard-fullscreen")
+    context.close()
+    end_match(page)
+
+
 def dashboard_trends(page: Page) -> None:
     """The graphs of the generated training view, from four weeks of statistics."""
     # Home Assistant draws the lines of its graphs at once, without the animation
@@ -3645,6 +3676,7 @@ def people(browser: Browser) -> None:
     match_summary(page)
     # After every other picture of its group: its darts count for the players.
     stream_overlay(page)
+    fullscreen_scoreboard(page)
     context.close()
 
 

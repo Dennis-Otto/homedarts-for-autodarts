@@ -220,6 +220,9 @@ const SCOREBOARD_DEFAULTS = {
   full_height: false,
   show_visit: true,
   show_status: true,
+  // A button that shows the scoreboard alone on the whole screen, which then stays on.
+  fullscreen_button: true,
+  keep_awake: true,
   // The caller speaks only when switched on, and a tap unlocks the sound.
   caller: false,
   call_scores: true,
@@ -457,7 +460,8 @@ function overlayOf(config) {
 }
 
 // Nobody taps a stream: the overlay has no new game screen, idle mode, caller, keypad,
-// corrections or status, and only the whole picture has room for the summary of a match.
+// corrections, status or full-screen button, and only the whole picture has room for
+// the summary of a match.
 function overlayConfig(config) {
   const overlay = overlayOf(config);
   if (!overlay) return config;
@@ -465,6 +469,8 @@ function overlayConfig(config) {
     ...config,
     full_height: false,
     show_status: false,
+    fullscreen_button: false,
+    keep_awake: false,
     caller: false,
     lobby: false,
     idle: false,
@@ -508,6 +514,19 @@ function leaveOverlay() {
   window.history.pushState(null, "", dashboard);
   window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
 }
+
+// Full screen where the browser offers it to the page: not on an iPhone, which shows only
+// videos on the whole screen, and not on the TV of Home Assistant Cast, which shows the
+// dashboard on the whole screen anyway, and where nobody taps.
+const fullscreenOffered = () => document.fullscreenEnabled === true && !window.customElements.get("hc-main");
+
+// The controls of the scoreboard, whose taps never count as a double tap that leaves
+// full screen: the keypad, the darts of the visit, the new game screen and its fields.
+const FULLSCREEN_CONTROLS = "button, a, input, select, textarea, label, [role=button], .tappable, .pad-area, .loupe";
+// Two taps at most this far apart, in milliseconds, are a double tap.
+const DOUBLE_TAP = 400;
+// How long the hint stays that the browser can't keep the screen on, in milliseconds.
+const AWAKE_HINT = 15000;
 
 const usable = (state) => state && !["unknown", "unavailable"].includes(state.state);
 const finite = (value) => (Number.isFinite(value) ? value : null);
@@ -5462,6 +5481,8 @@ const STRATEGY_SCOREBOARD = [
   "idle",
   "lobby_games",
   "idle_panels",
+  "fullscreen_button",
+  "keep_awake",
 ];
 
 // The options set in the dashboard's settings, without the empty ones.
@@ -5677,6 +5698,7 @@ const FORM_HELPERS = {
   idle_section: "idle_section_helper",
   idle_panels: "idle_panels_helper",
   keypad: "keypad_helper",
+  keep_awake: "keep_awake_helper",
   input_section: "input_section_helper",
   summary_seconds: "summary_seconds_helper",
   overlay_section: "overlay_section_helper",
@@ -5816,7 +5838,16 @@ const FORMS = {
     deviceField,
     titleField,
     toggles(
-      ["full_height", "show_visit", "show_status", "caller", "show_summary", "celebrations"],
+      [
+        "full_height",
+        "show_visit",
+        "show_status",
+        "caller",
+        "show_summary",
+        "celebrations",
+        "fullscreen_button",
+        "keep_awake",
+      ],
       SCOREBOARD_DEFAULTS
     ),
     secondsField("summary_seconds", 0, 600),
@@ -5926,7 +5957,7 @@ const strategyForm = (hass) => [
     type: "expandable",
     name: "scoreboard",
     schema: [
-      toggles(["caller", "keypad", "corrections", "idle"], SCOREBOARD_DEFAULTS),
+      toggles(["caller", "keypad", "corrections", "idle", "fullscreen_button", "keep_awake"], SCOREBOARD_DEFAULTS),
       voiceField,
       dartCallsField(),
       toggles(["call_route", "call_target"], SCOREBOARD_DEFAULTS),
@@ -6737,6 +6768,19 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
     min-height: calc(100vh - var(--ad-taken));
     min-height: calc(100dvh - var(--ad-taken));
   }
+  /* Full screen: the card alone on the screen, from edge to edge, without Home
+     Assistant's header, so only the safe areas of a phone or tablet take room from the
+     scoreboard. Where the new game screen is taller than the screen, the card scrolls in
+     it. Two quick taps leave full screen instead of zooming. */
+  :host(:fullscreen) { overflow-y: auto; background: var(--primary-background-color, #111); }
+  :host(:fullscreen) ha-card { height: auto; min-height: 100%; border: none; border-radius: 0; }
+  .scoreboard.fullscreen {
+    --ad-taken: calc(
+      var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) +
+        var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    );
+    touch-action: manipulation;
+  }
   .heading { display: grid; gap: 2px; min-width: 0; }
   /* The title keeps its words whole: where the buttons beside it leave too little room,
      as on a phone, they follow in a row below it. That row is never wider than the card;
@@ -7218,6 +7262,22 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
   .formats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   /* Finger-sized at a touch screen. */
   @media (any-pointer: coarse) { .lobby-toggle, .caller-toggle { min-height: 40px; } }
+  /* The full-screen button: an icon in a ring, finger-sized at a touch screen. */
+  .fullscreen-toggle {
+    display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 999px;
+    cursor: pointer; touch-action: manipulation; color: var(--ad-muted-text); --mdc-icon-size: 22px;
+    border: 1px solid var(--divider-color, rgba(127,127,127,.4)); background: none;
+  }
+  .fullscreen-toggle[aria-pressed="true"] {
+    color: #fff; background: var(--ad-accent-fill); border-color: var(--ad-accent-fill);
+  }
+  @media (any-pointer: coarse) { .fullscreen-toggle { width: 44px; height: 44px; } }
+  /* Once, where the browser can't keep the screen on: what to do instead. */
+  .awake-hint {
+    margin: 0; padding: .6em 1em; border-radius: 12px; font-size: clamp(13px, 1.6cqi, 18px);
+    color: var(--ad-warn-text); background: color-mix(in srgb, ${STATUS_COLORS.takeout} 14%, transparent);
+  }
+  .awake-hint a { color: inherit; font-weight: 700; }
 
   /* Full height: numbers and tables take the width (cqi) and the height (cqh) of the
      scores, less what the names, routes and details below them need. */
@@ -10134,6 +10194,110 @@ function createElements(Base) {
       this._tournamentTick = null;
       this._idleOff();
       this._stage();
+      // The browser leaves full screen with a card that leaves the page, and tells the page.
+      if (this._fullscreen) this._fullscreenChanged();
+    }
+
+    // Full screen shows the scoreboard alone on the screen, without the bars of the
+    // browser and the header and sidebar of Home Assistant. The button, Escape, which the
+    // browser handles, or a double tap on the scoreboard leaves it.
+    _toggleFullscreen() {
+      if (this.preview) return;
+      // The browser may say no, for example to a page in a frame: the card stays as it is.
+      const asked = this._fullscreen ? document.exitFullscreen() : this.requestFullscreen();
+      asked.catch(() => {});
+    }
+
+    // The browser tells the card when it enters and leaves full screen, also when Escape or
+    // a gesture of the system left it.
+    _fullscreenChanged = () => {
+      this._fullscreen = this.isConnected && this.getRootNode().fullscreenElement === this;
+      this._showFullscreen();
+      this._keepAwake();
+    };
+
+    // In full screen the scoreboard fills the screen, as at full height, without the room
+    // that Home Assistant's header takes.
+    _showFullscreen() {
+      const el = this._el;
+      const on = Boolean(this._fullscreen);
+      const full = on || Boolean(this._config.full_height);
+      el.board.classList.toggle("fullscreen", on);
+      el.board.classList.toggle("full", full);
+      // At full height the scores have a region of their own, which the keyboard reaches.
+      if (full) {
+        el.main.tabIndex = 0;
+        el.main.setAttribute("role", "region");
+        el.main.setAttribute("aria-label", this._t("view_scoreboard"));
+      } else {
+        for (const name of ["tabindex", "role", "aria-label"]) el.main.removeAttribute(name);
+      }
+      el.fullscreen.setAttribute("aria-pressed", String(on));
+      el.fullscreen.firstElementChild.setAttribute("icon", on ? "mdi:fullscreen-exit" : "mdi:fullscreen");
+      if (!on) {
+        clearTimeout(this._awakeTimer);
+        el.awake.hidden = true;
+      }
+    }
+
+    // Two taps in quick succession leave full screen, unless one of them was on a control.
+    _doubleTap(event) {
+      const now = Date.now();
+      const double = now - (this._lastTap ?? -Infinity) <= DOUBLE_TAP;
+      const counts = Boolean(this._fullscreen) && !event.target.closest(FULLSCREEN_CONTROLS);
+      this._lastTap = counts && !double ? now : null;
+      if (counts && double) this._toggleFullscreen();
+    }
+
+    // While the scoreboard fills the screen, the screen stays on where the browser lets a
+    // page hold it on: over HTTPS, as with Home Assistant Cloud, and in the Companion app.
+    // The browser lets go of it while the page is hidden, so it is held again when the
+    // page shows.
+    _keepAwake = () => {
+      const wanted = Boolean(this._fullscreen && this._config.keep_awake);
+      if (wanted) document.addEventListener("visibilitychange", this._keepAwake);
+      else document.removeEventListener("visibilitychange", this._keepAwake);
+      if (!wanted || document.visibilityState === "hidden") {
+        this._letSleep();
+        return;
+      }
+      // Held, or asked for: a lock that the browser let go of is asked for again.
+      if (this._awake && !this._awake.lock?.released) return;
+      const wakeLock = window.navigator.wakeLock;
+      if (typeof wakeLock?.request !== "function") {
+        this._awakeHint();
+        return;
+      }
+      const hold = { lock: null };
+      this._awake = hold;
+      wakeLock.request("screen").then(
+        (lock) => {
+          // Left full screen while the browser answered.
+          if (this._awake !== hold) {
+            lock.release();
+            return;
+          }
+          hold.lock = lock;
+        },
+        () => {
+          if (this._awake === hold) this._awake = null;
+          this._awakeHint();
+        }
+      );
+    };
+
+    // A lock still asked for is let go of as soon as the browser gives it.
+    _letSleep() {
+      this._awake?.lock?.release();
+      this._awake = null;
+    }
+
+    // Once, the first time the browser can't keep the screen on: how to keep it on anyway.
+    _awakeHint() {
+      if (this._hintedAwake || !this._fullscreen) return;
+      this._hintedAwake = true;
+      this._el.awake.hidden = false;
+      this._awakeTimer = setTimeout(() => (this._el.awake.hidden = true), AWAKE_HINT);
     }
 
     // On the dashboard, the overlay of a stream takes the whole window, above Home
@@ -10216,6 +10380,12 @@ function createElements(Base) {
       const caller =
         `<button class="caller-toggle" aria-pressed="false" title="${t("caller_hint")}">` +
         `<span class="caller-icon" aria-hidden="true">🔇</span><span>${t("caller")}</span></button>`;
+      // An icon alone: the pressed state tells whether the scoreboard fills the screen.
+      const fullscreen =
+        `<button type="button" class="fullscreen-toggle" aria-pressed="false" aria-label="${t("fullscreen")}"` +
+        ` title="${t("fullscreen_hint")}"${c.fullscreen_button && fullscreenOffered() ? "" : " hidden"}>` +
+        `<ha-icon icon="mdi:fullscreen" aria-hidden="true"></ha-icon></button>`;
+      const awake = documentation(["scoreboard.html#full-screen", "de/scoreboard.html#vollbild"]);
       // The overlay of a stream lies on a picture of its own, the stage.
       const overlay = overlayOf(c);
       this._overlay = overlay;
@@ -10224,7 +10394,7 @@ function createElements(Base) {
         <style>${SCOREBOARD_CSS}</style>
         <ha-card${overlay ? ` class="overlay-card"` : ""}>
           <div class="root">
-            ${stage}<div class="scoreboard${c.full_height ? " full" : ""}${overlay ? " overlay" : ""}">
+            ${stage}<div class="scoreboard${overlay ? " overlay" : ""}">
               <header>
                 <div class="heading">
                   <div class="title"></div>
@@ -10236,12 +10406,13 @@ function createElements(Base) {
                   )}</span></button>
                   ${c.caller ? caller : ""}
                   ${c.show_status ? `<div class="pill" role="status"></div>` : ""}
+                  ${fullscreen}
                 </div>
               </header>
+              <p class="awake-hint" role="status" hidden>${t("awake_hint")}
+                <a href="${awake}" target="_blank" rel="noreferrer">${t("awake_hint_link")}</a></p>
               <div class="banner appear" role="status" hidden></div>
-              <div class="main"${
-                c.full_height ? ` tabindex="0" role="region" aria-label="${t("view_scoreboard")}"` : ""
-              }></div>
+              <div class="main"></div>
               ${c.show_visit ? `<div class="visit"></div>` : ""}
               <div class="pad-area appear" hidden></div>
               <div class="loupe" hidden aria-hidden="true"></div>
@@ -10264,6 +10435,8 @@ function createElements(Base) {
         caller: root.querySelector(".caller-toggle"),
         callerIcon: root.querySelector(".caller-icon"),
         lobby: root.querySelector(".lobby-toggle"),
+        fullscreen: root.querySelector(".fullscreen-toggle"),
+        awake: root.querySelector(".awake-hint"),
         pad: root.querySelector(".pad-area"),
         loupe: root.querySelector(".loupe"),
         celebrate: root.querySelector(".celebrate"),
@@ -10278,6 +10451,10 @@ function createElements(Base) {
       this._followed = null;
       this._el.caller?.addEventListener("click", () => this._toggleCaller());
       this._el.lobby.addEventListener("click", () => this._lobbyAction("open"));
+      this._el.fullscreen.addEventListener("click", () => this._toggleFullscreen());
+      this._el.board.addEventListener("click", (event) => this._doubleTap(event));
+      this.addEventListener("fullscreenchange", this._fullscreenChanged);
+      this._showFullscreen();
       this._el.main.addEventListener("click", (event) => {
         const target = event.target.closest("[data-lobby]");
         if (target && !target.disabled) this._lobbyAction(target.dataset.lobby, target.dataset.value);
