@@ -7,6 +7,10 @@ name: Screenshot bot
 # tests/e2e/screenshots.py): each group of each language renders on a runner of its
 # own from a fresh demo, all side by side, and the collect job of a language puts its
 # groups together (tests/e2e/collect.sh), as tests/e2e/visual.sh does on one machine.
+# After a push, a group whose files an earlier run already rendered takes the images
+# of that run instead (tests/e2e/render_key.py): the visual check of a pull request
+# that main took rendered the files of its merge; the weekly run and a run on demand
+# render anew.
 # A release writes its version into the manifest; the frozen demo shows only its
 # major version, in online-bridge.png, so a new major version changes that image. The
 # maintainer or the release app merges a release, so its push starts the bot like any
@@ -65,6 +69,8 @@ jobs:
     # 21 minutes.
     timeout-minutes: 25
     permissions:
+      # The images of an earlier run with the same key (tests/e2e/render_key.py).
+      actions: read
       contents: read
     strategy:
       # A group that fails leaves the other groups and the other language running.
@@ -77,14 +83,16 @@ jobs:
       # GitHub's registry (ghcr.io, pkg-containers.githubusercontent.com), Playwright
       # from Microsoft's (mcr.microsoft.com, *.data.mcr.microsoft.com), pngquant from
       # Launchpad (launchpad.net, launchpadlibrarian.net) and the Python packages of
-      # the tool (pypi.org, files.pythonhosted.org). Home Assistant itself reaches
-      # only the icons of its other integrations, which the images show
+      # the tool (pypi.org, files.pythonhosted.org), and the images of an earlier
+      # run with the same key through the API (api.github.com). Home Assistant itself
+      # reaches only the icons of its other integrations, which the images show
       # (brands.home-assistant.io).
       - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: block
           allowed-endpoints: >
+            api.github.com:443
             github.com:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
@@ -98,6 +106,32 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The key of the files that the images are rendered from, and the newest run
+      # of the visual check or of the screenshot bot from a branch of this repository,
+      # never of a fork, that kept images with it: those are the images that a render
+      # would make, byte for byte. A push to main takes them; the weekly run and a
+      # run on demand render anew, and catch what changed outside the repository,
+      # such as the icons from brands.home-assistant.io
+      # (docs/development.md#images-rendered-once).
+      - name: Look for the same images in an earlier run
+        id: earlier
+        env:
+          LANGUAGE: ${{ matrix.language }}
+          GROUP: ${{ matrix.group }}
+          REUSE: ${{ github.event_name == 'push' }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tests/e2e/render_key.py find "$LANGUAGE" "$GROUP"
+      # A download that fails leaves the render to the next step.
+      - name: Take the images of the earlier run
+        id: reused
+        if: ${{ steps.earlier.outputs.run-id != '' }}
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ steps.earlier.outputs.name }}
+          run-id: ${{ steps.earlier.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: tests/e2e/artifacts/rendered
       # A step that hangs fails at a time limit of its own, three minutes or more
       # before that of the job, so that the steps after it keep its logs and explain
       # it: GitHub cancels a job at its limit, and then no step after it runs. With
@@ -105,6 +139,7 @@ jobs:
       # which prints the state of its containers before it ends
       # (docs/development.md#when-a-step-hangs).
       - name: Render the images of the group with the frozen clock
+        if: ${{ steps.reused.outcome != 'success' }}
         timeout-minutes: 21
         env:
           LANGUAGES: ${{ matrix.language }}
@@ -132,13 +167,16 @@ jobs:
           path: tests/e2e/artifacts/screenshots-*.json
           if-no-files-found: ignore
           retention-days: 1
+      # Under the key of what they are rendered from, also when they came from an
+      # earlier run, for the job that puts the groups together and for the runs of
+      # the next week.
       - name: Keep the images of the group
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rendered-${{ matrix.language }}-${{ matrix.group }}
+          name: ${{ steps.earlier.outputs.name }}
           path: tests/e2e/artifacts/rendered/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
       - name: Keep the screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

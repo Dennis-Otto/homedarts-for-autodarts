@@ -188,9 +188,8 @@ def test_the_workflows_render_every_group_on_a_runner_of_its_own(name, jobs):
         for step in render["steps"]
         if step.get("with", {}).get("path") == "tests/e2e/artifacts/rendered/"
     ]
-    assert (
-        upload["with"]["name"] == "rendered-${{ matrix.language }}-${{ matrix.group }}"
-    )
+    # Under the key of what the images are rendered from (tests/test_render_key.py).
+    assert upload["with"]["name"] == "${{ steps.earlier.outputs.name }}"
     # One group that fails cancels neither the other groups nor what comes after.
     assert render["strategy"]["fail-fast"] is False
     for job in jobs:
@@ -503,6 +502,24 @@ def test_collect_restores_the_committed_file_of_an_unchanged_image(repository):
     assert (repository / "docs/images/en/same.png").read_bytes() == committed
     collected = repository / "tests/e2e/artifacts/collected/en/same.png"
     assert collected.read_bytes() == committed
+
+
+def test_collect_takes_the_groups_under_the_keys_of_their_artifacts(repository):
+    # The jobs download the artifact of each group, rendered-<language>-<group>-<key>,
+    # into a folder of its name (tests/e2e/render_key.py); visual.sh leaves the
+    # folders without the key.
+    artifacts = repository / "tests" / "e2e" / "artifacts"
+    picture(artifacts / f"rendered-en-1-{'ab' * 32}" / "en" / "card.png", (200, 30, 40))
+    rendered(repository, 2, "same.png", level=1)
+    picture(artifacts / f"rendered-en-3-{'cd' * 32}" / "en" / "new.png")
+
+    result = collect(repository)
+
+    assert result.returncode == 0, result.stderr
+    assert f"Put together 3 images of {len(GROUPS)} groups in en." in result.stdout
+    images = repository / "docs" / "images" / "en"
+    assert Image.open(images / "card.png").getpixel((0, 0)) == (200, 30, 40)
+    assert (images / "new.png").exists()
 
 
 def test_collect_fails_without_the_images_of_a_group(repository):

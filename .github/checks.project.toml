@@ -199,7 +199,11 @@ artifact `visual-failure-*` keeps a screenshot of the page. A section that hangs
 after its budget with `Watchdog: The section … took longer than … s. It waits here:`
 and the stack of the section, down to the line that waits; a run that the step of the
 workflow stopped after twenty-one minutes says `Stopped by SIGINT` and shows the state
-of the containers and the end of the log of Home Assistant."""
+of the containers and the end of the log of Home Assistant. A group whose files an
+earlier run of this check or of the screenshot bot already rendered, on a branch of
+this repository, takes the images of that run instead of rendering them, and its
+summary says `Reused from run …` (`tests/e2e/render_key.py`); a download of them that
+fails renders the group anew."""
 why = """Every picture of the README and of the website comes from these images. An
 image that can't be rendered shows a card that no longer comes up in the demo, and the
 documentation would fall behind the cards."""

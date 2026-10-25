@@ -3,6 +3,7 @@ tool versions kept in two places agree with each other, and pull requests run th
 end-to-end tests for every file that they use."""
 
 import ast
+import importlib.util
 import json
 import os
 import re
@@ -653,6 +654,62 @@ def test_the_pictures_are_taken_again_when_the_recorded_board_changes(workflow):
     assert f"{recordings}/**" in trigger[event]["paths"]
     # Its README alone changes no picture.
     assert f"!{recordings}/README.md" in trigger[event]["paths"]
+
+
+# The key of the rendered images (tests/e2e/render_key.py): a job of the visual check
+# or of the screenshot bot takes the images of an earlier run with the same key, so
+# the key has to change with every file that changes an image.
+RENDER_KEY_SPEC = importlib.util.spec_from_file_location(
+    "render_key", E2E / "render_key.py"
+)
+assert RENDER_KEY_SPEC is not None and RENDER_KEY_SPEC.loader is not None
+render_key = importlib.util.module_from_spec(RENDER_KEY_SPEC)
+RENDER_KEY_SPEC.loader.exec_module(render_key)
+
+
+def in_the_key(path: str) -> bool:
+    """Whether a file or a folder lies below one of the inputs of the key."""
+    return any(
+        path == folder or path.startswith(f"{folder}/") for folder in render_key.INPUTS
+    )
+
+
+def test_the_key_of_the_images_knows_every_file_that_the_demo_mounts():
+    # Home Assistant of the demo reads the integration, its blueprints and the
+    # recordings of the Board Manager through the compose files, the screenshot tool
+    # its scripts in tests/e2e.
+    assert "blueprints/automation/homedarts" in mounted()
+    for path in sorted(mounted()):
+        assert in_the_key(path), f"render_key.py must know {path}, which the demo reads"
+
+
+@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow):
+    # A file whose change alone starts no render changes no image either.
+    assert skipped_by(workflow) == render_key.SKIPPED
+
+
+@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+def test_the_key_of_the_images_knows_every_file_that_starts_a_render(workflow):
+    path = ROOT / ".github" / "workflows" / workflow
+    trigger = yaml.safe_load(path.read_text(encoding="utf-8"))[True]
+    (event,) = [event for event in ("push", "pull_request") if event in trigger]
+    started = [
+        pattern.removesuffix("/**")
+        for pattern in trigger[event]["paths"]
+        if not pattern.startswith("!")
+    ]
+    # The workflow itself renders as the other one does (tests/test_render_key.py),
+    # and the screenshot bot records the live demo apart from the images.
+    apart = {
+        f".github/workflows/{workflow}",
+        "tests/demo_timeline.py",
+        "scripts/record_demo.py",
+    }
+    assert "custom_components/homedarts/frontend" in started
+    for pattern in started:
+        if pattern not in apart:
+            assert in_the_key(pattern), f"render_key.py must know {pattern}"
 
 
 def test_the_end_to_end_tests_run_the_oldest_supported_home_assistant():
