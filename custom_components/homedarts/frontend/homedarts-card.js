@@ -8295,7 +8295,9 @@ function createElements(Base) {
     // The config entry of the board, for actions of the integration.
     _entry() {
       const device = this._hass.devices?.[this._deviceId];
-      return device?.primary_config_entry ?? device?.config_entries?.[0] ?? null;
+      // Home Assistant 2026.10 keeps a device's one config entry in config_entry_id and
+      // stops the other two fields later.
+      return device?.config_entry_id ?? device?.primary_config_entry ?? device?.config_entries?.[0] ?? null;
     }
 
     // The state of correcting and the taps that change it: the darts, the pad, and the
@@ -11191,7 +11193,8 @@ function createElements(Base) {
     // The board's config entry, for the actions, which need it with several boards.
     _entry() {
       const device = this._hass.devices?.[this._deviceId];
-      const entry = device?.primary_config_entry || device?.config_entries?.[0];
+      // Home Assistant 2026.10 keeps it in config_entry_id, older releases in the others.
+      const entry = device?.config_entry_id || device?.primary_config_entry || device?.config_entries?.[0];
       return entry ? { config_entry_id: entry } : {};
     }
 

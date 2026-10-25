@@ -87,7 +87,10 @@ why = """It is the one test that runs the integration as it is installed, agains
 board that answers as a real one does: on Board Manager 1, on Board Manager 2 with its
 discovery by mDNS, and on the oldest Home Assistant that `hacs.json` promises."""
 fix = """Run the scenario of the job that failed on your machine with Docker, fix what
-it shows, and push. The job named after a version of Home Assistant runs the image
+it shows, and push. For a warning of Home Assistant about the integration, change the
+code at the file and line it names; one the integration can't follow yet goes into
+`KNOWN` of `tests/e2e/ha_reports.py`, with its reason and the release it fails again
+from. The job named after a version of Home Assistant runs the image
 `OLDEST_HOME_ASSISTANT` of `.github/workflows/e2e.yml` with Board Manager 2: set it as
 `HOME_ASSISTANT_IMAGE`."""
 commands = [

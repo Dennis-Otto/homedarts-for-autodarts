@@ -2076,8 +2076,10 @@ class Scenario:
         records = re.split(r"\n(?=\d{4}-\d{2}-\d{2} )", log)
         # Home Assistant reports the integration, such as a deprecated call that its
         # next release stops, in a warning of any of its modules (ha_reports.py). The
-        # system log keeps the last 50 of every level, the file keeps them all.
-        warnings = [" ".join(item["message"]) for item in items] + [
+        # system log keeps the last 50 of every level, the file keeps them all. An
+        # entry of the system log groups the messages of one call site, such as every
+        # report of the frame helper, so each of them counts on its own.
+        warnings = [message for item in items for message in item["message"]] + [
             match.group(1)
             for record in records
             if (match := WARNING_RECORD.match(record.rstrip("\n")))

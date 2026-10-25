@@ -329,3 +329,33 @@ async def test_the_scenario_passes_a_log_without_reports(scenario):
         entry("WARNING", "homeassistant.loader", CUSTOM_WARNING % "homedarts")
     )
     await scenario.run.logs()
+
+
+async def test_a_known_report_hides_no_other_report_of_its_entry(scenario, monkeypatch):
+    # The system log groups the reports of the frame helper in one entry.
+    other = FRAME_REPORT.replace("hass.data", "hass.http")
+    known = [
+        ha_reports.Known(
+            text="accesses hass.data directly",
+            reason="Home Assistant offers no replacement before 2099.1.",
+            until="2099.1",
+        )
+    ]
+    monkeypatch.setattr(
+        scenario.module,
+        "reports",
+        lambda messages, manifest, version: ha_reports.reports(
+            messages, manifest, version, known
+        ),
+    )
+    scenario.run.system_log.append(
+        {
+            "level": "WARNING",
+            "name": "homeassistant.helpers.frame",
+            "message": [FRAME_REPORT, other],
+            "count": 2,
+        }
+    )
+    with pytest.raises(scenario.module.E2EFailure) as failure:
+        await scenario.run.logs()
+    assert str(failure.value) == f"Home Assistant reports the integration: {[other]}"
