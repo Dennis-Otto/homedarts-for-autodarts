@@ -7,7 +7,7 @@ from itertools import combinations, permutations
 from types import SimpleNamespace
 
 import pytest
-from hypothesis import given
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from custom_components.homedarts.brackets import (
@@ -443,6 +443,50 @@ def test_32_players_play_to_a_champion(fmt, options, matches):
     assert snapshot["status"] == FINISHED and snapshot["winner"] == finished["winner"]
     assert snapshot["matches_played"] == snapshot["matches_total"] == matches
     assert json.loads(json.dumps(snapshot)) == snapshot
+
+
+# The big tournaments of the pictures of the documentation, with the options of the
+# screenshot tool (big_tournament in tests/e2e/screenshots.py), which plays them only
+# up to their pictures.
+DEMO_TOURNAMENTS = [
+    (GROUPS_KNOCKOUT, {"groups": 8, "advance": 2}),
+    (DOUBLE_KNOCKOUT, {}),
+]
+# As the screenshot tool plays: the first player wins, every third match the second.
+DEMO_WINNERS = [int(match % 3 == 2) for match in range(64)]
+
+
+@settings(max_examples=30)
+@given(
+    big=st.sampled_from(DEMO_TOURNAMENTS),
+    winners=st.lists(st.integers(0, 1), min_size=64, max_size=64),
+)
+@example(big=DEMO_TOURNAMENTS[0], winners=DEMO_WINNERS)
+@example(big=DEMO_TOURNAMENTS[1], winners=DEMO_WINNERS)
+def test_the_big_tournaments_of_the_demo_find_their_champion_whatever_the_results(
+    big, winners
+):
+    fmt, options = big
+    tournament, practice = director(32, fmt=fmt, **options)
+    sides = iter(winners)
+    events = play_out(tournament, practice, winner=lambda names: next(sides))
+    kinds = [kind for kind, _ in events]
+    played = kinds.count("tournament_match_finished")
+    drawn = tournament.tournament
+    if fmt == GROUPS_KNOCKOUT:
+        # Eight groups of four, then a knockout of their best two.
+        assert [len(group) for group in drawn.groups] == [4] * 8
+        assert played == 8 * 6 + 15 + int(drawn.third_place)
+    else:
+        # Everyone but the champion loses twice, and a second grand final follows
+        # when the champion of the losers' bracket wins the first.
+        assert played == 62 + int(drawn.matches[-1].played)
+    assert kinds[-1] == "tournament_finished"
+    champion = events[-1][1]["winner"]
+    assert champion in PLAYERS[:32]
+    snapshot = tournament.snapshot()
+    assert snapshot["status"] == FINISHED and snapshot["winner"] == champion
+    assert snapshot["matches_played"] == snapshot["matches_total"] == played
 
 
 def test_round_counts_within_its_part_of_the_tournament():

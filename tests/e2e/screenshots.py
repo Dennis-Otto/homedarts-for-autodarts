@@ -1369,30 +1369,28 @@ FIELD = [
 ]  # fmt: skip
 
 
-def play_tournament(page: Page, matches: int | None = None) -> int:
-    """Play the matches of the tournament, most of them won by the first player
-    and every third by the second, until `matches` are played or it is over;
-    how many it played."""
-    played = 0
-    while matches is None or played < matches:
-        if page.evaluate(TOURNAMENT_IN, ["finished"]):
-            break
+def play_tournament(page: Page, matches: int) -> None:
+    """Play the first `matches` matches of the tournament, most of them won by the
+    first player and every third by the second."""
+    for played in range(matches):
         if page.evaluate(TOURNAMENT_IN, ["waiting"]):
             page.evaluate(CALL_ACTION, ["next_tournament_match", {}])
             page.wait_for_function(TOURNAMENT_IN, arg=["playing"])
         checkout_101(page, ["S20", "S20", "S1"] if played % 3 == 2 else None)
         page.wait_for_function(TOURNAMENT_IN, arg=["waiting", "finished"])
-        played += 1
-    return played
 
 
 def big_tournament(
     page: Page, name: str, options: dict, before: int, shown: str, height: int
 ) -> None:
-    """A tournament of 32 players played to its champion through the practice
-    game, with a picture of the scoreboard between two matches after `before`
-    of them, once `shown` is on it, on a screen `height` high that shows all of
-    it."""
+    """A tournament of 32 players through the practice game, with a picture of the
+    scoreboard between two matches after `before` of them, once `shown` is on it,
+    on a screen `height` high that shows all of it.
+
+    The tournament stops right after its picture: the matches after it showed in
+    no image, and tests/test_tournament_formats.py plays 32 players to their
+    champion with many random results, in a fraction of a second instead of
+    minutes."""
     pull_darts()
     game(page, "off")
     page.evaluate(
@@ -1423,13 +1421,6 @@ def big_tournament(
     ready(board)
     card_shot(board, name, tag=SCOREBOARD)
     board.close()
-    page.evaluate(
-        CALL_SERVICE, ["number", "set_value", "tournament_pause", {"value": 0}]
-    )
-    # On to the champion: the acceptance of 32 players in the demo.
-    play_tournament(page)
-    if not page.evaluate(TOURNAMENT_IN, ["finished"]):
-        raise AssertionError(f"{name}: the tournament of 32 found no champion")
     page.evaluate(CALL_ACTION, ["stop_tournament", {}])
     page.evaluate(
         CALL_SERVICE, ["number", "set_value", "tournament_pause", {"value": 10}]
@@ -3687,7 +3678,7 @@ def people(browser: Browser) -> None:
 
 def tournaments(browser: Browser) -> None:
     """The big tournaments: groups with a knockout and a double elimination, 32
-    players each, played to their champions."""
+    players each, each up to its picture."""
     context = new_context(
         browser,
         viewport={"width": 1280, "height": 1000},
@@ -3742,28 +3733,50 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # so that the visual check and the screenshot bot render the groups side by side,
 # one runner each, and a group renders the same images on its own as after the
 # others. The sections of a group run in their order: a later one sees what the
-# earlier ones played. The groups take about the same time; screenshots.sh,
+# earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
 # visual.yml and screenshots.yml know how many there are.
 GROUPS = (
-    ("cards", "live", "practice", "games"),
+    # The dartboard without Autodarts last: its second board would be the first of
+    # the cards without one.
+    ("cards", "live", "practice", "games", "manual"),
     # The players card shows the five players of the tournament.
     ("more games", "people"),
     # The bot plays its first match in the corrections, as it did before the groups.
     # The big tournaments before the calendar's weekly report, which starts a new week.
-    ("corrections", "formats", "tournaments", "calendar", "manual"),
+    ("corrections", "formats", "tournaments", "calendar"),
 )
+# The seconds of each section on a runner of GitHub, the mean of both languages in
+# the visual check of 25 October 2026 (run 40170950991), once the big tournaments
+# stopped at their pictures. No group may take more than SLOWER of group_times.py
+# times the seconds of the shortest (tests/test_screenshot_groups.py), and the job
+# that puts the groups of a language together marks one that did. Each job also
+# starts its demo, about two and a half minutes. A fourth group would need more
+# games and the people apart, and its start would cost more than it saves: three
+# groups take the fewest minutes of the runners.
+SECONDS = {
+    "cards": 39.0,
+    "live": 24.0,
+    "practice": 24.0,
+    "games": 218.0,
+    "more games": 250.0,
+    "people": 189.0,
+    "corrections": 55.0,
+    "formats": 124.0,
+    "tournaments": 203.0,
+    "calendar": 60.0,
+    "manual": 47.0,
+}
 # The seconds after which the watchdog fails a section (watchdog.py): about twice
-# its longest run in CI and at least two minutes, and with GRACE less than the time
-# limit of its step in visual.yml and screenshots.yml. The longest runs, in October
-# 2026: games 248 s, more games 281 s, formats 127 s, people 213 s and tournaments
-# 447 s; every other section less than a minute.
+# its longest run in CI (SECONDS) and at least two minutes, and with GRACE less than
+# the time limit of its step in visual.yml and screenshots.yml.
 SECTION_BUDGET = 120.0
 BUDGETS = {
     "games": 510.0,
     "more games": 570.0,
     "formats": 270.0,
     "people": 450.0,
-    "tournaments": 840.0,
+    "tournaments": 420.0,
+    "calendar": 150.0,
 }
 
 
@@ -3806,13 +3819,27 @@ def main() -> None:
             timings.append((name, monotonic() - began))
             print(f"Screenshot section: {name} ({timings[-1][1]:.1f} s)", flush=True)
         browser.close()
-    # For the summary of the workflow run, to keep the groups about equally long.
+    # For the summary of the workflow run, to keep the groups about equally long:
+    # the table of this group, and its seconds for the table of all groups of the
+    # language (group_times.py).
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     (ARTIFACTS / f"screenshots-{LANGUAGE}-{group}.md").write_text(
         f"### Screenshots: group {group} of {len(GROUPS)} ({LANGUAGE})\n\n"
         "| Section | Seconds |\n| --- | ---: |\n"
         + "".join(f"| {name} | {seconds:.1f} |\n" for name, seconds in timings)
         + f"| all | {sum(seconds for _, seconds in timings):.1f} |\n",
+        encoding="utf-8",
+    )
+    (ARTIFACTS / f"screenshots-{LANGUAGE}-{group}.json").write_text(
+        json.dumps(
+            {
+                "language": LANGUAGE,
+                "group": group,
+                "groups": len(GROUPS),
+                "sections": [[name, round(seconds, 1)] for name, seconds in timings],
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
 
