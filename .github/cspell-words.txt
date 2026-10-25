@@ -28,6 +28,7 @@ Integrationen
 Kamerastream
 Kamerastreams
 Keyfarbe
+Koroutine
 Lautsprechersymbol
 Liveansicht
 Matchergebnis

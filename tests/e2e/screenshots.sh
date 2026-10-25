@@ -44,15 +44,33 @@ export E2E_PROJECT_NAME="${PROJECT_NAME}"
 export MSYS_NO_PATHCONV=1
 ROOT_MOUNT="$(cd "${REPOSITORY_ROOT}" && (pwd -W 2>/dev/null || pwd))"
 
+# diagnose, and a signal that stops the run as a failure.
+# shellcheck source=tests/e2e/diagnose.sh
+. "${SCRIPT_DIR}/diagnose.sh"
+COMPOSE=("${DOCKER_BIN}" compose --project-name "${PROJECT_NAME}" --file compose.yaml)
+# The container of the browser, beside the demo.
+BROWSER="${PROJECT_NAME}-playwright"
+
 # The Playwright image comes while the first demo starts; if that fails, docker run
 # fetches it itself and says why it can't.
 "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null 2>&1 &
 pulling=$!
 
 cleanup() {
+	status=$?
+	trap - EXIT
+	keep_cleaning
 	kill "${pulling}" 2>/dev/null || true
-	"${DOCKER_BIN}" compose --project-name "${PROJECT_NAME}" --file compose.yaml \
-		down --volumes --remove-orphans >/dev/null 2>&1 || true
+	# First the browser that a signal stopped, which still runs, so that no container
+	# outlives the step, then what a group that failed or was stopped shows: its
+	# containers and the end of the log of Home Assistant.
+	"${DOCKER_BIN}" rm --force "${BROWSER}" >/dev/null 2>&1 || true
+	end_background
+	if ((status != 0)); then
+		diagnose 100 "${COMPOSE[@]}"
+	fi
+	"${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+	exit "${status}"
 }
 trap cleanup EXIT
 
@@ -62,10 +80,11 @@ cd "${SCRIPT_DIR}"
 for language in ${LANGUAGES:-en de}; do
 	for group in "${groups[@]}"; do
 		echo "Group ${group} of ${GROUP_COUNT} in ${language}, from a fresh demo"
-		DEMO_LANGUAGE="${language}" bash "${SCRIPT_DIR}/demo.sh"
+		# In the background, so that a signal stops them at once.
+		in_background env DEMO_LANGUAGE="${language}" bash "${SCRIPT_DIR}/demo.sh"
 		wait "${pulling}" 2>/dev/null || true
 		# The config volume of the demo holds the file that moves its frozen clock on.
-		"${DOCKER_BIN}" run --rm --network "${PROJECT_NAME}_default" \
+		in_background "${DOCKER_BIN}" run --rm --name "${BROWSER}" --network "${PROJECT_NAME}_default" \
 			--env "DEMO_LANGUAGE=${language}" \
 			--env "DEMO_TIME=${DEMO_TIME}" \
 			--env "DEMO_CLOCK=/ha-config/.demo_clock" \

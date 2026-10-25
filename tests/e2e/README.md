@@ -23,7 +23,12 @@ bash tests/e2e/run.sh
 ```
 
 The log shows the seconds of every phase of the scenario, such as
-`Scenario phase: resilience (46.3 s)`.
+`Scenario phase: resilience (46.3 s)`. A phase, a step of the browser test or a
+section of the screenshots that hangs fails after its budget of time with the line
+that it waits at (`watchdog.py`), and a run that a signal stops, such as Ctrl+C or
+GitHub at the time limit of its step, prints the state of its containers and the end
+of the log of Home Assistant (`diagnose.sh`); see
+[When a step hangs](../../docs/development.md#when-a-step-hangs).
 
 The script pulls the image of Home Assistant before the containers start, up to
 three times 10 seconds apart, so that a pull the registry cuts off doesn't fail the

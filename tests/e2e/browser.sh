@@ -9,7 +9,8 @@
 # and BROWSER_SHARD=1/2 with BROWSER_WORKERS=2, as on the first runner in CI, the
 # shards 1/4 and 2/4.
 # A shard that fails names the step that failed and the command that runs it alone,
-# in GitHub Actions also as an annotation of the job and in its summary.
+# in GitHub Actions also as an annotation of the job and in its summary. So does a run
+# that a signal stops, such as when its step in the workflow runs out of time.
 
 set -euo pipefail
 
@@ -60,21 +61,33 @@ artifacts_of() {
 	if ((WORKERS == 1)); then echo "${ARTIFACTS}"; else echo "${ARTIFACTS}/shard-${shard/\//-of-}"; fi
 }
 compose_of() { "${DOCKER_BIN}" compose --project-name "$(project_of "$1")" --file compose.yaml "${@:2}"; }
+# The container of the browser of a worker, beside its demo.
+browser_of() { echo "$(project_of "$1")-playwright"; }
 
-# The workers that failed, or the one worker while it runs.
+# diagnose, and a signal that stops the run as a failure.
+# shellcheck source=tests/e2e/diagnose.sh
+. "${SCRIPT_DIR}/diagnose.sh"
+
+# The workers that failed, or the one worker while it runs, and those that passed.
 FAILED=()
+PASSED=()
 
 # The step that failed in a worker, from the table of its steps that browser.py writes
-# after each one; nothing when no step failed, such as when its demo didn't start.
-failed_step() {
-	local table line failed='^[|] (.+) [(]failed[)] [|]'
+# before and after each one, and how: the step that failed or took longer than its
+# budget, or the one that still ran when a signal stopped the run; nothing when no step
+# failed, such as when its demo didn't start. failed_step names it, step_end says how
+# it ended: "failed", "took too long" or "running".
+step_row() {
+	local table line failed='^[|] (.+) [(](failed|took too long|running)[)] [|]'
 	table="$(artifacts_of "$1")/browser-steps-table.md"
 	if [[ -s "${table}" ]]; then
 		while IFS= read -r line; do
-			if [[ "${line}" =~ ${failed} ]]; then echo "${BASH_REMATCH[1]}"; fi
+			if [[ "${line}" =~ ${failed} ]]; then echo "${BASH_REMATCH[$2]}"; fi
 		done <"${table}"
 	fi
 }
+failed_step() { step_row "$1" 1; }
+step_end() { step_row "$1" 2; }
 
 # The command that runs what failed in a worker alone, on the same Home Assistant: the
 # step that failed, which passes alone as every step does, or else the worker's shard.
@@ -104,10 +117,19 @@ explain() {
 	if ((PARTS * WORKERS > 1)); then title+=" in shard ${shard}"; fi
 	what="The ${title,}"
 	if [[ -n "${step}" ]]; then what+=" at the step \"${step}\""; fi
+	if [[ -n "${STOPPED}" ]]; then what+=" when ${STOPPED} stopped it"; fi
 	if ((WORKERS > 1)); then lines=" Its lines in the log begin with [${shard}]."; fi
 	echo "${what}.${lines} Run it alone: ${command}"
 	if [[ "${GITHUB_ACTIONS:-}" != true ]]; then return 0; fi
-	local why="a card doesn't look or behave in a real browser as the test expects"
+	local why="a card doesn't look or behave in a real browser as the test expects" end
+	end="$(step_end "$1")"
+	if [[ "${end}" == "took too long" ]]; then
+		why="it took longer than its budget, and the log shows the line that it waited at"
+	elif [[ -n "${STOPPED}" ]]; then
+		why="the run took longer than its step in the workflow allows, and nothing in it ran out of time before"
+	elif [[ "${end}" == running ]]; then
+		why="the browser test ended in it without a result, such as when the watchdog ended a hang that no exception reached, and the log shows the stack of every thread"
+	fi
 	local kept="The artifact of this job keeps the screenshots and the logs."
 	echo "::error title=${title}::${what}: ${why}.${lines} ${kept} Run it alone: ${command}"
 	if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
@@ -119,7 +141,22 @@ explain() {
 cleanup() {
 	status=$?
 	trap - EXIT
+	keep_cleaning
 	local worker folder
+	# A signal stopped every worker that still ran.
+	if [[ -n "${STOPPED}" ]]; then
+		for ((worker = 1; worker <= WORKERS; worker++)); do
+			if [[ " ${FAILED[*]} ${PASSED[*]} " != *" ${worker} "* ]]; then FAILED+=("${worker}"); fi
+		done
+	fi
+	# First the browsers that a signal stopped, which still run, so that no container
+	# outlives the step; they are not part of the Compose projects, and their lines are
+	# already in the log.
+	for ((worker = 1; worker <= WORKERS; worker++)); do
+		"${DOCKER_BIN}" rm --force "$(browser_of "${worker}")" >/dev/null 2>&1 || true
+	done
+	# Then what tells most about a run that hangs, before GitHub ends it: the
+	# containers of each failed worker, its logs and its explanation; the cleanup last.
 	for ((worker = 1; worker <= WORKERS; worker++)); do
 		folder="$(artifacts_of "${worker}")"
 		# In CI, the summary of the job shows the seconds of every step, which
@@ -128,15 +165,18 @@ cleanup() {
 			cat "${folder}/browser-steps-table.md" >>"${GITHUB_STEP_SUMMARY}" || true
 		fi
 		if ((status != 0)) && [[ " ${FAILED[*]} " == *" ${worker} "* ]]; then
+			diagnose 100 compose_of "${worker}"
 			compose_of "${worker}" logs --no-color --tail 200 || true
 			compose_of "${worker}" exec -T homeassistant cat /config/home-assistant.log \
 				>"${folder}/home-assistant-browser.log" 2>/dev/null || true
 		fi
-		compose_of "${worker}" down --volumes --remove-orphans >/dev/null 2>&1 || true
 	done
 	if ((status != 0)); then
 		for worker in "${FAILED[@]}"; do explain "${worker}" || true; done
 	fi
+	for ((worker = 1; worker <= WORKERS; worker++)); do
+		compose_of "${worker}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+	done
 	exit "${status}"
 }
 trap cleanup EXIT
@@ -150,7 +190,7 @@ worker() {
 	artifacts_mount="$(cd "${folder}" && (pwd -W 2>/dev/null || pwd))"
 	E2E_PROJECT_NAME="$(project_of "$1")" E2E_PORT="$((PORT + $1 - 1))" \
 		bash "${SCRIPT_DIR}/demo.sh"
-	"${DOCKER_BIN}" run --rm --network "$(project_of "$1")_default" \
+	"${DOCKER_BIN}" run --rm --name "$(browser_of "$1")" --network "$(project_of "$1")_default" \
 		--env "BOARD_MANAGER=${BOARD_MANAGER}" \
 		--env "BROWSER_ARTIFACTS=/artifacts" \
 		--env "BROWSER_SHARD=$(shard_of "$1")" \
@@ -181,7 +221,7 @@ started="${SECONDS}"
 compose_of 1 pull --quiet --policy missing &
 pulling=$!
 if ! "${DOCKER_BIN}" image inspect "${PLAYWRIGHT_IMAGE}" >/dev/null 2>&1; then
-	"${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
+	in_background "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
 fi
 wait "${pulling}"
 echo "Images ready in $((SECONDS - started)) s"
@@ -189,7 +229,7 @@ echo "Images ready in $((SECONDS - started)) s"
 if ((WORKERS == 1)); then
 	# Until it passes, a failure is the worker's, which cleanup explains.
 	FAILED=(1)
-	worker 1
+	in_background worker 1
 	exit 0
 fi
 workers=()
@@ -199,7 +239,7 @@ for ((w = 1; w <= WORKERS; w++)); do
 done
 # Every worker runs to its end, so that a run names all the shards that fail.
 for ((w = 1; w <= WORKERS; w++)); do
-	wait "${workers[w - 1]}" || FAILED+=("${w}")
+	if wait "${workers[w - 1]}"; then PASSED+=("${w}"); else FAILED+=("${w}"); fi
 done
 # cleanup explains every shard that failed.
 if ((${#FAILED[@]} > 0)); then exit 1; fi

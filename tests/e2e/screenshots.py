@@ -26,6 +26,7 @@ from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, probe
 from PIL import Image
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from watchdog import GRACE, budget, deadline, wake_playwright
 
 HA = "http://homeassistant:8123"
 BOARD = "http://board-mock:3180"
@@ -389,13 +390,16 @@ def failure_screenshots() -> Iterator[list[Browser]]:
             for context in browser.contexts
             for page in context.pages
         ]
-        for number, page in enumerate(pages, start=1):
-            path = ARTIFACTS / f"screenshots-{LANGUAGE}-failure-{number}.png"
-            try:
-                page.screenshot(path=str(path), full_page=True)
-                print(f"saved {path}")
-            except Exception as error:  # A screenshot must never hide the failure.
-                print(f"No failure screenshot {number}: {error}")
+        # A page of a section that hung may hang as well: ten seconds each, and
+        # GRACE for all of them (watchdog.py).
+        with deadline(GRACE):
+            for number, page in enumerate(pages, start=1):
+                path = ARTIFACTS / f"screenshots-{LANGUAGE}-failure-{number}.png"
+                try:
+                    page.screenshot(path=str(path), full_page=True, timeout=10_000)
+                    print(f"saved {path}")
+                except Exception as error:  # A screenshot must never hide the failure.
+                    print(f"No failure screenshot {number}: {error}")
         raise
 
 
@@ -3748,6 +3752,19 @@ GROUPS = (
     # The big tournaments before the calendar's weekly report, which starts a new week.
     ("corrections", "formats", "tournaments", "calendar", "manual"),
 )
+# The seconds after which the watchdog fails a section (watchdog.py): about twice
+# its longest run in CI and at least two minutes, and with GRACE less than the time
+# limit of its step in visual.yml and screenshots.yml. The longest runs, in October
+# 2026: games 248 s, more games 281 s, formats 127 s, people 213 s and tournaments
+# 447 s; every other section less than a minute.
+SECTION_BUDGET = 120.0
+BUDGETS = {
+    "games": 510.0,
+    "more games": 570.0,
+    "formats": 270.0,
+    "people": 450.0,
+    "tournaments": 840.0,
+}
 
 
 def chosen_group(value: str) -> int:
@@ -3777,7 +3794,15 @@ def main() -> None:
         browsers.append(browser)
         for name in GROUPS[group - 1]:
             began = monotonic()
-            SECTIONS[name](browser)
+            print(f"Screenshot section: {name}", flush=True)
+            # A section that hangs fails after its budget with the line it waits at,
+            # long before the time limit of the job.
+            with budget(
+                f"The section {name}",
+                BUDGETS.get(name, SECTION_BUDGET),
+                wake=wake_playwright,
+            ):
+                SECTIONS[name](browser)
             timings.append((name, monotonic() - began))
             print(f"Screenshot section: {name} ({timings[-1][1]:.1f} s)", flush=True)
         browser.close()

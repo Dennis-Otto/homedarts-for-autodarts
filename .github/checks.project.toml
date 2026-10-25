@@ -80,14 +80,22 @@ problem = """The scenario of `tests/e2e/run.sh` failed in a real Home Assistant 
 Docker, with a simulated Board Manager: the onboarding, the setup, a control, darts in
 real time, a fault of the board, persistence, the diagnostics or the removal. The log
 names the phase and the assertion that failed; the artifact `e2e-scenario-*` keeps the
-logs of Home Assistant and of the simulated board."""
+logs of Home Assistant and of the simulated board. A phase that hangs fails after its
+budget with `Watchdog: The phase … took longer than … s. It waits here:` and the stack
+of the coroutines that wait, down to the line that waits; a run that the step of the
+workflow stopped after seven minutes says `Stopped by SIGINT` and shows the state of
+the containers, what they use of the CPU and the memory, and the end of the log of
+Home Assistant."""
 why = """It is the one test that runs the integration as it is installed, against a
 board that answers as a real one does: on Board Manager 1, on Board Manager 2 with its
 discovery by mDNS, and on the oldest Home Assistant that `hacs.json` promises."""
 fix = """Run the scenario of the job that failed on your machine with Docker, fix what
 it shows, and push. The job named after a version of Home Assistant runs the image
 `OLDEST_HOME_ASSISTANT` of `.github/workflows/e2e.yml` with Board Manager 2: set it as
-`HOME_ASSISTANT_IMAGE`."""
+`HOME_ASSISTANT_IMAGE`. For a phase that took too long, read its stack from the bottom:
+the last line is what it waited for, such as an entity that never changed or an
+answer of the board that never came. A phase that only grew slower gets a larger
+`budget` in `tests/e2e/scenario.py`."""
 commands = [
   "BOARD_MANAGER=1 bash tests/e2e/run.sh",
   "BOARD_MANAGER=2 bash tests/e2e/run.sh",
@@ -103,7 +111,11 @@ WebKit for Safari, against the demo of Home Assistant: a card that is missing, w
 than the screen, cuts off a text, changes its height during a game, or breaks a rule
 of accessibility (WCAG 2.1 A and AA). The log names the step and the screen; the
 artifact `e2e-browser-*` keeps a screenshot of every open page and the log of Home
-Assistant."""
+Assistant. A step that hangs fails after its budget with `Watchdog: <step> took longer
+than … s. It waits here:` and the stack of the step, down to the line that waits; a
+run that the step of the workflow stopped after twelve minutes names the step that
+still ran, `when SIGINT stopped it`, and shows the state of the containers, what they
+use of the CPU and the memory, and the end of the log of Home Assistant."""
 why = """The tests of the cards with Node can't see what a browser draws: these steps
 use every card on phones, tablets and touch screens, in every language, as the
 players do at their boards."""
@@ -112,7 +124,11 @@ fix = """Run the group of the job that failed on your machine with Docker, after
 with `BROWSER_SHARD=3/4` and *group 4* with `BROWSER_SHARD=4/4`, and `BROWSER_STEPS`
 runs only the steps that it names. The jobs named after a version of Home Assistant
 run the image `OLDEST_HOME_ASSISTANT` of `.github/workflows/e2e.yml`: set it as
-`HOME_ASSISTANT_IMAGE`. Fix the card that the screenshot shows, and push."""
+`HOME_ASSISTANT_IMAGE`. Fix the card that the screenshot shows, and push. For a step
+that took too long, read its stack from the bottom: the last lines of `browser.py` and
+`pages.py` are what it waited for, such as a page that never settled. A step that only
+grew slower gets a larger `budget` in `steps()` of `tests/e2e/browser.py`, about three
+times its seconds in `browser-steps-table.md`."""
 commands = [
   "npm ci",
   "BROWSER_STEPS=\"steady heights\" bash tests/e2e/browser.sh",
@@ -169,11 +185,17 @@ title = "The images of the documentation"
 problem = """An image of the documentation couldn't be rendered from the demo, with its
 frozen clock, for the language and the group of the check: a card didn't come up, or
 a step of `tests/e2e/screenshots.py` ran out of time. The log names the image; the
-artifact `visual-failure-*` keeps a screenshot of the page."""
+artifact `visual-failure-*` keeps a screenshot of the page. A section that hangs fails
+after its budget with `Watchdog: The section … took longer than … s. It waits here:`
+and the stack of the section, down to the line that waits; a run that the step of the
+workflow stopped after twenty-one minutes says `Stopped by SIGINT` and shows the state
+of the containers and the end of the log of Home Assistant."""
 why = """Every picture of the README and of the website comes from these images. An
 image that can't be rendered shows a card that no longer comes up in the demo, and the
 documentation would fall behind the cards."""
-fix = """Render the group on your machine with Docker, fix the card or the step of the
+fix = """A section that only grew slower gets a larger budget in `BUDGETS` of
+`tests/e2e/screenshots.py`, about twice its seconds in the summary of the job. Else
+render the group on your machine with Docker, fix the card or the step of the
 screenshot tool that failed, put the committed images back, and push:"""
 commands = [
   "SCREENSHOT_GROUP=2/3 LANGUAGES=en bash tests/e2e/visual.sh",
