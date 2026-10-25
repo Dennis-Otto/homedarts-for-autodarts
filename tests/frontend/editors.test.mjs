@@ -198,7 +198,7 @@ test("the caller's calls, the new game screen and idle mode wait in sections of 
       ["Keep the screen on in full screen", true],
     ]
   );
-  assert.match(form.computeHelper(form.schema[2].schema[7]), /over HTTPS, such as with Home Assistant Cloud/);
+  assert.match(form.computeHelper(form.schema[2].schema[7]), /at an https:\/\/ address, such as with Home Assistant Cloud/);
   const [caller, lobby, idle] = form.schema.slice(4, 7);
   assert.deepEqual([caller.type, caller.name, caller.flatten], ["expandable", "caller_options", true]);
   assert.equal(form.computeLabel(caller), "Caller options");

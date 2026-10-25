@@ -222,7 +222,7 @@ export default {
   "show_status": "Bordstatus tonen",
   "fullscreen_button": "Knop voor volledig scherm",
   "keep_awake": "Scherm aan laten bij volledig scherm",
-  "keep_awake_helper": "Waar de browser een pagina dat toestaat: via HTTPS, zoals met Home Assistant Cloud, en in de Companion-app.",
+  "keep_awake_helper": "Waar de browser een pagina dat toestaat: op een https://-adres, zoals met Home Assistant Cloud, in de browser en in de Companion-app.",
   "fullscreen": "Volledig scherm",
   "fullscreen_hint": "Toon alleen het scorebord op het hele scherm; de knop, Escape of dubbeltikken sluit het",
   "awake_hint": "Deze browser kan het scherm hier niet aan laten. Zet de schermtime-out uit in de instellingen van de tablet.",

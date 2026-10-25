@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: Wie die Anzeigetafel im Vollbild den Bildschirm eingeschaltet lässt
-  accDescr: Ein Tipp auf die Vollbild-Taste zeigt die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant. Wo der Browser einer Seite erlaubt, den Bildschirm eingeschaltet zu lassen, über HTTPS oder in der Companion-App, bleibt er an. Zeigt das Tablet eine andere App, lässt der Browser los, und die Anzeigetafel hält den Bildschirm wieder an, sobald die Seite wieder zu sehen ist. Wo der Browser es nicht kann, sagt ein Hinweis einmal, die automatische Bildschirmabschaltung des Tablets auszuschalten. Die Taste, Escape oder zweimal Tippen beendet das Vollbild, und der Bildschirm darf wieder ausgehen.
+  accDescr: Ein Tipp auf die Vollbild-Taste zeigt die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant. Wo der Browser einer Seite erlaubt, den Bildschirm eingeschaltet zu lassen, unter einer https://-Adresse im Browser wie in der Companion-App, bleibt er an. Zeigt das Tablet eine andere App, lässt der Browser los, und die Anzeigetafel hält den Bildschirm wieder an, sobald die Seite wieder zu sehen ist. Wo der Browser es nicht kann, sagt ein Hinweis einmal, die automatische Bildschirmabschaltung des Tablets auszuschalten. Die Taste, Escape oder zweimal Tippen beendet das Vollbild, und der Bildschirm darf wieder ausgehen.
 
   TAP["Ein Tipp auf die Vollbild-Taste"] --> FULL["Die Anzeigetafel allein auf dem Bildschirm:<br/>keine Leisten des Browsers, keine Kopfzeile, keine Seitenleiste"]
-  FULL --> LOCK{{"Kann der Browser den Bildschirm anlassen?<br/>Über HTTPS oder in der Companion-App"}}
+  FULL --> LOCK{{"Kann der Browser den Bildschirm anlassen?<br/>Unter einer https://-Adresse, auch in der Companion-App"}}
   LOCK -- ja --> ON["Der Bildschirm bleibt an"]
   ON -- "eine andere App, dann zurück" --> AGAIN["Die Anzeigetafel hält den<br/>Bildschirm wieder an"]
   AGAIN --> ON

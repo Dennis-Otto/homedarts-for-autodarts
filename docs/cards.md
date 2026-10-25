@@ -337,7 +337,7 @@ Panels with nothing to show are skipped. A dart, a new game or a tap anywhere en
 | `show_visit` | boolean | `true` | Show the darts of the current visit |
 | `show_status` | boolean | `true` | Show the board status |
 | `fullscreen_button` | boolean | `true` | Show the [full-screen button](scoreboard.md#full-screen) at the top right, where the browser offers full screen: the scoreboard alone on the screen, without the bars of the browser and Home Assistant's header and sidebar |
-| `keep_awake` | boolean | `true` | Keep the screen on while the scoreboard is in full screen, where the browser allows it: over HTTPS and in the Companion app |
+| `keep_awake` | boolean | `true` | Keep the screen on while the scoreboard is in full screen, where the browser allows it: at an `https://` address, in the browser and in the Companion app alike |
 | `caller` | boolean | `false` | Switch the caller on: the screen announces visits, what a player requires, busts and game shots |
 | `call_scores` | boolean | `true` | Call the score of every visit (Cricket: its marks) |
 | `call_checkouts` | boolean | `true` | Call what the next player requires when a checkout is possible |

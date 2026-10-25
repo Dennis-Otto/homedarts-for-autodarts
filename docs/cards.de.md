@@ -337,7 +337,7 @@ Seiten ohne Inhalt werden übersprungen. Ein Dart, ein neues Spiel oder ein Tipp
 | `show_visit` | Wahrheitswert | `true` | Die Darts der aktuellen Aufnahme anzeigen |
 | `show_status` | Wahrheitswert | `true` | Den Board-Status anzeigen |
 | `fullscreen_button` | Wahrheitswert | `true` | Die [Vollbild-Taste](scoreboard.de.md#vollbild) oben rechts zeigen, wo der Browser Vollbild anbietet: die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant |
-| `keep_awake` | Wahrheitswert | `true` | Den Bildschirm anlassen, solange die Anzeigetafel im Vollbild ist, wo der Browser es erlaubt: über HTTPS und in der Companion-App |
+| `keep_awake` | Wahrheitswert | `true` | Den Bildschirm anlassen, solange die Anzeigetafel im Vollbild ist, wo der Browser es erlaubt: unter einer `https://`-Adresse, im Browser wie in der Companion-App |
 | `caller` | Wahrheitswert | `false` | Den Caller einschalten: Der Bildschirm sagt Aufnahmen, den Rest eines Spielers, Überwerfen und Game shot an |
 | `call_scores` | Wahrheitswert | `true` | Die Punkte jeder Aufnahme ansagen (Cricket: ihre Marks) |
 | `call_checkouts` | Wahrheitswert | `true` | Ansagen, was der nächste Spieler braucht, wenn ein Checkout möglich ist |

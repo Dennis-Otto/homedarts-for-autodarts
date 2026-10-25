@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: How the scoreboard keeps the screen on in full screen
-  accDescr: A tap on the full-screen button puts the scoreboard alone on the screen, without the bars of the browser and the header and sidebar of Home Assistant. Where the browser lets a page hold the screen on, over HTTPS or in the Companion app, the screen stays on. When the tablet shows another app, the browser lets go, and the scoreboard holds the screen on again when the page shows. Where the browser can't, a hint says once to switch off the screen timeout of the tablet. The button, Escape or a double tap leaves full screen and lets the screen sleep.
+  accDescr: A tap on the full-screen button puts the scoreboard alone on the screen, without the bars of the browser and the header and sidebar of Home Assistant. Where the browser lets a page hold the screen on, at an https:// address in the browser and in the Companion app alike, the screen stays on. When the tablet shows another app, the browser lets go, and the scoreboard holds the screen on again when the page shows. Where the browser can't, a hint says once to switch off the screen timeout of the tablet. The button, Escape or a double tap leaves full screen and lets the screen sleep.
 
   TAP["A tap on the full-screen button"] --> FULL["The scoreboard alone on the screen:<br/>no bars of the browser, no header, no sidebar"]
-  FULL --> LOCK{{"Can the browser hold the screen on?<br/>Over HTTPS or in the Companion app"}}
+  FULL --> LOCK{{"Can the browser hold the screen on?<br/>At an https:// address, also in the Companion app"}}
   LOCK -- yes --> ON["The screen stays on"]
   ON -- "another app, then back" --> AGAIN["The scoreboard holds<br/>the screen on again"]
   AGAIN --> ON

@@ -222,7 +222,7 @@ export default {
   "show_status": "Afficher l'état de la cible",
   "fullscreen_button": "Bouton plein écran",
   "keep_awake": "Garder l'écran allumé en plein écran",
-  "keep_awake_helper": "Là où le navigateur le permet à une page\u00a0: en HTTPS, comme avec Home Assistant Cloud, et dans l'application Companion.",
+  "keep_awake_helper": "Là où le navigateur le permet à une page\u00a0: à une adresse https://, comme avec Home Assistant Cloud, dans le navigateur comme dans l'application Companion.",
   "fullscreen": "Plein écran",
   "fullscreen_hint": "Afficher le tableau des scores seul sur tout l'écran\u00a0; le bouton, Échap ou un double appui le quitte",
   "awake_hint": "Ce navigateur ne peut pas garder l'écran allumé ici. Désactivez la mise en veille de l'écran dans les réglages de la tablette.",

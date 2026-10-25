@@ -222,7 +222,7 @@ export default {
   "show_status": "Board-Status anzeigen",
   "fullscreen_button": "Vollbild-Taste",
   "keep_awake": "Bildschirm im Vollbild eingeschaltet lassen",
-  "keep_awake_helper": "Wo der Browser es einer Seite erlaubt: über HTTPS, etwa mit Home Assistant Cloud, und in der Companion-App.",
+  "keep_awake_helper": "Wo der Browser es einer Seite erlaubt: unter einer https://-Adresse, etwa mit Home Assistant Cloud, im Browser wie in der Companion-App.",
   "fullscreen": "Vollbild",
   "fullscreen_hint": "Die Anzeigetafel allein auf dem ganzen Bildschirm zeigen; die Taste, Escape oder zweimal Tippen beendet das Vollbild",
   "awake_hint": "Dieser Browser kann den Bildschirm hier nicht eingeschaltet lassen. Schalte die automatische Bildschirmabschaltung in den Einstellungen des Tablets aus.",

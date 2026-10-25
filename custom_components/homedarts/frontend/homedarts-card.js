@@ -7272,9 +7272,10 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
     color: #fff; background: var(--ad-accent-fill); border-color: var(--ad-accent-fill);
   }
   @media (any-pointer: coarse) { .fullscreen-toggle { width: 44px; height: 44px; } }
-  /* Once, where the browser can't keep the screen on: what to do instead. */
+  /* Once, where the browser can't keep the screen on: what to do instead. It is a row of
+     its own in the header, so every layout of the scoreboard keeps its grid areas. */
   .awake-hint {
-    margin: 0; padding: .6em 1em; border-radius: 12px; font-size: clamp(13px, 1.6cqi, 18px);
+    flex: 1 0 100%; margin: 0; padding: .6em 1em; border-radius: 12px; font-size: clamp(13px, 1.6cqi, 18px);
     color: var(--ad-warn-text); background: color-mix(in srgb, ${STATUS_COLORS.takeout} 14%, transparent);
   }
   .awake-hint a { color: inherit; font-weight: 700; }
@@ -10408,9 +10409,9 @@ function createElements(Base) {
                   ${c.show_status ? `<div class="pill" role="status"></div>` : ""}
                   ${fullscreen}
                 </div>
+                <p class="awake-hint" role="status" hidden>${t("awake_hint")}
+                  <a href="${awake}" target="_blank" rel="noreferrer">${t("awake_hint_link")}</a></p>
               </header>
-              <p class="awake-hint" role="status" hidden>${t("awake_hint")}
-                <a href="${awake}" target="_blank" rel="noreferrer">${t("awake_hint_link")}</a></p>
               <div class="banner appear" role="status" hidden></div>
               <div class="main"></div>
               ${c.show_visit ? `<div class="visit"></div>` : ""}

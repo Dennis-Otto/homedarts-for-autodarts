@@ -225,7 +225,7 @@ export default {
   "show_status": "Show the board status",
   "fullscreen_button": "Full-screen button",
   "keep_awake": "Keep the screen on in full screen",
-  "keep_awake_helper": "Where the browser lets a page do it: over HTTPS, such as with Home Assistant Cloud, and in the Companion app.",
+  "keep_awake_helper": "Where the browser lets a page do it: at an https:// address, such as with Home Assistant Cloud, in the browser and in the Companion app alike.",
   "fullscreen": "Full screen",
   "fullscreen_hint": "Show the scoreboard alone on the whole screen; the button, Escape or a double tap leaves full screen",
   "awake_hint": "This browser can't keep the screen on here. Switch off the screen timeout in the settings of the tablet.",

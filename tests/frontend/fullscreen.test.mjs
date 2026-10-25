@@ -304,6 +304,8 @@ test("once, where the browser can't keep the screen on, a hint says how to keep 
   // Over plain HTTP the browser has no wake lock.
   const card = setup();
   const hint = $(card, ".awake-hint");
+  // A row of the header, so the grid of the keypad layout keeps its areas.
+  assert.equal(hint.parentElement.tagName, "HEADER");
   button(card).click();
   assert.equal(hint.hidden, false);
   assert.match(hint.textContent, /This browser can't keep the screen on here/);

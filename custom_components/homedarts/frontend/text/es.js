@@ -222,7 +222,7 @@ export default {
   "show_status": "Mostrar el estado de la diana",
   "fullscreen_button": "Botón de pantalla completa",
   "keep_awake": "Mantener la pantalla encendida en pantalla completa",
-  "keep_awake_helper": "Donde el navegador se lo permite a una página: por HTTPS, como con Home Assistant Cloud, y en la app Companion.",
+  "keep_awake_helper": "Donde el navegador se lo permite a una página: en una dirección https://, como con Home Assistant Cloud, tanto en el navegador como en la app Companion.",
   "fullscreen": "Pantalla completa",
   "fullscreen_hint": "Mostrar solo el marcador en toda la pantalla; el botón, Escape o un doble toque la cierra",
   "awake_hint": "Este navegador no puede mantener la pantalla encendida aquí. Desactiva el apagado automático de la pantalla en los ajustes de la tableta.",
