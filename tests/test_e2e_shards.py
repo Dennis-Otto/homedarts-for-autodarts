@@ -333,11 +333,27 @@ def browsers(calls: list[str]) -> list[str]:
     """The shard and network of every browser that browser.sh started."""
     started = []
     for call in calls:
-        if call.startswith("run --rm --network "):
+        if call.startswith("run --rm "):
             words = call.split()
             shard = next(word for word in words if word.startswith("BROWSER_SHARD="))
-            started.append(f"{words[3]} {shard}")
+            started.append(f"{words[words.index('--network') + 1]} {shard}")
     return started
+
+
+@needs_bash
+def test_each_browser_has_a_name_that_the_cleanup_removes_it_by(tmp_path):
+    # A browser that a signal stopped would keep running, and its docker run would
+    # keep the output of the step open, so GitHub would wait for it to the end.
+    _, calls = browser_sh(tmp_path, BROWSER_WORKERS="2")
+
+    names = sorted(
+        call.split()[call.split().index("--name") + 1]
+        for call in calls
+        if call.startswith("run --rm ")
+    )
+    assert names == ["homedarts_browser_1-playwright", "homedarts_browser_2-playwright"]
+    for name in names:
+        assert f"rm --force {name}" in calls
 
 
 @needs_bash

@@ -188,7 +188,7 @@ a step of `tests/e2e/screenshots.py` ran out of time. The log names the image; t
 artifact `visual-failure-*` keeps a screenshot of the page. A section that hangs fails
 after its budget with `Watchdog: The section … took longer than … s. It waits here:`
 and the stack of the section, down to the line that waits; a run that the step of the
-workflow stopped after seventeen minutes says `Stopped by SIGINT` and shows the state
+workflow stopped after twenty-one minutes says `Stopped by SIGINT` and shows the state
 of the containers and the end of the log of Home Assistant."""
 why = """Every picture of the README and of the website comes from these images. An
 image that can't be rendered shows a card that no longer comes up in the demo, and the

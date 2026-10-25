@@ -48,6 +48,8 @@ ROOT_MOUNT="$(cd "${REPOSITORY_ROOT}" && (pwd -W 2>/dev/null || pwd))"
 # shellcheck source=tests/e2e/diagnose.sh
 . "${SCRIPT_DIR}/diagnose.sh"
 COMPOSE=("${DOCKER_BIN}" compose --project-name "${PROJECT_NAME}" --file compose.yaml)
+# The container of the browser, beside the demo.
+BROWSER="${PROJECT_NAME}-playwright"
 
 # The Playwright image comes while the first demo starts; if that fails, docker run
 # fetches it itself and says why it can't.
@@ -64,6 +66,9 @@ cleanup() {
 	if ((status != 0)); then
 		diagnose 100 "${COMPOSE[@]}"
 	fi
+	# A browser that a signal stopped still runs, and its docker run keeps the output
+	# of the step open, so that GitHub would wait for it to the end.
+	"${DOCKER_BIN}" rm --force "${BROWSER}" >/dev/null 2>&1 || true
 	"${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
 	exit "${status}"
 }
@@ -79,7 +84,7 @@ for language in ${LANGUAGES:-en de}; do
 		in_background env DEMO_LANGUAGE="${language}" bash "${SCRIPT_DIR}/demo.sh"
 		wait "${pulling}" 2>/dev/null || true
 		# The config volume of the demo holds the file that moves its frozen clock on.
-		in_background "${DOCKER_BIN}" run --rm --network "${PROJECT_NAME}_default" \
+		in_background "${DOCKER_BIN}" run --rm --name "${BROWSER}" --network "${PROJECT_NAME}_default" \
 			--env "DEMO_LANGUAGE=${language}" \
 			--env "DEMO_TIME=${DEMO_TIME}" \
 			--env "DEMO_CLOCK=/ha-config/.demo_clock" \

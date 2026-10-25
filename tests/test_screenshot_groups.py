@@ -169,8 +169,12 @@ def test_the_comment_of_the_visual_check_finds_one_report_per_language():
 
 # screenshots.sh --------------------------------------------------------------------
 
+# Notes every call; the screenshot tool fails when a test sets $FAIL.
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
+if [[ -n "${FAIL:-}" && "$1" == run ]]; then
+  exit 1
+fi
 """
 
 
@@ -233,6 +237,26 @@ def test_every_group_renders_from_a_fresh_demo_in_turn(tmp_path):
         )
         == 1
     )
+
+
+def test_a_group_that_fails_shows_its_containers_and_removes_its_browser(tmp_path):
+    result, calls = render(tmp_path, LANGUAGES="en", SCREENSHOT_GROUP="1/3", FAIL="1")
+
+    assert result.returncode == 1
+    (run,) = [call for call in calls if call.startswith("run ")]
+    assert "--name autodarts_demo-playwright " in run
+    project = "compose --project-name autodarts_demo --file compose.yaml "
+    after = [call.removeprefix(project) for call in calls[calls.index(run) + 1 :]]
+    # The state of the containers, what they use and the end of the log of Home
+    # Assistant; then the browser goes, which a signal would leave running, and the
+    # demo.
+    assert after == [
+        "ps --all",
+        "stats --no-stream",
+        "exec -T homeassistant tail -n 100 /config/home-assistant.log",
+        "rm --force autodarts_demo-playwright",
+        "down --volumes --remove-orphans",
+    ]
 
 
 def test_one_group_renders_into_the_folder_it_is_given(tmp_path):

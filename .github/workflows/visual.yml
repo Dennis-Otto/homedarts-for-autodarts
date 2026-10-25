@@ -40,8 +40,9 @@ jobs:
   render:
     name: render (${{ matrix.language }}, ${{ matrix.group }}/3)
     runs-on: ubuntu-latest
-    # The demo takes about two minutes, the images of a group about six.
-    timeout-minutes: 20
+    # The demo takes about two minutes, the images of the longest group, the third,
+    # about twelve; the step that renders them ends after 21 minutes.
+    timeout-minutes: 25
     permissions:
       contents: read
     strategy:
@@ -83,7 +84,7 @@ jobs:
       # which prints the state of its containers before it ends
       # (docs/development.md#when-a-step-hangs).
       - name: Render the images of the group with the frozen clock
-        timeout-minutes: 17
+        timeout-minutes: 21
         env:
           LANGUAGES: ${{ matrix.language }}
           SCREENSHOT_GROUP: ${{ matrix.group }}/3

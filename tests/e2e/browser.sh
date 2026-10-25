@@ -61,6 +61,8 @@ artifacts_of() {
 	if ((WORKERS == 1)); then echo "${ARTIFACTS}"; else echo "${ARTIFACTS}/shard-${shard/\//-of-}"; fi
 }
 compose_of() { "${DOCKER_BIN}" compose --project-name "$(project_of "$1")" --file compose.yaml "${@:2}"; }
+# The container of the browser of a worker, beside its demo.
+browser_of() { echo "$(project_of "$1")-playwright"; }
 
 # diagnose, and a signal that stops the run as a failure.
 # shellcheck source=tests/e2e/diagnose.sh
@@ -167,6 +169,9 @@ cleanup() {
 		for worker in "${FAILED[@]}"; do explain "${worker}" || true; done
 	fi
 	for ((worker = 1; worker <= WORKERS; worker++)); do
+		# A browser that a signal stopped still runs, and its docker run keeps the
+		# output of the step open, so that GitHub would wait for it to the end.
+		"${DOCKER_BIN}" rm --force "$(browser_of "${worker}")" >/dev/null 2>&1 || true
 		compose_of "${worker}" down --volumes --remove-orphans >/dev/null 2>&1 || true
 	done
 	exit "${status}"
@@ -182,7 +187,7 @@ worker() {
 	artifacts_mount="$(cd "${folder}" && (pwd -W 2>/dev/null || pwd))"
 	E2E_PROJECT_NAME="$(project_of "$1")" E2E_PORT="$((PORT + $1 - 1))" \
 		bash "${SCRIPT_DIR}/demo.sh"
-	"${DOCKER_BIN}" run --rm --network "$(project_of "$1")_default" \
+	"${DOCKER_BIN}" run --rm --name "$(browser_of "$1")" --network "$(project_of "$1")_default" \
 		--env "BOARD_MANAGER=${BOARD_MANAGER}" \
 		--env "BROWSER_ARTIFACTS=/artifacts" \
 		--env "BROWSER_SHARD=$(shard_of "$1")" \
