@@ -21,11 +21,13 @@ pytestmark = pytest.mark.skipif(
 )
 
 # Notes every call; the first $PULL_FAILURES pulls fail, and with $HANG the scenario
-# runs until the containers go down after it, as a "down" stops its "exec".
+# runs until the containers go down after it, as a "down" stops its "exec", or until
+# it is ended, which notes in $CALLS.ended how many calls came before.
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
 if [[ -n "${HANG:-}" && "$*" == *scenario.py* ]]; then
-  while (($(grep -c ' down ' "$CALLS") < 2)); do sleep 0.1; done
+  trap 'wc -l < "$CALLS" > "$CALLS.ended"; exit 143' TERM
+  while (($(grep -c ' down ' "$CALLS") < 2)); do sleep 0.1 & wait "$!"; done
   exit 137
 fi
 if [[ "$*" == *" pull "* ]]; then
@@ -139,3 +141,7 @@ def test_a_signal_stops_a_hung_scenario_with_the_logs_of_a_failed_run(tmp_path):
         result.stderr
     )
     assert commands(calls) == ["down", "pull", "up", "exec", *DIAGNOSIS, "down"]
+    # The scenario that hung ended before the diagnosis, so nothing of the step
+    # outlives it.
+    ended = tmp_path / "calls.ended"
+    assert int(ended.read_text(encoding="utf-8")) == 4

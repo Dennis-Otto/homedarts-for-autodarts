@@ -61,14 +61,14 @@ cleanup() {
 	trap - EXIT
 	keep_cleaning
 	kill "${pulling}" 2>/dev/null || true
-	# A group that failed or was stopped shows its containers and the end of the log
-	# of Home Assistant.
+	# First the browser that a signal stopped, which still runs, so that no container
+	# outlives the step, then what a group that failed or was stopped shows: its
+	# containers and the end of the log of Home Assistant.
+	"${DOCKER_BIN}" rm --force "${BROWSER}" >/dev/null 2>&1 || true
+	end_background
 	if ((status != 0)); then
 		diagnose 100 "${COMPOSE[@]}"
 	fi
-	# A browser that a signal stopped still runs, and its docker run keeps the output
-	# of the step open, so that GitHub would wait for it to the end.
-	"${DOCKER_BIN}" rm --force "${BROWSER}" >/dev/null 2>&1 || true
 	"${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
 	exit "${status}"
 }

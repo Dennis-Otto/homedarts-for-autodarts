@@ -37,7 +37,19 @@ keep_cleaning() {
 }
 
 # Run a command, a function too, in the background and wait for it, with its status.
+# BACKGROUND keeps its process for end_background while it runs.
+BACKGROUND=""
 in_background() {
+	local status=0
 	"$@" &
-	wait "$!"
+	BACKGROUND=$!
+	wait "${BACKGROUND}" || status=$?
+	BACKGROUND=""
+	return "${status}"
+}
+
+# In the trap on EXIT, before anything else: end the command that a signal stopped the
+# wait for, so that nothing of the step outlives it.
+end_background() {
+	if [[ -n "${BACKGROUND}" ]]; then kill "${BACKGROUND}" 2>/dev/null || true; fi
 }

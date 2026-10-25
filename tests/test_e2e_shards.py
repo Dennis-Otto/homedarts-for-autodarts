@@ -342,8 +342,8 @@ def browsers(calls: list[str]) -> list[str]:
 
 @needs_bash
 def test_each_browser_has_a_name_that_the_cleanup_removes_it_by(tmp_path):
-    # A browser that a signal stopped would keep running, and its docker run would
-    # keep the output of the step open, so GitHub would wait for it to the end.
+    # A browser that a signal stopped would keep running, so the cleanup removes it,
+    # so that no container outlives the step.
     _, calls = browser_sh(tmp_path, BROWSER_WORKERS="2")
 
     names = sorted(
@@ -556,7 +556,10 @@ def test_a_signal_stops_a_hung_run_and_names_the_step_that_still_ran(tmp_path):
     assert "| touch screens (running) | – |" in summary.read_text(encoding="utf-8")
     project = "compose --project-name homedarts_browser --file compose.yaml "
     shown = [call.removeprefix(project) for call in calls if call.startswith(project)]
-    # First the state of its containers and its logs, last the cleanup.
+    # First the browser goes, which still runs, then the state of its containers and
+    # its logs, last the cleanup.
+    removed = calls.index("rm --force homedarts_browser-playwright")
+    assert removed < calls.index(project + "ps --all")
     assert shown[-6:] == [
         "ps --all",
         "stats --no-stream",

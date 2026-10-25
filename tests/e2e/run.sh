@@ -20,6 +20,7 @@ cleanup() {
 	status=$?
 	trap - EXIT
 	keep_cleaning
+	end_background
 	if [[ "${status}" -ne 0 ]]; then
 		# First what tells most about a run that hangs, before GitHub ends it.
 		diagnose 300 "${COMPOSE[@]}"

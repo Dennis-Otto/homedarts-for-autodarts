@@ -247,14 +247,14 @@ def test_a_group_that_fails_shows_its_containers_and_removes_its_browser(tmp_pat
     assert "--name autodarts_demo-playwright " in run
     project = "compose --project-name autodarts_demo --file compose.yaml "
     after = [call.removeprefix(project) for call in calls[calls.index(run) + 1 :]]
-    # The state of the containers, what they use and the end of the log of Home
-    # Assistant; then the browser goes, which a signal would leave running, and the
-    # demo.
+    # First the browser goes, which a signal would leave running, so that no container
+    # outlives the step; then the state of the containers, what they use and the end
+    # of the log of Home Assistant, and the demo.
     assert after == [
+        "rm --force autodarts_demo-playwright",
         "ps --all",
         "stats --no-stream",
         "exec -T homeassistant tail -n 100 /config/home-assistant.log",
-        "rm --force autodarts_demo-playwright",
         "down --volumes --remove-orphans",
     ]
 

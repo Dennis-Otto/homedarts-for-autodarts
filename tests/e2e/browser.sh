@@ -149,7 +149,13 @@ cleanup() {
 			if [[ " ${FAILED[*]} ${PASSED[*]} " != *" ${worker} "* ]]; then FAILED+=("${worker}"); fi
 		done
 	fi
-	# First what tells most about a run that hangs, before GitHub ends it: the
+	# First the browsers that a signal stopped, which still run, so that no container
+	# outlives the step; they are not part of the Compose projects, and their lines are
+	# already in the log.
+	for ((worker = 1; worker <= WORKERS; worker++)); do
+		"${DOCKER_BIN}" rm --force "$(browser_of "${worker}")" >/dev/null 2>&1 || true
+	done
+	# Then what tells most about a run that hangs, before GitHub ends it: the
 	# containers of each failed worker, its logs and its explanation; the cleanup last.
 	for ((worker = 1; worker <= WORKERS; worker++)); do
 		folder="$(artifacts_of "${worker}")"
@@ -169,9 +175,6 @@ cleanup() {
 		for worker in "${FAILED[@]}"; do explain "${worker}" || true; done
 	fi
 	for ((worker = 1; worker <= WORKERS; worker++)); do
-		# A browser that a signal stopped still runs, and its docker run keeps the
-		# output of the step open, so that GitHub would wait for it to the end.
-		"${DOCKER_BIN}" rm --force "$(browser_of "${worker}")" >/dev/null 2>&1 || true
 		compose_of "${worker}" down --volumes --remove-orphans >/dev/null 2>&1 || true
 	done
 	exit "${status}"
