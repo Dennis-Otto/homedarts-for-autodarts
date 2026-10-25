@@ -21,9 +21,11 @@ from typing import Any, Protocol
 from .bot import BOT_DARTS, Bot
 from .bot import aim as bot_aim
 from .errors import ActionRefused
+from .lifecycle import GameLifecycle
 from .local_api import number
 from .manual import ManualDarts
 from .modes import VisitRefused
+from .moments import stamp
 from .practice import PracticeGame
 from .profiles import clean_name, valid_name
 from .progress import Progress
@@ -124,6 +126,8 @@ class BoardGames:
         self.records = PersonalRecords()
         self.progress = Progress()
         self.tournament = TournamentDirector()
+        # The start and the end of the games, for game_started and game_ended.
+        self.life = GameLifecycle()
         # The key of the board, the ID of its entry in Home Assistant, by which
         # the boards of a tournament on several boards know each other.
         self.key = ""
@@ -164,6 +168,13 @@ class BoardGames:
         self.progress.restore(stored.get("progress"), self.practice.profiles, now)
         self.tournament.restore(stored.get("tournament"))
         self.practice.hold = self.tournament.waiting
+        self.life.restore(stored.get("lifecycle"))
+        if isinstance(saved, dict) and "lifecycle" not in saved:
+            self.life.adopt(
+                self.practice,
+                self.tournament.running and not self.tournament.waiting,
+                stamp(now),
+            )
 
     def stored(self) -> dict[str, Any]:
         """Training sessions, the practice game, personal bests, the players'
@@ -174,6 +185,7 @@ class BoardGames:
             "records": self.records.stored(),
             "progress": self.progress.stored(),
             "tournament": self.tournament.stored(),
+            "lifecycle": self.life.stored(),
         }
 
     # -- the darts on the board --------------------------------------------------
@@ -246,6 +258,10 @@ class BoardGames:
         ):
             changed = True
             announced.append((kind, attributes, source))
+        darts = any(kind in DART_EVENTS for kind, _ in observed)
+        for kind, attributes in self._game_events(now, darts=darts):
+            changed = True
+            announced.append((kind, attributes, source))
         self._publish(data, changed)
 
     def _book_visit(
@@ -261,6 +277,8 @@ class BoardGames:
         events = self.practice.finish_visit(empty, now=now)
         booked = self._booked(pending.legs_total, decided)
         events += self.progress.after(pending, self.practice, now)
+        # A won game ends before a tournament starts its next match.
+        ended = self._game_events(now)
         # A tournament takes the result once the practice game booked it; the
         # board holding a tournament on several boards announces its events.
         fixture = self._fixture(now)
@@ -272,7 +290,7 @@ class BoardGames:
             events += fixture
         self._announced += [
             (kind, details, source)
-            for kind, details in self._recorded(events, now, booked)
+            for kind, details in [*self._recorded(events, now, booked), *ended]
         ]
 
     def _recorded(
@@ -374,9 +392,35 @@ class BoardGames:
         events it brings, with the personal bests they set. A change cannot
         be undone visit by visit."""
         recorded = self._recorded(events, now)
+        idle = any(
+            kind == "session_ended" and attributes.get("reason") == "idle"
+            for kind, attributes in events
+        )
         self._undo = None
         self.revision += 1
-        return recorded
+        return recorded + self._game_events(now, idle=idle)
+
+    def _game_events(
+        self, now: datetime, *, darts: bool = False, idle: bool = False
+    ) -> list[Event]:
+        """The start and the end of the games since the last step, see
+        GameLifecycle.follow."""
+        director, board = self._seat()
+        return self.life.follow(
+            self.practice,
+            stamp(now),
+            tournament=director.running and not director.waiting_at(board),
+            darts=darts,
+            idle=idle,
+        )
+
+    def follow_game(self, now: datetime) -> list[Announcement]:
+        """The start and the end of the games after another board of a
+        tournament on several boards changed them, see moved."""
+        return [
+            (kind, attributes, "training")
+            for kind, attributes in self._game_events(now)
+        ]
 
     # -- tournaments -------------------------------------------------------------
 

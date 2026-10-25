@@ -1,6 +1,6 @@
 # Instructions for coding agents
 
-HomeDarts for Autodarts: Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and fifteen blueprints, games started by voice. No cloud account needed.
+HomeDarts for Autodarts: Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and sixteen blueprints, games started by voice. No cloud account needed.
 
 These are the rules for coding agents, such as Claude Code, Codex, GitHub Copilot and Cursor, that change this repository; people find the same rules in [CONTRIBUTING.md](CONTRIBUTING.md). The blueprint keeps this file current, so change it in the blueprint, not here. The notes of this project, such as where its parts are, are in [.github/agents.project.md](.github/agents.project.md): read them as well.
 

@@ -341,7 +341,7 @@ async def test_a_new_game_ends_a_visit_entered_by_hand(hass, aioclient_mock):
     events = record(hass, coordinator)
     await start(hass, "501")
     # The dart counts for the training, not for the new game.
-    assert kinds(events) == ["visit_completed"]
+    assert kinds(events) == ["game_ended", "game_started", "visit_completed"]
     assert coordinator.games.practice.snapshot()["visit"] == []
     assert state(hass, "sensor", "practice_remaining") == "501"
     assert coordinator.games.training.snapshot()["darts"] == 1

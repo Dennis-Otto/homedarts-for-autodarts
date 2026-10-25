@@ -38,7 +38,7 @@ HomeDarts for Autodarts is a free, open-source integration that connects an Auto
 | Play | Up to four players or two teams of two, handicap start scores, a bot from level 20 to 120, tournaments of three to 32 players |
 | Scoreboard | A full-screen view for a tablet or TV, with the new game screen, dart corrections, a caller and idle mode |
 | Statistics | Personal bests, heatmaps of the real dart positions, trends, achievements, a leaderboard, a weekly report and exports |
-| Home | Seven dashboard cards, an automatic dashboard and fifteen blueprints, for example a light show on a 180 |
+| Home | Seven dashboard cards, an automatic dashboard and sixteen blueprints, for example a light show on a 180 |
 | Languages | English, German, Dutch, French and Spanish |
 | Quality | 100 % test coverage, tested against both Board Manager generations in Docker; every rule of the Home Assistant quality scale up to Platinum (self-assessed) |
 | Requirements | Home Assistant 2026.8 or newer with HACS; the tested setups are under [supported devices](README.md#supported-devices) |
@@ -85,7 +85,7 @@ Every screenshot of the documentation is in [`docs/images/en`](https://github.co
 | On the scoreboard | In Home Assistant |
 | --- | --- |
 | <img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs per set, double out and the start button" width="100%"> | <img src="images/en/players-card.png" alt="Players card with the profiles of Alex, Sam and Kim with their pictures, their averages and personal bests, the head-to-head record of Alex and Sam, and the recent matches" width="100%"> |
-| <img src="images/en/match-summary.png" alt="Scoreboard after Alex beat Sam 2 : 1 in 301: the match summary with legs, 3-dart average, first 9, checkout rate, highest checkout, 180s, 140+, 100+, best leg, darts at a double and darts of both players" width="100%"> | <img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the fifteen HomeDarts blueprints, from the board problem alert to the weekly report, and their file names" width="100%"> |
+| <img src="images/en/match-summary.png" alt="Scoreboard after Alex beat Sam 2 : 1 in 301: the match summary with legs, 3-dart average, first 9, checkout rate, highest checkout, 180s, 140+, 100+, best leg, darts at a double and darts of both players" width="100%"> | <img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the sixteen HomeDarts blueprints, from the board problem alert to the weekly report, and their file names" width="100%"> |
 
 ## Stream your games
 
@@ -146,7 +146,7 @@ I play on an Autodarts board, and I wanted the whole game in Home Assistant, not
 
 - **Local and in real time.** It talks to the Board Manager on the board PC in your network: no Autodarts account, no cloud, nothing leaves your home.
 - **A dart machine at home.** X01, six Cricket games, nine party and eight training games, a bot from level 20 to 120 and tournaments, on a full-screen scoreboard for a tablet or TV, with a caller.
-- **Every dart for your automations.** Events for every dart, visit, bust, leg and match, seven dashboard cards and fifteen blueprints, from a light show on a 180 to a weekly report. Statistics with heatmaps stay in your Home Assistant.
+- **Every dart for your automations.** Events for every dart, visit, bust, leg and match, seven dashboard cards and sixteen blueprints, from a light show on a 180 to a weekly report. Statistics with heatmaps stay in your Home Assistant.
 
 **Try it first:** the [live demo](https://dennis-otto.github.io/homedarts-for-autodarts/demo/index.html) plays the cards in your browser, with nothing to install. No Autodarts board? It also counts darts entered on a keypad.
 
@@ -170,7 +170,7 @@ I play darts on an Autodarts board, whose cameras score every dart, and I wanted
 
 - **Local push, no cloud.** It connects to the Board Manager on the board PC in your network; no Autodarts account needed.
 - **Your own dart machine.** X01, Cricket, party and training games, a bot and tournaments, with a full-screen scoreboard and a caller for a tablet or TV at the board.
-- **An event for every dart.** Visits, busts, legs and matches as events, seven dashboard cards and fifteen blueprints: a light show on a 180, a photo of the board after a checkout, a weekly report, games started by voice.
+- **An event for every dart.** Visits, busts, legs and matches as events, seven dashboard cards and sixteen blueprints: a light show on a 180, a photo of the board after a checkout, a weekly report, games started by voice.
 
 Statistics with heatmaps of where your darts really land stay in your Home Assistant.
 

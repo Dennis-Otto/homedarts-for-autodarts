@@ -1,0 +1,22 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Wie die Walk-on-Musik spielt
+  accDescr: Wenn ein Spiel beginnt, sucht der Blueprint im Song-Paket den Song jedes Spielers, in der Reihenfolge der Plätze: den eigenen Song, etwa alex.mp3, bot.mp3 für den Bot oder default.mp3. Jeder Song spielt die Sekunden pro Walk-on; ein Spieler ohne Song läuft still ein. Der erste Dart beendet die Walk-ons sofort. Ein Spiel, das gestoppt oder ersetzt wird, stoppt die Musik. Wenn die Darts der Siegaufnahme gezogen sind, spielt der Song des Siegers.
+  STARTED(["game_started"]) --> SEAT["Der nächste Spieler, Platz für Platz"]
+  SEAT --> FIND{"Ein Song im Paket?<br/>alex.mp3, bot.mp3<br/>oder default.mp3"}
+  FIND -- "ja" --> SONG["Der Song spielt die<br/>Sekunden pro Walk-on"]
+  FIND -- "nein" --> SILENT["Läuft still ein"]
+  SONG --> DART{"Der erste Dart?"}
+  DART -- "nein" --> SEAT
+  SILENT --> SEAT
+  DART -- "ja" --> STOP["Die Musik stoppt"]
+  ENDED(["game_ended: stopped oder replaced"]) --> STOP
+  WON(["game_ended: won"]) --> WINNER["Der Song des Siegers"]
+  classDef start fill:#2563eb2e,stroke:#2563eb,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class STARTED,ENDED,WON start
+  class SONG,WINNER done

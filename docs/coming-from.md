@@ -20,7 +20,7 @@ Used HomeDarts up to version 1.18, when it was called Autodarts? That is no othe
 | --- | --- | --- | --- | --- |
 | **Runs without the cloud** | Yes, with the [local interface](how-it-works.md#privacy) of the Board Manager | No, with an [Autodarts account](https://autodarts.com/) | No, darts-caller [signs in to Autodarts](https://github.com/Peschi90/darts-caller#autodarts-login) | Some of them ([details](coming-from.md#can-it-stay)) |
 | **Entities and events in Home Assistant** | Yes, an [event](entities.md#board-events) for every dart, visit, takeout, bust, leg and match | No | No | Sensors of the current visit or game |
-| **Blueprints** | [Fifteen blueprints](automations.md#blueprints) | No | No | No |
+| **Blueprints** | [Sixteen blueprints](automations.md#blueprints) | No | No | No |
 | **Light show** | [Light show](automations.md#light-show) blueprint, for WLED or any light | WLED, with Tools | WLED, with darts-wled | Your own automations |
 | **Caller** | On the [scoreboard](scoreboard.md#the-caller) or your [speakers](automations.md#which-caller) | In the app, with a premium voice in [Plus](https://autodarts.com/); more with Tools | Voice packs, with darts-caller | No |
 | **Statistics kept at home** | [Yes](statistics.md): averages, heatmaps, profiles and a year of history | No, in the Autodarts account | No | No |

@@ -1,6 +1,6 @@
 # Notes of this project for coding agents
 
-HomeDarts for Autodarts: Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and fifteen blueprints, games started by voice. No cloud account needed.
+HomeDarts for Autodarts: Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and sixteen blueprints, games started by voice. No cloud account needed.
 
 This file belongs to the project: the blueprint wrote it once, and its updates leave it alone. It adds to `AGENTS.md` what a coding agent needs to know about this project alone, such as its architecture, the commands of its own checks and what to watch for in its tests.
 

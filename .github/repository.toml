@@ -3,7 +3,7 @@
 # https://github.com/Dennis-Otto/repo-blueprint#settings-as-code
 
 [repository]
-description = "Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and fifteen blueprints, games started by voice. No cloud account needed."
+description = "Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and sixteen blueprints, games started by voice. No cloud account needed."
 homepage = "https://dennis-otto.github.io/homedarts-for-autodarts/"
 topics = ["autodarts", "darts", "hacs", "home-assistant", "home-assistant-custom-component", "dartboard", "hacs-integration", "home-assistant-blueprints", "homeassistant", "lovelace-card", "darts-training", "home-assistant-integration", "home-automation", "lovelace-custom-card", "smart-home"]
 has_issues = true

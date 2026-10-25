@@ -1,0 +1,22 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Wann ein Spiel beginnt und wann es endet
+  accDescr: Ein Spiel beginnt, sobald es eingerichtet ist, auf welchem Weg auch immer: in der Lobby der Anzeigetafel, per Sprache, mit homedarts.start_game, der Auswahl Spiel, Neues Match, dem nächsten Match eines Turniers oder dem ersten Dart nach einem beendeten Match; game_started nennt das Spiel, den Modus, die Spieler und ihre Namen. Es endet einmal: won, wenn die Darts der Siegaufnahme gezogen sind, stopped, wenn das Spiel ausgeschaltet wird, replaced, wenn ein anderes Spiel oder eine geänderte Einstellung ein neues Match beginnt, oder idle, wenn die Trainingssession nach ihrer Leerlaufzeit endet; game_ended nennt den Grund und den Sieger. Ein Spiel, das nach dem Leerlauf-Ende oder nach einer zurückgenommenen Siegaufnahme weitergeht, beginnt erneut als resumed.
+  SETUP["Lobby, Sprache, homedarts.start_game,<br/>Auswahl Spiel, Neues Match,<br/>das nächste Match eines Turniers,<br/>der erste Dart nach einem Match"] --> STARTED(["game_started<br/>Spiel, Modus, Spieler, Namen"])
+  STARTED --> PLAY["Das Spiel läuft"]
+  PLAY -- "Darts der Siegaufnahme gezogen" --> WON(["game_ended: won,<br/>mit dem Sieger"])
+  PLAY -- "ausgeschaltet" --> STOPPED(["game_ended: stopped"])
+  PLAY -- "anderes Spiel oder Einstellung" --> REPLACED(["game_ended: replaced"])
+  PLAY -- "Leerlauf-Ende der Session" --> IDLE(["game_ended: idle"])
+  REPLACED --> STARTED
+  IDLE -- "der nächste Dart" --> RESUMED(["game_started, resumed"])
+  WON -- "Siegaufnahme zurückgenommen" --> RESUMED
+  RESUMED --> PLAY
+  classDef start fill:#2563eb2e,stroke:#2563eb,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class STARTED,RESUMED start
+  class WON,STOPPED,REPLACED,IDLE done

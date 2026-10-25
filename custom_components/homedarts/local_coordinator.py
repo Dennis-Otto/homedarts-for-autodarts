@@ -113,6 +113,8 @@ EVENT_TYPES = [
     "leg_won",
     "match_won",
     "turn_changed",
+    "game_started",
+    "game_ended",
     "drill_finished",
     "checkout_attempt",
     "personal_best",

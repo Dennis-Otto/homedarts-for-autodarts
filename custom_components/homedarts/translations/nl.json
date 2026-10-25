@@ -678,6 +678,8 @@
               "leg_won": "Leg gewonnen",
               "match_won": "Wedstrijd gewonnen",
               "turn_changed": "Spelerswissel",
+              "game_started": "Spel gestart",
+              "game_ended": "Spel beëindigd",
               "drill_finished": "Trainingsspel afgerond",
               "checkout_attempt": "Uitgooipoging",
               "personal_best": "Persoonlijk record",
@@ -720,6 +722,28 @@
               "bobs_27": "Bob's 27",
               "streak": "Reeks",
               "darts_thrown": "Gegooide darts"
+            }
+          },
+          "mode": {
+            "name": "Modus",
+            "state": {
+              "practice": "Oefenen",
+              "match": "Wedstrijd",
+              "party": "Partyspel",
+              "training": "Trainingsspel",
+              "tournament": "Toernooi"
+            }
+          },
+          "reason": {
+            "name": "Reden",
+            "state": {
+              "manual": "Handmatig",
+              "new_session": "Nieuwe sessie",
+              "first_dart": "Eerste dart",
+              "idle": "Inactief",
+              "won": "Gewonnen",
+              "stopped": "Gestopt",
+              "replaced": "Vervangen"
             }
           }
         }
