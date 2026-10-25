@@ -118,12 +118,7 @@ Every explanation says in `autofix` how its check fixes itself: the commands, a 
 
 ## Website
 
-<<<<<<< before updating
-MkDocs builds the website from `mkdocs.yml` and the pages in `docs/`, the English one at <https://dennis-otto.github.io/homedarts-for-autodarts/> and the German one from the `.de` pages under `/de/`, with a switch between the two on every page. It starts with `docs/index.md` and `docs/index.de.md`; `docs/README.md` and `docs/README.de.md` are the overviews on GitHub. The check *docs* builds it strictly in every pull request, so that a broken link fails; after the build, lychee checks every link and anchor of the built pages, also those written in HTML, without asking a server, `python3 .github/blueprint.py site-check site` what the hooks of the website promise, such as a sitemap in every folder of pages and the 404 page in the default language, and `scripts/check-site.sh`, where it exists, the website as this project alone does. Every change of `main` publishes it on GitHub Pages, signs its provenance, which `SECURITY.md` shows how to verify, and asks the published website for its pages. To see it while you write, at <http://127.0.0.1:8000>
-=======
-
 MkDocs builds the website from `mkdocs.yml` and the pages in `docs/`. The check *docs* builds it strictly in every pull request, so that a broken link fails; after the build, lychee checks every link and anchor of the built pages, also those written in HTML, without asking a server, `python3 .github/blueprint.py site-check site` what the hooks of the website promise, such as a sitemap in every folder of pages and the 404 page in the default language, that no page loads more than 1,200 KB at once on a phone, and that every page shows each picture of its Markdown, the parts of the README included, and `scripts/check-site.sh`, where it exists, the website as this project alone does. Every change of `main` publishes it on GitHub Pages, signs its provenance, which `SECURITY.md` shows how to verify, and asks the published website for its pages. To see it while you write, at <http://127.0.0.1:8000>:
->>>>>>> after updating
 
 ```sh
 python3 -m venv .venv-docs
@@ -198,11 +193,6 @@ The GitHub app, the stores of the projects and other renderers of Markdown show 
 
 The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with the package for HACS, its SBOM and its signed provenance; the [release guide](docs/releases.md) describes every step. A release of dependency updates merges and publishes itself.
 
-<<<<<<< before updating
-A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release, for a beta for example, which HACS offers only with its beta switch on. A prerelease leaves the fragments and the text of Unreleased to the release that follows it
-=======
-
 A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release, for a prerelease for example. After the merge, the release bot writes the title and such a line, or one of `BREAKING CHANGE:`, into the end of the description as an override in an HTML comment, which release-please reads instead of the squash commit, whose parser could fail on another line of the description. A prerelease leaves the fragments and the text of Unreleased to the release that follows it.
->>>>>>> after updating
 
 By contributing, you agree that your contribution is licensed under the [MIT license](LICENSE) of this project.
