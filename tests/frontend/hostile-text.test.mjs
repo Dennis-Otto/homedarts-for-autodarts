@@ -18,7 +18,7 @@
 // does, and its markup then differs without any markup of the text.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { test } from "node:test";
+import { mock, test } from "node:test";
 
 import fc from "fast-check";
 
@@ -120,9 +120,9 @@ const RECORDED = RECORDING.steps.map((_, step) => {
   };
 });
 
-function made(options) {
+function made({ answers = {}, ...options }) {
   const { states, devices, entities } = makeHass(options);
-  return { states, devices, entities, answers: { positions: {}, error: "Not in the test" } };
+  return { states, devices, entities, answers: { positions: {}, error: "Not in the test", ...answers } };
 }
 
 // Home Assistant as a card sees it, with an administrator, who also gets the menus of the profiles.
@@ -135,6 +135,15 @@ function hassOf(world, read) {
     entities: world.entities,
     user: { id: "admin", name: "Admin", is_admin: true },
     callService: () => Promise.resolve(),
+    // The recorder sends the board events of the history, where a world has them.
+    ...(world.answers.history && {
+      connection: {
+        subscribeMessage(callback, message) {
+          Promise.resolve().then(() => callback({ states: { [message.entity_ids[0]]: world.answers.history } }));
+          return Promise.resolve(() => {});
+        },
+      },
+    }),
     async callWS(message) {
       if (message.type !== "homedarts/positions") throw new Error(world.answers.error);
       return world.answers.positions[message.player ?? ""] ?? { known: false, positions: [], spread: [] };
@@ -170,7 +179,9 @@ function withManualEntry(world) {
 }
 
 // What the recording does not reach, as the tests of these views set it up: a team match, a
-// party game with lives, a round robin on two boards, and the board PC with its cameras.
+// party game with lives, a round robin on two boards, the board PC with its cameras, groups
+// before their knockout, Golf, a bull-off, a training game, typed scores, idle mode, the
+// history of a training session and the aim map.
 const at = (seconds) => new Date(NOW + seconds * 1000).toISOString();
 const TEAM_MATCH = {
   ...READY,
@@ -298,27 +309,182 @@ const BOARD_PC = {
   "sensor.vision_version": "0.9.1",
 };
 const CAMERAS = [camera(1, { problem: "on" }), camera(2, { fps: "29.97" })];
+const standings = (...names) => names.map((name, index) => standing(index + 1, name, 2 - index, index));
+const GROUPS = {
+  ...READY,
+  "sensor.tournament": {
+    state: "round_2",
+    attributes: {
+      ...ROUND_ROBIN["sensor.tournament"].attributes,
+      format: "groups_knockout",
+      players: ["Alex", "Sam", "Kim", "Lea", "Max", "Tom"],
+      next: fixture(3, "round_2", ["Kim", "Tom"], { round: 2, group: "B" }),
+      standings: undefined,
+      boards: [],
+      advance: 2,
+      groups: [
+        { group: "A", standings: standings("Alex", "Lea", "Max") },
+        { group: "B", standings: standings("Kim", "Tom", "Sam") },
+      ],
+      bracket: [{ stage: "final", round: 1, matches: [fixture(7, "final", [null, null])] }],
+    },
+  },
+};
+const practice = (state, attributes) => ({ ...READY, "sensor.practice_remaining": { state, attributes } });
+const GOLF = practice("unknown", {
+  game: "golf",
+  player: 1,
+  name: "Alex",
+  round: 4,
+  rounds: 9,
+  target: "4",
+  scores: [
+    { player: 1, name: "Alex", points: 11, scorecard: [3, 4, 4] },
+    { player: 2, name: "Sam", points: 13, scorecard: [5, 4, 4] },
+  ],
+});
+// The second dart of the bull-off leads.
+const BULL_OFF = practice("501", {
+  game: 501,
+  bull_off: {
+    player: 1,
+    throws: [
+      { player: 1, name: "Alex", hit: "S20", distance: 41.4 },
+      { player: 2, name: "Sam", hit: "25", distance: 11.2 },
+    ],
+  },
+});
+// A checkout with its route.
+const DRILL = {
+  ...READY,
+  "sensor.practice_target": {
+    state: "81",
+    attributes: {
+      drill: "checkout",
+      remaining: 81,
+      checkout: "T19 D12",
+      attempt_visit: 2,
+      attempts: 4,
+      successes: 1,
+      rate: 25,
+      best: 9,
+    },
+  },
+};
+// A board that takes the score of each visit, on the keypad's score view.
+const MANUAL = {
+  ...practice("501", {
+    game: 501,
+    player: 1,
+    name: "Alex",
+    visit_from: 501,
+    scores: [{ player: 1, name: "Alex", remaining: 501 }],
+  }),
+  "sensor.local_status": "manual",
+};
+// Between games, with something for every panel of idle mode.
+const IDLE = {
+  ...READY,
+  "sensor.local_visit_score": { state: "0", attributes: { throws: [] } },
+  "sensor.training_darts": "24",
+  "sensor.training_average": "55.75",
+  "sensor.training_highest_visit": "140",
+  "sensor.training_scores_180": "1",
+  "sensor.training_streak": { state: "3", attributes: { best_streak: 5 } },
+  "sensor.darts_today": { state: "60", attributes: { goal: 120 } },
+  "sensor.personal_best": { state: at(-86400), attributes: { highest_visit: 140, fewest_darts_501: 18 } },
+  "sensor.player_profiles": {
+    state: "2",
+    attributes: {
+      players: [
+        { name: "Alex", legs_played: 20, legs_won: 12, average: 61.3 },
+        { name: "Sam", legs_played: 10, legs_won: 4, average: 48.2 },
+      ],
+    },
+  },
+  "sensor.last_match": {
+    state: at(-1500),
+    attributes: {
+      matches: [
+        {
+          ended: at(-1500),
+          game: 501,
+          legs_to_win: 3,
+          sets_to_win: 1,
+          winner: 2,
+          players: [
+            { name: "Alex", legs: 1, sets: 0, match_legs: 1, average: 55.5 },
+            { name: "Sam", legs: 3, sets: 1, match_legs: 3, average: 60.1 },
+          ],
+        },
+      ],
+    },
+  },
+};
+// A training session and the visits of it that the recorder has.
+const SESSION = {
+  "sensor.training_darts": { state: "6", attributes: { hits: { T20: 2, S20: 4 } } },
+  "sensor.training_started": at(-600),
+  "switch.training_session": "on",
+  "event.board_events": { state: at(-650), attributes: { event_type: "session_started" } },
+};
+const visitRow = (seconds, score, segments) => ({
+  s: at(seconds),
+  a: { event_type: "visit_completed", score, darts: segments.length, segments },
+});
+const HISTORY = [visitRow(-300, 100, ["T20", "S20", "S20"]), visitRow(-200, 60, ["S20", "S20", "S20"])];
+
+// The players of the recording with the most positions and the most doubles, for the
+// options of one player: so that a recording with other players keeps their views.
+const last = RECORDED.at(-1);
+const PROFILES = Object.values(last.states).find((state) => state.entity_id.endsWith("_player_profiles"));
+const most = (pairs) => pairs.sort((a, b) => b[1] - a[1])[0][0];
+const THROWER = most(
+  Object.entries(last.answers.positions).flatMap(([name, { positions }]) => (name ? [[name, positions.length]] : []))
+);
+const DOUBLER = most(PROFILES.attributes.players.map(({ name, doubles }) => [name, doubles?.doubles?.length ?? 0]));
+// The aim of the thrower, as Home Assistant answers once there are enough darts at a treble.
+const AIM = {
+  darts: 140,
+  needed: 30,
+  offset_x: -6,
+  offset_y: 2,
+  sd_x: 20,
+  sd_y: 20,
+  correlation: 0,
+  best: { bed: "T19", x: -34, y: -96, expected: 18.871, compared: { T20: 18.047, BULL: 16.353 } },
+};
+const aimed = { ...last.answers.positions, [THROWER]: { ...last.answers.positions[THROWER], aim: AIM } };
+const AIMED = { ...last, answers: { ...last.answers, positions: aimed } };
 
 // The cards with the options that show the most of them, and their title.
 const CARDS = {
   "homedarts-scoreboard-card": [{ keypad: true, caller: true }, { overlay: "chroma", overlay_layout: "lower_third" }],
   "homedarts-card": [{ keypad: true }, { layout: "vertical" }],
-  "homedarts-training-card": [{}, { mode: "aim", player: "Kim" }, { mode: "positions", player: "Alex" }],
+  "homedarts-training-card": [{}, { mode: "aim", player: THROWER }, { mode: "positions", player: THROWER }],
   "homedarts-players-card": [{ export: true }],
   "homedarts-status-card": [{}],
-  "homedarts-doubles-card": [{}, { player: "Sam" }],
+  "homedarts-doubles-card": [{}, { player: DOUBLER }],
   "homedarts-leaderboard-card": [{ period: "week" }, { period: "all" }],
 };
 const configs = (type) => CARDS[type].map((options) => ({ title: "Darts", ...options }));
 
-async function show(type, config, world, read) {
-  const card = document.createElement(type);
-  card.setConfig({ type: `custom:${type}`, device_id: Object.keys(world.devices)[0], ...config });
-  card.hass = hassOf(world, read);
-  document.body.append(card);
-  await settle();
-  await settle();
-  return card;
+// A card as it shows a world, after so many milliseconds without a tap, as before idle mode.
+async function show(type, config, world, read, wait = 0) {
+  if (wait) mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"], now: Date.now() });
+  try {
+    const card = document.createElement(type);
+    card.setConfig({ type: `custom:${type}`, device_id: Object.keys(world.devices)[0], ...config });
+    card.hass = hassOf(world, read);
+    document.body.append(card);
+    await settle();
+    // A timer that a timer sets runs with a tick of its own.
+    for (let left = wait; left > 0; left -= 10000) mock.timers.tick(Math.min(left, 10000));
+    await settle();
+    return card;
+  } finally {
+    if (wait) mock.timers.reset();
+  }
 }
 
 // The steps of the recording that show a card something that the steps before did not: one
@@ -343,7 +509,6 @@ async function viewsOf(type, config, steps = RECORDED.keys()) {
 // Each card in each view of the recording with each of its options, and with the variations
 // and fixtures of what the recording does not show.
 const SCENARIOS = [];
-const last = RECORDED.at(-1);
 for (const type of Object.keys(CARDS)) {
   // The other options show their own parts in fewer of these views.
   const [standard, ...others] = configs(type);
@@ -365,6 +530,27 @@ for (const [name, options] of Object.entries({
     SCENARIOS.push({ name, type, config: configs(type)[0], world: made(options) });
   }
 }
+for (const [name, options] of Object.entries({
+  groups: { states: GROUPS },
+  golf: { states: GOLF },
+  "bull-off": { states: BULL_OFF },
+  "training game": { states: DRILL },
+  "typed scores": { states: MANUAL, device: { primary_config_entry: "entry" } },
+})) {
+  for (const type of ["homedarts-scoreboard-card", "homedarts-card"]) {
+    SCENARIOS.push({ name, type, config: configs(type)[0], world: made(options) });
+  }
+}
+// Each panel of idle mode, which begins after three minutes and turns every ten seconds.
+const idler = "homedarts-scoreboard-card";
+for (const panel of [0, 1, 2, 3, 4]) {
+  const [config, world, wait] = [configs(idler)[0], made({ states: IDLE }), 180000 + panel * 10000];
+  SCENARIOS.push({ name: `idle panel ${panel}`, type: idler, config, world, wait });
+}
+const trainer = "homedarts-training-card";
+const history = made({ states: SESSION, answers: { history: HISTORY } });
+SCENARIOS.push({ name: "history", type: trainer, config: configs(trainer)[0], world: history });
+SCENARIOS.push({ name: "aim", type: trainer, config: configs(trainer)[1], world: AIMED });
 
 // Hostile text ------------------------------------------------------------------------
 
@@ -382,15 +568,18 @@ function texts(value, path) {
 
 // The texts that reach the card: of the states it reads, but not their entity ids, the names
 // of the board, the answers of Home Assistant and the card's options.
-async function textsOf({ type, config, world }) {
+async function textsOf({ type, config, world, wait }) {
   const read = new Set();
-  (await show(type, config, world, read)).remove();
+  (await show(type, config, world, read, wait)).remove();
   return [
     ...[...read]
       .filter((id) => world.states[id])
       .flatMap((id) => texts(world.states[id], ["states", id]).filter(({ path }) => path[2] !== "entity_id")),
     ...texts(world.devices, ["devices"]),
-    ...texts(world.answers, ["answers"]),
+    // The times and kinds of the events of the history stay, or it would show no visit.
+    ...texts(world.answers, ["answers"]).filter(
+      ({ path }) => !(path[1] === "history" && ["s", "event_type"].includes(path.at(-1)))
+    ),
     ...texts(config, ["config"]),
   ];
 }
@@ -416,6 +605,11 @@ function hostile({ world, config }, positions, payload, after) {
   const { config: options, ...rest } = copy;
   return { world: rest, config: options };
 }
+
+// Texts that a card reads to choose what it shows: ids such as the game, the format and the
+// state of a tournament, times, numbers and beds. Every other text names something, such as
+// a player, a group, a board or a device.
+const CHOICE = /^(?:[a-z0-9_./:+-]*|[\d\s:.+TZ-]+|(?:S|D|T|SI|SO)?\d+|BULL|MISS)$/;
 
 // The text at a path of the world or the options.
 const textAt = ({ world, config }, path) => path.reduce((node, key) => node[key], { ...world, config });
@@ -475,7 +669,7 @@ function controls(card) {
 // nothing new goes on in the same card. Each control is tapped once for the same card and
 // options, in the first view that offers it: explored keeps them, by what they show besides
 // the payload and numbers.
-async function shown({ type, config, world }, { explored = null, payload = "" } = {}) {
+async function shown({ type, config, world, wait }, { explored = null, payload = "" } = {}) {
   const found = [];
   const paths = [[]];
   const first = (name) => {
@@ -487,7 +681,7 @@ async function shown({ type, config, world }, { explored = null, payload = "" } 
   };
   while (paths.length) {
     const path = paths.shift();
-    const card = await show(type, config, world);
+    const card = await show(type, config, world, null, wait);
     for (const name of path) {
       controls(card).get(name)?.click();
       await settle();
@@ -529,12 +723,38 @@ test("every card has its views from the recording, and the scoreboard one of eac
     killer: ["homedarts-scoreboard-card", ".big.lives"],
     "round robin": ["homedarts-scoreboard-card", ".standings"],
     "board PC": ["homedarts-status-card", ".camera.problem"],
+    groups: ["homedarts-scoreboard-card", ".groups .group .standings"],
+    golf: ["homedarts-scoreboard-card", ".scorecard"],
+    "bull-off": ["homedarts-scoreboard-card", ".player.winner .details-line"],
+    "training game": ["homedarts-scoreboard-card", ".route-line .bed"],
+    "typed scores": ["homedarts-scoreboard-card", '.segmented.view [data-pad="score"]'],
+    "idle panel 0": ["homedarts-scoreboard-card", '.idle-panel[data-panel="leaderboard"] .ranking'],
+    "idle panel 1": ["homedarts-scoreboard-card", '.idle-panel[data-panel="records"] .records'],
+    "idle panel 2": ["homedarts-scoreboard-card", '.idle-panel[data-panel="today"] .goal'],
+    "idle panel 3": ["homedarts-scoreboard-card", '.idle-panel[data-panel="last_match"] .result'],
+    "idle panel 4": ["homedarts-scoreboard-card", '.idle-panel[data-panel="clock"] .clock'],
+    history: ["homedarts-training-card", ".visit-bar:not(.empty)"],
+    aim: ["homedarts-training-card", ".heat-layer .aim-best"],
   };
-  for (const [name, [type, selector]] of Object.entries(views)) {
-    const { config, world } = SCENARIOS.find((scenario) => scenario.type === type && scenario.name === name);
-    const card = await show(type, config, world);
+  const showing = async ({ type, config, world, wait }, selector, name) => {
+    const card = await show(type, config, world, null, wait);
+    // The aim map comes from a computation of its own.
+    for (let round = 0; round < 50 && !card.shadowRoot.querySelector(selector); round += 1) await settle();
     assert.ok(card.shadowRoot.querySelector(selector), `${name}: ${selector}`);
     card.remove();
+  };
+  for (const [name, [type, selector]] of Object.entries(views)) {
+    await showing(SCENARIOS.find((scenario) => scenario.type === type && scenario.name === name), selector, name);
+  }
+  // The options for one player show the darts and the doubles of the player.
+  const options = {
+    "homedarts-training-card": [{ mode: "positions" }, ".heat-layer .position"],
+    "homedarts-doubles-card": [{ player: DOUBLER }, ".double"],
+  };
+  for (const [type, [option, selector]] of Object.entries(options)) {
+    const [key, value] = Object.entries(option)[0];
+    const config = configs(type).find((each) => each[key] === value);
+    await showing({ type, config, world: last }, selector, `${type} with ${JSON.stringify(config)}`);
   }
   // The persons lend the players their pictures, on the scoreboard and the players card.
   for (const type of ["homedarts-scoreboard-card", "homedarts-players-card"]) {
@@ -548,6 +768,7 @@ test("every card has its views from the recording, and the scoreboard one of eac
 
 test("every text of every card is hostile at once, in every view and behind every control", async () => {
   const explored = new Set();
+  const named = new Set();
   let rotation = 0;
   for (const scenario of SCENARIOS) {
     const positions = await textsOf(scenario);
@@ -558,6 +779,12 @@ test("every text of every card is hostile at once, in every view and behind ever
       const found = await shown({ ...scenario, ...world }, after ? { explored, payload: POLYGLOT } : {});
       assert.deepEqual(found, [], `${label(scenario)}: ${after ? "after" : "instead of"} the texts`);
     }
+    // The payload instead of every text that names something, while the card shows the view
+    // that its ids, times and numbers choose, such as the groups of a tournament or idle mode.
+    const names = positions.filter(({ path, key }) => !key && !CHOICE.test(textAt(scenario, path)));
+    const world = hostile(scenario, names, POLYGLOT, false);
+    const found = await shown({ ...scenario, ...world }, { explored: named, payload: POLYGLOT });
+    assert.deepEqual(found, [], `${label(scenario)}: instead of the names`);
     // Two of the payloads for one place each in turn.
     const others = PAYLOADS.filter((payload) => payload !== POLYGLOT && payload !== LINK);
     for (const after of [false, true]) {
@@ -568,8 +795,8 @@ test("every text of every card is hostile at once, in every view and behind ever
     // Every address, such as the picture of a person, a link to script, while the texts that
     // lead to it, such as the link of a profile to its person, stay as they are.
     const addresses = positions.filter(({ path, key }) => !key && /^(\/|https?:)/i.test(textAt(scenario, path)));
-    const world = hostile(scenario, addresses, LINK, false);
-    assert.deepEqual(await shown({ ...scenario, ...world }), [], `${label(scenario)}: ${LINK}`);
+    const linked = hostile(scenario, addresses, LINK, false);
+    assert.deepEqual(await shown({ ...scenario, ...linked }), [], `${label(scenario)}: ${LINK}`);
   }
 });
 
