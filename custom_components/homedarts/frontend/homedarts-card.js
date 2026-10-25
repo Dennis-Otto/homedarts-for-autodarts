@@ -7275,7 +7275,7 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
   /* Once, where the browser can't keep the screen on: what to do instead. It is a row of
      its own in the header, so every layout of the scoreboard keeps its grid areas. */
   .awake-hint {
-    flex: 1 0 100%; margin: 0; padding: .6em 1em; border-radius: 12px; font-size: clamp(13px, 1.6cqi, 18px);
+    flex: 1 0 100%; box-sizing: border-box; min-width: 0; margin: 0; padding: .6em 1em; border-radius: 12px; font-size: clamp(13px, 1.6cqi, 18px);
     color: var(--ad-warn-text); background: color-mix(in srgb, ${STATUS_COLORS.takeout} 14%, transparent);
   }
   .awake-hint a { color: inherit; font-weight: 700; }
