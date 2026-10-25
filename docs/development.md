@@ -316,14 +316,14 @@ The tool renders its images in three fixed groups (`GROUPS` in `screenshots.py`)
   <img src="images/en/screenshot-groups-light.png" alt="How the visual check and the screenshot bot render the images in groups: each language renders in three groups at once, each group on a runner of its own from a fresh demo. The cards, the first games and the dartboard without Autodarts make group 1, more games with the players group 2, the corrections of a dart, the formats, the big tournaments and the calendar group 3. Then one job per language puts the images of its three groups together and compares them with the committed images. The visual check writes the comparison into one comment on the pull request; the screenshot bot updates its pull request with every language that rendered." width="560">
 </picture>
 
-`screenshots.sh` and `visual.sh` render every group in turn, each from a fresh demo, and `SCREENSHOT_GROUP=2/3` renders the second group alone. `IMAGES` names the folder below the repository root that the images go to, `docs/images` unless given. The [screenshot bot](#screenshot-bot) and the [visual check](#visual-check) render each group of each language in a job of its own, six jobs side by side of eight to ten minutes each, where two jobs took twenty minutes before. A job per language then puts its groups together and compares them with the committed images (`tests/e2e/collect.sh`), as `visual.sh` does on one machine; it fails when a group left no images or two groups rendered the same image.
+`screenshots.sh` and `visual.sh` render every group in turn, each from a fresh demo, and `SCREENSHOT_GROUP=2/3` renders the second group alone. `IMAGES` names the folder below the repository root that the images go to, `docs/images` unless given. The [screenshot bot](#screenshot-bot) and the [visual check](#visual-check) render each group of each language in a job of its own, six jobs side by side of eight to eleven minutes each, where two jobs took twenty minutes before. A job per language then puts its groups together and compares them with the committed images (`tests/e2e/collect.sh`), as `visual.sh` does on one machine; it fails when a group left no images or two groups rendered the same image.
 
-Each job of a group lists the seconds of its sections in its summary, and the log shows them as `Screenshot section: people (220.6 s)`. The job of a language that puts its groups together lists every group with its seconds as well, and marks one that took more than one and a half times as long as the shortest (`tests/e2e/group_times.py`): every run of the language waits for its slowest group. On a runner of GitHub, on 25 October 2026:
+Each job of a group lists the seconds of its sections in its summary, and the log shows them as `Screenshot section: people (220.6 s)`. The job of a language that puts its groups together lists every group with its seconds as well, and marks one that took more than one and a half times as long as the shortest (`tests/e2e/group_times.py`): every run of the language waits for its slowest group. On a runner of GitHub, in the visual check of 25 October 2026 (the seconds of a section vary by about a tenth from run to run):
 
 | Group | Sections | Seconds of the sections | The job |
 | --- | --- | ---: | ---: |
-| 1 | cards, live, practice, games, manual | 352 | 8 min |
-| 2 | more games, people | 439 | 10 min |
+| 1 | cards, live, practice, games, manual | 352 | 8 to 9 min |
+| 2 | more games, people | 439 | 10 to 11 min |
 | 3 | corrections, formats, tournaments, calendar | 442 | 10 min |
 
 Each job also pulls Home Assistant and starts its demo, about two and a half minutes. The two big tournaments of 32 players stop right after their pictures: played on to their champions, about 70 matches that no image showed, they kept the third group busy for 14 minutes, and every run of a language waited for it. `tests/test_tournament_formats.py` plays both to their champion instead, with every outcome, in under two seconds. Three groups take the fewest minutes of the runners: a fourth would need more games and the players apart, and the start of its demo would cost more than it saves. `SECONDS` in `screenshots.py` keeps the seconds of each section.
@@ -350,7 +350,7 @@ The **Visual check** workflow (`.github/workflows/visual.yml`) renders the image
 
 An image that can't be rendered fails the check, and the other language still gets its report: the summary of its job *compare*, its artifact and the comment, which lists its images and names the language that could not be rendered. The comment workflow starts when a check ends (`workflow_run`), so that it may comment on pull requests from forks as well, but it never checks out or runs their code: it reads only the reports of the check, takes nothing from them but image names and numbers it checks, and writes the comment itself. The check runs only when its files change, so it is no required check.
 
-The same comparison runs locally; it leaves the new images in `docs/images` and the report in `tests/e2e/artifacts/visual/`. Every group of a language takes about as long as on a runner of GitHub, eight to ten minutes, and one group alone renders only its own images:
+The same comparison runs locally; it leaves the new images in `docs/images` and the report in `tests/e2e/artifacts/visual/`. Every group of a language takes about as long as on a runner of GitHub, eight to eleven minutes, and one group alone renders only its own images:
 
 ```sh
 LANGUAGES=en bash tests/e2e/visual.sh

@@ -8,7 +8,7 @@ flowchart TB
   accDescr: Each language renders in three groups at once, each group on a runner of its own from a fresh demo. The cards, the first games and the dartboard without Autodarts make group 1, more games with the players group 2, the corrections of a dart, the formats, the big tournaments and the calendar group 3. Then one job per language puts the images of its three groups together and compares them with the committed images. The visual check writes the comparison into one comment on the pull request; the screenshot bot updates its pull request with every language that rendered.
 
   START["A pull request or a push to main<br/>changes the cards or the screenshot tool"] --> G1 & G2 & G3
-  G1["Group 1, a fresh demo:<br/>the cards, the live card,<br/>the first games, the manual board,<br/>about 8 min"]
+  G1["Group 1, a fresh demo:<br/>the cards, the live card,<br/>the first games, the manual board,<br/>about 9 min"]
   G2["Group 2, a fresh demo:<br/>more games, a tournament,<br/>then the players, about 10 min"]
   G3["Group 3, a fresh demo:<br/>the corrections, the formats,<br/>the big tournaments up to their pictures,<br/>the calendar, about 10 min"]
   G1 & G2 & G3 --> COLLECT["One job per language puts<br/>its groups together and compares<br/>them with the committed images"]
