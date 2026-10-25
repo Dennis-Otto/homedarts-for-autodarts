@@ -4,6 +4,28 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.1.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.0.1...v2.1.0) (2026-10-25)
+
+
+### Features
+
+* **cards:** a full-screen button on the scoreboard that keeps the screen awake ([#478](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/478)) ([7a8a991](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/7a8a9914b3413e5ade482d9dc1e6f08f1091e305))
+* game_started and game_ended events and a walk-on music blueprint ([#473](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/473)) ([9a55bf6](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/9a55bf604cb294aa1e6a965098ef683641b3447e))
+* keep a backup when a board is deleted, and restore or merge it into a board ([#469](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/469)) ([a73e76c](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/a73e76c01a25f21b4f712acc6055750713db91c0))
+* rename a player or merge two profiles, also from the players card ([#470](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/470)) ([797262e](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/797262ee99bc3cc20bfc2a5698761ace9c7e4215))
+
+
+### Bug fixes
+
+* keep every dart position across a restart and kill the surviving mutants of the restore ([#497](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/497)) ([116ef83](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/116ef836161d1e555228736eff5ff4cf1c4a6ed3))
+* read a board's config entry the way Home Assistant 2026.10 keeps it, and fail the tests on its reports about the integration ([#489](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/489)) ([b7f3700](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/b7f370043fcf733d4c4e2c625ddeab1547b18b4f))
+
+
+### Performance
+
+* **ci:** balance the screenshot groups and stop playing the big tournaments to their champion ([#494](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/494)) ([7406f7d](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/7406f7d433831747758c131cef27b81b4cd3e5ed))
+* **ci:** render the documentation images once per input and let the screenshot bot reuse them ([#500](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/500)) ([211cfd7](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/211cfd73d1d206ff2d9e4f11705defa5a7188393))
+
 ## [2.0.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.0.0...v2.0.1) (2026-10-23)
 
 ### Fixed
