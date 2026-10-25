@@ -1,6 +1,6 @@
 # HomeDarts for Autodarts
 
-[← Projektseite](https://github.com/Dennis-Otto/homedarts-for-autodarts) · [English documentation](README.md)
+[← Projektseite](https://github.com/Dennis-Otto/homedarts-for-autodarts) · [English documentation](README.md) · [Nederlands](index.nl.md) · [Français](index.fr.md) · [Español](index.es.md)
 
 **Dein Autodarts-Board live in Home Assistant: lokal, in Echtzeit und bereit für Automationen.**
 

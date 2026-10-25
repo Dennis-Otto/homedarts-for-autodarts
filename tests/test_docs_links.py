@@ -79,24 +79,24 @@ OPTIONAL = (
     "scripts/check-site.sh",
     ".github/screenshots-paths.txt",
 )
-# The number words of the five languages, which the text uses for counts.
+# The number words of each language, which its text uses for counts. Each text
+# reads only its own: the Spanish "once" (11) is an English word, the French
+# "onze" (11) a Dutch one and the French "seize" (16) an English verb.
 NUMBERS = {
-    word: number
-    for words in (
-        "one two three four five six seven eight nine ten eleven twelve thirteen "
-        "fourteen fifteen sixteen seventeen eighteen nineteen twenty",
-        "eins zwei drei vier fünf sechs sieben acht neun zehn elf zwölf dreizehn "
-        "vierzehn fünfzehn sechzehn siebzehn achtzehn neunzehn zwanzig",
-        "één twee drie vier vijf zes zeven acht negen tien elf twaalf dertien "
+    language: {word: number for number, word in enumerate(words.split(), start=1)}
+    for language, words in {
+        "en": "one two three four five six seven eight nine ten eleven twelve "
+        "thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty",
+        "de": "eins zwei drei vier fünf sechs sieben acht neun zehn elf zwölf "
+        "dreizehn vierzehn fünfzehn sechzehn siebzehn achtzehn neunzehn zwanzig",
+        "nl": "één twee drie vier vijf zes zeven acht negen tien elf twaalf dertien "
         "veertien vijftien zestien zeventien achttien negentien twintig",
-        "un deux trois quatre cinq six sept huit neuf dix onze douze treize "
+        "fr": "un deux trois quatre cinq six sept huit neuf dix onze douze treize "
         "quatorze quinze seize dix-sept dix-huit dix-neuf vingt",
-        "uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece "
+        "es": "uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece "
         "catorce quince dieciséis diecisiete dieciocho diecinueve veinte",
-    )
-    for number, word in enumerate(words.split(), start=1)
+    }.items()
 }
-NUMBER = r"(\d+|" + "|".join(NUMBERS) + r")"
 # A count starts a word: counts above twenty are written in digits, and the end of
 # a compound such as "twenty-one" or "einundzwanzig" is no count of its own.
 START = r"(?<![\w-])"
@@ -105,13 +105,22 @@ START = r"(?<![\w-])"
 # bord", "siete tarjetas del panel", "the fourteen `homedarts.*` actions" and "die
 # vierzehn Aktionen `homedarts.*`". A count of some of them, such as "two voice
 # blueprints", names no total and is left alone.
+COUNTED_PATTERNS = {
+    "blueprints": r"{START}{NUMBER}\s+(?:Autodarts[\s-]+)?Blueprints\b",
+    "cards": r"{START}{NUMBER}\s+(?:Dashboard[\s-]*)?"
+    r"(?:cards|Karten|kaarten|cartes|tarjetas)\b",
+    "actions": r"{START}{NUMBER}\s+"
+    r"(?:`homedarts\.\*`\s+actions|Aktionen\s+`homedarts\.\*`)",
+}
 COUNTED = {
-    kind: re.compile(pattern, re.IGNORECASE)
-    for kind, pattern in {
-        "blueprints": rf"{START}{NUMBER}\s+(?:Autodarts[\s-]+)?Blueprints\b",
-        "cards": rf"{START}{NUMBER}\s+(?:Dashboard[\s-]*)?(?:cards|Karten|kaarten|cartes|tarjetas)\b",
-        "actions": rf"{START}{NUMBER}\s+(?:`homedarts\.\*`\s+actions|Aktionen\s+`homedarts\.\*`)",
-    }.items()
+    language: {
+        kind: re.compile(
+            pattern.format(START=START, NUMBER=r"(\d+|" + "|".join(words) + r")"),
+            re.IGNORECASE,
+        )
+        for kind, pattern in COUNTED_PATTERNS.items()
+    }
+    for language, words in NUMBERS.items()
 }
 # Code blocks, also the indented ones of tabs and admonitions, count nothing.
 COUNTED_FENCE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1", re.MULTILINE | re.DOTALL)
@@ -452,22 +461,30 @@ def counts_in_the_code() -> dict[str, int]:
     }
 
 
-def claims(text: str):
+def language_of(path: Path) -> str:
+    """The language of a document: the one its name or folder names, or English."""
+    if path.parent == DOCS / "de":
+        return "de"
+    language = path.suffixes[-2][1:] if len(path.suffixes) > 1 else "en"
+    return language if language in FURTHER else "en"
+
+
+def claims(text: str, language: str = "en"):
     """The counts a text names: what it counts, the number, the line and the words."""
     # Examples in code blocks count nothing; their lines stay for the line numbers.
     text = COUNTED_FENCE.sub(lambda fence: "\n" * fence.group().count("\n"), text)
-    for kind, pattern in COUNTED.items():
+    for kind, pattern in COUNTED[language].items():
         for match in pattern.finditer(text):
             word = match.group(1).lower()
-            number = int(word) if word.isdigit() else NUMBERS[word]
+            number = int(word) if word.isdigit() else NUMBERS[language][word]
             yield kind, number, text.count("\n", 0, match.start()) + 1, match.group()
 
 
-def wrong_counts(text: str, actual: dict[str, int]) -> list[str]:
+def wrong_counts(text: str, actual: dict[str, int], language: str = "en") -> list[str]:
     """The counts of a text that differ from the code, with the right number."""
     return [
         f"line {line}: {words!r}, but there are {actual[kind]} {kind}"
-        for kind, number, line, words in claims(text)
+        for kind, number, line, words in claims(text, language)
         if number != actual[kind]
     ]
 
@@ -487,48 +504,63 @@ def test_the_counts_in_the_prose_match_the_code():
     wrong: list[str] = []
     for path in COUNTING:
         text = path.read_text(encoding="utf-8")
-        named |= {kind for kind, *_ in claims(text)}
+        language = language_of(path)
+        named |= {kind for kind, *_ in claims(text, language)}
         name = path.relative_to(ROOT).as_posix()
-        wrong += [f"{name}, {problem}" for problem in wrong_counts(text, actual)]
-    assert named == set(COUNTED)
+        wrong += [
+            f"{name}, {problem}" for problem in wrong_counts(text, actual, language)
+        ]
+    assert named == set(COUNTED_PATTERNS)
     assert not wrong, "\n".join(wrong)
 
 
 @pytest.mark.parametrize(
-    ("sentence", "kind", "number"),
+    ("sentence", "kind", "number", "language"),
     [
-        ("Twelve blueprints: light show, callers and reports.", "blueprints", 12),
-        ("Zwölf Blueprints: Lichtshow, Caller und Berichte.", "blueprints", 12),
-        ("The blueprints page with the eleven Autodarts blueprints", "blueprints", 11),
-        ("Die Blueprint-Seite mit den elf Autodarts-Blueprints", "blueprints", 11),
-        ("It brings 12 blueprints.", "blueprints", 12),
-        ("The integration includes\nsix cards.", "cards", 6),
-        ("Six dashboard cards and an automatic dashboard", "cards", 6),
-        ("Sechs Dashboard-Karten und ein automatisches Dashboard", "cards", 6),
-        ("It brings seven dashboard\n    cards to the picker.", "cards", 7),
-        ("Some day there are 21 Autodarts\nblueprints.", "blueprints", 21),
-        ("Zestien blueprints: lichtshow, opkomstmuziek.", "blueprints", 16),
-        ("Zeven dashboardkaarten en een automatisch dashboard", "cards", 7),
-        ("Alle zeven kaarten en het automatische dashboard", "cards", 7),
-        ("Seize blueprints : spectacle de lumière", "blueprints", 16),
-        ("Sept cartes de tableau de bord et un tableau de bord", "cards", 7),
-        ("Dix-sept blueprints, un jour.", "blueprints", 17),
-        ("Dieciséis blueprints (planos, en Home Assistant)", "blueprints", 16),
-        ("Siete tarjetas del panel y un panel automático", "cards", 7),
-        ("the thirteen `homedarts.*` actions, which need a login", "actions", 13),
+        ("Twelve blueprints: light show, callers and reports.", "blueprints", 12, "en"),
+        ("Zwölf Blueprints: Lichtshow, Caller und Berichte.", "blueprints", 12, "de"),
+        (
+            "The blueprints page with the eleven Autodarts blueprints",
+            "blueprints",
+            11,
+            "en",
+        ),
+        (
+            "Die Blueprint-Seite mit den elf Autodarts-Blueprints",
+            "blueprints",
+            11,
+            "de",
+        ),
+        ("It brings 12 blueprints.", "blueprints", 12, "en"),
+        ("The integration includes\nsix cards.", "cards", 6, "en"),
+        ("Six dashboard cards and an automatic dashboard", "cards", 6, "en"),
+        ("Sechs Dashboard-Karten und ein automatisches Dashboard", "cards", 6, "de"),
+        ("It brings seven dashboard\n    cards to the picker.", "cards", 7, "en"),
+        ("Some day there are 21 Autodarts\nblueprints.", "blueprints", 21, "en"),
+        ("Zestien blueprints: lichtshow, opkomstmuziek.", "blueprints", 16, "nl"),
+        ("Zeven dashboardkaarten en een automatisch dashboard", "cards", 7, "nl"),
+        ("Alle zeven kaarten en het automatische dashboard", "cards", 7, "nl"),
+        ("Seize blueprints : spectacle de lumière", "blueprints", 16, "fr"),
+        ("Sept cartes de tableau de bord et un tableau de bord", "cards", 7, "fr"),
+        ("Dix-sept blueprints, un jour.", "blueprints", 17, "fr"),
+        ("Dieciséis blueprints (planos, en Home Assistant)", "blueprints", 16, "es"),
+        ("Siete tarjetas del panel y un panel automático", "cards", 7, "es"),
+        ("the thirteen `homedarts.*` actions, which need a login", "actions", 13, "en"),
         (
             "die dreizehn Aktionen `homedarts.*`, die eine Anmeldung brauchen",
             "actions",
             13,
+            "de",
         ),
     ],
 )
-def test_a_wrong_count_is_found(sentence, kind, number):
+def test_a_wrong_count_is_found(sentence, kind, number, language):
     """The sentences the docs once had wrong, in each language, and their kin."""
-    assert [(found, said) for found, said, *_ in claims(sentence)] == [(kind, number)]
+    found = [(found, said) for found, said, *_ in claims(sentence, language)]
+    assert found == [(kind, number)]
     code = {"blueprints": 0, "cards": 0, "actions": 0}
-    assert not wrong_counts(sentence, {**code, kind: number})
-    wrong = wrong_counts(sentence, {**code, kind: number + 1})
+    assert not wrong_counts(sentence, {**code, kind: number}, language)
+    wrong = wrong_counts(sentence, {**code, kind: number + 1}, language)
     assert len(wrong) == 1
     assert wrong[0].endswith(f", but there are {number + 1} {kind}")
 
@@ -552,10 +584,43 @@ def test_a_wrong_count_names_its_line():
         "```yaml\n# three blueprints\n```",
         '=== "YAML"\n\n    ```yaml\n    # three blueprints\n    ```',
         "Some day twenty-one blueprints, einundzwanzig Blueprints.",
+        "Once cards are on a dashboard, they follow the board.",
+        "Once blueprints are imported, they run on their own.",
     ],
 )
 def test_a_count_of_some_names_no_total(sentence):
     assert not list(claims(sentence))
+
+
+@pytest.mark.parametrize(
+    ("sentence", "language"),
+    [
+        ("Onze kaarten tonen elk spel.", "nl"),
+        ("Onze cards are on a dashboard.", "en"),
+        ("Seize blueprints, they said.", "en"),
+    ],
+)
+def test_a_word_of_another_language_is_no_count(sentence, language):
+    """Each text reads only the number words of its own language."""
+    assert not list(claims(sentence, language))
+
+
+@pytest.mark.parametrize(
+    ("name", "language"),
+    [
+        ("README.md", "en"),
+        ("README.de.md", "de"),
+        ("docs/faq.nl.md", "nl"),
+        ("docs/index.fr.md", "fr"),
+        ("docs/installation.es.md", "es"),
+        ("docs/de/karten.md", "de"),
+        ("mkdocs.yml", "en"),
+        (".github/repository.toml", "en"),
+        ("docs/demo.min.js", "en"),
+    ],
+)
+def test_the_language_of_a_document_is_its_name(name, language):
+    assert language_of(ROOT / name) == language
 
 
 COMPARE = re.compile(

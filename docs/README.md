@@ -2,7 +2,7 @@
 
 [← Project page](https://github.com/Dennis-Otto/homedarts-for-autodarts) · [Deutsche Dokumentation](README.de.md) · [Nederlands](index.nl.md) · [Français](index.fr.md) · [Español](index.es.md)
 
-Everything about HomeDarts for Autodarts, the Home Assistant integration for Autodarts boards and any other dartboard: how to set it up, play and train with it, put a scoreboard next to the board, follow your statistics and let your home join in. The [website of the documentation](https://dennis-otto.github.io/homedarts-for-autodarts/) has the same pages, with a search and a switch to German. HomeDarts for Autodarts is an unofficial community project, not affiliated with Autodarts.
+Everything about HomeDarts for Autodarts, the Home Assistant integration for Autodarts boards and any other dartboard: how to set it up, play and train with it, put a scoreboard next to the board, follow your statistics and let your home join in. The [website of the documentation](https://dennis-otto.github.io/homedarts-for-autodarts/) has the same pages, with a search and a switch to German; its start page, quick start, installation and FAQ are also in [Dutch](https://dennis-otto.github.io/homedarts-for-autodarts/nl/), [French](https://dennis-otto.github.io/homedarts-for-autodarts/fr/) and [Spanish](https://dennis-otto.github.io/homedarts-for-autodarts/es/). HomeDarts for Autodarts is an unofficial community project, not affiliated with Autodarts.
 
 <img src="images/en/hero.webp" alt="Animation: a 301 match on the live card and the scoreboard side by side. Alex throws three triple 20s, Sam scores 85, and Alex checks out 121 for the game shot" width="100%">
 

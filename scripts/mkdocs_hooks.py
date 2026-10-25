@@ -411,7 +411,8 @@ def on_post_page(output: str, page: Any, config: Any) -> str:
     English is a copy of the English page and no version of its own, so it names
     none: the plugin i18n writes the versions of the English page into its head, and
     the hooks of the blueprint, which run after these, keep them where the page has
-    two languages besides English.
+    two languages besides English. That is a gap of the blueprint,
+    Dennis-Otto/repo-blueprint#428; once it is fixed, the line below does nothing.
     """
     if in_english(page):
         output = VERSION.sub("", output)
