@@ -9,6 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from hypothesis import Phase, settings
 
 from custom_components.homedarts import checkout
 
@@ -211,5 +212,13 @@ def test_the_property_tests_draw_the_same_examples_in_ci_and_under_mutmut():
     assert hypothesis_profile({"CI": ""}) == "local"
     assert hypothesis_profile({"CI": "true"}) == "ci"
     # mutmut sets the variable in each of its runs, the one without a mutant to "".
-    assert hypothesis_profile({"MUTANT_UNDER_TEST": ""}) == "ci"
-    assert hypothesis_profile({"MUTANT_UNDER_TEST": "stats"}) == "ci"
+    assert hypothesis_profile({"MUTANT_UNDER_TEST": ""}) == "mutation"
+    assert hypothesis_profile({"MUTANT_UNDER_TEST": "stats", "CI": "true"}) == (
+        "mutation"
+    )
+    ci, mutation = settings.get_profile("ci"), settings.get_profile("mutation")
+    assert mutation.derandomize and ci.derandomize
+    assert mutation.max_examples == ci.max_examples
+    assert mutation.deadline is ci.deadline is None
+    # A mutant is killed at the first example that fails, without a smaller one.
+    assert set(ci.phases) - set(mutation.phases) == {Phase.shrink, Phase.explain}

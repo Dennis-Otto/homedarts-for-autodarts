@@ -1,16 +1,30 @@
 """Party games, X01 variants and the bull-off."""
 
+import json
+
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
 from custom_components.homedarts.board import distance_mm
 from custom_components.homedarts.party import (
+    GOLF_HOLES,
+    GOTCHA_TARGETS,
     HALVE_IT_START,
     KILLER_LIVES,
+    MAX_ROUNDS,
+    PARTY_GAMES,
+    WORLD_ORDERS,
     BullOff,
+    PartyGame,
     make_party,
 )
-from custom_components.homedarts.practice import MAX_PLAYERS, PracticeGame
+from custom_components.homedarts.practice import (
+    MAX_PLAYERS,
+    PARTY_PLAYERS,
+    PracticeGame,
+)
+from custom_components.homedarts.scoring import MODES
 
 from .local_helpers import NOW, dart, throw
 
@@ -26,6 +40,10 @@ def game_of(kind: str | int, players: int = 1, **names: str) -> PracticeGame:
 
 def kinds(events: list) -> list[str]:
     return [kind for kind, _ in events]
+
+
+def darts_of(*names: str) -> list[dict]:
+    return [dart(name) for name in names]
 
 
 def missed(number: int) -> dict:
@@ -311,6 +329,72 @@ def test_a_restored_bull_off_drops_throws_it_cannot_trust():
         assert restored.thrower == 0 and not restored.rethrow
 
 
+@pytest.mark.parametrize(
+    "order",
+    [
+        [],
+        (0, 1),
+        3,
+        # Every player once, each one at the board: 2 is the third of three.
+        [0, 2],
+        [0, 0],
+        [-1, 0],
+        [True, 0],
+        [0.0, 1],
+    ],
+)
+def test_a_bull_off_with_an_order_of_other_players_starts_anew(order):
+    assert BullOff.restored({"order": order, "index": 0}, 2) is None
+
+
+def test_a_restored_bull_off_counts_only_the_darts_of_players_who_threw():
+    # The first of three threw; every other entry belongs to nobody who threw.
+    restored = BullOff.restored(
+        {
+            "order": [2, 0, 1],
+            "index": 1,
+            "hits": {"2": "S20", "0": "BULL", "x": "25", "-1": "25"},
+            "distances": {"2": 40, "1": 2.0, "x": 1.0, "-1": 3.0},
+        },
+        3,
+    )
+    assert (restored.index, restored.thrower) == (1, 0)
+    assert restored.hits == {2: "S20"} and restored.distances == {2: 40.0}
+    assert type(restored.distances[2]) is float and restored.rethrow is False
+
+
+@pytest.mark.parametrize(
+    ("index", "distance"),
+    [
+        # The index of the next thrower: the first is 0, one past the last is none.
+        (0, 2.0),
+        (2, 2.0),
+        (-1, 2.0),
+        (True, 2.0),
+        ("1", 2.0),
+        (None, 2.0),
+        # A distance that is no number, or True, is no distance the board measured.
+        (1, "far"),
+        (1, True),
+    ],
+)
+def test_a_bull_off_with_an_index_or_distance_it_cannot_trust_starts_anew(
+    index, distance
+):
+    restored = BullOff.restored(
+        {
+            "order": [1, 0],
+            "index": index,
+            "hits": {"1": "25", "0": "BULL"},
+            "distances": {"1": distance, "0": 1.0},
+        },
+        2,
+    )
+    assert type(restored.index) is int and restored.index == 0
+    assert restored.hits == {} and restored.distances == {}
+    assert restored.thrower == 1
+
+
 def test_a_bull_off_decides_who_starts():
     game = PracticeGame()
     game.bull_off = True
@@ -530,3 +614,216 @@ def test_any_party_game_keeps_its_scores_consistent(kind, players, bull_off, vis
         ):
             # Nobody who is out ever throws.
             assert snapshot["scores"][snapshot["player"] - 1]["lives"] > 0
+
+
+@pytest.mark.parametrize("starter", [3, -1, True, "1", None])
+def test_a_party_game_starts_with_the_first_player_unless_the_store_names_one(
+    starter,
+):
+    shanghai = make_party("shanghai", 3)
+    shanghai.restore({"starter": 2})
+    assert shanghai.starter == 2
+    shanghai.restore({"starter": starter})
+    assert shanghai.starter == 0
+
+
+@pytest.mark.parametrize(
+    "counts",
+    [[True, 0], [2.5, 0], [-1, 0], ["3", 0], [3], [3, 0, 0], "3"],
+)
+def test_party_points_and_hits_take_only_a_whole_count_for_every_player(counts):
+    shanghai = make_party("shanghai", 2)
+    shanghai.restore({"points": [4, 0], "hits": [2, 0]})
+    shanghai.restore({"points": counts, "hits": counts})
+    assert (shanghai.points, shanghai.hits) == ([4, 0], [2, 0])
+
+
+@pytest.mark.parametrize(("turns", "kept"), [(0, 0), (5, 5), (-3, 0), ("5", 0)])
+def test_party_turns_are_a_count_from_zero(turns, kept):
+    shanghai = make_party("shanghai", 2)
+    shanghai.restore({"turns": 7})
+    shanghai.restore({"turns": turns})
+    assert shanghai.turns == kept
+    shanghai.restore({})
+    assert shanghai.turns == 0
+
+
+def test_killer_numbers_are_numbers_of_the_board_and_lives_are_three_at_most():
+    killer = make_party("killer", 2)
+    killer.restore({"numbers": [1, 20], "lives": [0, KILLER_LIVES]})
+    assert killer.numbers == [1, 20] and killer.lives == [0, KILLER_LIVES]
+    for numbers in ([True, None], [21, None], [0, None], [2.0, None], [5, 5]):
+        killer = make_party("killer", 2)
+        killer.restore({"numbers": numbers})
+        assert killer.numbers == [None, None]
+    for lives in ([KILLER_LIVES + 1, 1], [-1, 1], [True, 1], [1]):
+        killer = make_party("killer", 2)
+        killer.restore({"lives": lives})
+        assert killer.lives == [KILLER_LIVES] * 2
+
+
+def test_killer_details_and_targets_follow_the_number_and_the_killer():
+    killer = make_party("killer", 3)
+    killer.restore({"numbers": [7, None, 3], "killers": [True, False, False]})
+    assert killer.details(0) == {"number": 7, "lives": KILLER_LIVES, "killer": True}
+    assert killer.details(1) == {"number": None, "lives": KILLER_LIVES, "killer": False}
+    # A killer aims at the doubles of the others, and nobody before a number.
+    assert [killer.target(player) for player in range(3)] == [None, None, "D3"]
+
+
+@pytest.mark.parametrize(("name", "number"), [("S1", 1), ("T20", 20), ("BULL", None)])
+def test_killer_numbers_are_picked_from_1_to_20(name, number):
+    killer = make_party("killer", 2)
+    assert killer.book(0, darts_of(name)).numbers == [number, None]
+
+
+def test_a_killer_dart_counts_after_darts_that_do_nothing():
+    killer = make_party("killer", 3)
+    killer.restore({"numbers": [5, 7, 9]})
+    killer.book(0, darts_of("S1", "D9", "D5"))
+    # D9 takes no life from a player who is no killer yet; D5 makes them one.
+    assert killer.killers == [True, False, False] and killer.lives == [3, 3, 3]
+    # A player out of lives has none to lose.
+    killer.restore({"lives": [3, 0, 3]})
+    assert killer.book(0, darts_of("D7", "D9")).lives == [3, 0, 2]
+
+
+def test_gotcha_counts_the_darts_that_score():
+    gotcha = make_party("gotcha", 2)
+    assert gotcha.book(0, darts_of("S20", "MISS", "T1")).hits == 2
+    assert gotcha.book(1, darts_of("MISS")).hits == 0
+    assert gotcha.hits == [2, 0]
+
+
+@pytest.mark.parametrize(("points", "kept"), [(301, True), (302, False)])
+def test_gotcha_keeps_scores_up_to_its_target(points, kept):
+    gotcha = make_party("gotcha", 2, target=301)
+    gotcha.restore({"points": [points, 12]})
+    assert gotcha.points == ([points, 12] if kept else [0, 0])
+
+
+VISIT_BEDS = [
+    *(f"{bed}{number}" for bed in "SDT" for number in range(1, 21)),
+    "25",
+    "BULL",
+    "MISS",
+]
+VISITS = st.lists(st.lists(st.sampled_from(VISIT_BEDS), max_size=3), max_size=40)
+
+
+@st.composite
+def party_setups(draw) -> tuple[str, int, int | None, dict]:
+    """A party game, its players, and the options it takes."""
+    kind = draw(st.sampled_from(PARTY_GAMES))
+    players = draw(st.integers(2 if kind == "killer" else 1, PARTY_PLAYERS))
+    rounds, options = None, {}
+    if kind == "golf":
+        rounds = draw(st.sampled_from(GOLF_HOLES))
+    elif kind == "count_up":
+        rounds = draw(st.integers(1, MAX_ROUNDS))
+    elif kind == "bermuda":
+        options = {"halve": draw(st.booleans())}
+    elif kind == "round_the_world":
+        options = {"order": draw(st.sampled_from(WORLD_ORDERS))}
+    elif kind == "gotcha":
+        options = {
+            "target": draw(st.integers(*GOTCHA_TARGETS)),
+            "out_mode": draw(st.sampled_from(MODES)),
+        }
+    return kind, players, rounds, options
+
+
+def play(
+    game: PartyGame,
+    player: int,
+    visits: list[list[str]],
+    decided: bool = False,
+    new_legs: bool = True,
+) -> tuple[int, bool, list]:
+    """Book the visits in turn: the next player after each, and after a decided
+    leg a new one, which the next player starts, or the end of the play. The
+    player at the board, whether the leg is decided, and what every visit made."""
+    results = []
+    for visit in visits:
+        if decided:
+            if not new_legs:
+                break
+            player = (game.starter + 1) % game.players
+            game.new_leg(game.players, player)
+            decided = False
+        result = game.book(player, [dart(name) for name in visit])
+        results.append(result)
+        if result.won is None:
+            player = game.next(player)
+        else:
+            decided = True
+    return player, decided, results
+
+
+def state(game: PartyGame) -> tuple:
+    """Everything the cards and the announcements show of a party game."""
+    players = range(game.players)
+    return (
+        game.stored(),
+        [game.details(player) for player in players],
+        [game.target(player) for player in players],
+        [game.announced(player) for player in players],
+        (game.round, game.shown_round, game.playoff(), game.choosing),
+    )
+
+
+@given(party_setups(), VISITS, VISITS, VISITS)
+def test_a_restored_party_game_plays_on_as_the_stored_one(
+    setup, before, elsewhere, after
+):
+    kind, players, rounds, options = setup
+    game = make_party(kind, players, rounds, **options)
+    player, decided, _ = play(game, 0, before)
+    # The store keeps the game as JSON. A restart restores it into a game just
+    # made, and every field it keeps replaces what a game held before.
+    saved = json.loads(json.dumps(game.stored()))
+    fresh = make_party(kind, players, rounds, **options)
+    fresh.restore(saved)
+    used = make_party(kind, players, rounds, **options)
+    play(used, 0, elsewhere)
+    used.restore(saved)
+    for copy in (fresh, used):
+        assert state(copy) == state(game)
+    played = play(game, player, after, decided, new_legs=False)
+    for copy in (fresh, used):
+        assert play(copy, player, after, decided, new_legs=False) == played
+        assert state(copy) == state(game)
+
+
+BULL_OFF_BEDS = ["BULL", "25", "S20", "T5", "D1", "MISS"]
+
+
+@st.composite
+def bull_off_throws(draw) -> tuple[list[int], list]:
+    """An order of the players and the darts they throw at the bull."""
+    players = draw(st.integers(1, PARTY_PLAYERS))
+    order = draw(st.permutations(range(players)))
+    position = st.none() | st.tuples(st.floats(-1.2, 1.2), st.floats(-1.2, 1.2))
+    darts = draw(
+        st.lists(st.tuples(st.sampled_from(BULL_OFF_BEDS), position), max_size=30)
+    )
+    return list(order), darts
+
+
+@given(bull_off_throws(), st.integers(0, 30), st.booleans())
+def test_a_restored_bull_off_goes_on_as_the_stored_one(throws, split, by_distance):
+    order, darts = throws
+    bull_off = BullOff(order)
+    for name, position in darts[:split]:
+        if bull_off.book(dart(name), position, by_distance) is not None:
+            # Decided: the match starts, and nothing is left to restore.
+            return
+    saved = json.loads(json.dumps(bull_off.stored()))
+    restored = BullOff.restored(saved, len(order))
+    assert restored.stored() == bull_off.stored()
+    for name, position in darts[split:]:
+        winner = bull_off.book(dart(name), position, by_distance)
+        assert restored.book(dart(name), position, by_distance) == winner
+        assert restored.stored() == bull_off.stored()
+        if winner is not None:
+            break

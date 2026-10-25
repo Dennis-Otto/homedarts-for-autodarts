@@ -1,6 +1,11 @@
 """Hit rates per double, checkout routes over the strongest doubles, and how
 often every double was hit at all."""
 
+import json
+
+from hypothesis import given
+from hypothesis import strategies as st
+
 from custom_components.homedarts.checkout import checkout
 from custom_components.homedarts.doubles import (
     MIN_ATTEMPTS,
@@ -59,6 +64,72 @@ def test_a_double_is_preferred_only_when_it_is_a_strong_one():
     even = DoubleStats()
     even.record([("D16", True)] * 3 + [("D16", False)] * 7)
     assert even.preferred() == ("D16",)
+
+
+def test_the_snapshot_of_the_doubles_with_their_rates():
+    stats = DoubleStats()
+    stats.record([("D16", True), ("D16", False), ("D16", False)])
+    stats.record([("BULL", False)] * 3)
+    assert stats.snapshot() == {
+        "attempts": 6,
+        "hits": 1,
+        "rate": 16.7,
+        "favourite": None,
+        "doubles": [
+            {"double": "D16", "attempts": 3, "hits": 1, "rate": 33.3},
+            {"double": "BULL", "attempts": 3, "hits": 0, "rate": 0.0},
+        ],
+    }
+
+
+def test_doubles_never_hit_are_never_preferred():
+    stats = DoubleStats()
+    stats.restore({"D1": [MIN_ATTEMPTS, 0]})
+    assert stats.preferred() == ()
+    # A single hit is enough when the others are hit less often.
+    stats.restore({"D1": [MIN_ATTEMPTS, 1], "D2": [MIN_ATTEMPTS, 0]})
+    assert stats.preferred() == ("D1",)
+
+
+def test_strong_doubles_rank_by_their_rate_then_by_their_attempts():
+    stats = DoubleStats()
+    # D4, thrown often and never hit, makes the others strong.
+    stats.restore({"D3": [10, 6], "D1": [10, 9], "D2": [20, 12], "D4": [400, 0]})
+    assert stats.preferred() == ("D1", "D2", "D3")
+    # Rates are compared as the cards show them, to a tenth of a percent: 49.99 %
+    # with more attempts comes before 50 %.
+    stats.restore({"D6": [20000, 10000], "D5": [20001, 9999], "D4": [400000, 0]})
+    assert stats.preferred() == ("D5", "D6")
+    # A rate shown as 0.0 % comes after 0.5 %.
+    stats.restore({"D1": [2001, 1], "D2": [200, 1], "D4": [100000, 0]})
+    assert (stats.rate("D1"), stats.rate("D2")) == (0.0, 0.5)
+    assert stats.preferred() == ("D2", "D1")
+
+
+def test_restored_double_statistics_take_only_whole_counts():
+    stats = DoubleStats()
+    stats.restore({"D1": [3, True], "D2": [2.5, 1], "D3": [-1, 0], "D4": [0, 0]})
+    assert stats.stored() == {"D4": [0, 0]} and stats.rate("D4") is None
+
+
+ATTEMPTS = st.lists(
+    st.tuples(st.sampled_from(["D16", "D20", "D8", "BULL", "S20"]), st.booleans()),
+    max_size=80,
+)
+
+
+@given(ATTEMPTS, ATTEMPTS)
+def test_restored_double_statistics_go_on_as_the_stored_ones(before, after):
+    stats = DoubleStats()
+    stats.record(before)
+    restored = DoubleStats()
+    restored.restore(json.loads(json.dumps(stats.stored())))
+    assert restored.snapshot() == stats.snapshot()
+    stats.record(after)
+    restored.record(after)
+    assert restored.stored() == stats.stored()
+    assert restored.snapshot() == stats.snapshot()
+    assert restored.preferred() == stats.preferred()
 
 
 def test_preferred_doubles_rank_first_among_equal_routes():

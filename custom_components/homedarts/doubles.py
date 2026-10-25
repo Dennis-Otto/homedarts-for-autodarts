@@ -92,7 +92,8 @@ class DoubleStats:
         strong = [
             double
             for double in DOUBLES
-            if (count := self.counts.get(double, [0, 0]))[0] >= MIN_ATTEMPTS
+            if double in self.counts
+            and (count := self.counts[double])[0] >= MIN_ATTEMPTS
             and count[1] > 0
             # Hits per attempt at least the overall rate, without rounding.
             and count[1] * attempts >= hit * count[0]

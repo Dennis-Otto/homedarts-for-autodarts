@@ -12,6 +12,7 @@ from custom_components.homedarts.checkout import (
     DOUBLES,
     HIGHEST,
     Setup,
+    _hard,
     _leaves,
     checkout,
     setup,
@@ -413,3 +414,17 @@ def test_a_setup_is_the_best_of_every_way_to_throw_the_darts(
             ), (remaining, darts)
             # Even three treble 20s leave too much above 230: nothing to set up.
             assert found is None or remaining - 60 * darts <= 230
+
+
+def test_a_setup_avoids_the_outer_bull_and_the_small_trebles():
+    small_trebles = {f"T{number}" for number in range(1, 19)}
+    hard = {
+        bull_mode: {bed.name for bed in beds if _hard(bed)}
+        for bull_mode, beds in BEDS_BY_BULL.items()
+    }
+    # With the bull mode 50/50, the outer bull is the single "BULL" of 50 points;
+    # the bullseye, a double, is no small bed.
+    assert hard == {
+        BULL_25_50: {"25", *small_trebles},
+        BULL_50_50: {"BULL", *small_trebles},
+    }

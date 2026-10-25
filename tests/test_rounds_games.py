@@ -139,6 +139,14 @@ def test_count_up_adds_every_dart_for_its_rounds():
     assert make_party("count_up", 2).rounds == 8
 
 
+def test_the_scorecard_keeps_the_score_of_every_round():
+    count_up = CountUp(1, 3)
+    for names in (("S20", "MISS"), ("T20",), ("S1", "S2", "S3")):
+        count_up.book(0, darts(*names))
+    assert count_up.scorecard == [[20, 60, 6]] and count_up.points == [86]
+    assert count_up.turns == 3 and count_up.hits == [5]
+
+
 def test_rounds_games_restore_their_state_and_ignore_nonsense():
     golf = Golf(3, 9)
     golf.book(0, darts("D1"))
@@ -160,6 +168,59 @@ def test_rounds_games_restore_their_state_and_ignore_nonsense():
     assert restored.lineup == [0, 1, 2] and restored.scorecard == [[1], [], []]
     restored.restore(None)
     assert restored.stored() == golf.stored()
+
+
+def test_a_rounds_game_takes_every_field_of_the_store_whatever_it_held():
+    # The second player starts the leg: the lineup differs from a new game's.
+    stored = Golf(2, 9)
+    stored.new_leg(2, 1)
+    saved = json.loads(json.dumps(stored.stored()))
+    used = Golf(2, 9)
+    for player in (0, 1, 0):
+        used.book(player, darts("S1"))
+    assert (used.current_round, used.thrown, used.lineup) == (2, 1, [0, 1])
+    used.restore(saved)
+    assert used.stored() == stored.stored()
+    assert (used.current_round, used.thrown, used.lineup) == (1, 0, [1, 0])
+
+
+def test_a_rounds_game_stored_after_its_last_round_stays_decided():
+    count_up = CountUp(2, 1)
+    count_up.book(0, darts("S20"))
+    assert count_up.book(1, darts("S1")).won == 0
+    saved = json.loads(json.dumps(count_up.stored()))
+    # Everybody has thrown in the last round, which decided the leg.
+    assert saved["thrown"] == 2 and saved["round"] == 1
+    restored = CountUp(2, 1)
+    restored.restore(saved)
+    assert restored.stored() == count_up.stored()
+
+
+@pytest.mark.parametrize(
+    "lineup", [[True, 0], [0, 2], [-1, 0], [0, 0], [], "10", [0.0, 1], [1.0]]
+)
+def test_a_rounds_game_takes_only_a_lineup_of_its_own_players(lineup):
+    golf = Golf(2, 9)
+    golf.restore({"lineup": [1, 0]})
+    golf.restore({"lineup": lineup})
+    assert golf.lineup == [1, 0]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "nonsense"),
+    [
+        ("thrown", 2, [3, -1, True, "1"]),
+        ("round", 3, [0, -1, True, "2"]),
+    ],
+)
+def test_a_rounds_game_keeps_its_round_and_turn_without_a_count_of_them(
+    field, value, nonsense
+):
+    for wrong in nonsense:
+        golf = Golf(2, 9)
+        golf.restore({field: value})
+        golf.restore({field: wrong})
+        assert golf.stored()[field] == value
 
 
 def rounds_game(kind: str, players: int = 2) -> PracticeGame:

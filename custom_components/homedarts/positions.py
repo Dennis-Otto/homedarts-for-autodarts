@@ -18,7 +18,7 @@ from typing import Any
 from .aim import MIN_DARTS, ErrorModel, best_aim
 from .board import RADIUS_MM, aim_point
 from .doubles import aimed_at
-from .scoring import BULL_25_50, DOUBLE, STRAIGHT, VISIT_DARTS, fits, score
+from .scoring import BULL_25_50, DOUBLE, VISIT_DARTS, score
 
 # The beds a dart can be aimed at, as the log stores them by position; the
 # singles are too wide to tell where a player aimed.
@@ -82,12 +82,9 @@ def x01_aims(
         if remaining is None or (opening is not None and index < opening):
             continue
         left = remaining - score(dart, bull_mode)
-        busted = (
-            left < 0
-            or (out_mode != STRAIGHT and left == 1)
-            or (left == 0 and not fits(dart, out_mode))
-        )
-        remaining = None if busted or left == 0 else left
+        # The finish and a bust end the aims of the visit, and so does 1 left: a
+        # bust with double or master out, and without them a single, no aim.
+        remaining = left if left > 1 else None
     return aims
 
 
@@ -375,11 +372,17 @@ class DartLog:
         if not isinstance(saved, list) or len(saved) % 3:
             return
         scale = RADIUS_MM * 10
-        limit = MAX_DISTANCE * scale
+        # Stored in whole tenths of a millimetre, a dart at MAX_DISTANCE may lie up
+        # to a tenth further out: it comes back, though a new dart there would not.
+        limit = MAX_DISTANCE * scale + 1
         for index in range(0, len(saved), 3):
             x, y, aim = saved[index : index + 3]
             if not all(type(value) is int for value in (x, y, aim)):
                 continue
-            if abs(x) > limit or abs(y) > limit or not 0 <= aim <= len(AIMS):
+            # A whole number too large for a float has no distance.
+            if max(abs(x), abs(y)) > limit or math.hypot(x, y) > limit:
                 continue
-            self.add((x / scale, y / scale), AIMS[aim - 1] if aim else None)
+            if 0 <= aim <= len(AIMS):
+                self.darts.append(
+                    (x / scale, y / scale, AIMS[aim - 1] if aim else None)
+                )

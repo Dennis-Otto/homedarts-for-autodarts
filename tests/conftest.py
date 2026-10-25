@@ -18,7 +18,7 @@ import pytest
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.setup import async_setup_component
-from hypothesis import settings
+from hypothesis import Phase, settings
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from syrupy.assertion import SnapshotAssertion
 from syrupy.extensions.amber import AmberSnapshotExtension
@@ -33,16 +33,27 @@ custom_components.__path__.insert(
 )
 
 # Property tests never fail on a slow machine; in CI they replay the same
-# examples on every run, so a failure shows up again on a retry.
+# examples on every run, so a failure shows up again on a retry. Under mutmut they
+# draw the same examples as in CI and stop at the first that fails: a killed
+# mutant needs no smaller example, and looking for one can take longer than the
+# time limit of the mutant, which then counts as no result.
 settings.register_profile("local", deadline=None)
 settings.register_profile("ci", deadline=None, derandomize=True, print_blob=True)
+settings.register_profile(
+    "mutation",
+    deadline=None,
+    derandomize=True,
+    phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.target),
+)
 
 
 def hypothesis_profile(environ: Mapping[str, str]) -> str:
     """The profile of the property tests: the same examples in every run in CI
     and under mutmut, which sets MUTANT_UNDER_TEST before it imports the tests,
     so that a mutant is killed or survives the same way on every machine."""
-    return "ci" if environ.get("CI") or "MUTANT_UNDER_TEST" in environ else "local"
+    if "MUTANT_UNDER_TEST" in environ:
+        return "mutation"
+    return "ci" if environ.get("CI") else "local"
 
 
 settings.load_profile(hypothesis_profile(os.environ))
