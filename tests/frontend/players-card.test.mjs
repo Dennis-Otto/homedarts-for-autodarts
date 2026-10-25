@@ -510,7 +510,7 @@ test("renaming asks for the new name, says when it joins another profile and cal
   const { card, hass } = setup(
     { ...profiles(ALEX, LEA), ...lastMatch({}) },
     {},
-    { callWS, user: ADMIN, device: { primary_config_entry: "entry-1" } }
+    { callWS, user: ADMIN, device: { config_entry_id: "entry-1" } }
   );
   const dialog = manage(card, "Alex", "rename");
   assert.equal(dialog.open, true);

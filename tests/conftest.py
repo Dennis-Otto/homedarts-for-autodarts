@@ -2,18 +2,20 @@
 
 import asyncio
 import functools
+import json
 import logging
 import os
 import re
 import shutil
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 from unittest.mock import patch
 
 import pytest
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.setup import async_setup_component
 from hypothesis import settings
@@ -22,6 +24,8 @@ from syrupy.assertion import SnapshotAssertion
 from syrupy.extensions.amber import AmberSnapshotExtension
 
 import custom_components
+
+from .e2e import ha_reports
 
 # The HA test plugin preloads its own custom_components package.
 custom_components.__path__.insert(
@@ -222,15 +226,55 @@ WATCHED_LOGGERS = (
 UNAVAILABLE = re.compile(r"Error fetching homedarts_local data: ")
 
 
-# The log of a test whose errors pytest_runtest_teardown checks.
+# The manifest, whose domain and issue tracker Home Assistant's reports about the
+# integration name (tests/e2e/ha_reports.py).
+MANIFEST = json.loads((INTEGRATION / "manifest.json").read_text(encoding="utf-8"))
+
+# The log of a test that pytest_runtest_teardown checks, and whether the test logs
+# errors of the integration on purpose.
 CHECKED_LOG = pytest.StashKey[pytest.LogCaptureFixture]()
+ERRORS_EXPECTED = pytest.StashKey[bool]()
 
 
 @pytest.fixture(autouse=True)
 def no_unexpected_errors(request, caplog):
-    """An error in the log fails the test, unless it is marked expected_errors."""
-    if not request.node.get_closest_marker("expected_errors"):
-        request.node.stash[CHECKED_LOG] = caplog
+    """An error in the log fails the test, unless it is marked expected_errors, and
+    a report of Home Assistant about the integration fails every test."""
+    request.node.stash[CHECKED_LOG] = caplog
+    request.node.stash[ERRORS_EXPECTED] = (
+        request.node.get_closest_marker("expected_errors") is not None
+    )
+
+
+def reported(record: logging.LogRecord) -> bool:
+    """Whether Home Assistant reports the integration in a warning, whatever its
+    logger, such as a deprecated call that its next release stops."""
+    return record.levelno >= logging.WARNING and bool(
+        ha_reports.reports([record.getMessage()], MANIFEST, HA_VERSION)
+    )
+
+
+def unexpected_error(record: logging.LogRecord) -> bool:
+    """Whether an error of the integration or of the parts of Home Assistant that
+    run its entities, WebSocket commands and webhooks fails the test."""
+    return (
+        record.levelno >= logging.ERROR
+        and record.name.startswith(WATCHED_LOGGERS)
+        and not UNAVAILABLE.match(record.getMessage())
+    )
+
+
+def log_problems(
+    records: Iterable[tuple[str, logging.LogRecord]], errors_expected: bool
+) -> list[str]:
+    """The records of a test, each with the phase that logged it, that fail it: every
+    report of Home Assistant about the integration, and the unexpected errors unless
+    the test is marked expected_errors."""
+    return [
+        f"{when}: {record.name}: {record.getMessage()}"
+        for when, record in records
+        if reported(record) or (not errors_expected and unexpected_error(record))
+    ]
 
 
 @pytest.hookimpl(wrapper=True, trylast=True)
@@ -245,15 +289,15 @@ def pytest_runtest_teardown(item):
     caplog = item.stash.get(CHECKED_LOG, None)
     if caplog is None:
         return
-    errors = [
-        f"{when}: {record.name}: {record.getMessage()}"
-        for when in ("setup", "call", "teardown")
-        for record in caplog.get_records(when)
-        if record.levelno >= logging.ERROR
-        and record.name.startswith(WATCHED_LOGGERS)
-        and not UNAVAILABLE.match(record.getMessage())
-    ]
-    assert not errors, errors
+    problems = log_problems(
+        (
+            (when, record)
+            for when in ("setup", "call", "teardown")
+            for record in caplog.get_records(when)
+        ),
+        item.stash[ERRORS_EXPECTED],
+    )
+    assert not problems, "\n".join(["The log of the test shows problems:", *problems])
 
 
 @pytest.fixture

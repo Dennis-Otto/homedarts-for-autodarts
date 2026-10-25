@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Warnungen von Home Assistant über die Integration
+  accDescr: Home Assistant warnt im Log seiner eigenen Module, wenn die Integration etwas nutzt, das ein kommendes Release entfernt, oder die Ereignisschleife blockiert - ein veralteter Aufruf, eine veraltete Konstante oder Funktion, ein blockierender Aufruf - und bittet, es der Integration zu melden. pytest prüft das Log jedes Tests, wenn er abgebaut ist, das End-to-End-Szenario in seiner Phase logs das Systemlog und die Logdatei, bei jedem Pull Request, der sie ändert, und jede Nacht gegen die Beta von Home Assistant. Eine Warnung, die die Integration nennt, lässt den Test oder das Szenario mit der Meldung von Home Assistant fehlschlagen, außer sie ist eine bekannte Meldung, deren Release noch nicht gekommen ist. Ein fehlgeschlagener nächtlicher Lauf gegen die Beta wird zu einem Issue des Workflows Bot health, bevor das Release die Nutzer erreicht.
+
+  HA["Home Assistant warnt in seinem eigenen Log:<br/>Detected that custom integration 'homedarts' ...,<br/>Detected blocking call ... by custom integration 'homedarts',<br/>The deprecated ... was used from homedarts"] --> PYTEST{{"pytest: das Log jedes Tests,<br/>wenn er abgebaut ist,<br/>gleich welcher Logger"}}
+  HA --> SCENARIO{{"Das End-to-End-Szenario, Phase logs:<br/>das Systemlog und die Logdatei"}}
+  PYTEST --> KNOWN{"Eine bekannte Meldung,<br/>vor ihrem Release?"}
+  SCENARIO --> KNOWN
+  KNOWN -- "ja" --> PASS["Besteht, bis zum Release<br/>in KNOWN von ha_reports.py"]
+  KNOWN -- "nein" --> FAIL["Schlägt mit der Meldung<br/>von Home Assistant fehl"]
+  FAIL -- "jede Nacht gegen die Beta" --> ISSUE["Ein Issue des Workflows Bot health,<br/>bevor das Release die Nutzer erreicht"]
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class PYTEST,SCENARIO,KNOWN bot
+  class PASS done
+  class FAIL,ISSUE failed
