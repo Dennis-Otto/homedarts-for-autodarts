@@ -10,9 +10,7 @@ flowchart TB
   START["A pull request or a push to main<br/>changes the cards or the screenshot tool"] --> KEY
   KEY["Each job of a group: did an earlier run<br/>of this repository render the same files?"]
   KEY -->|"yes"| TAKE["It takes the images of that run,<br/>in under a minute"]
-  KEY --> G1
-  KEY -->|"no, or weekly or on demand"| G2
-  KEY --> G3
+  KEY -->|"no, or weekly or on demand"| G1 & G2 & G3
   G1["Group 1, a fresh demo:<br/>the cards, the live card,<br/>the first games, the manual board,<br/>about 9 min"]
   G2["Group 2, a fresh demo:<br/>more games, a tournament,<br/>then the players, about 10 min"]
   G3["Group 3, a fresh demo:<br/>the corrections, the formats,<br/>the big tournaments up to their pictures,<br/>the calendar, about 10 min"]

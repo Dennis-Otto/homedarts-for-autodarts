@@ -30,6 +30,7 @@ artifacts can't be looked up, the job renders anew as well.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -188,7 +189,16 @@ def find(language: str, group: str) -> None:
         repository = os.environ["GITHUB_REPOSITORY"]
         try:
             run = earlier(name, repository, int(os.environ["GITHUB_REPOSITORY_ID"]))
-        except (OSError, ValueError) as error:
+        # Any answer the lookup can't read, such as a connection that drops
+        # mid-answer or an answer of an unexpected shape, ends in a fresh render.
+        except (
+            OSError,
+            ValueError,
+            http.client.HTTPException,
+            KeyError,
+            TypeError,
+            AttributeError,
+        ) as error:
             print(
                 "::warning::The images of earlier runs can't be looked up"
                 f" ({error}), so the job renders them anew."

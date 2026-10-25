@@ -10,9 +10,7 @@ flowchart TB
   START["Ein Pull Request oder ein Push auf main<br/>ändert die Karten oder das Screenshot-Werkzeug"] --> KEY
   KEY["Jeder Job einer Gruppe: Hat ein früherer Lauf<br/>dieses Repositorys dieselben Dateien erzeugt?"]
   KEY -->|"ja"| TAKE["Er übernimmt die Bilder dieses Laufs,<br/>in unter einer Minute"]
-  KEY --> G1
-  KEY -->|"nein, oder wöchentlich oder auf Abruf"| G2
-  KEY --> G3
+  KEY -->|"nein, oder wöchentlich oder auf Abruf"| G1 & G2 & G3
   G1["Gruppe 1, eine frische Demo:<br/>die Karten, die Live-Karte,<br/>die ersten Spiele, die manuelle Scheibe,<br/>etwa 9 min"]
   G2["Gruppe 2, eine frische Demo:<br/>weitere Spiele, ein Turnier,<br/>danach die Spieler, etwa 10 min"]
   G3["Gruppe 3, eine frische Demo:<br/>die Korrekturen, die Formate,<br/>die großen Turniere bis zu ihren Bildern,<br/>der Kalender, etwa 10 min"]

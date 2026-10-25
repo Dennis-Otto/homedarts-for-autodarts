@@ -3,6 +3,7 @@ run when they were rendered from the same files, and only from a run of this
 repository's own workflows on one of its own branches, never of a fork
 (tests/e2e/render_key.py)."""
 
+import http.client
 import importlib.util
 import io
 import json
@@ -469,8 +470,12 @@ def test_a_run_on_a_schedule_or_on_demand_renders_anew(
         URLError("the host is blocked"),
         HTTPError(LISTING, 502, "Bad Gateway", {}, None),
         json.JSONDecodeError("Expecting value", "", 0),
+        http.client.IncompleteRead(b""),
+        KeyError("id"),
+        TypeError("'NoneType' object is not subscriptable"),
+        AttributeError("'list' object has no attribute 'get'"),
     ],
-    ids=["network", "http", "json"],
+    ids=["network", "http", "json", "dropped", "missing", "shape", "list"],
 )
 def test_without_the_api_the_job_renders_anew(step, monkeypatch, capsys, error):
     outputs, summary = step
@@ -489,6 +494,43 @@ def test_without_the_api_the_job_renders_anew(step, monkeypatch, capsys, error):
     assert "Rendered anew: the images of earlier runs can't be looked up" in (
         summary.read_text(encoding="utf-8")
     )
+
+
+@pytest.mark.parametrize(
+    "listing",
+    [
+        {"artifacts": [{**artifact(42), "created_at": None}, artifact(43)]},
+        {"artifacts": [{"name": NAME}, None]},
+        {"artifacts": "none"},
+        ["not", "an", "object"],
+    ],
+    ids=["unsortable", "no-object", "no-list", "no-dict"],
+)
+def test_an_answer_of_an_unexpected_shape_renders_anew(step, answers, capsys, listing):
+    outputs, summary = step
+    known, _ = answers
+    known[LISTING] = listing
+
+    render_key.find("en", "2")
+
+    assert outputs_of(outputs) == {"name": NAME}
+    assert "::warning::The images of earlier runs can't be looked up" in (
+        capsys.readouterr().out
+    )
+    assert "Rendered anew: the images of earlier runs can't be looked up" in (
+        summary.read_text(encoding="utf-8")
+    )
+
+
+def test_a_run_whose_answer_lacks_its_fields_is_not_taken(step, answers):
+    outputs, summary = step
+    known, _ = answers
+    known[LISTING] = {"artifacts": [artifact(42)]}
+    known[run_path(42)] = {"name": "Visual check"}
+
+    render_key.find("en", "2")
+
+    assert outputs_of(outputs) == {"name": NAME}
 
 
 def test_without_the_files_of_the_runner_the_step_prints(step, monkeypatch, capsys):
