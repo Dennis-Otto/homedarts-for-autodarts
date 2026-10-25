@@ -40,8 +40,9 @@ jobs:
   render:
     name: render (${{ matrix.language }}, ${{ matrix.group }}/3)
     runs-on: ubuntu-latest
-    # The demo takes about two minutes, the images of the longest group, the second,
-    # about eight and a half; the step that renders them ends after 21 minutes.
+    # The demo takes about two minutes, the images of the longest group, the second
+    # or the third, about seven and a half; the step that renders them ends after
+    # 21 minutes.
     timeout-minutes: 25
     permissions:
       contents: read

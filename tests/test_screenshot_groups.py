@@ -112,10 +112,14 @@ def test_the_steps_that_depend_on_each_other_share_a_group():
     # match is that of the corrections, as before the groups, and then the formats.
     bot = GROUPS[group_of["corrections"]]
     assert bot.index("corrections") < bot.index("formats")
-    # A second board would be the first of the cards without one, and the weekly
-    # report starts a new week: both come last in their group.
-    manual = GROUPS[group_of["manual"]]
-    assert manual[-2:] == ("calendar", "manual")
+    # A second board would be the first of the cards without one: the dartboard
+    # without Autodarts comes last in its group. The weekly report starts a new week:
+    # the calendar comes last in its group, or right before that board.
+    assert GROUPS[group_of["manual"]][-1] == "manual"
+    calendar = [
+        section for section in GROUPS[group_of["calendar"]] if section != "manual"
+    ]
+    assert calendar[-1] == "calendar"
 
 
 def test_no_group_takes_much_longer_than_the_shortest():

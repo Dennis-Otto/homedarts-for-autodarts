@@ -5,12 +5,12 @@ config:
 ---
 flowchart TB
   accTitle: Wie Bildvergleich und Screenshot-Bot die Bilder in Gruppen erzeugen
-  accDescr: Jede Sprache wird in drei Gruppen gleichzeitig erzeugt, jede Gruppe auf einem eigenen Runner aus einer frischen Demo. Die Karten und die ersten Spiele bilden Gruppe 1, weitere Spiele mit den Spielern Gruppe 2, die Korrekturen eines Darts, die Formate, die großen Turniere, der Kalender und die Dartscheibe ohne Autodarts Gruppe 3. Danach setzt ein Job je Sprache die Bilder seiner drei Gruppen zusammen und vergleicht sie mit den eingecheckten Bildern. Der Bildvergleich schreibt den Vergleich in einen Kommentar am Pull Request; der Screenshot-Bot aktualisiert seinen Pull Request mit jeder Sprache, die erzeugt wurde.
+  accDescr: Jede Sprache wird in drei Gruppen gleichzeitig erzeugt, jede Gruppe auf einem eigenen Runner aus einer frischen Demo. Die Karten, die ersten Spiele und die Dartscheibe ohne Autodarts bilden Gruppe 1, weitere Spiele mit den Spielern Gruppe 2, die Korrekturen eines Darts, die Formate, die großen Turniere und der Kalender Gruppe 3. Danach setzt ein Job je Sprache die Bilder seiner drei Gruppen zusammen und vergleicht sie mit den eingecheckten Bildern. Der Bildvergleich schreibt den Vergleich in einen Kommentar am Pull Request; der Screenshot-Bot aktualisiert seinen Pull Request mit jeder Sprache, die erzeugt wurde.
 
   START["Ein Pull Request oder ein Push auf main<br/>ändert die Karten oder das Screenshot-Werkzeug"] --> G1 & G2 & G3
-  G1["Gruppe 1, eine frische Demo:<br/>die Karten, die Live-Karte,<br/>die ersten Spiele, etwa 8 min"]
-  G2["Gruppe 2, eine frische Demo:<br/>weitere Spiele, ein Turnier,<br/>danach die Spieler, etwa 11 min"]
-  G3["Gruppe 3, eine frische Demo:<br/>die Korrekturen, die Formate,<br/>die großen Turniere bis zu ihren Bildern,<br/>der Kalender, die manuelle Scheibe, etwa 10 min"]
+  G1["Gruppe 1, eine frische Demo:<br/>die Karten, die Live-Karte,<br/>die ersten Spiele, die manuelle Scheibe,<br/>etwa 8 min"]
+  G2["Gruppe 2, eine frische Demo:<br/>weitere Spiele, ein Turnier,<br/>danach die Spieler, etwa 10 min"]
+  G3["Gruppe 3, eine frische Demo:<br/>die Korrekturen, die Formate,<br/>die großen Turniere bis zu ihren Bildern,<br/>der Kalender, etwa 10 min"]
   G1 & G2 & G3 --> COLLECT["Ein Job je Sprache setzt<br/>seine Gruppen zusammen und vergleicht<br/>sie mit den eingecheckten Bildern"]
   COLLECT --> COMMENT["Bildvergleich: ein Kommentar<br/>am Pull Request"]
   COLLECT --> BOT["Screenshot-Bot: sein Pull Request<br/>mit jeder Sprache, die erzeugt wurde"]

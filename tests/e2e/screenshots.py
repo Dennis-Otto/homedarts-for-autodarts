@@ -3735,33 +3735,35 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
 # visual.yml and screenshots.yml know how many there are.
 GROUPS = (
-    ("cards", "live", "practice", "games"),
+    # The dartboard without Autodarts last: its second board would be the first of
+    # the cards without one.
+    ("cards", "live", "practice", "games", "manual"),
     # The players card shows the five players of the tournament.
     ("more games", "people"),
     # The bot plays its first match in the corrections, as it did before the groups.
     # The big tournaments before the calendar's weekly report, which starts a new week.
-    ("corrections", "formats", "tournaments", "calendar", "manual"),
+    ("corrections", "formats", "tournaments", "calendar"),
 )
-# The seconds of each section on a runner of GitHub, from the screenshot bot of
-# 25 October 2026 (run 40164790427), the tournaments since they stop at their
-# pictures. No group may take more than SLOWER of group_times.py times the seconds
-# of the shortest (tests/test_screenshot_groups.py), and the job that puts the
-# groups of a language together flags one that did. Each job also starts its demo,
-# about two and a half minutes. A fourth group would need more games and the people
-# apart, and its start would cost more than it saves: three groups take the fewest
-# minutes of the runners.
+# The seconds of each section on a runner of GitHub, the mean of both languages in
+# the visual check of 25 October 2026 (run 40170950991), once the big tournaments
+# stopped at their pictures. No group may take more than SLOWER of group_times.py
+# times the seconds of the shortest (tests/test_screenshot_groups.py), and the job
+# that puts the groups of a language together marks one that did. Each job also
+# starts its demo, about two and a half minutes. A fourth group would need more
+# games and the people apart, and its start would cost more than it saves: three
+# groups take the fewest minutes of the runners.
 SECONDS = {
-    "cards": 45.0,
-    "live": 27.0,
-    "practice": 25.0,
-    "games": 248.0,
-    "more games": 283.0,
-    "people": 221.0,
-    "corrections": 52.0,
-    "formats": 120.0,
-    "tournaments": 205.0,
-    "calendar": 49.0,
-    "manual": 43.0,
+    "cards": 39.0,
+    "live": 24.0,
+    "practice": 24.0,
+    "games": 218.0,
+    "more games": 250.0,
+    "people": 189.0,
+    "corrections": 55.0,
+    "formats": 124.0,
+    "tournaments": 203.0,
+    "calendar": 60.0,
+    "manual": 47.0,
 }
 # The seconds after which the watchdog fails a section (watchdog.py): about twice
 # its longest run in CI (SECONDS) and at least two minutes, and with GRACE less than
@@ -3773,6 +3775,7 @@ BUDGETS = {
     "formats": 270.0,
     "people": 450.0,
     "tournaments": 420.0,
+    "calendar": 150.0,
 }
 
 
