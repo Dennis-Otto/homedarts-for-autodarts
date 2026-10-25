@@ -702,7 +702,8 @@ each party game, the bull-off, the dart positions and the double rates play rand
 darts, are stored as JSON at a random point and restored, into a new game and into
 one that has played other darts, and then play on with the same darts as the
 original, with the same state, details and results. Tests with stored values that
-are wrong, too old or cut short check that each field falls back to its default.
+are wrong, too old or cut short check that a field the restore cannot trust keeps
+what the game held, which after a restart is its default.
 
 ## Issue assistant
 
