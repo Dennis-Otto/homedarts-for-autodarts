@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The checks of this integration alone, which scripts/check.sh runs last: the license
-# terms, the rules of ESLint for the JavaScript (eslint.config.mjs), and the tests
-# of the dashboard cards and of the translation bot with Node (100 % of lines,
-# branches and functions covered).
+# terms, every line and branch of the key of the rendered images tested, the rules
+# of ESLint for the JavaScript (eslint.config.mjs), and the tests of the dashboard
+# cards and of the translation bot with Node (100 % of lines, branches and functions
+# covered).
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -22,6 +23,16 @@ for path in ("LICENSE", "custom_components/homedarts/LICENSE"):
 		raise SystemExit(f"{path}: the terms differ from the MIT license.")
 print("LICENSE and the copy in the integration carry the MIT terms.")
 PYTHON
+
+printf '\n== %s\n' "The key of the rendered images, with every line and branch tested"
+# tests/e2e/render_key.py decides whether the visual check and the screenshot bot
+# take the images of an earlier run instead of rendering them; the coverage of the
+# integration leaves tests/e2e out.
+coverage_data="$(mktemp)"
+python3 -m coverage run --rcfile=/dev/null --data-file="${coverage_data}" --branch \
+	--include=tests/e2e/render_key.py -m pytest --quiet -p no:cacheprovider tests/test_render_key.py
+python3 -m coverage report --rcfile=/dev/null --data-file="${coverage_data}" --show-missing --fail-under=100
+rm -f "${coverage_data}"
 
 printf '\n== %s\n' "The cards and the translation bot"
 if ! command -v node >/dev/null 2>&1 || [[ ! -d node_modules ]]; then

@@ -83,7 +83,10 @@ def test_a_group_without_times_is_named_and_the_others_still_compare(tmp_path):
 
     table = group_times.table("en", tmp_path)
 
-    assert "| 2/3 | – | – | no times: the group failed |" in table
+    assert (
+        "| 2/3 | – | – | no times: the group failed or took its images from an earlier run |"
+        in table
+    )
     assert "| 3/3 | manual | 400.0 | 1.33 × |" in table
     assert "⚠️" not in table
 

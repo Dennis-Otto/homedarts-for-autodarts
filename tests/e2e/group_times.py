@@ -70,7 +70,9 @@ def table(language: str, folder: Path) -> str:
     ]
     for group in range(1, count + 1):
         if group not in found:
-            lines.append(f"| {group}/{count} | – | – | no times: the group failed |")
+            lines.append(
+                f"| {group}/{count} | – | – | no times: the group failed or took its images from an earlier run |"
+            )
             continue
         names = ", ".join(name for name, _ in found[group]["sections"])
         ratio = totals[group] / shortest

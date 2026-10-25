@@ -4,7 +4,9 @@
 # of their own, and compare them with the committed ones, as visual.sh does after it
 # rendered every group itself. The visual check (visual.yml) and the screenshot bot
 # (screenshots.yml) run it for each language after the jobs of its groups, which
-# leave the images of group k in tests/e2e/artifacts/rendered-<language>-<k>/.
+# leave the images of group k in tests/e2e/artifacts/rendered-<language>-<k>-<key>/,
+# with the key of what the images are rendered from (tests/e2e/render_key.py);
+# visual.sh leaves them in tests/e2e/artifacts/rendered-<language>-<k>/.
 #
 # Afterwards docs/images holds the new images, tests/e2e/artifacts/visual/ the report
 # of compare.py, as after visual.sh, and tests/e2e/artifacts/collected/ the rendered
@@ -34,7 +36,7 @@ shopt -s nullglob
 missing=()
 for language in ${LANGUAGES}; do
 	for ((group = 1; group <= GROUP_COUNT; group++)); do
-		rendered=("${ARTIFACTS}/rendered-${language}-${group}/${language}"/*)
+		rendered=("${ARTIFACTS}/rendered-${language}-${group}"{,-*}"/${language}"/*)
 		if ((${#rendered[@]} == 0)); then
 			missing+=("group ${group} in ${language}")
 		fi
@@ -49,17 +51,19 @@ rm -rf "${REFERENCE}" "${OUTPUT}" "${COLLECTED}"
 mkdir -p "${REFERENCE}" "${OUTPUT}"
 cp -R "${IMAGES}/." "${REFERENCE}/"
 
-declare -A from
+# The group of every image, and its file.
+declare -A from file
 for language in ${LANGUAGES}; do
 	mkdir -p "${COLLECTED}/${language}"
 	for ((group = 1; group <= GROUP_COUNT; group++)); do
-		for image in "${ARTIFACTS}/rendered-${language}-${group}/${language}"/*; do
+		for image in "${ARTIFACTS}/rendered-${language}-${group}"{,-*}"/${language}"/*; do
 			name="${language}/$(basename -- "${image}")"
 			if [[ -n "${from[${name}]:-}" ]]; then
 				echo "${name} comes from group ${from[${name}]} and group ${group}; each image belongs to one group." >&2
 				exit 1
 			fi
 			from["${name}"]="${group}"
+			file["${name}"]="${image}"
 		done
 	done
 	declare -A diagram=()
@@ -78,7 +82,7 @@ for language in ${LANGUAGES}; do
 	unset diagram
 done
 for name in "${!from[@]}"; do
-	cp "${ARTIFACTS}/rendered-${name%%/*}-${from[${name}]}/${name}" "${IMAGES}/${name}"
+	cp "${file[${name}]}" "${IMAGES}/${name}"
 done
 echo "Put together ${#from[@]} images of ${GROUP_COUNT} groups in ${LANGUAGES}."
 

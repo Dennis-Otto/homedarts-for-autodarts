@@ -1,0 +1,3 @@
+### Improved
+
+- **The pictures of the documentation are rendered once per change:** a pull request that only catches up with `main`, and the screenshot bot after its merge, take the pictures that the visual check already rendered from the same files, in under a minute instead of about ten, and keep the runners free for the tests. Only pictures of this repository's own runs count, never those of a pull request from a fork, and the weekly run of the screenshot bot still renders every picture anew ([images rendered once](https://dennis-otto.github.io/homedarts-for-autodarts/development.html#images-rendered-once)).
