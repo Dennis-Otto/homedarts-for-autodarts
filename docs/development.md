@@ -169,7 +169,7 @@ BOARD_MANAGER=1 bash tests/e2e/run.sh
 BOARD_MANAGER=2 bash tests/e2e/run.sh   # includes discovery by mDNS
 ```
 
-The log shows the seconds of every phase, such as `Scenario phase: resilience (46.3 s)`.
+The log shows the seconds of every phase, such as `Scenario phase: resilience (46.3 s)`. A phase that hangs fails after its budget of time with the line that it waits at, as a step of the browser test does (see [When a step hangs](#when-a-step-hangs)).
 
 ### Recorded Board Manager answers
 
@@ -241,6 +241,27 @@ The browser test waits for what it checks, never for a fixed time, which would b
 The steps that look at many screens open them side by side and play every game once for all of them: *every screen size* its nine screens, and then the phones in four more languages; *steady heights* its four screens with three views each; *accessibility* its four screens and themes, where axe-core scans all of them at the same time; and *a dartboard without Autodarts* its nine screens. A wait that runs out names the page with its screen size and language, what it waited for and what the page showed instead, such as the request that got no answer or the state of each entity.
 
 `tests/test_e2e_waits.py` fails when the browser test waits a fixed time with `page.wait_for_timeout`, except for the two waits it lists with their reasons, each called once: a finger that rests on the loupe for 120 ms before it lets go, and the six seconds for which the Safari step holds back `homedarts-card.js`. No script that drives a browser may call `time.sleep`: Playwright's sync API handles the events of the browser, such as a request that a route holds back, only inside its own calls, so a sleep stops all of them. `tests/test_e2e_waits.py` also fails when a step runs the clock of a page that it installs only after the page has loaded, or never, because the timers of the cards would then run on the real clock.
+
+#### When a step hangs
+
+A wait that never ends would run until the time limit of its job, and GitHub cancels a job at its limit: then no step after it runs, so the job keeps no screenshots and no logs, and nothing explains it. So every step has a budget of time, and `tests/e2e/watchdog.py` fails a step that runs longer:
+
+- **The budgets.** A step of the browser test may take about three times its longest run in CI, and at least two minutes: `budget` of its `Step` in `steps()` of `tests/e2e/browser.py`, 390 s for the *steady heights* and 150 s for *every screen size*. A section of the screenshot tool may take about twice its longest run (`BUDGETS` in `tests/e2e/screenshots.py`, 840 s for the *tournaments*), and a phase of the scenario three times (`phase()` in `tests/e2e/scenario.py`, 150 s for the *resilience*).
+- **The stack of the step.** When the budget runs out, the log shows `Watchdog: steady heights took longer than 390 s. It waits here:` and the stack of the step, down to the line that it waits at, and the step fails with that message. A step that waits in a call of Playwright gets the call cancelled, so that the screenshots of its open pages still come; a phase of the scenario shows every coroutine that waits for the next one. A hang that no exception reaches, such as one in C code, ends two minutes later: faulthandler prints the stack of every thread and ends the process.
+- **The time limit of the step.** Each step of `e2e.yml`, `visual.yml` and `screenshots.yml` that runs a test script has a time limit of its own, three minutes or more before that of its job, such as 12 minutes for the browser test in a job of 15. A step that runs out of time fails, and the steps after it keep the artifact and explain the failure. The step runs its script with `exec`, so that the script itself gets the SIGINT with which GitHub stops the step: `run.sh`, `browser.sh` and `screenshots.sh` then first end their browser or the scenario that still runs, so that no container outlives the step, and print the state of their containers, what each of them uses of the CPU and the memory, and the end of the log of Home Assistant. `browser.py` notes the step that runs in `browser-steps-table.md` before it starts, so `browser.sh` names that step too.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/step-budgets-dark.png">
+  <img src="images/en/step-budgets-light.png" alt="When a step of the end-to-end tests hangs: every step of the browser test, section of the screenshot tool and phase of the scenario has a budget of time, about three times its longest run in CI. A step that ends within it goes on to the next. One that takes longer gets its stack printed by the watchdog, down to the line that it waits at, and fails with its name; a hang that no exception reaches ends two minutes later, when faulthandler prints the stack of every thread and ends the process. A run that outlasts the time limit of its step in the workflow, three minutes or more before that of the job, gets SIGINT from GitHub, and the script prints the state of its containers. Either way the step fails while the job still runs, so the artifact keeps the screenshots and the logs, the PR coach explains the failure and the flaky-test bot names the step." width="560">
+</picture>
+
+The step *the watchdog*, in group 3, checks in every run that a wait in a page that never ends and one of the step itself each fail within seconds, and that the page still answers afterwards: it runs on the Playwright of the run, whose sync API the watchdog relies on. The drill *a hung step* shows what a hang leaves behind; it runs only when `BROWSER_STEPS` names it by its whole name, and fails after 20 s:
+
+```sh
+BROWSER_STEPS="a hung step" bash tests/e2e/browser.sh
+```
+
+A step that only grew slower gets a larger budget. `tests/test_e2e_watchdog.py` checks the watchdog without a browser, also with a small model of Playwright's sync API, and `tests/test_e2e_workflow.py` that every step of the workflows that runs a test script ends three minutes or more before its job, and that every budget, with the two minutes for the screenshots, ends before its step.
 
 ### Accessibility check
 

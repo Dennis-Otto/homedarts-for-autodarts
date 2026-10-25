@@ -7,7 +7,8 @@ one, two and four shards each run every group once: shard 1/2 runs the groups 1 
 names, in a shard or in the whole run. The steps keep their order, and each one but
 those that read the demo as demo.py left it starts from the board between games
 (``Board.between_games`` in browser.py), so every choice of steps passes as the whole
-run does.
+run does. A drill, a step that fails on purpose, runs only when ``BROWSER_STEPS``
+names it by its whole name.
 """
 
 from __future__ import annotations
@@ -17,6 +18,9 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 GROUPS = 4
+# The seconds that a step may take before the watchdog fails it (watchdog.py): about
+# three times its longest run in CI, and at least two minutes.
+BUDGET = 120.0
 
 
 @dataclass(frozen=True)
@@ -29,6 +33,11 @@ class Step:
     # Reads the demo as demo.py left it, such as the visit on the board: it comes
     # before every step that changes the board, and nothing is reset before it.
     as_started: bool = False
+    # The seconds after which the watchdog fails the step.
+    budget: float = BUDGET
+    # Fails on purpose, to show what a failure of its kind leaves behind: runs only
+    # when BROWSER_STEPS names it by its whole name, never in a shard of its own.
+    drill: bool = False
 
 
 class Choice(ValueError):
@@ -61,15 +70,16 @@ def names(value: str) -> list[str]:
 def asked(step: Step, wanted: str, steps: Sequence[Step]) -> bool:
     """Whether BROWSER_STEPS asks for the step with one of its words: the whole name of
     a step asks for that step alone, such as "training card" without the "training card
-    editor", and a beginning for every step it begins, such as "touch"."""
-    if any(other.name == wanted for other in steps):
+    editor", and a beginning for every step it begins, such as "touch". A drill only
+    by its whole name."""
+    if step.drill or any(other.name == wanted for other in steps):
         return step.name == wanted
     return step.name.startswith(wanted)
 
 
 def choose(steps: Sequence[Step], wanted: str = "", part: str = "") -> list[Step]:
     """The steps to run, in their order: those of the shard ``part`` that ``wanted``
-    asks for, or all of them for empty values."""
+    asks for, or all of them but the drills for empty values."""
     for step in steps:
         if not 1 <= step.group <= GROUPS:
             raise Choice(f"{step.name}: group {step.group} is not 1 to {GROUPS}")
@@ -84,5 +94,7 @@ def choose(steps: Sequence[Step], wanted: str = "", part: str = "") -> list[Step
         step
         for step in steps
         if (step.group - 1) % n == k - 1
-        and (not words or any(asked(step, word, steps) for word in words))
+        and (
+            any(asked(step, word, steps) for word in words) if words else not step.drill
+        )
     ]

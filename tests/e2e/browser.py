@@ -8,11 +8,13 @@ from __future__ import annotations
 import json
 import math
 import os
+import threading
 import time
 import tomllib
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 
 from pages import (
@@ -37,6 +39,7 @@ from playwright.sync_api import (
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from shards import Step, choose, shard
+from watchdog import GRACE, budget, deadline, wake_playwright
 
 HA = "http://homeassistant:8123"
 # The client of the frontend at that address, which its login page signs in for.
@@ -3134,7 +3137,9 @@ def keep_screenshots(browser: Browser, step: str, besides: Page | None = None) -
         if path is None:
             return
         try:
-            page.screenshot(path=path, full_page=True)
+            # Ten seconds, not Playwright's thirty: a page of a step that hung may
+            # hang as well, and the screenshots of all pages have GRACE together.
+            page.screenshot(path=path, full_page=True, timeout=10_000)
         except Exception as error:  # A screenshot must never hide the real failure.
             print(f"No screenshot of {step}: {error}", flush=True)
 
@@ -3142,33 +3147,44 @@ def keep_screenshots(browser: Browser, step: str, besides: Page | None = None) -
 class StepTimes:
     """The seconds of every step, kept as a table in browser-steps-table.md with the
     other artifacts after each step, failed or not: browser.sh adds it to the summary
-    of the job in CI, which shows what to make faster and how to split the steps."""
+    of the job in CI, which shows what to make faster and how to split the steps.
+    While a step runs, the table names it as running, so that a run that GitHub
+    stops, such as when its step of the workflow runs out of time, still names the
+    step that it stopped in."""
 
     def __init__(self, title: str) -> None:
         self.title = title
         self.steps: list[tuple[str, float]] = []
         self.path = artifact("browser steps", "table.md")
 
+    def running(self, name: str) -> None:
+        self.write(f"| {name} (running) | – |")
+
     def add(self, name: str, seconds: float) -> float:
         self.steps.append((name, seconds))
-        if self.path is not None:
-            rows = [f"| {step} | {taken:.1f} |" for step, taken in self.steps]
-            total = sum(taken for _, taken in self.steps)
-            self.path.write_text(
-                "\n".join(
-                    [
-                        f"### {self.title}",
-                        "",
-                        "| Step | Seconds |",
-                        "| --- | ---: |",
-                        *rows,
-                        f"| All steps | {total:.1f} |",
-                        "",
-                    ]
-                ),
-                encoding="utf-8",
-            )
+        self.write()
         return seconds
+
+    def write(self, *running: str) -> None:
+        if self.path is None:
+            return
+        rows = [f"| {step} | {taken:.1f} |" for step, taken in self.steps]
+        total = sum(taken for _, taken in self.steps)
+        self.path.write_text(
+            "\n".join(
+                [
+                    f"### {self.title}",
+                    "",
+                    "| Step | Seconds |",
+                    "| --- | ---: |",
+                    *rows,
+                    *running,
+                    f"| All steps | {total:.1f} |",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
 
 
 class Timeline:
@@ -3556,13 +3572,59 @@ class Board:
         expect_state([page], BETWEEN_GAMES)
 
 
+def watchdog(browser: Browser) -> None:
+    """The watchdog itself, on Playwright's real sync API, whose greenlets and tasks
+    it relies on (wake_playwright of watchdog.py): a wait in a page that never ends,
+    and one of the step itself, each fail soon after a budget of two seconds with the
+    name of the wait, and the page still answers afterwards, as the screenshots of a
+    step that hung need it. So a new release of Playwright that changes them fails
+    here, and not first in a step that hangs."""
+    page = browser.new_page()
+    never = "() => new Promise(() => {})"
+    waits: tuple[tuple[str, Callable[[], object]], ...] = (
+        ("A wait in a page that never ends", lambda: page.evaluate(never)),
+        ("A wait of the step that never ends", lambda: threading.Event().wait()),
+    )
+    for what, wait in waits:
+        started = time.monotonic()
+        try:
+            with budget(what, 2, BrowserFailure, wake_playwright):
+                wait()
+        except BrowserFailure as error:
+            check(
+                str(error) == f"{what} took longer than 2 s",
+                f"{what} failed with {error!r}",
+            )
+        else:
+            raise BrowserFailure(f"{what} ended")
+        taken = time.monotonic() - started
+        check(taken < 10, f"{what} failed {taken:.1f} s after a budget of 2 s")
+        check(
+            page.evaluate("() => 6 * 7") == 42,
+            f"The page no longer answers after {what.lower()} ran out of time",
+        )
+    page.close()
+
+
+def hung_step(browser: Browser) -> None:
+    """A drill, which runs only when BROWSER_STEPS names it: a step that hangs in its
+    page, as steps did in CI until GitHub cancelled their job. Its budget runs out,
+    and the run fails as after any hang, with the name of the step, the line that it
+    waited at, a screenshot of its page and the logs of Home Assistant."""
+    page = browser.new_page()
+    page.set_content("<h1>A step that hangs</h1>")
+    page.evaluate("() => new Promise(() => {})")
+
+
 def steps(browser: Browser, playwright: Playwright) -> list[Step]:
     """Every step in its order, each in one of four groups of about the same seconds,
     which browser-steps-table.md lists after a run. In CI the groups 1 and 2 share a
     runner (BROWSER_WORKERS=2): the steady heights, the longest step, run beside the
     short steps of group 1. The groups 3 and 4 have a runner each, so that Safari's
     WebKit in group 4 shares the CPU with no other browser: it failed to load the
-    scripts of Home Assistant while every screen size opened nine screens beside it."""
+    scripts of Home Assistant while every screen size opened nine screens beside it.
+    A step that runs longer than its budget fails (shards.BUDGET): one of about three
+    times its longest run in CI, at least two minutes."""
     return [
         # Both read the demo as demo.py left it: the training card its session before
         # any control changes it, the live card the visit on the board.
@@ -3580,12 +3642,15 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
             "correcting with the keypad and the bot", 1, lambda: play_comfort(browser)
         ),
         Step("tournament", 1, lambda: tournament(browser)),
+        Step("the watchdog", 3, lambda: watchdog(browser)),
         Step("tablet screen", 3, lambda: tablet_screen(browser)),
         Step("touch screens", 4, lambda: touch_screens(browser)),
         Step("Safari on an iPhone", 4, lambda: safari(playwright)),
-        Step("every screen size", 3, lambda: screens(browser)),
+        # 41 s at most in CI.
+        Step("every screen size", 3, lambda: screens(browser), budget=150),
         Step("accessibility", 4, lambda: accessibility(browser)),
-        Step("steady heights", 2, lambda: steady_heights(browser)),
+        # 126 s at most in CI.
+        Step("steady heights", 2, lambda: steady_heights(browser), budget=390),
         Step("automatic dashboard", 1, lambda: strategy(browser)),
         Step("players export", 1, lambda: players_export(browser)),
         Step("live card editor", 1, lambda: editor(browser, rows=7)),
@@ -3624,6 +3689,7 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
         Step("dashboard strategy editor", 1, lambda: strategy_editor(browser)),
         Step("light theme", 1, lambda: light_theme(browser)),
         Step("languages", 1, lambda: languages(browser)),
+        Step("a hung step", 3, lambda: hung_step(browser), budget=20, drill=True),
         # Last: a second board would be the first of the cards without one.
         Step("a dartboard without Autodarts", 3, lambda: manual_board(browser)),
     ]
@@ -3640,20 +3706,28 @@ def main() -> None:
         for step in chosen:
             # A failure then names the step, not only a timeout deep in Playwright.
             print(f"Browser step: {step.name}", flush=True)
+            times.running(step.name)
             started = time.monotonic()
+            # A step that hangs fails after its budget with the line it waits at,
+            # long before the time limit of the job (watchdog.py).
+            watch = budget(step.name, step.budget, BrowserFailure, wake_playwright)
             try:
-                if not step.as_started:
-                    try:
-                        board.between_games()
-                    except Exception as error:
-                        raise BrowserFailure(
-                            f"Before {step.name}, the board did not get back"
-                            f" between games: {error}"
-                        ) from error
-                step.run()
+                with watch:
+                    if not step.as_started:
+                        try:
+                            board.between_games()
+                        except Exception as error:
+                            raise BrowserFailure(
+                                f"Before {step.name}, the board did not get back"
+                                f" between games: {error}"
+                            ) from error
+                    step.run()
             except Exception:
-                times.add(f"{step.name} (failed)", time.monotonic() - started)
-                keep_screenshots(browser, step.name, besides=board.page)
+                # browser.sh explains a step that took too long otherwise.
+                how = "took too long" if watch.fired else "failed"
+                times.add(f"{step.name} ({how})", time.monotonic() - started)
+                with deadline(GRACE):
+                    keep_screenshots(browser, step.name, besides=board.page)
                 raise
             seconds = times.add(step.name, time.monotonic() - started)
             print(f"Browser step: {step.name} ({seconds:.1f} s)", flush=True)

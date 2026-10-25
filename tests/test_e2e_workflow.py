@@ -4,8 +4,11 @@ one required check, e2e, passes only when every test that had to run passed.
 The steps of e2e.yml run here as GitHub runs them, in bash with a stand-in for gh
 that answers as the API does, through the same jq filter."""
 
+import ast
+import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import tomllib
@@ -388,3 +391,108 @@ def test_the_required_check_waits_for_every_test_of_a_pull_request():
     }
     assert {"scenario", "browser", "live-demo"} <= tests
     assert set(gate["needs"]) == tests
+
+
+# Time limits ----------------------------------------------------------------------
+
+E2E = ROOT / "tests" / "e2e"
+WATCHDOG_SPEC = importlib.util.spec_from_file_location(
+    "e2e_watchdog", E2E / "watchdog.py"
+)
+assert WATCHDOG_SPEC is not None and WATCHDOG_SPEC.loader is not None
+watchdog = importlib.util.module_from_spec(WATCHDOG_SPEC)
+WATCHDOG_SPEC.loader.exec_module(watchdog)
+# The workflows that run the scripts of tests/e2e, and the scripts that print the
+# state of their containers when a signal stops them (tests/e2e/diagnose.sh).
+TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "screenshots.yml")
+DIAGNOSED = ("run.sh", "browser.sh", "screenshots.sh")
+
+
+def long_steps() -> list[tuple[str, dict, dict]]:
+    """Every step that runs a script of tests/e2e, as (where, its job, the step)."""
+    found = []
+    for name in TESTED_WORKFLOWS:
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
+        )
+        for key, job in workflow["jobs"].items():
+            for step in job["steps"]:
+                if re.search(r"bash tests/e2e/\S+\.sh", step.get("run", "")):
+                    found.append((f"{name} {key}: {step['name']}", job, step))
+    return found
+
+
+def test_every_long_step_ends_at_its_own_limit_well_before_its_job():
+    # GitHub cancels a job at its time limit, and then no step after it runs: no
+    # artifact, no explanation. A step that runs out of its own time fails, and the
+    # steps after it keep its logs and explain it, in the three minutes before the
+    # job's limit.
+    steps = long_steps()
+    assert len(steps) >= 9
+    for where, job, step in steps:
+        assert "timeout-minutes" in step, f"{where} has no time limit of its own"
+        assert step["timeout-minutes"] <= job["timeout-minutes"] - 3, where
+
+
+def test_the_scripts_that_diagnose_a_signal_get_it_from_the_step():
+    # With exec, the script itself is the process that GitHub signals when the step
+    # runs out of time, not a shell that waits for it.
+    for where, _, step in long_steps():
+        script = step["run"].split("tests/e2e/", 1)[1].split()[0]
+        if script in DIAGNOSED:
+            assert step["run"] == f"exec bash tests/e2e/{script}", where
+        source = (E2E / script).read_text(encoding="utf-8")
+        assert ('. "${SCRIPT_DIR}/diagnose.sh"' in source) == (script in DIAGNOSED)
+
+
+def assigned(source: str, name: str):
+    """What a script assigns to a name at the level of its module, as a value."""
+    for node in ast.parse(source).body:
+        if (
+            isinstance(node, ast.Assign)
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == name
+        ):
+            return ast.literal_eval(node.value)
+    raise AssertionError(f"{name} is not assigned")
+
+
+def step_limit(workflow: str, script: str) -> int:
+    """The shortest time limit, in seconds, of the steps of a workflow that run a
+    script."""
+    limits = [
+        step["timeout-minutes"] * 60
+        for where, _, step in long_steps()
+        if where.startswith(f"{workflow} ") and f"tests/e2e/{script}" in step["run"]
+    ]
+    assert limits, (workflow, script)
+    return min(limits)
+
+
+def test_every_phase_of_the_scenario_runs_out_of_time_before_its_step():
+    source = (E2E / "scenario.py").read_text(encoding="utf-8")
+    default = assigned(source, "PHASE_BUDGET")
+    budgets = [default] + [
+        float(ast.literal_eval(keyword.value))
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "phase"
+        for keyword in node.keywords
+        if keyword.arg == "budget"
+    ]
+    assert len(budgets) > 1
+    assert min(budgets) >= 120
+    assert max(budgets) + watchdog.GRACE < step_limit("e2e.yml", "run.sh")
+
+
+def test_every_section_of_the_screenshots_runs_out_of_time_before_its_step():
+    source = (E2E / "screenshots.py").read_text(encoding="utf-8")
+    default = assigned(source, "SECTION_BUDGET")
+    budgets = assigned(source, "BUDGETS")
+    sections = {section for group in assigned(source, "GROUPS") for section in group}
+    assert set(budgets) <= sections
+    assert default >= 120 and min(budgets.values()) > default
+    for workflow in ("visual.yml", "screenshots.yml"):
+        limit = step_limit(workflow, "screenshots.sh")
+        assert max(budgets.values()) + watchdog.GRACE < limit, workflow

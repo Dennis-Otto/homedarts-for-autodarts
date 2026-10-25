@@ -12,13 +12,19 @@ export E2E_PORT
 # Keep container paths such as /e2e unchanged when running from Git Bash on Windows.
 export MSYS_NO_PATHCONV=1
 
+# diagnose, and a signal that stops the run as a failure.
+# shellcheck source=tests/e2e/diagnose.sh
+. "${SCRIPT_DIR}/diagnose.sh"
+
 cleanup() {
 	status=$?
 	trap - EXIT
+	keep_cleaning
+	end_background
 	if [[ "${status}" -ne 0 ]]; then
-		"${COMPOSE[@]}" ps || true
+		# First what tells most about a run that hangs, before GitHub ends it.
+		diagnose 300 "${COMPOSE[@]}"
 		"${COMPOSE[@]}" logs --no-color --tail 300 || true
-		"${COMPOSE[@]}" exec -T homeassistant tail -n 300 /config/home-assistant.log || true
 		# CI keeps the complete logs of a failed run as an artifact.
 		if [[ -n "${E2E_ARTIFACTS:-}" ]]; then
 			mkdir -p "${E2E_ARTIFACTS}"
@@ -58,6 +64,7 @@ pull_images() {
 
 cd "${SCRIPT_DIR}"
 "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
-pull_images
-"${COMPOSE[@]}" up --detach --wait --wait-timeout 300
-"${COMPOSE[@]}" exec -T homeassistant python3 /e2e/scenario.py
+# In the background, so that a signal stops them at once.
+in_background pull_images
+in_background "${COMPOSE[@]}" up --detach --wait --wait-timeout 300
+in_background "${COMPOSE[@]}" exec -T homeassistant python3 /e2e/scenario.py

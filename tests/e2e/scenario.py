@@ -20,6 +20,7 @@ import aiohttp
 from board_mock import API_KEY, BOARD_ID, GENERATION, PORT, TLS_KEY, UPDATE, VERSION
 from ha_reports import reports
 from pictures import board_photo
+from watchdog import within
 
 HA = "http://127.0.0.1:8123"
 BOARD = f"http://board-mock:{PORT}"
@@ -2132,11 +2133,19 @@ class Scenario:
             )
 
 
-async def phase[T](name: str, run: Awaitable[T]) -> T:
+# The seconds after which the watchdog fails a phase (watchdog.py): about three times
+# its longest run in CI, at least two minutes. Only the resilience, with its outages
+# and its restart of the board, took longer than 15 s: 50 s at most in October 2026.
+PHASE_BUDGET = 120.0
+
+
+async def phase[T](name: str, run: Awaitable[T], budget: float = PHASE_BUDGET) -> T:
     """Run a phase of the scenario and print its seconds, which tell where its time
-    goes: "Scenario phase: resilience (46.3 s)"."""
+    goes: "Scenario phase: resilience (46.3 s)". A phase that hangs fails after its
+    budget with the line that it waits at, long before the time limit of the job."""
+    print(f"Scenario phase: {name}", flush=True)
     started = time.monotonic()
-    result = await run
+    result = await within(f"The phase {name}", budget, run, E2EFailure)
     print(f"Scenario phase: {name} ({time.monotonic() - started:.1f} s)", flush=True)
     return result
 
@@ -2146,13 +2155,13 @@ async def main() -> None:
     async with aiohttp.ClientSession(timeout=timeout) as session:
         scenario = Scenario(session)
         await phase("onboarding", scenario.onboard())
-        await scenario.connect()
+        await phase("connection", scenario.connect())
         entry_id = await phase("setup", scenario.setup())
         await phase("registries", scenario.registries(entry_id))
         await phase("initial state", scenario.initial_state())
         await phase("controls", scenario.controls())
         await phase("realtime", scenario.realtime(entry_id))
-        await phase("resilience", scenario.resilience(entry_id))
+        await phase("resilience", scenario.resilience(entry_id), budget=150)
         await phase("online bridge", scenario.online_bridge(entry_id))
         await phase("reports", scenario.reports(entry_id))
         await phase("games", scenario.games())
