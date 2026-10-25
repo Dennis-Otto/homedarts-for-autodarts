@@ -90,8 +90,6 @@ jobs:
           SCREENSHOT_GROUP: ${{ matrix.group }}/3
           IMAGES: tests/e2e/artifacts/rendered
         run: exec bash tests/e2e/screenshots.sh
-      # The seconds of the group also go with its images, for the table of all groups
-      # of the language in the job that compares them (tests/e2e/group_times.py).
       - name: List how long the sections took
         if: ${{ !cancelled() }}
         run: |
@@ -100,11 +98,17 @@ jobs:
               cat "$table" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
-          for times in tests/e2e/artifacts/screenshots-*.json; do
-            if [[ -f "$times" ]]; then
-              cp "$times" tests/e2e/artifacts/rendered/
-            fi
-          done
+      # The seconds of the group, for the table of all groups of the language in the
+      # job that compares them (tests/e2e/group_times.py). An artifact of their own: the
+      # folder of the images belongs to the container that rendered them.
+      - name: Keep the seconds of the group
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: times-${{ matrix.language }}-${{ matrix.group }}
+          path: tests/e2e/artifacts/screenshots-*.json
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Keep the images of the group
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -174,6 +178,12 @@ jobs:
         run: bash tests/e2e/collect.sh
       - name: List the images that look different
         run: cat tests/e2e/artifacts/visual/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Take the seconds of every group
+        if: ${{ !cancelled() }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: times-${{ matrix.language }}-*
+          path: tests/e2e/artifacts
       # Every group with its seconds; one that took more than one and a half times as
       # long as the shortest is marked, so that GROUPS of screenshots.py gets a new
       # balance (docs/development.md#groups-side-by-side).

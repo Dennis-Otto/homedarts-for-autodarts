@@ -197,22 +197,32 @@ def test_the_workflows_render_every_group_on_a_runner_of_its_own(name, jobs):
     ("name", "job"), [("visual.yml", "compare"), ("screenshots.yml", "collect")]
 )
 def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
-    steps = workflow(name)["jobs"]["render"]["steps"]
-    names = [step.get("name") for step in steps]
-    listed = steps[names.index("List how long the sections took")]
-    # The seconds of the group go with its images, before they are kept.
-    assert (
-        'cp "$times" tests/e2e/artifacts/rendered/' in listed["run"]
-        and "tests/e2e/artifacts/screenshots-*.json" in listed["run"]
-    )
-    assert names.index("List how long the sections took") < names.index(
-        "Keep the images of the group"
-    )
-    (table,) = [
-        step
-        for step in workflow(name)["jobs"][job]["steps"]
-        if "group_times.py" in step.get("run", "")
+    render = workflow(name)["jobs"]["render"]["steps"]
+    # An artifact of their own: the folder of the images belongs to root, the user of
+    # the container that rendered them, so no step of the runner writes into it.
+    assert not any("artifacts/rendered/" in step.get("run", "") for step in render)
+    (kept,) = [
+        step for step in render if step.get("name") == "Keep the seconds of the group"
     ]
+    assert kept["if"] == "${{ !cancelled() }}"
+    assert kept["with"] == {
+        "name": "times-${{ matrix.language }}-${{ matrix.group }}",
+        "path": "tests/e2e/artifacts/screenshots-*.json",
+        "if-no-files-found": "ignore",
+        "retention-days": 1,
+    }
+    steps = workflow(name)["jobs"][job]["steps"]
+    names = [step.get("name") for step in steps]
+    taken = steps[names.index("Take the seconds of every group")]
+    assert taken["if"] == "${{ !cancelled() }}"
+    assert taken["with"] == {
+        "pattern": "times-${{ matrix.language }}-*",
+        "path": "tests/e2e/artifacts",
+    }
+    table = steps[names.index("List how long the groups took")]
+    assert names.index("Take the seconds of every group") < names.index(
+        "List how long the groups took"
+    )
     assert table["if"] == "${{ !cancelled() }}"
     assert table["env"]["LANGUAGE"] == "${{ matrix.language }}"
     assert table["run"] == (

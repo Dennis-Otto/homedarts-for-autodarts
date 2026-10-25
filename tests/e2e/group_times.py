@@ -3,8 +3,8 @@ job that puts the groups of a language together.
 
 Every run of screenshots.py writes the seconds of its sections to
 screenshots-<language>-<group>.json among the artifacts, and the render jobs of
-visual.yml and screenshots.yml keep it with the images of their group. The table
-lists every group with its sections and seconds, and flags a group that took more
+visual.yml and screenshots.yml keep it as the artifact times-<language>-<group>.
+The table lists every group with its sections and seconds, and flags a group that took more
 than SLOWER times as long as the shortest one: the runs of a language wait for their
 slowest group, so a section of it moves to a shorter one (GROUPS in screenshots.py).
 
@@ -37,13 +37,13 @@ def slow(totals: dict[int, float]) -> dict[int, float]:
 def times(language: str, folder: Path) -> tuple[int, dict[int, dict]]:
     """The number of groups and the times of each group that rendered, from the
     files of screenshots.py: in the folder itself, as screenshots.sh leaves them,
-    or in the folder of each group's artifact, as the jobs download them."""
+    or in a folder for each group's artifact, as the jobs download them."""
     found: dict[int, dict] = {}
     count = 0
     for path in sorted(
         [
             *folder.glob(f"screenshots-{language}-*.json"),
-            *folder.glob(f"rendered-{language}-*/screenshots-{language}-*.json"),
+            *folder.glob(f"*/screenshots-{language}-*.json"),
         ]
     ):
         data = json.loads(path.read_text(encoding="utf-8"))

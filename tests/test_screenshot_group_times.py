@@ -35,7 +35,7 @@ def times(folder: Path, language: str, group: int, sections: dict, groups: int =
 
 def downloaded(artifacts: Path, language: str, group: int, sections: dict) -> None:
     """The file of a group in the folder of its artifact, as a job downloads it."""
-    times(artifacts / f"rendered-{language}-{group}", language, group, sections)
+    times(artifacts / f"times-{language}-{group}", language, group, sections)
 
 
 def test_only_a_group_more_than_one_and_a_half_times_the_shortest_is_slow():
