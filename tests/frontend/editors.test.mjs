@@ -167,7 +167,16 @@ test("the caller's calls, the new game screen and idle mode wait in sections of 
   assert.deepEqual(names(form.schema), [
     "device_id",
     "title",
-    ["full_height", "show_visit", "show_status", "caller", "show_summary", "celebrations"],
+    [
+      "full_height",
+      "show_visit",
+      "show_status",
+      "caller",
+      "show_summary",
+      "celebrations",
+      "fullscreen_button",
+      "keep_awake",
+    ],
     "summary_seconds",
     [
       ["call_scores", "call_checkouts", "call_results", "call_sounds", "call_route", "call_target"],
@@ -181,6 +190,15 @@ test("the caller's calls, the new game screen and idle mode wait in sections of 
     "accent_color",
   ]);
   assert.equal(form.schema[2].schema[4].default, true);
+  // The full-screen button, and the screen kept on in full screen, are on by default.
+  assert.deepEqual(
+    form.schema[2].schema.slice(6).map((field) => [form.computeLabel(field), field.default]),
+    [
+      ["Full-screen button", true],
+      ["Keep the screen on in full screen", true],
+    ]
+  );
+  assert.match(form.computeHelper(form.schema[2].schema[7]), /at an https:\/\/ address, such as with Home Assistant Cloud/);
   const [caller, lobby, idle] = form.schema.slice(4, 7);
   assert.deepEqual([caller.type, caller.name, caller.flatten], ["expandable", "caller_options", true]);
   assert.equal(form.computeLabel(caller), "Caller options");
@@ -403,6 +421,8 @@ test("the dashboard strategy has an editor with the board and the title", async 
       ["keypad", false],
       ["corrections", true],
       ["idle", true],
+      ["fullscreen_button", true],
+      ["keep_awake", true],
     ]
   );
   assert.equal(scoreboard.schema[1].name, "caller_voice");
@@ -450,6 +470,11 @@ test("the dashboard strategy has an editor with the board and the title", async 
   for (const [scoreboard, expected] of [
     [{ caller: true, lobby_games: [], idle_panels: ["clock"] }, { caller: true, idle_panels: ["clock"] }],
     [{ caller_voice: "russ-bray" }, { caller_voice: "russ-bray" }],
+    // Switched off, the full-screen button and the screen kept on stay off.
+    [
+      { fullscreen_button: false, keep_awake: false },
+      { fullscreen_button: false, keep_awake: false },
+    ],
     [
       { call_darts: "bed", call_route: true, call_target: false },
       { call_darts: "bed", call_route: true, call_target: false },

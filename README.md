@@ -123,7 +123,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 
 ### Screen at the board
 
-- A scoreboard for a tablet or TV, also through Chromecast, readable from the oche
+- A scoreboard for a tablet or TV, also through Chromecast, readable from the oche, with a [full-screen button](https://dennis-otto.github.io/homedarts-for-autodarts/scoreboard.html#full-screen) that keeps the screen on
 - A new game screen to choose the game, the players and the format at the board, or to start a tournament
 - A caller that calls the game through the screen's browser, also with the recorded voice packs of darts-caller or a voice you record with Piper, and for blind and low-vision players every dart, the checkout route and the next target
 - Idle mode with a leaderboard, personal bests, today's darts and a clock

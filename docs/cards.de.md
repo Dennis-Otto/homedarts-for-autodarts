@@ -244,7 +244,7 @@ show_system: false
 
 <img src="images/de/scoreboard-teams.png" alt="Anzeigetafel eines 501-Team-Matches: Alex und Kim mit Rest 45 gegen Sam und Lea mit Rest 216, Sam am Board fett mit seinem Average" width="760">
 
-Das [automatische Dashboard](#automatisches-dashboard) hat eine Ansicht *Anzeigetafel*, die die Karte über den ganzen Bildschirm zeigt. Mit `full_height` ist die Anzeigetafel genau einen Bildschirm hoch: Zahlen und Tabellen wachsen und schrumpfen mit dem Platz, den Banner, Aufnahme und Tastenfeld lassen, sodass nichts gescrollt werden muss, vom 800 × 480-Display bis zum Fernseher. Ein Tablet im Hochformat zeigt zwei Spieler übereinander, drei oder vier zu zweit nebeneinander. Auf dem Handy lässt die bildschirmfüllende Anzeigetafel Platz für die Adresszeile des Browsers. Die Anleitung [Anzeigetafel am Board](scoreboard.de.md) zeigt Schritt für Schritt, wie du ein Tablet oder einen Fernseher, den Caller und den Ruhemodus einrichtest.
+Das [automatische Dashboard](#automatisches-dashboard) hat eine Ansicht *Anzeigetafel*, die die Karte über den ganzen Bildschirm zeigt. Mit `full_height` ist die Anzeigetafel genau einen Bildschirm hoch: Zahlen und Tabellen wachsen und schrumpfen mit dem Platz, den Banner, Aufnahme und Tastenfeld lassen, sodass nichts gescrollt werden muss, vom 800 × 480-Display bis zum Fernseher. Ein Tablet im Hochformat zeigt zwei Spieler übereinander, drei oder vier zu zweit nebeneinander. Auf dem Handy lässt die bildschirmfüllende Anzeigetafel Platz für die Adresszeile des Browsers. Die Vollbild-Taste oben rechts zeigt die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant, und lässt den Bildschirm so lange an; siehe [Vollbild](scoreboard.de.md#vollbild). Die Anleitung [Anzeigetafel am Board](scoreboard.de.md) zeigt Schritt für Schritt, wie du ein Tablet oder einen Fernseher, den Caller und den Ruhemodus einrichtest.
 
 ### Spielauswahl
 
@@ -336,6 +336,8 @@ Seiten ohne Inhalt werden übersprungen. Ein Dart, ein neues Spiel oder ein Tipp
 | `full_height` | Wahrheitswert | `false` | Die Höhe des Bildschirms füllen, für eine Ansicht im Panel-Modus |
 | `show_visit` | Wahrheitswert | `true` | Die Darts der aktuellen Aufnahme anzeigen |
 | `show_status` | Wahrheitswert | `true` | Den Board-Status anzeigen |
+| `fullscreen_button` | Wahrheitswert | `true` | Die [Vollbild-Taste](scoreboard.de.md#vollbild) oben rechts zeigen, wo der Browser Vollbild anbietet: die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant |
+| `keep_awake` | Wahrheitswert | `true` | Den Bildschirm anlassen, solange die Anzeigetafel im Vollbild ist, wo der Browser es erlaubt: unter einer `https://`-Adresse, im Browser wie in der Companion-App |
 | `caller` | Wahrheitswert | `false` | Den Caller einschalten: Der Bildschirm sagt Aufnahmen, den Rest eines Spielers, Überwerfen und Game shot an |
 | `call_scores` | Wahrheitswert | `true` | Die Punkte jeder Aufnahme ansagen (Cricket: ihre Marks) |
 | `call_checkouts` | Wahrheitswert | `true` | Ansagen, was der nächste Spieler braucht, wenn ein Checkout möglich ist |
@@ -496,7 +498,7 @@ Pro Board entstehen bis zu sechs Ansichten in den Tabs und das Stream-Overlay. S
 
 Die Spieleinstellungen haben außerdem *Ausbullen nach Abstand* bei den Regeln des Übungsspiels und *Turnier Dauer der Zusammenfassung* bei den Turniereinstellungen. Die meisten Spiele brauchen nichts davon: Die [Spielauswahl](#spielauswahl) der Anzeigetafel stellt Spiel, Spieler und Regeln ein.
 
-In YAML ist das ganze Dashboard eine Zeile; `device_id`, `title`, `scoreboard` und `overlay_view` sind optional. `scoreboard` setzt Optionen der Karte in der Ansicht *Anzeigetafel*: `caller`, `keypad`, `corrections`, `idle`, `lobby_games` und `idle_panels`, wie bei der [Anzeigetafel](#anzeigetafel) beschrieben. `overlay_view` setzt `overlay`, `overlay_layout` und `overlay_color` des Stream-Overlays. Was du weglässt, behält den Standard der Karte; das Stream-Overlay ist durchsichtig.
+In YAML ist das ganze Dashboard eine Zeile; `device_id`, `title`, `scoreboard` und `overlay_view` sind optional. `scoreboard` setzt Optionen der Karte in der Ansicht *Anzeigetafel*: `caller`, `keypad`, `corrections`, `idle`, `lobby_games`, `idle_panels`, `fullscreen_button` und `keep_awake`, wie bei der [Anzeigetafel](#anzeigetafel) beschrieben. `overlay_view` setzt `overlay`, `overlay_layout` und `overlay_color` des Stream-Overlays. Was du weglässt, behält den Standard der Karte; das Stream-Overlay ist durchsichtig.
 
 ```yaml
 strategy:

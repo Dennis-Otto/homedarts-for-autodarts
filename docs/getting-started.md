@@ -59,7 +59,7 @@ Go to **Settings → Dashboards → Add dashboard → HomeDarts**. One click cre
 
 1. On the tablet, open Home Assistant in the browser or in the [Home Assistant app](https://companion.home-assistant.io/) and sign in. A user of its own without administrator rights keeps the screen from changing your settings.
 2. Open the HomeDarts dashboard and its *Scoreboard* view.
-3. Switch the browser to full screen and keep the tablet awake while it is charging.
+3. Tap the full-screen button at the top right of the scoreboard: it fills the screen and keeps it on. Where the browser can't keep it on, such as at an address with `http://`, switch off the screen timeout of the tablet; see [full screen](scoreboard.md#full-screen).
 
 The [scoreboard guide](scoreboard.md#set-up-the-screen) has the details and the options, such as the caller.
 

@@ -1377,6 +1377,30 @@ def tablet_screen(browser: Browser) -> None:
         and pad["top"] < main["bottom"],
         f"The pad is not beside the scores: {fit}",
     )
+    # Full screen: the keypad layout still fills exactly one screen, with the hint of a
+    # browser that can't keep the screen on over plain HTTP in the header, and the button
+    # brings the configured height back.
+    toggle = page.locator(f"{card} .fullscreen-toggle")
+    toggle.click()
+    page.wait_for_function("() => !!document.fullscreenElement", timeout=15000)
+    check(
+        toggle.get_attribute("aria-pressed") == "true",
+        "The full-screen button is not pressed in full screen",
+    )
+    page.locator(f"{card} header .awake-hint").wait_for(timeout=15000)
+    fits("The keypad in full screen")
+    fills("The keypad in full screen")
+    check(
+        page.evaluate(TABLET_FIT)["beside"],
+        "The pad is not beside the scores in full screen",
+    )
+    toggle.click()
+    page.wait_for_function("() => !document.fullscreenElement", timeout=15000)
+    check(
+        toggle.get_attribute("aria-pressed") == "false",
+        "The full-screen button stays pressed after full screen",
+    )
+    fills("The keypad after full screen")
     page.evaluate(CALL_SERVICE, ["switch", "turn_off", "practice_manual_entry"])
     game_off()
 

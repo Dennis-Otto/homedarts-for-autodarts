@@ -65,10 +65,13 @@ function popovers(t) {
   return shown;
 }
 
-test("the overlay shows the game on plates of its own, without the card and its controls", () => {
+test("the overlay shows the game on plates of its own, without the card and its controls", (t) => {
+  // A browser that offers full screen: the overlay has no button for it all the same.
+  Object.defineProperty(window.document, "fullscreenEnabled", { configurable: true, value: true });
+  t.after(() => delete window.document.fullscreenEnabled);
   const { card } = setup(
     { ...visit(T20), ...game({ checkout: "T15 D18" }) },
-    { overlay: "chroma", caller: true, keypad: true, show_status: true, full_height: true }
+    { overlay: "chroma", caller: true, keypad: true, show_status: true, full_height: true, fullscreen_button: true }
   );
   assert.equal($(card, "ha-card").className, "overlay-card");
   assert.deepEqual(stageOf(card), ["chroma", "lower_third", "#00FF00"]);
@@ -84,8 +87,9 @@ test("the overlay shows the game on plates of its own, without the card and its 
   assert.ok($(card, ".player.active .route .bed"));
   assert.equal($(card, ".visit").hidden, false);
   assert.equal($(card, ".visit .dart .segment").textContent, "T20");
-  // Nobody taps a stream: no status, caller, new game screen, keypad or corrections.
+  // Nobody taps a stream: no status, caller, new game screen, keypad, corrections or full screen.
   assert.equal($(card, ".pill"), null);
+  assert.equal($(card, ".fullscreen-toggle").hidden, true);
   assert.equal($(card, ".caller-toggle"), null);
   assert.equal($(card, ".lobby-toggle").hidden, true);
   assert.equal($(card, ".pad-area").hidden, true);

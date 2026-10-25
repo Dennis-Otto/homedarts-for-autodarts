@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 // The browser comes first; the modules then wait for an app element.
-import { makeHass, READY, settle } from "./dom.mjs";
+import { makeHass, mount, READY, settle } from "./dom.mjs";
 import {
   APP_ELEMENTS,
   frontendReady,
@@ -82,4 +82,15 @@ test("pictures of Home Assistant carry its address, which the receiver needs", (
     personLinks(people, profiles).get("alex").picture,
     "https://homeassistant.example.org:8123/api/image/serve/alex/512x512"
   );
+});
+
+test("the scoreboard on the TV has no full-screen button: the receiver fills the screen anyway", async (t) => {
+  // Defined by the first test, unless this one runs alone.
+  if (!customElements.get("hc-main")) customElements.define("hc-main", class extends HTMLElement {});
+  await customElements.whenDefined("homedarts-scoreboard-card");
+  // A browser engine that offers full screen, as the receiver's may.
+  Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+  t.after(() => delete document.fullscreenEnabled);
+  const card = mount("homedarts-scoreboard-card", makeHass({ states: READY }));
+  assert.equal(card.shadowRoot.querySelector(".fullscreen-toggle").hidden, true);
 });

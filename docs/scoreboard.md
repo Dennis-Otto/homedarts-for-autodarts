@@ -10,7 +10,7 @@ A tablet or a TV next to the board turns your darts room into a stage: the score
 
 <img src="images/en/scoreboard.webp" alt="Animation: the scoreboard during a 501 match. The turn passes between Alex and Sam after every visit, and Alex checks out 141 with T20 T19 D12 to win the match" width="760">
 
-**On this page:** [What you need](#what-you-need) · [Set up the screen](#set-up-the-screen) · [On a TV with Home Assistant Cast](#on-a-tv-with-home-assistant-cast) · [Landscape, portrait and TV](#landscape-portrait-and-tv) · [Choose the next game](#choose-the-next-game) · [During the game](#during-the-game) · [Correct and enter darts](#correct-and-enter-darts) · [Tournaments](#tournaments) · [The caller](#the-caller) · [Between games: idle mode](#between-games-idle-mode) · [Stream overlay](#stream-overlay) · [Tips](#tips) · [If something is off](#if-something-is-off)
+**On this page:** [What you need](#what-you-need) · [Set up the screen](#set-up-the-screen) · [Full screen](#full-screen) · [On a TV with Home Assistant Cast](#on-a-tv-with-home-assistant-cast) · [Landscape, portrait and TV](#landscape-portrait-and-tv) · [Choose the next game](#choose-the-next-game) · [During the game](#during-the-game) · [Correct and enter darts](#correct-and-enter-darts) · [Tournaments](#tournaments) · [The caller](#the-caller) · [Between games: idle mode](#between-games-idle-mode) · [Stream overlay](#stream-overlay) · [Tips](#tips) · [If something is off](#if-something-is-off)
 
 ## What you need
 
@@ -22,7 +22,7 @@ A tablet or a TV next to the board turns your darts room into a stage: the score
 
 1. **Create the dashboard.** Go to **Settings → Dashboards → Add dashboard → HomeDarts**. The [automatic dashboard](cards.md#automatic-dashboard) has a *Scoreboard* view that shows the [scoreboard card](cards.md#scoreboard-card) across the whole screen.
 2. **Open the view on the screen.** Sign in as the screen's user and open the dashboard's *Scoreboard* view. Its address ends in `/scoreboard`, with several boards in `/scoreboard-1`, `/scoreboard-2` and so on; bookmark it or put it on the home screen of the tablet.
-3. **Go full screen.** Use the browser's full-screen mode or a kiosk browser that opens the address at start. Keep the screen awake while it is on the charger, in the settings of the tablet or the kiosk browser.
+3. **Go full screen.** Tap the full-screen button at the top right of the scoreboard, the last one of its top bar: the bars of the browser, Home Assistant's header and its sidebar disappear, and the screen stays on while the scoreboard fills it. The button, Escape or a double tap leaves full screen again. [Full screen](#full-screen) says which browsers keep the screen on, and what helps in the others.
 4. **Switch on what you like.** Open the dashboard's menu (⋮) → **Edit dashboard**. In the section *Scoreboard view*, switch on the [caller](#the-caller) and the [keypad](#correct-and-enter-darts), and choose the games of the [new game screen](#choose-the-next-game) and the panels of [idle mode](#between-games-idle-mode); the dashboard stays automatic and gets the views of later releases. For every other option, build a view of your own: a view in panel mode with the scoreboard card and `full_height: true`, or choose **Take control** in that editor's menu, which turns the dashboard into one you edit yourself:
 
 ```yaml
@@ -35,6 +35,22 @@ idle_panels: [leaderboard, today, last_match, clock]
 ```
 
 The [card guide](cards.md#scoreboard-card) lists every option.
+
+## Full screen
+
+The full-screen button at the top right of the scoreboard puts the scoreboard alone on the screen, from edge to edge: without the bars of the browser, without Home Assistant's header and sidebar. The scores take the whole height, as with `full_height`, and the button stays pressed. The button, Escape or a double tap on the scoreboard leaves full screen; a tap on one of its buttons, such as those of the keypad, never counts as half of a double tap.
+
+<img src="images/en/scoreboard-fullscreen.png" alt="The scoreboard in full screen on a landscape tablet, without Home Assistant's header and sidebar: Practice 501, Alex at the board with 301 left after a T20, Sam with 417, and the pressed full-screen button at the top right. Below the title, the hint of a browser that can't keep the screen on at an http:// address, with the link How to keep it on" width="760">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/fullscreen-dark.png">
+  <img src="images/en/fullscreen-light.png" alt="How the scoreboard keeps the screen on in full screen: A tap on the full-screen button puts the scoreboard alone on the screen, without the bars of the browser and the header and sidebar of Home Assistant. Where the browser lets a page hold the screen on, at an https:// address in the browser and in the Companion app alike, the screen stays on. When the tablet shows another app, the browser lets go, and the scoreboard holds the screen on again when the page shows. Where the browser can't, a hint says once to switch off the screen timeout of the tablet. The button, Escape or a double tap leaves full screen and lets the screen sleep." width="560">
+</picture>
+
+- **The screen stays on** while the scoreboard fills it: the card asks the browser for a screen wake lock and asks again when the tablet shows the page after another app. Browsers give it to a page only at an address that starts with `https://`, such as the one of Home Assistant Cloud; that holds for the Home Assistant Companion app too, which shows Home Assistant in a browser of its own.
+- **Where the browser can't,** for example at an address that starts with `http://`, the scoreboard says so once, with a link to this section. Switch off the screen timeout in the settings of the tablet, at least while it is on the charger, or open the view in a kiosk browser that keeps the screen on. The Android Companion app can also keep the screen on by itself, with a setting under *Companion app* in its settings.
+- **Where the button shows:** in every browser that lets a page go full screen, such as Chrome, Edge, Firefox and Samsung Internet on a tablet, a computer or a phone, and Safari on an iPad. Safari on an iPhone shows only videos on the whole screen, so the button stays away there: add the view to the home screen instead, which opens it without the bars of Safari. The TV of [Home Assistant Cast](#on-a-tv-with-home-assistant-cast) and the [stream overlay](#stream-overlay) have no button either, as they fill their screen anyway.
+- **Your choice:** `fullscreen_button: false` hides the button, and `keep_awake: false` leaves the screen to the settings of the tablet. Both are in the card editor and in the section *Scoreboard view* of the [automatic dashboard](cards.md#automatic-dashboard).
 
 ## On a TV with Home Assistant Cast
 
@@ -304,6 +320,7 @@ overlay_color: "#FF00FF"
 | What you see | What helps |
 | --- | --- |
 | Darts are not counted | Detection is stopped: the status at the top right says *Detection stopped*. The new game screen's start switches it on; otherwise switch it on with the [board status card](cards.md#board-status-card) or the live card. Also check that *Practice game* is not *Off* and that no [online match](online-matches.md) holds the board. |
+| The screen goes dark during a game | In full screen the scoreboard keeps the screen on only at an `https://` address, in the browser and in the Companion app alike; elsewhere it says so once. Switch off the screen timeout of the tablet; see [full screen](#full-screen). |
 | The caller stays silent | Tap **Caller** once after every reload of the page: browsers play sound only after a tap. Check the volume of the device. |
 | The caller speaks with the browser's voice despite a voice pack | The name of the pack is the name of its folder in `homedarts/voices` of the media folder, in the same case. Calls the pack has no file for are always the browser's; see the [files of a pack](#voice-packs). Files copied after the caller was switched on count after the next tap on **Caller**. |
 | The new game screen does not open | It never opens in the preview of the card editor, and not with `lobby: false`. |
