@@ -6,7 +6,11 @@ name: Visual check
 # (GROUPS in tests/e2e/screenshots.py): each group of each language renders on a
 # runner of its own from a fresh demo, all side by side, and then the compare job of
 # a language puts its groups together and compares them (tests/e2e/collect.sh), as
-# tests/e2e/visual.sh does on one machine. It only reports: the summary lists every
+# tests/e2e/visual.sh does on one machine. A group whose files an earlier run of
+# this check or of the screenshot bot already rendered, on a branch of this
+# repository, takes the images of that run instead (tests/e2e/render_key.py): so a
+# pull request that "Update branches" brought up to date without a change of those
+# files renders nothing anew. It only reports: the summary lists every
 # image that looks different with the share of its pixels that changed, the artifact
 # holds the images before and after with their differences, and visual-comment.yml
 # writes the list into one comment on the pull request. An intended change reaches
@@ -40,10 +44,13 @@ jobs:
   render:
     name: render (${{ matrix.language }}, ${{ matrix.group }}/3)
     runs-on: ubuntu-latest
-    # The demo takes about two minutes, the images of the longest group, the third,
-    # about twelve; the step that renders them ends after 21 minutes.
+    # The demo takes about two minutes, the images of the longest group, the second
+    # or the third, about seven and a half; the step that renders them ends after
+    # 21 minutes.
     timeout-minutes: 25
     permissions:
+      # The images of an earlier run with the same key (tests/e2e/render_key.py).
+      actions: read
       contents: read
     strategy:
       # A group that fails leaves the other groups and the other language running.
@@ -56,14 +63,16 @@ jobs:
       # GitHub's registry (ghcr.io, pkg-containers.githubusercontent.com), Playwright
       # from Microsoft's (mcr.microsoft.com, *.data.mcr.microsoft.com), pngquant from
       # Launchpad (launchpad.net, launchpadlibrarian.net) and the Python packages of
-      # the tool (pypi.org, files.pythonhosted.org). Home Assistant itself reaches
-      # only the icons of its other integrations, which the images show
+      # the tool (pypi.org, files.pythonhosted.org), and the images of an earlier
+      # run with the same key through the API (api.github.com). Home Assistant itself
+      # reaches only the icons of its other integrations, which the images show
       # (brands.home-assistant.io).
       - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: block
           allowed-endpoints: >
+            api.github.com:443
             github.com:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
@@ -77,6 +86,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The key of the files that the images are rendered from, and the newest run
+      # of the visual check or of the screenshot bot from a branch of this repository,
+      # never of a fork, that kept images with it: those are the images that a render
+      # would make, byte for byte. A pull request takes them, a run on demand renders
+      # anew (docs/development.md#images-rendered-once).
+      - name: Look for the same images in an earlier run
+        id: earlier
+        env:
+          LANGUAGE: ${{ matrix.language }}
+          GROUP: ${{ matrix.group }}
+          REUSE: ${{ github.event_name == 'pull_request' }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tests/e2e/render_key.py find "$LANGUAGE" "$GROUP"
+      # A download that fails leaves the render to the next step.
+      - name: Take the images of the earlier run
+        id: reused
+        if: ${{ steps.earlier.outputs.run-id != '' }}
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ steps.earlier.outputs.name }}
+          run-id: ${{ steps.earlier.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: tests/e2e/artifacts/rendered
       # A step that hangs fails at a time limit of its own, three minutes or more
       # before that of the job, so that the steps after it keep its logs and explain
       # it: GitHub cancels a job at its limit, and then no step after it runs. With
@@ -84,6 +117,7 @@ jobs:
       # which prints the state of its containers before it ends
       # (docs/development.md#when-a-step-hangs).
       - name: Render the images of the group with the frozen clock
+        if: ${{ steps.reused.outcome != 'success' }}
         timeout-minutes: 21
         env:
           LANGUAGES: ${{ matrix.language }}
@@ -98,13 +132,29 @@ jobs:
               cat "$table" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+      # The seconds of the group, for the table of all groups of the language in the
+      # job that compares them (tests/e2e/group_times.py). An artifact of their own: the
+      # folder of the images belongs to the container that rendered them.
+      - name: Keep the seconds of the group
+        if: ${{ !cancelled() }}
+        # Only informational: never keeps the images or the report from being kept.
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: times-${{ matrix.language }}-${{ matrix.group }}
+          path: tests/e2e/artifacts/screenshots-*.json
+          if-no-files-found: ignore
+          retention-days: 1
+      # Under the key of what they are rendered from, also when they came from an
+      # earlier run, for the job that puts the groups together and for the runs of
+      # the next week.
       - name: Keep the images of the group
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rendered-${{ matrix.language }}-${{ matrix.group }}
+          name: ${{ steps.earlier.outputs.name }}
           path: tests/e2e/artifacts/rendered/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
       - name: Keep the screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -167,6 +217,24 @@ jobs:
         run: bash tests/e2e/collect.sh
       - name: List the images that look different
         run: cat tests/e2e/artifacts/visual/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Take the seconds of every group
+        if: ${{ !cancelled() }}
+        # Only informational: never keeps the images or the report from being kept.
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: times-${{ matrix.language }}-*
+          path: tests/e2e/artifacts
+      # Every group with its seconds; one that took more than one and a half times as
+      # long as the shortest is marked, so that GROUPS of screenshots.py gets a new
+      # balance (docs/development.md#groups-side-by-side).
+      - name: List how long the groups took
+        if: ${{ !cancelled() }}
+        # Only informational: never keeps the images or the report from being kept.
+        continue-on-error: true
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: python3 tests/e2e/group_times.py "$LANGUAGE" tests/e2e/artifacts >> "$GITHUB_STEP_SUMMARY"
       - name: Keep the images before and after, with their differences
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

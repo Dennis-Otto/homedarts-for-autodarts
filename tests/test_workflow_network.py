@@ -51,6 +51,8 @@ IMAGES = {
     "launchpadlibrarian.net",
     # the icons of Home Assistant's other integrations, which the images show
     "brands.home-assistant.io",
+    # the images of an earlier run with the same key (tests/e2e/render_key.py)
+    "api.github.com",
 }
 COMPARISON = {"github.com", *PYTHON_PACKAGES}
 
