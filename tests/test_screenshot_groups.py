@@ -7,6 +7,7 @@ docker, collect.sh with compare.py, and the steps of the screenshot bot in bash 
 stand-ins for gh and a repository of their own."""
 
 import ast
+import importlib.util
 import json
 import os
 import re
@@ -23,6 +24,9 @@ ROOT = Path(__file__).parents[1]
 E2E = ROOT / "tests" / "e2e"
 WORKFLOWS = ROOT / ".github" / "workflows"
 TOOL = ast.parse((E2E / "screenshots.py").read_text(encoding="utf-8"))
+SPEC = importlib.util.spec_from_file_location("group_times", E2E / "group_times.py")
+group_times = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(group_times)
 
 pytestmark = pytest.mark.skipif(
     shutil.which("bash") is None, reason="the scripts run in bash"
@@ -52,6 +56,9 @@ def assigned(name: str) -> ast.expr:
 
 
 GROUPS = ast.literal_eval(assigned("GROUPS"))
+SECONDS = ast.literal_eval(assigned("SECONDS"))
+BUDGETS = ast.literal_eval(assigned("BUDGETS"))
+SECTION_BUDGET = ast.literal_eval(assigned("SECTION_BUDGET"))
 SECTIONS = assigned("SECTIONS")
 assert isinstance(SECTIONS, ast.Dict)
 SECTION_FUNCTIONS = {
@@ -111,6 +118,43 @@ def test_the_steps_that_depend_on_each_other_share_a_group():
     assert manual[-2:] == ("calendar", "manual")
 
 
+def test_no_group_takes_much_longer_than_the_shortest():
+    # The runs of a language wait for their slowest group: by the measured seconds
+    # of its sections, none takes more than SLOWER times as long as the shortest.
+    assert sorted(SECONDS) == sorted(SECTION_FUNCTIONS)
+    totals = {
+        number: sum(SECONDS[section] for section in group)
+        for number, group in enumerate(GROUPS, 1)
+    }
+    assert group_times.slow(totals) == {}, totals
+
+
+def test_every_section_may_take_twice_its_seconds_before_the_watchdog_fails_it():
+    assert set(BUDGETS) <= set(SECONDS)
+    for section, seconds in SECONDS.items():
+        assert BUDGETS.get(section, SECTION_BUDGET) >= 2 * seconds, section
+
+
+def test_the_big_tournaments_stop_at_their_pictures():
+    # No image shows a match after the picture; the tests of the tournament formats
+    # play 32 players to their champion instead (tests/test_tournament_formats.py).
+    (big,) = [
+        node
+        for node in TOOL.body
+        if isinstance(node, ast.FunctionDef) and node.name == "big_tournament"
+    ]
+    played = [
+        node
+        for node in ast.walk(big)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "play_tournament"
+    ]
+    assert [[ast.unparse(argument) for argument in call.args] for call in played] == [
+        ["page", "before"]
+    ]
+
+
 @pytest.mark.parametrize("script", ["screenshots.sh", "collect.sh"])
 def test_the_scripts_know_how_many_groups_there_are(script):
     assert group_count(script) == len(GROUPS)
@@ -147,6 +191,34 @@ def test_the_workflows_render_every_group_on_a_runner_of_its_own(name, jobs):
     assert render["strategy"]["fail-fast"] is False
     for job in jobs:
         assert "!cancelled()" in workflow(name)["jobs"][job]["if"]
+
+
+@pytest.mark.parametrize(
+    ("name", "job"), [("visual.yml", "compare"), ("screenshots.yml", "collect")]
+)
+def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
+    steps = workflow(name)["jobs"]["render"]["steps"]
+    names = [step.get("name") for step in steps]
+    listed = steps[names.index("List how long the sections took")]
+    # The seconds of the group go with its images, before they are kept.
+    assert (
+        'cp "$times" tests/e2e/artifacts/rendered/' in listed["run"]
+        and "tests/e2e/artifacts/screenshots-*.json" in listed["run"]
+    )
+    assert names.index("List how long the sections took") < names.index(
+        "Keep the images of the group"
+    )
+    (table,) = [
+        step
+        for step in workflow(name)["jobs"][job]["steps"]
+        if "group_times.py" in step.get("run", "")
+    ]
+    assert table["if"] == "${{ !cancelled() }}"
+    assert table["env"]["LANGUAGE"] == "${{ matrix.language }}"
+    assert table["run"] == (
+        'python3 tests/e2e/group_times.py "$LANGUAGE" tests/e2e/artifacts'
+        ' >> "$GITHUB_STEP_SUMMARY"'
+    )
 
 
 def test_the_bot_runs_nothing_in_a_fork():

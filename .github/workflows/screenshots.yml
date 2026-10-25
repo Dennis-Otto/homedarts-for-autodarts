@@ -60,8 +60,8 @@ jobs:
     name: render (${{ matrix.language }}, ${{ matrix.group }}/3)
     if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
-    # The demo takes about two minutes, the images of the longest group, the third,
-    # about twelve; the step that renders them ends after 21 minutes.
+    # The demo takes about two minutes, the images of the longest group, the second,
+    # about eight and a half; the step that renders them ends after 21 minutes.
     timeout-minutes: 25
     permissions:
       contents: read
@@ -110,12 +110,19 @@ jobs:
           SCREENSHOT_GROUP: ${{ matrix.group }}/3
           IMAGES: tests/e2e/artifacts/rendered
         run: exec bash tests/e2e/screenshots.sh
+      # The seconds of the group also go with its images, for the table of all groups
+      # of the language in the job that puts them together (tests/e2e/group_times.py).
       - name: List how long the sections took
         if: ${{ !cancelled() }}
         run: |
           for table in tests/e2e/artifacts/screenshots-*.md; do
             if [[ -f "$table" ]]; then
               cat "$table" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          for times in tests/e2e/artifacts/screenshots-*.json; do
+            if [[ -f "$times" ]]; then
+              cp "$times" tests/e2e/artifacts/rendered/
             fi
           done
       - name: Keep the images of the group
@@ -181,6 +188,14 @@ jobs:
         run: bash tests/e2e/collect.sh
       - name: List the images that changed
         run: cat tests/e2e/artifacts/visual/summary.md >> "$GITHUB_STEP_SUMMARY"
+      # Every group with its seconds; one that took more than one and a half times as
+      # long as the shortest is marked, so that GROUPS of screenshots.py gets a new
+      # balance (docs/development.md#groups-side-by-side).
+      - name: List how long the groups took
+        if: ${{ !cancelled() }}
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: python3 tests/e2e/group_times.py "$LANGUAGE" tests/e2e/artifacts >> "$GITHUB_STEP_SUMMARY"
       # Only the rendered images: the diagrams of docs/images come from
       # render_diagrams.sh, and main may have newer ones by now.
       - name: Keep the images
