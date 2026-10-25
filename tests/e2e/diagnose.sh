@@ -49,7 +49,11 @@ in_background() {
 }
 
 # In the trap on EXIT, before anything else: end the command that a signal stopped the
-# wait for, so that nothing of the step outlives it.
+# wait for, and wait until it has ended, so that nothing of the step outlives it and
+# the diagnosis shows the containers only after it.
 end_background() {
-	if [[ -n "${BACKGROUND}" ]]; then kill "${BACKGROUND}" 2>/dev/null || true; fi
+	if [[ -n "${BACKGROUND}" ]]; then
+		kill "${BACKGROUND}" 2>/dev/null || true
+		wait "${BACKGROUND}" 2>/dev/null || true
+	fi
 }
