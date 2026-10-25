@@ -1,11 +1,14 @@
 """Aimed beds, dart positions, the grouping around a bed and the error model of the
 aim map, with synthetic scatter."""
 
+import json
 import math
 import random
 from copy import deepcopy
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from custom_components.homedarts import positions
 from custom_components.homedarts.aim import MIN_DARTS, ErrorModel
@@ -14,6 +17,7 @@ from custom_components.homedarts.checkout import checkout
 from custom_components.homedarts.positions import (
     AIMS,
     GROUPS,
+    MAX_DISTANCE,
     MIN_GROUP,
     DartLog,
     aim_model,
@@ -21,7 +25,7 @@ from custom_components.homedarts.positions import (
     spread,
     x01_aims,
 )
-from custom_components.homedarts.scoring import DOUBLE, STRAIGHT
+from custom_components.homedarts.scoring import BULL_50_50, DOUBLE, MASTER, STRAIGHT
 
 from .local_helpers import dart
 
@@ -139,6 +143,58 @@ def test_double_in_aims_after_the_opening_double():
     assert x01_aims(501, darts("D20", "T20"), DOUBLE, 0, routes) == [None, "T20"]
 
 
+def test_the_double_that_finishes_comes_before_the_route():
+    # A route that sets up another double: one dart at 32 is still thrown at D16.
+    def setup(remaining: int, left: int) -> tuple[str, ...]:
+        return ("S16", "D8")
+
+    assert x01_aims(32, darts("S16", "D8"), DOUBLE, None, setup) == ["D16", "D8"]
+    # Without double out, the route names the bed.
+    assert x01_aims(32, darts("S16", "D8"), STRAIGHT, None, setup) == [None, None]
+
+
+def test_the_opening_double_scores_for_the_darts_after_it():
+    # D10 opens and leaves 40: the next dart aims at D20.
+    assert x01_aims(60, darts("D10", "D20"), DOUBLE, 0, routes) == [None, "D20"]
+    assert x01_aims(60, darts("S1", "D10", "S20"), DOUBLE, 1, routes) == [
+        None,
+        None,
+        "D20",
+    ]
+
+
+def test_the_aims_count_the_outer_bull_as_the_bull_mode_scores_it():
+    def route(remaining: int, left: int) -> tuple[str, ...]:
+        return checkout(remaining, left, DOUBLE, (), BULL_50_50)
+
+    # With the bull mode 50/50, the outer bull leaves 40 of 90 for D20; with
+    # 25/50 it leaves 65, which the route sets up with a single, the outer bull.
+    aims = x01_aims(90, darts("25", "D20"), DOUBLE, None, route, BULL_50_50)
+    assert aims[1] == "D20"
+    assert checkout(65, 2) == ("25", "D20")
+    assert x01_aims(90, darts("25", "D20"), DOUBLE, None, routes)[1] is None
+
+
+@pytest.mark.parametrize(
+    ("start", "names", "out_mode", "aims"),
+    [
+        # A single 1 leaves 2 for D1, and with master out 3 for T1.
+        (3, ("S1", "D1"), DOUBLE, [None, "D1"]),
+        (4, ("S1", "T1"), MASTER, ["D2", "T1"]),
+        # 1 left busts with double out: no checkout, no treble 20 either.
+        (3, ("S2", "S1"), DOUBLE, [None, None]),
+        # A finish without double out ends the visit.
+        (20, ("S20", "T20"), STRAIGHT, [None, None]),
+        (501, ("T20", "T20", "T20"), STRAIGHT, ["T20", "T20", "T20"]),
+    ],
+)
+def test_the_aims_follow_the_score_left_after_every_dart(start, names, out_mode, aims):
+    def route(remaining: int, left: int) -> tuple[str, ...]:
+        return checkout(remaining, left, out_mode)
+
+    assert x01_aims(start, darts(*names), out_mode, None, route) == aims
+
+
 def test_the_grouping_of_rings_is_exact():
     """20 darts 30 mm and 20 darts 10 mm around a point 6 mm left of T20."""
     older = ring("T20", 30, 20, centre=(-6, 2))
@@ -197,6 +253,40 @@ def test_groupings_come_most_darts_first():
     assert [group["target"] for group in tied] == ["D1", "D2"]
 
 
+def test_the_grouping_is_rounded_to_a_tenth_of_a_millimetre():
+    older = ring("T20", 30.37, 20, centre=(-6.24, 2.26))
+    newer = ring("T20", 10.11, 20, centre=(-6.24, 2.26))
+    assert spread([*older, *newer]) == [
+        {
+            "target": "T20",
+            "darts": 40,
+            "offset_x": -6.2,
+            "offset_y": 2.3,
+            "r50": 10.1,
+            "r80": 30.4,
+            "change": -20.3,
+        }
+    ]
+
+
+def test_the_radii_hold_half_and_four_fifths_of_the_darts():
+    # Two darts at 1 to 5 mm left and right of D16.
+    line = [around("D16", side * step, 0.0) for step in range(1, 6) for side in (1, -1)]
+    [group] = spread(line)
+    assert (group["r50"], group["r80"]) == (3.0, 4.0)
+
+
+def test_a_bed_with_too_few_darts_leaves_the_others_their_grouping():
+    few = ring("BULL", 5, MIN_GROUP - 1)
+    [group] = spread([*few, *ring("T19", 5, 2 * MIN_GROUP)])
+    # Two halves of enough darts each show the trend.
+    assert (group["target"], group["darts"], group["change"]) == (
+        "T19",
+        2 * MIN_GROUP,
+        0.0,
+    )
+
+
 def test_the_log_keeps_the_newest_darts_compactly():
     log = DartLog(3)
     log.add(None, "T20")
@@ -235,6 +325,82 @@ def test_the_log_restores_only_valid_darts():
     )
     assert log.positions() == [[0.1, 0.6], [-0.1, 0.0]]
     assert [aim for _, _, aim in log.darts] == [None, "BULL"]
+
+
+def test_darts_at_the_edge_of_the_board_come_back_after_a_restart():
+    log = DartLog(10)
+    # Up to MAX_DISTANCE from the centre, and the last double, D20.
+    log.add((MAX_DISTANCE, 0.0), "D20")
+    log.add((0.0, -MAX_DISTANCE), None)
+    # Rounded to tenths of a millimetre, this one is a little further out.
+    log.add((2.99985, 0.0173), "BULL")
+    log.add((MAX_DISTANCE, 0.001), "T20")
+    stored = log.stored()
+    assert stored == [5100, 0, 41, 0, -5100, 0, 5100, 29, 1]
+    restored = DartLog(10)
+    restored.restore(json.loads(json.dumps(stored)))
+    assert restored.stored() == stored
+    assert [aim for _, _, aim in restored.darts] == ["D20", None, "BULL"]
+
+
+def test_a_restored_log_takes_darts_up_to_a_tenth_of_a_millimetre_further_out():
+    log = DartLog(10)
+    log.restore(
+        [
+            *(5101, 0, 1),
+            *(0, -5101, 41),
+            *(5102, 0, 1),
+            *(-4000, 4000, 1),
+            *(10**400, 0, 1),
+        ]
+    )
+    assert log.stored() == [5101, 0, 1, 0, -5101, 41]
+
+
+def test_the_log_keeps_aims_of_the_beds_it_knows_and_rounds_positions():
+    log = DartLog(10)
+    log.add((0.12345, -0.56789), "S20")
+    log.add((-0.0004, 0.9996), "T20")
+    assert log.positions() == [[0.123, -0.568], [-0.0, 1.0]]
+    assert [aim for _, _, aim in log.darts] == [None, "T20"]
+
+
+def test_an_aim_model_of_the_same_darts_is_no_newer_one():
+    log = DartLog(10)
+    log.add((0.0, 0.6), "T20")
+    best = {"aim": "T20", "compared": {}}
+    assert log.store_aim(positions.Aim(log.version, {"darts": 1}, best=best))
+    other = {"aim": "T19", "compared": {}}
+    assert not log.store_aim(positions.Aim(log.version, {"darts": 1}, best=other))
+    assert log.best_aim() == best
+
+
+POSITIONS = st.lists(
+    st.tuples(
+        st.floats(-MAX_DISTANCE - 0.1, MAX_DISTANCE + 0.1),
+        st.floats(-MAX_DISTANCE - 0.1, MAX_DISTANCE + 0.1),
+        st.sampled_from([*AIMS, "S20", None]),
+    ),
+    max_size=40,
+)
+
+
+@given(POSITIONS, POSITIONS, st.integers(1, 50))
+def test_a_restored_log_goes_on_as_the_stored_one(before, after, size):
+    log = DartLog(size)
+    for x, y, aim in before:
+        log.add((x, y), aim)
+    stored = log.stored()
+    restored = DartLog(size)
+    restored.restore(json.loads(json.dumps(stored)))
+    assert restored.stored() == stored and len(restored) == len(log)
+    for x, y, aim in after:
+        log.add((x, y), aim)
+        restored.add((x, y), aim)
+    assert restored.stored() == log.stored()
+    # Within a tenth of a millimetre, the positions of the cards round alike.
+    for position, original in zip(restored.positions(), log.positions(), strict=True):
+        assert position == pytest.approx(original, abs=2e-3)
 
 
 def test_the_log_works_out_its_grouping_once_per_dart():
@@ -332,6 +498,56 @@ def test_the_aim_model_never_collapses():
     model = aim_model(line)
     assert model["correlation"] == 0.95
     assert model["sd_x"] == model["sd_y"] > 5
+
+
+def test_the_aim_model_of_a_scatter_to_the_half_millimetre():
+    """Darts 5 mm right of and 4 mm below the trebles, spread 10 mm sideways and
+    16 mm up and down with a correlation of 0.6, and 30 aimed at the treble 19 in
+    scoring visits: the model of the trimmed darts, to its rounding."""
+    generator = random.Random(11)
+    darts = normal(generator, ["T20", "T3", "T11"], 300, (5, -4), (10, 16), 0.6)
+    darts += [(x, y, "T20") for x, y, _ in normal(generator, ["T19"], 30)]
+    assert aim_model(darts) == {
+        "darts": 330,
+        "needed": MIN_DARTS,
+        "offset_x": 5.5,
+        "offset_y": -4.0,
+        "sd_x": 10.0,
+        "sd_y": 16.5,
+        "correlation": 0.6,
+    }
+
+
+def test_a_group_of_darts_far_off_does_not_pull_the_model():
+    """Darts 40 mm right of and 30 mm below the treble 20, and a quarter of them
+    60 mm higher: the median point and the median distance from it, where the
+    model starts, keep the far group out from the first round."""
+    generator = random.Random(3)
+    darts = normal(generator, ["T20"], 200, (40, -30), (8, 8))
+    darts += normal(generator, ["T20"], 70, (40, 30), (8, 8))
+    assert aim_model(darts) == {
+        "darts": 270,
+        "needed": MIN_DARTS,
+        "offset_x": 39.5,
+        "offset_y": -31.0,
+        "sd_x": 8.0,
+        "sd_y": 8.0,
+        "correlation": -0.15,
+    }
+
+
+def test_the_model_of_a_tight_grouping_starts_without_a_correlation():
+    generator = random.Random(4)
+    darts = normal(generator, ["T20"], 100, sd=(0.8, 0.8))
+    assert aim_model(darts) == {
+        "darts": 100,
+        "needed": MIN_DARTS,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "sd_x": 0.5,
+        "sd_y": 1.0,
+        "correlation": -0.2,
+    }
 
 
 def work_out(log: DartLog) -> bool:

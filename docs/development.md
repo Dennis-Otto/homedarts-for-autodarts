@@ -714,11 +714,21 @@ To run them yourself on Linux or macOS (mutmut forks, so on Windows in WSL or Do
 ```
 
 Under mutmut the property tests draw the same examples as in CI, so a mutant is
-killed or survives the same way on every machine, and every test gets ten times its
-time limit: each call of a changed function passes a trampoline of mutmut, which makes
-the slowest tests several times slower, and mutmut stops a mutant that hangs by a limit
-of its own. mutmut keeps its copy and its results in `mutants/`; delete the folder
-when you are done.
+killed or survives the same way on every machine, and stop at the first example that
+fails: a killed mutant needs no smaller one, and looking for it could take longer than
+the time limit of the mutant, which would then count as no result. Every test gets ten
+times its time limit: each call of a changed function passes a trampoline of mutmut,
+which makes the slowest tests several times slower, and mutmut stops a mutant that
+hangs by a limit of its own. mutmut keeps its copy and its results in `mutants/`;
+delete the folder when you are done.
+
+The code that brings the games back after a restart has property tests of its own:
+each party game, the bull-off, the dart positions and the double rates play random
+darts, are stored as JSON at a random point and restored, into a new game and into
+one that has played other darts, and then play on with the same darts as the
+original, with the same state, details and results. Tests with stored values that
+are wrong, too old or cut short check that a field the restore cannot trust keeps
+what the game held, which after a restart is its default.
 
 ## Issue assistant
 

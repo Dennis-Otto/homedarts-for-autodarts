@@ -74,6 +74,16 @@ def inner_single(position: tuple[float, float] | None) -> bool | None:
     return None if position is None else math.hypot(*position) < INNER_SINGLE
 
 
+def _thrown(saved: object, thrown: list[int]) -> dict[int, object]:
+    """What a stored mapping keeps for the players who threw, by player; the
+    keys of a mapping are text in JSON."""
+    return {
+        int(key): value
+        for key, value in (saved if isinstance(saved, dict) else {}).items()
+        if str(key).isdigit() and int(key) in thrown
+    }
+
+
 class BullOff:
     """Every player throws one dart at the bull; the closest starts the match.
 
@@ -171,18 +181,18 @@ class BullOff:
         bull_off = cls(order)
         bull_off.rethrow = saved.get("rethrow") is True
         index = saved.get("index")
-        bull_off.index = index if type(index) is int and 0 <= index < len(order) else 0
+        bull_off.index = (
+            index if type(index) is int and index in range(len(order)) else 0
+        )
         thrown = order[: bull_off.index]
-        hits, distances = saved.get("hits"), saved.get("distances")
-        for key, value in (hits if isinstance(hits, dict) else {}).items():
-            player = int(key) if str(key).isdigit() else -1
-            if player in thrown and isinstance(value, str):
+        for player, value in _thrown(saved.get("hits"), thrown).items():
+            if isinstance(value, str):
                 bull_off.hits[player] = value
-        for key, value in (distances if isinstance(distances, dict) else {}).items():
-            player = int(key) if str(key).isdigit() else -1
-            number = isinstance(value, int | float) and not isinstance(value, bool)
-            if player in thrown and (number or value is None):
-                bull_off.distances[player] = None if value is None else float(value)
+        for player, value in _thrown(saved.get("distances"), thrown).items():
+            if value is None:
+                bull_off.distances[player] = None
+            elif isinstance(value, int | float) and not isinstance(value, bool):
+                bull_off.distances[player] = float(value)
         # Up to version 1.5, only distances were kept: that round starts again.
         if not len(bull_off.hits) == len(bull_off.distances) == bull_off.index:
             bull_off.index, bull_off.hits, bull_off.distances = 0, {}, {}
@@ -327,11 +337,11 @@ class PartyGame(ABC):
             return None
 
         starter = saved.get("starter")
-        self.starter = starter if type(starter) is int and 0 <= starter < size else 0
+        self.starter = starter if type(starter) is int and starter in range(size) else 0
         self.points = counts("points") or self.points
         self.hits = counts("hits") or self.hits
         turns = saved.get("turns")
-        self.turns = turns if type(turns) is int and turns >= 0 else 0
+        self.turns = max(turns, 0) if type(turns) is int else 0
 
 
 class Shanghai(PartyGame):
@@ -842,7 +852,7 @@ class RoundsGame(PartyGame):
         ):
             self.lineup = list(lineup)
         # Everybody has thrown once the last round decided the leg.
-        if type(thrown) is int and 0 <= thrown <= len(self.lineup):
+        if type(thrown) is int and thrown in range(len(self.lineup) + 1):
             self.thrown = thrown
         if (
             isinstance(scorecard, list)
