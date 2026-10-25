@@ -10,7 +10,7 @@ Ein Tablet oder Fernseher neben dem Board macht deinen Dartraum zur Bühne: der 
 
 <img src="images/de/scoreboard.webp" alt="Animation: die Anzeigetafel in einem 501-Match; nach jeder Aufnahme wechselt der Wurf zwischen Alex und Sam, und Alex checkt 141 mit T20 T19 D12 zum Sieg" width="760">
 
-**Auf dieser Seite:** [Was du brauchst](#was-du-brauchst) · [Den Bildschirm einrichten](#den-bildschirm-einrichten) · [Auf dem Fernseher mit Home Assistant Cast](#auf-dem-fernseher-mit-home-assistant-cast) · [Quer, hochkant und Fernseher](#quer-hochkant-und-fernseher) · [Das nächste Spiel wählen](#das-nächste-spiel-wählen) · [Während des Spiels](#während-des-spiels) · [Darts korrigieren und eingeben](#darts-korrigieren-und-eingeben) · [Turniere](#turniere) · [Der Caller](#der-caller) · [Zwischen den Spielen: Ruhemodus](#zwischen-den-spielen-ruhemodus) · [Stream-Overlay](#stream-overlay) · [Tipps](#tipps) · [Wenn etwas nicht passt](#wenn-etwas-nicht-passt)
+**Auf dieser Seite:** [Was du brauchst](#was-du-brauchst) · [Den Bildschirm einrichten](#den-bildschirm-einrichten) · [Vollbild](#vollbild) · [Auf dem Fernseher mit Home Assistant Cast](#auf-dem-fernseher-mit-home-assistant-cast) · [Quer, hochkant und Fernseher](#quer-hochkant-und-fernseher) · [Das nächste Spiel wählen](#das-nächste-spiel-wählen) · [Während des Spiels](#während-des-spiels) · [Darts korrigieren und eingeben](#darts-korrigieren-und-eingeben) · [Turniere](#turniere) · [Der Caller](#der-caller) · [Zwischen den Spielen: Ruhemodus](#zwischen-den-spielen-ruhemodus) · [Stream-Overlay](#stream-overlay) · [Tipps](#tipps) · [Wenn etwas nicht passt](#wenn-etwas-nicht-passt)
 
 ## Was du brauchst
 
@@ -22,7 +22,7 @@ Ein Tablet oder Fernseher neben dem Board macht deinen Dartraum zur Bühne: der 
 
 1. **Dashboard anlegen.** Öffne **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Das [automatische Dashboard](cards.de.md#automatisches-dashboard) hat eine Ansicht *Anzeigetafel*, die die [Anzeigetafel-Karte](cards.de.md#anzeigetafel) über den ganzen Bildschirm zeigt.
 2. **Ansicht auf dem Bildschirm öffnen.** Melde dich als Benutzer des Bildschirms an und öffne die Ansicht *Anzeigetafel* des Dashboards. Ihre Adresse endet auf `/scoreboard`, bei mehreren Boards auf `/scoreboard-1`, `/scoreboard-2` und so weiter; lege ein Lesezeichen an oder setze sie auf den Startbildschirm des Tablets.
-3. **Vollbild.** Nutze den Vollbildmodus des Browsers oder einen Kiosk-Browser, der die Adresse beim Start öffnet. Lass den Bildschirm am Ladegerät eingeschaltet, in den Einstellungen des Tablets oder des Kiosk-Browsers.
+3. **Vollbild.** Tippe auf die Vollbild-Taste oben rechts auf der Anzeigetafel, die letzte ihrer oberen Leiste: Die Leisten des Browsers, die Kopfzeile von Home Assistant und seine Seitenleiste verschwinden, und der Bildschirm bleibt an, solange die Anzeigetafel ihn füllt. Die Taste, Escape oder zweimal Tippen beendet das Vollbild wieder. [Vollbild](#vollbild) sagt, welche Browser den Bildschirm anlassen und was in den anderen hilft.
 4. **Einschalten, was dir gefällt.** Öffne das Menü des Dashboards (⋮) → **Dashboard bearbeiten**. Im Abschnitt *Ansicht Anzeigetafel* schaltest du den [Caller](#der-caller) und das [Tastenfeld](#darts-korrigieren-und-eingeben) ein und wählst die Spiele der [Spielauswahl](#das-nächste-spiel-wählen) und die Seiten des [Ruhemodus](#zwischen-den-spielen-ruhemodus); das Dashboard bleibt automatisch und bekommt die Ansichten späterer Versionen. Für jede andere Option baust du eine eigene Ansicht: eine Ansicht im Panel-Modus mit der Anzeigetafel und `full_height: true`, oder du wählst im Menü dieses Editors **Kontrolle übernehmen**, das aus dem Dashboard eines macht, das du selbst bearbeitest:
 
 ```yaml
@@ -35,6 +35,22 @@ idle_panels: [leaderboard, today, last_match, clock]
 ```
 
 Die [Anleitung zu den Karten](cards.de.md#anzeigetafel) nennt jede Option.
+
+## Vollbild
+
+Die Vollbild-Taste oben rechts auf der Anzeigetafel zeigt die Anzeigetafel allein auf dem Bildschirm, von Rand zu Rand: ohne die Leisten des Browsers, ohne Kopfzeile und Seitenleiste von Home Assistant. Die Spielstände nehmen die ganze Höhe ein, wie mit `full_height`, und die Taste bleibt gedrückt. Die Taste, Escape oder zweimal Tippen auf die Anzeigetafel beendet das Vollbild; ein Tipp auf eine ihrer Tasten, etwa die des Tastenfelds, zählt nie als halber Doppeltipp.
+
+<img src="images/de/scoreboard-fullscreen.png" alt="Die Anzeigetafel im Vollbild auf einem Tablet im Querformat, ohne Kopfzeile und Seitenleiste von Home Assistant: Übungsspiel 501, Alex am Board mit 301 Rest nach einer T20, Sam mit 417, und oben rechts die gedrückte Vollbild-Taste. Unter dem Titel der Hinweis eines Browsers, der den Bildschirm unter einer http://-Adresse nicht anlassen kann, mit dem Link So bleibt er an" width="760">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/de/fullscreen-dark.png">
+  <img src="images/de/fullscreen-light.png" alt="Wie die Anzeigetafel im Vollbild den Bildschirm eingeschaltet lässt: Ein Tipp auf die Vollbild-Taste zeigt die Anzeigetafel allein auf dem Bildschirm, ohne die Leisten des Browsers und ohne Kopfzeile und Seitenleiste von Home Assistant. Wo der Browser einer Seite erlaubt, den Bildschirm eingeschaltet zu lassen, unter einer https://-Adresse im Browser wie in der Companion-App, bleibt er an. Zeigt das Tablet eine andere App, lässt der Browser los, und die Anzeigetafel hält den Bildschirm wieder an, sobald die Seite wieder zu sehen ist. Wo der Browser es nicht kann, sagt ein Hinweis einmal, die automatische Bildschirmabschaltung des Tablets auszuschalten. Die Taste, Escape oder zweimal Tippen beendet das Vollbild, und der Bildschirm darf wieder ausgehen." width="560">
+</picture>
+
+- **Der Bildschirm bleibt an,** solange die Anzeigetafel ihn füllt: Die Karte bittet den Browser, den Bildschirm anzulassen (Screen Wake Lock), und bittet erneut, wenn das Tablet die Seite nach einer anderen App wieder zeigt. Browser erlauben das einer Seite nur unter einer Adresse, die mit `https://` beginnt, etwa der von Home Assistant Cloud; das gilt auch für die Companion-App von Home Assistant, die Home Assistant in einem eigenen Browser zeigt.
+- **Wo der Browser es nicht kann,** etwa unter einer Adresse, die mit `http://` beginnt, sagt die Anzeigetafel das einmal, mit einem Link auf diesen Abschnitt. Schalte die automatische Bildschirmabschaltung in den Einstellungen des Tablets aus, zumindest am Ladegerät, oder öffne die Ansicht in einem Kiosk-Browser, der den Bildschirm anlässt. Die Android-Companion-App kann den Bildschirm auch selbst anlassen, mit einer Einstellung unter *Companion-App* in ihren Einstellungen.
+- **Wo die Taste erscheint:** in jedem Browser, der eine Seite ins Vollbild lässt, etwa Chrome, Edge, Firefox und Samsung Internet auf einem Tablet, einem Computer oder einem Handy, und Safari auf einem iPad. Safari auf dem iPhone zeigt nur Videos auf dem ganzen Bildschirm, dort bleibt die Taste weg: Lege die Ansicht stattdessen auf den Home-Bildschirm, der sie ohne die Leisten von Safari öffnet. Der Fernseher mit [Home Assistant Cast](#auf-dem-fernseher-mit-home-assistant-cast) und das [Stream-Overlay](#stream-overlay) haben auch keine, sie füllen ihren Bildschirm ohnehin.
+- **Deine Wahl:** `fullscreen_button: false` blendet die Taste aus, und `keep_awake: false` überlässt den Bildschirm den Einstellungen des Tablets. Beides steht im Karteneditor und im Abschnitt *Ansicht Anzeigetafel* des [automatischen Dashboards](cards.de.md#automatisches-dashboard).
 
 ## Auf dem Fernseher mit Home Assistant Cast
 
@@ -304,6 +320,7 @@ overlay_color: "#FF00FF"
 | Was du siehst | Was hilft |
 | --- | --- |
 | Darts werden nicht gezählt | Die Erkennung ist gestoppt: Der Status oben rechts zeigt *Erkennung gestoppt*. Der Start in der Spielauswahl schaltet sie ein; sonst schaltest du sie im [Board-Status](cards.de.md#board-status) oder in der Live-Karte ein. Prüfe außerdem, dass *Übungsspiel* nicht auf *Aus* steht und kein [Online-Match](online-matches.de.md) das Board belegt. |
+| Der Bildschirm geht während eines Spiels aus | Im Vollbild lässt die Anzeigetafel den Bildschirm nur unter einer `https://`-Adresse an, im Browser wie in der Companion-App; sonst sagt sie das einmal. Schalte die automatische Bildschirmabschaltung des Tablets aus; siehe [Vollbild](#vollbild). |
 | Der Caller bleibt stumm | Tippe nach jedem Neuladen der Seite einmal auf **Caller**: Browser spielen Ton erst nach einem Tippen ab. Prüfe die Lautstärke des Geräts. |
 | Der Caller spricht trotz Voice-Pack mit der Stimme des Browsers | Der Name des Packs ist der Name seines Ordners in `homedarts/voices` des Medienordners, in derselben Groß- und Kleinschreibung. Ansagen, für die das Pack keine Datei hat, spricht immer der Browser; siehe die [Dateien eines Packs](#voice-packs). Dateien, die nach dem Einschalten des Callers kopiert wurden, zählen nach dem nächsten Tippen auf **Caller**. |
 | Die Spielauswahl öffnet sich nicht | Sie öffnet sich nie in der Vorschau des Karteneditors und nicht mit `lobby: false`. |

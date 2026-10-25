@@ -111,7 +111,7 @@ Du kommst von Autodarts Local, einer anderen Integration für Autodarts oder dar
 
 ### Bildschirm am Board
 
-- Eine Anzeigetafel für Tablet oder Fernseher, auch über Chromecast, lesbar vom Abwurf aus
+- Eine Anzeigetafel für Tablet oder Fernseher, auch über Chromecast, lesbar vom Abwurf aus, mit einer [Vollbild-Taste](https://dennis-otto.github.io/homedarts-for-autodarts/de/scoreboard.html#vollbild), die den Bildschirm anlässt
 - Eine Spielauswahl, um Spiel, Spieler und Format direkt am Board zu wählen oder ein Turnier zu starten
 - Ein Caller, der das Spiel über den Browser des Bildschirms ansagt, auch mit den aufgenommenen Voice-Packs von darts-caller oder einer Stimme, die du mit Piper aufnimmst
 - Ein Ruhemodus mit Bestenliste, Bestleistungen, den Darts von heute und einer Uhr
