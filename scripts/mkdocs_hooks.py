@@ -10,20 +10,28 @@ GitHub. The hooks lead them to the pages of the website where MkDocs alone can't
 - README.md and README.de.md are the start pages on GitHub and stay off the
   website, which starts with index.md and index.de.md. A link to them leads to the
   start page of the website.
-- The German pages sit next to the English ones, named like them with .de, such as
-  games.de.md next to games.md, and the plugin i18n builds the German website in
-  de/ from them, with the English page where no German one exists. Each website is
-  built on its own and knows only its own pages, so a link to the other language,
-  such as [Deutsch](games.de.md) on an English page or [English](games.md) on a
-  German one, leads to that page of the other website. So do the links of an
-  English page on the German website, whose anchors are those of English pages.
-- A page of the German website lies one folder deeper than its file, in de/, so
-  the pictures of its HTML, such as <img src="images/de/card.png">, get the path
-  from there, as those of the Markdown do.
-- A page on GitHub starts with a line back to the overview, often with the link to
-  the other language, such as [← Documentation](README.md) · [Deutsch](games.de.md).
-  The website has its menu, its tabs and the switch of the language for that, so it
-  leaves the line out.
+- The pages of the further languages sit next to the English ones, named like them
+  with their language, such as games.de.md next to games.md and index.nl.md next to
+  index.md, and the plugin i18n builds the website of each language in its folder,
+  such as de/ and nl/, with the English page where the language has none. Each
+  website is built on its own and knows only its own pages, so a link to another
+  language, such as [Deutsch](games.de.md) on an English page or [English](faq.md)
+  on a Dutch one, leads to that page of the other website. So do the links of an
+  English page on the website of a further language that has a page of their own:
+  their anchors are those of the English pages.
+- A page of a further language lies one folder deeper than its file, such as in
+  de/, so the pictures of its HTML, such as <img src="images/de/card.png">, get the
+  path from there, as those of the Markdown do.
+- A page on GitHub starts with a line back to the overview, often with the links to
+  the other languages, such as [← Documentation](README.md) · [Deutsch](faq.de.md)
+  · [Nederlands](faq.nl.md). The website has its menu, its tabs and the switch of
+  the language for that, so it leaves the line out.
+- A further language may show an English page for want of its own, such as the
+  Dutch website most pages. The language may give such a page a note in its own
+  words, with a link to where native speakers help to translate it: extra.
+  untranslated of its section in mkdocs.yml. The hooks of the blueprint mark the
+  text of such a page as English, so that screen readers read it with an English
+  voice; the note keeps the language of the website.
 - A page may include a whole file of the repository, as changelog.md includes
   CHANGELOG.md with the line --8<-- "CHANGELOG.md", so that nothing is written
   twice. The links of that file are written from its own folder, such as
@@ -37,8 +45,8 @@ GitHub. The hooks lead them to the pages of the website where MkDocs alone can't
 They also give search engines and the previews of shared links what they need:
 
 - A start page is titled with the name of the website alone. Material does so on
-  the English one, but titles the German one "Start - Autodarts für Home
-  Assistant", after its tab.
+  the English one, but titles the others after their tab, such as "Start -
+  HomeDarts for Autodarts" the German one.
 - A page that moved, such as LOCAL-CONTROL.md, keeps the old links of GitHub
   working. Its front matter names the page that took its place, moved:
   installation.md, and the hooks make it lead there at once, in the language of
@@ -65,11 +73,31 @@ from urllib.parse import urljoin
 # The warnings of MkDocs, which mkdocs build --strict counts.
 log = logging.getLogger("mkdocs.hooks.html_links")
 
-# The language of the pages named with .de, and the one of the others.
-GERMAN = "de"
+# The language of the pages without a language in their name, and the further ones
+# of the plugin i18n in mkdocs.yml, whose pages are named with it, such as
+# games.de.md and index.nl.md.
 ENGLISH = "en"
-# The start pages on GitHub, and those of the website that take their place.
+GERMAN = "de"
+FURTHER = (GERMAN, "nl", "fr", "es")
+# The language in the name of a page of a further language, such as .nl.md.
+NAMED = re.compile(rf"\.({'|'.join(FURTHER)})\.md$")
+# The start pages on GitHub, and those of the website that take their place. Only
+# German has an overview of its own on GitHub.
 START = {"README.md": "index.md", f"README.{GERMAN}.md": f"index.{GERMAN}.md"}
+# The start page of the website in each language.
+HOMES = {"index.md", *(f"index.{language}.md" for language in FURTHER)}
+# The setting of a further language in extra of mkdocs.yml with the note on a page
+# that it shows in English: its text and the name and address of its link.
+UNTRANSLATED = "untranslated"
+# The note, an admonition of Material without a title, in the language of the
+# website, after the title of the page.
+NOTE = (
+    '<div class="admonition info untranslated" lang="{language}">'
+    '<p>{text} <a href="{href}">{link}</a></p></div>'
+)
+TITLE_HEADING = re.compile(r"<h1\b.*?</h1>", re.DOTALL)
+# A version of a page in another language in its head, which the plugin i18n writes.
+VERSION = re.compile(r'<link\b[^>]*\brel="alternate"[^>]*\bhreflang="[^"]*"[^>]*>\s*')
 
 # The cards of the integration with the texts they import, and where the live demo
 # loads them from.
@@ -118,11 +146,11 @@ SOURCE = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 # The line back to the overview of GitHub at the start of a page, after its title,
-# with the link to the other language if there is one, as a paragraph of its own.
+# with the links to the other languages if there are some, as a paragraph of its own.
 BACK = re.compile(
     r"(?P<title>\A\s*(?:#[ \t][^\n]*\n)?)\s*"
-    r"\[← [^\]\n]+\]\((?:\.\./)?README(?:\.de)?\.md\)"
-    r"(?: · \[[^\]\n]+\]\([^)\s]+\))?[ \t]*(?:\n(?=[ \t]*\n)|\n?\Z)"
+    rf"\[← [^\]\n]+\]\((?:\.\./)?README(?:\.(?:{'|'.join(FURTHER)}))?\.md\)"
+    r"(?: · \[[^\]\n]+\]\([^)\s]+\))*[ \t]*(?:\n(?=[ \t]*\n)|\n?\Z)"
 )
 # A line that includes a whole file with pymdownx.snippets, by its path from the
 # root of the repository, such as --8<-- "CHANGELOG.md"; a section of a file, such
@@ -142,8 +170,29 @@ BRANCH = "main"
 
 
 def website(page: Any) -> str:
-    """The language of the website that page is built for, by its address."""
-    return GERMAN if page.file.url.startswith(f"{GERMAN}/") else ENGLISH
+    """The language of the website that page is built for, by its address: the
+    further one of its folder, such as de/games.html, or English."""
+    folder = page.file.url.partition("/")[0]
+    return folder if folder in FURTHER else ENGLISH
+
+
+def language_of(path: str) -> str:
+    """The language of a file of docs/ by its name: the further one that names it,
+    such as games.de.md, or English, such as games.md."""
+    named = NAMED.search(path)
+    return named[1] if named else ENGLISH
+
+
+def english(path: str) -> str:
+    """The English file of docs/ of a page in any language: games.md of games.de.md."""
+    return NAMED.sub(".md", path)
+
+
+def in_language(path: str, language: str) -> str:
+    """The file of docs/ of the English page path in language: games.nl.md of games.md."""
+    if language == ENGLISH:
+        return path
+    return f"{path.removesuffix('.md')}.{language}.md"
 
 
 def relative(target: str, source: str) -> str:
@@ -159,26 +208,26 @@ def linked(page: Any, path: str) -> str:
 
 
 def other_language(page: Any, target: str, docs: Path) -> str | None:
-    """The address of target for a link of page, if target is in the other language.
+    """The address of target for a link of page, if target is in another language.
 
-    A page named with .de is German. A page without it is English if a German page
-    of its name exists; otherwise it is the page of both websites, which the German
-    one shows in English, and a link to it stays on the website of page. The
-    addresses are those of use_directory_urls: false, as the blueprint sets it.
+    A page named with a further language, such as .de, is in that language. A page
+    without one is English if the website of page has a page of its name in its
+    own language; otherwise the website shows it in English, and a link to it stays
+    on the website of page. The addresses are those of use_directory_urls: false,
+    as the blueprint sets it.
     """
-    if target.endswith(f".{GERMAN}.md"):
-        theirs = GERMAN
-        address = f"{GERMAN}/{target.removesuffix(f'.{GERMAN}.md')}.html"
-    elif (docs / f"{target.removesuffix('.md')}.{GERMAN}.md").is_file():
-        theirs = ENGLISH
-        address = f"{target.removesuffix('.md')}.html"
-    else:
+    theirs, ours = language_of(target), website(page)
+    if theirs == ENGLISH and (
+        ours == ENGLISH or not (docs / in_language(target, ours)).is_file()
+    ):
         return None
-    if theirs == website(page):
+    if theirs == ours:
         return None
     if not (docs / target).is_file():
         log.warning("%s links to %s, which isn't a page", page.file.src_uri, target)
         return None
+    folder = "" if theirs == ENGLISH else f"{theirs}/"
+    address = f"{folder}{english(target).removesuffix('.md')}.html"
     return relative(address, page.file.url)
 
 
@@ -194,13 +243,13 @@ def lead_on(page: Any, docs: Path, files: Any) -> None:
     """Let a page that moved lead to the page that took its place.
 
     The successor is the one of the website of page: on the German website its
-    German page, if there is one. The head of page leads there (on_post_page), and
-    the search of the website leaves page out.
+    German page, if there is one, and so on. The head of page leads there
+    (on_post_page), and the search of the website leaves page out.
     """
     target = linked(page, page.meta[MOVED_TO])
-    german = f"{target.removesuffix('.md')}.{GERMAN}.md"
-    if website(page) == GERMAN and (docs / german).is_file():
-        target = german
+    own = in_language(target, website(page))
+    if (docs / own).is_file():
+        target = own
     found = files.get_file_from_path(target)
     if found is None:
         log.warning(
@@ -300,8 +349,38 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Any) -> str:
     return SOURCE.sub(replace, markdown)
 
 
+def in_english(page: Any) -> bool:
+    """Whether page is an English page that the website of a further language shows
+    for want of a page of its own, such as games.md as nl/games.html."""
+    ours = website(page)
+    return ours != ENGLISH and language_of(page.file.src_uri) != ours
+
+
+def untranslated(html: str, page: Any, config: Any) -> str:
+    """The HTML of an English page that a further language shows for want of a page
+    of its own, with the note of the language after its title, if the language has
+    one.
+
+    A page that moved has no text to read; it leads on at once.
+    """
+    note = (getattr(config, "extra", None) or {}).get(UNTRANSLATED)
+    if not in_english(page) or MOVED_TO in page.meta or not note:
+        return html
+    written = NOTE.format(
+        language=website(page),
+        text=escape(note["text"], quote=False),
+        href=escape(note["href"]),
+        link=escape(note["link"], quote=False),
+    )
+    title = TITLE_HEADING.search(html)
+    end = title.end() if title else 0
+    return f"{html[:end]}{written}{html[end:]}"
+
+
 def on_page_content(html: str, page: Any, config: Any, files: Any) -> str:
-    """The HTML of the page, with its links to Markdown files leading to pages."""
+    """The HTML of the page, with its links to Markdown files leading to pages, and
+    the note of its language on a page that it shows in English."""
+    html = untranslated(html, page, config)
     docs = Path(config.docs_dir)
 
     def replace(match: re.Match[str]) -> str:
@@ -328,9 +407,15 @@ def on_post_page(output: str, page: Any, config: Any) -> str:
     """The head of the page, for search engines and the previews of shared links.
 
     A start page is titled with the name of its website alone, and a page that moved
-    leads to the page that took its place.
+    leads to the page that took its place. A page that a further language shows in
+    English is a copy of the English page and no version of its own, so it names
+    none: the plugin i18n writes the versions of the English page into its head, and
+    the hooks of the blueprint, which run after these, keep them where the page has
+    two languages besides English.
     """
-    if page.file.src_uri in START.values():
+    if in_english(page):
+        output = VERSION.sub("", output)
+    if page.file.src_uri in HOMES:
         name = escape(config.site_name)
         output = TITLE.sub(lambda _: f"<title>{name}</title>", output, count=1)
         output = SHARED_TITLE.sub(lambda match: f'{match[1]}{name}"', output)

@@ -683,7 +683,8 @@ def test_the_end_to_end_tests_run_the_oldest_supported_home_assistant():
 # How the pages name the oldest supported Home Assistant: "2026.8 or newer",
 # "**2026.8** oder neuer", "ab 2026.8" and the badge of the README.
 MINIMUM_RELEASE = re.compile(
-    r"\*{0,2}(20\d\d\.\d{1,2})(?:\.\d+)?\*{0,2} (?:or newer|oder neuer)"
+    r"\*{0,2}(20\d\d\.\d{1,2})(?:\.\d+)?\*{0,2} "
+    r"(?:or newer|oder neuer|of nieuwer|ou plus récent|o posterior)"
     r"|\bab \*{0,2}(20\d\d\.\d{1,2})"
     r"|Home%20Assistant-(20\d\d\.\d{1,2})%2B"
 )
@@ -724,6 +725,9 @@ def test_the_documentation_names_the_oldest_supported_home_assistant():
         "docs/README.de.md",
         "docs/installation.md",
         "docs/installation.de.md",
+        "docs/installation.nl.md",
+        "docs/installation.fr.md",
+        "docs/installation.es.md",
     ):
         assert named[page], page
 

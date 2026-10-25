@@ -7,15 +7,16 @@
 #   pip install --require-hashes -r .github/docs-requirements.txt && mkdocs serve
 # https://squidfunk.github.io/mkdocs-material/
 INHERIT: .github/mkdocs-blueprint.yml
-# The name of the website, which ends the title of every page, and the German one
-# below. It is the name of the integration, which names Autodarts, so that the
+# The name of the website, which ends the title of every page, and those of the
+# other languages below. It is the name of the integration, which names Autodarts, so that the
 # website is found with it, and it is not the website of Autodarts itself.
 site_name: "HomeDarts for Autodarts"
 site_description: "HomeDarts for Autodarts, the Home Assistant integration for Autodarts boards and any dartboard: local realtime board control, X01, Cricket, party and training games, tournaments and a bot, player statistics with heatmaps, seven dashboard cards and sixteen blueprints, games started by voice. No cloud account needed."
 site_url: https://dennis-otto.github.io/homedarts-for-autodarts/
 repo_url: https://github.com/Dennis-Otto/homedarts-for-autodarts
 repo_name: Dennis-Otto/homedarts-for-autodarts
-# The footer of every page; the German one is with the languages below. It says
+# The footer of every page; those of the other languages are with the languages
+# below. It says
 # that the website is not one of Autodarts, whose boards it is about.
 copyright: "© 2026 Trkal and HACSAutodarts contributors; 2026 Dennis Otto<br>HomeDarts for Autodarts is an unofficial community integration, not affiliated with Autodarts."
 
@@ -50,7 +51,8 @@ theme:
         icon: material/weather-sunny
         name: Switch to the scheme of the system
 
-# The website starts with index.md and index.de.md. README.md and README.de.md are
+# The website starts with index.md and index.de.md, and so on for each language.
+# README.md and README.de.md are
 # the overviews of the folder on GitHub, and docs/de/ only keeps the old addresses
 # of the German pages that released versions link to. The template of a decision is
 # for the pull request that copies it, not for readers of the website.
@@ -61,8 +63,10 @@ exclude_docs: |
   /decisions/0000-template.md
 
 plugins:
+  # The search of each language finds its words in their forms, such as "spellen"
+  # for "spel" in Dutch.
   search:
-    lang: [en, de]
+    lang: [en, de, nl, fr, es]
   # The preview cards of shared links in the navy of the brand, with the icon of the
   # header, as the social preview of the repository.
   social:
@@ -74,13 +78,21 @@ plugins:
   git-revision-date-localized:
     exclude:
       - changelog.md
-  # English and German. The German pages sit next to the English ones, named like
-  # them with .de, such as games.de.md next to games.md, and make the German website
-  # in de/, with German menus, search and dates, and a switch between the languages
-  # in the header that keeps the page. A page without German version is shown in
-  # English there. https://ultrabug.github.io/mkdocs-static-i18n/
+  # English, German, Dutch, French and Spanish. The pages of a language sit next to
+  # the English ones, named like them with its code, such as games.de.md next to
+  # games.md, and make its website in its folder, such as de/, with its menus,
+  # search and dates, and a switch between the languages in the header that keeps
+  # the page. German has every page that players read; Dutch, French and Spanish
+  # have the pages that decide whether someone tries it: the start page, the quick
+  # start, the installation and the frequently asked questions (decision 0027). A
+  # page without a version in a language is shown in English there, which search
+  # engines don't list twice, with the note of extra.untranslated, which links to
+  # the issue where native speakers help to translate it (scripts/mkdocs_hooks.py).
+  # The theme of a language names the switch between light and dark in its words.
+  # https://ultrabug.github.io/mkdocs-static-i18n/
   i18n:
     enabled: true
+    fallback_to_default: true
     languages:
       - locale: en
         name: English
@@ -100,6 +112,78 @@ plugins:
           Project: Projekt
           Changelog: Änderungen
           Decisions: Entscheidungen
+      - locale: nl
+        name: Nederlands
+        build: true
+        site_name: "HomeDarts for Autodarts"
+        copyright: "© 2026 Trkal en de bijdragers van HACSAutodarts; 2026 Dennis Otto<br>HomeDarts for Autodarts is een onofficiële integratie van de community, niet verbonden aan Autodarts."
+        site_description: "HomeDarts for Autodarts, de Home Assistant-integratie voor Autodarts-borden en elk dartbord: lokale realtime besturing van het bord, X01, Cricket, party- en trainingsspellen, toernooien en een bot, spelersstatistieken met heatmaps, zeven dashboardkaarten en zestien blueprints, spellen starten met je stem. Geen cloudaccount nodig."
+        nav_translations:
+          Home: Start
+          Get started: Aan de slag
+          Guides: Handleidingen
+          Reference: Naslag
+          Project: Project
+          Changelog: Wijzigingen
+          Decisions: Beslissingen
+        theme:
+          palette:
+            - toggle: { name: "Naar het lichte thema" }
+            - toggle: { name: "Naar het donkere thema" }
+            - toggle: { name: "Naar het thema van het systeem" }
+        extra:
+          untranslated:
+            text: "Deze pagina is er nog alleen in het Engels."
+            link: "Help mee met de vertaling"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/480"
+      - locale: fr
+        name: Français
+        build: true
+        site_name: "HomeDarts for Autodarts"
+        copyright: "© 2026 Trkal et les contributeurs de HACSAutodarts ; 2026 Dennis Otto<br>HomeDarts for Autodarts est une intégration non officielle de la communauté, sans lien avec Autodarts."
+        site_description: "HomeDarts for Autodarts, l'intégration Home Assistant pour les cibles Autodarts et toute cible de fléchettes : contrôle local en temps réel, X01, Cricket, jeux de fête et d'entraînement, tournois et un bot, statistiques des joueurs avec cartes de chaleur, sept cartes de tableau de bord et seize blueprints, parties lancées à la voix. Sans compte cloud."
+        nav_translations:
+          Home: Accueil
+          Get started: Premiers pas
+          Guides: Guides
+          Reference: Référence
+          Project: Projet
+          Changelog: Nouveautés
+          Decisions: Décisions
+        theme:
+          palette:
+            - toggle: { name: "Passer au thème clair" }
+            - toggle: { name: "Passer au thème sombre" }
+            - toggle: { name: "Passer au thème du système" }
+        extra:
+          untranslated:
+            text: "Cette page n'existe encore qu'en anglais."
+            link: "Aidez-nous à la traduire"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/481"
+      - locale: es
+        name: Español
+        build: true
+        site_name: "HomeDarts for Autodarts"
+        copyright: "© 2026 Trkal y los colaboradores de HACSAutodarts; 2026 Dennis Otto<br>HomeDarts for Autodarts es una integración no oficial de la comunidad, sin relación con Autodarts."
+        site_description: "HomeDarts for Autodarts, la integración de Home Assistant para dianas Autodarts y cualquier diana: control local en tiempo real, X01, Cricket, juegos de fiesta y de entrenamiento, torneos y un bot, estadísticas con mapas de calor, siete tarjetas del panel y dieciséis blueprints, partidas por voz. Sin cuenta en la nube."
+        nav_translations:
+          Home: Inicio
+          Get started: Primeros pasos
+          Guides: Guías
+          Reference: Referencia
+          Project: Proyecto
+          Changelog: Cambios
+          Decisions: Decisiones
+        theme:
+          palette:
+            - toggle: { name: "Cambiar al tema claro" }
+            - toggle: { name: "Cambiar al tema oscuro" }
+            - toggle: { name: "Cambiar al tema del sistema" }
+        extra:
+          untranslated:
+            text: "Esta página todavía solo está en inglés."
+            link: "Ayúdanos a traducirla"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/482"
 
 # Links in the HTML of a page, links to the start pages of GitHub and links to the
 # other language lead to the pages of the website, as the links of the Markdown do.
@@ -115,8 +199,9 @@ extra_css:
   - stylesheets/brand.css
   - stylesheets/extra.css
 
-# The menu, a tab in the header for each section. The German website has the same
-# one, with the German pages and the titles of nav_translations above.
+# The menu, a tab in the header for each section. The website of each further
+# language has the same one, with its pages and the titles of nav_translations
+# above.
 nav:
   - Home: index.md
   - Get started:

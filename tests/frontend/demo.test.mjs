@@ -293,8 +293,9 @@ test("the page plays the recorded games with the cards, in the reader's language
     assert.equal($("h1").textContent, TEXT.fr.title);
     assert.equal(chapters[1].textContent, TEXT.fr.cricket);
     assert.match(view.location.href, /\?lang=fr$/);
-    // The website has no French pages; the header leads to the English ones.
-    assert.equal($("[data-page='cards']").getAttribute("href"), "../cards.html");
+    // The header leads to the French website, which shows the card guide in English.
+    assert.equal($("[data-page='installation']").getAttribute("href"), "../fr/installation.html");
+    assert.equal($("[data-page='cards']").getAttribute("href"), "../fr/cards.html");
     assert.equal($("homedarts-scoreboard-card")._hass.language, "fr");
     // A dark theme of the system reaches the cards.
     changes[0]();

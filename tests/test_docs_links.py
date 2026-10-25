@@ -37,10 +37,14 @@ OWN = re.compile(
     r"|raw\.githubusercontent\.com/Dennis-Otto/homedarts-for-autodarts/main)/"
 )
 # The documentation website (mkdocs.yml): docs/<page>.md is <page>.html, and its
-# German page docs/<page>.de.md is de/<page>.html, or the English page where no
-# German one exists; index.md is the start page.
+# page in a further language, such as docs/<page>.de.md, is de/<page>.html, or the
+# English page where that language has none; index.md is the start page.
 WEBSITE = "https://dennis-otto.github.io/homedarts-for-autodarts/"
-WEBSITE_PAGE = re.compile(r"^(?:(de)/)?([^#?]*)")
+FURTHER = ("de", "nl", "fr", "es")
+WEBSITE_PAGE = re.compile(rf"^(?:({'|'.join(FURTHER)})/)?([^#?]*)")
+# The pages that decide whether someone tries the integration, which every further
+# language has (docs/decisions/0027-the-start-pages-in-dutch-french-and-spanish.md).
+START_PAGES = ("index", "getting-started", "installation", "faq")
 # A line of a page of the website that includes a file of the repository, or a
 # section of one, with pymdownx.snippets, such as --8<-- "CHANGELOG.md".
 INCLUDE = re.compile(r'^--8<-- "([^":]+)(?::([\w-]+))?"$', re.MULTILINE)
@@ -75,7 +79,7 @@ OPTIONAL = (
     "scripts/check-site.sh",
     ".github/screenshots-paths.txt",
 )
-# The number words of both languages, which the text uses for counts.
+# The number words of the five languages, which the text uses for counts.
 NUMBERS = {
     word: number
     for words in (
@@ -83,6 +87,12 @@ NUMBERS = {
         "fourteen fifteen sixteen seventeen eighteen nineteen twenty",
         "eins zwei drei vier fünf sechs sieben acht neun zehn elf zwölf dreizehn "
         "vierzehn fünfzehn sechzehn siebzehn achtzehn neunzehn zwanzig",
+        "één twee drie vier vijf zes zeven acht negen tien elf twaalf dertien "
+        "veertien vijftien zestien zeventien achttien negentien twintig",
+        "un deux trois quatre cinq six sept huit neuf dix onze douze treize "
+        "quatorze quinze seize dix-sept dix-huit dix-neuf vingt",
+        "uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece "
+        "catorce quince dieciséis diecisiete dieciocho diecinueve veinte",
     )
     for number, word in enumerate(words.split(), start=1)
 }
@@ -90,15 +100,16 @@ NUMBER = r"(\d+|" + "|".join(NUMBERS) + r")"
 # A count starts a word: counts above twenty are written in digits, and the end of
 # a compound such as "twenty-one" or "einundzwanzig" is no count of its own.
 START = r"(?<![\w-])"
-# What the text counts, as it says it in English and German: "thirteen blueprints",
-# "sieben Dashboard-Karten", "the fourteen `homedarts.*` actions" and "die
+# What the text counts, as it says it in its languages: "thirteen blueprints",
+# "sieben Dashboard-Karten", "zeven dashboardkaarten", "sept cartes de tableau de
+# bord", "siete tarjetas del panel", "the fourteen `homedarts.*` actions" and "die
 # vierzehn Aktionen `homedarts.*`". A count of some of them, such as "two voice
 # blueprints", names no total and is left alone.
 COUNTED = {
     kind: re.compile(pattern, re.IGNORECASE)
     for kind, pattern in {
         "blueprints": rf"{START}{NUMBER}\s+(?:Autodarts[\s-]+)?Blueprints\b",
-        "cards": rf"{START}{NUMBER}\s+(?:Dashboard[\s-]+)?(?:cards|Karten)\b",
+        "cards": rf"{START}{NUMBER}\s+(?:Dashboard[\s-]*)?(?:cards|Karten|kaarten|cartes|tarjetas)\b",
         "actions": rf"{START}{NUMBER}\s+(?:`homedarts\.\*`\s+actions|Aktionen\s+`homedarts\.\*`)",
     }.items()
 }
@@ -176,14 +187,14 @@ def targets_of(text: str) -> list[str]:
 
 def website_page(address: str) -> tuple[Path, str]:
     """The file of docs/ and the anchor of an address of the documentation website."""
-    german, page = WEBSITE_PAGE.match(address).groups()
+    language, page = WEBSITE_PAGE.match(address).groups()
     # A file that the website serves as it is, such as the page of the live demo.
-    if not german and page.endswith(".html") and (ROOT / "docs" / page).is_file():
+    if not language and page.endswith(".html") and (ROOT / "docs" / page).is_file():
         return ROOT / "docs" / page, ""
     name = (page or "index.html").removesuffix(".html")
     anchor = address.partition("#")[2]
-    file = ROOT / "docs" / f"{name}.de.md"
-    if not german or not file.is_file():
+    file = ROOT / "docs" / f"{name}.{language}.md"
+    if not language or not file.is_file():
         file = ROOT / "docs" / f"{name}.md"
     return file, unquote(anchor)
 
@@ -309,16 +320,46 @@ def test_the_manifest_links_to_the_website():
     assert manifest["documentation"] == WEBSITE
 
 
-def test_every_german_page_sits_next_to_its_english_page():
-    """A German page is named like its English page with .de (decision 0009)."""
+def test_every_page_of_a_further_language_sits_next_to_its_english_page():
+    """A German page is named like its English page with .de (decision 0009), a
+    Dutch, French or Spanish one with .nl, .fr or .es (decision 0027)."""
     german = sorted((ROOT / "docs").glob("**/*.de.md"))
     assert len(german) >= 18
     lonely = [
         path.relative_to(ROOT).as_posix()
-        for path in german
-        if not path.with_name(path.name.removesuffix(".de.md") + ".md").exists()
+        for language in FURTHER
+        for path in sorted((ROOT / "docs").glob(f"**/*.{language}.md"))
+        if not path.with_name(
+            path.name.removesuffix(f".{language}.md") + ".md"
+        ).exists()
     ]
     assert not lonely, lonely
+
+
+@pytest.mark.parametrize("language", FURTHER)
+def test_every_further_language_has_the_start_pages(language):
+    """The start page, the quick start, the installation and the frequently asked
+    questions, which link to each other in their language, and on GitHub the line
+    back at the top of each English page links to them, and theirs to it. A link to
+    a section that only the English page has, such as installation.md#reconfigure,
+    stays English."""
+    for name in START_PAGES:
+        page = DOCS / f"{name}.{language}.md"
+        assert page.is_file(), page
+        own = prose(page.read_text(encoding="utf-8"))
+        others = {
+            f"{other}.md"
+            for other in START_PAGES
+            if other != name and f"]({other}.md)" in own
+        }
+        assert not others, f"{page.name} links to {others}, not to its own pages"
+        if name == "index":
+            continue
+        english = (DOCS / f"{name}.md").read_text(encoding="utf-8")
+        back = next(line for line in english.splitlines() if line.startswith("[← "))
+        assert f"]({name}.{language}.md)" in back, f"{name}.md: {back}"
+        back = next(line for line in own.splitlines() if line.startswith("[← "))
+        assert f"]({name}.md)" in back, f"{page.name}: {back}"
 
 
 def front_matter(path: Path) -> dict[str, object]:
@@ -466,6 +507,14 @@ def test_the_counts_in_the_prose_match_the_code():
         ("Sechs Dashboard-Karten und ein automatisches Dashboard", "cards", 6),
         ("It brings seven dashboard\n    cards to the picker.", "cards", 7),
         ("Some day there are 21 Autodarts\nblueprints.", "blueprints", 21),
+        ("Zestien blueprints: lichtshow, opkomstmuziek.", "blueprints", 16),
+        ("Zeven dashboardkaarten en een automatisch dashboard", "cards", 7),
+        ("Alle zeven kaarten en het automatische dashboard", "cards", 7),
+        ("Seize blueprints : spectacle de lumière", "blueprints", 16),
+        ("Sept cartes de tableau de bord et un tableau de bord", "cards", 7),
+        ("Dix-sept blueprints, un jour.", "blueprints", 17),
+        ("Dieciséis blueprints (planos, en Home Assistant)", "blueprints", 16),
+        ("Siete tarjetas del panel y un panel automático", "cards", 7),
         ("the thirteen `homedarts.*` actions, which need a login", "actions", 13),
         (
             "die dreizehn Aktionen `homedarts.*`, die eine Anmeldung brauchen",
@@ -475,7 +524,7 @@ def test_the_counts_in_the_prose_match_the_code():
     ],
 )
 def test_a_wrong_count_is_found(sentence, kind, number):
-    """The sentences the docs once had wrong, in both languages, and their kin."""
+    """The sentences the docs once had wrong, in each language, and their kin."""
     assert [(found, said) for found, said, *_ in claims(sentence)] == [(kind, number)]
     code = {"blueprints": 0, "cards": 0, "actions": 0}
     assert not wrong_counts(sentence, {**code, kind: number})
@@ -538,7 +587,8 @@ def website_address(link: str, german: bool) -> str | None:
     """The address on the website of a link of a README to a page of docs/ or to the
     changelog, for the README of one language, or None for any other link.
 
-    A German page is in de/. A page without it is English if a German page of its
+    A German page is in de/, and so is the page of every further language in its
+    folder, such as nl/. A page without one is English if a German page of its
     name exists; otherwise it is the page of both websites, and the German README
     stays on the German website, as scripts/mkdocs_hooks.py does.
     """
@@ -549,8 +599,9 @@ def website_address(link: str, german: bool) -> str | None:
     if match is None:
         return None
     page, anchor = match["page"], match["anchor"] or ""
-    if page.endswith(".de"):
-        return f"{WEBSITE}de/{page.removesuffix('.de')}.html{anchor}"
+    stem, _, language = page.rpartition(".")
+    if stem and language in FURTHER:
+        return f"{WEBSITE}{language}/{stem}.html{anchor}"
     if page == "README":
         return f"{WEBSITE}{'de/' if german else ''}{anchor}"
     english = (DOCS / f"{page}.de.md").is_file()
@@ -570,6 +621,9 @@ def website_links(text: str, german: bool) -> str:
         ("faq.md#top", False, f"{WEBSITE}faq.html#top"),
         (f"{BLOB}docs/faq.md", False, f"{WEBSITE}faq.html"),
         ("faq.de.md#oben", True, f"{WEBSITE}de/faq.html#oben"),
+        ("faq.nl.md#spelen", False, f"{WEBSITE}nl/faq.html#spelen"),
+        ("index.fr.md", True, f"{WEBSITE}fr/index.html"),
+        (f"{BLOB}docs/installation.es.md", False, f"{WEBSITE}es/installation.html"),
         ("development.md", True, f"{WEBSITE}development.html"),
         ("releases.md#x", True, f"{WEBSITE}de/releases.html#x"),
         ("decisions/0001-x.md", True, f"{WEBSITE}de/decisions/0001-x.html"),

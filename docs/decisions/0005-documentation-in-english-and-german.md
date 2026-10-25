@@ -18,7 +18,7 @@ Many Autodarts players are in German-speaking countries, and the maintainer is G
 
 ## Decision
 
-Option 2. The documentation is in `docs/`, its German translation in `docs/de/`, and every pull request that changes one changes the other. Since [0009](0009-german-pages-next-to-the-english-ones.md), each German page sits next to its English page. The integration and its cards speak English, German, Spanish, French and Dutch.
+Option 2. The documentation is in `docs/`, its German translation in `docs/de/`, and every pull request that changes one changes the other. Since [0009](0009-german-pages-next-to-the-english-ones.md), each German page sits next to its English page. Since [0027](0027-the-start-pages-in-dutch-french-and-spanish.md), the start page, the quick start, the installation and the frequently asked questions are also in Dutch, French and Spanish. The integration and its cards speak English, German, Spanish, French and Dutch.
 
 ## Consequences
 
