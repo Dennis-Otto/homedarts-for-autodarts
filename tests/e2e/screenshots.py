@@ -1389,7 +1389,8 @@ def big_tournament(
 
     The tournament stops right after its picture: the matches after it showed in
     no image, and tests/test_tournament_formats.py plays 32 players to their
-    champion with every outcome, in a fraction of a second instead of minutes."""
+    champion with many random results, in a fraction of a second instead of
+    minutes."""
     pull_darts()
     game(page, "off")
     page.evaluate(

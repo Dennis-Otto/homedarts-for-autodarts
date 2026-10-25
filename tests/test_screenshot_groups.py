@@ -209,6 +209,8 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
         step for step in render if step.get("name") == "Keep the seconds of the group"
     ]
     assert kept["if"] == "${{ !cancelled() }}"
+    # Only informational: a failed upload of the seconds never costs the images.
+    assert kept["continue-on-error"] is True
     assert kept["with"] == {
         "name": "times-${{ matrix.language }}-${{ matrix.group }}",
         "path": "tests/e2e/artifacts/screenshots-*.json",
@@ -219,6 +221,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
     names = [step.get("name") for step in steps]
     taken = steps[names.index("Take the seconds of every group")]
     assert taken["if"] == "${{ !cancelled() }}"
+    assert taken["continue-on-error"] is True
     assert taken["with"] == {
         "pattern": "times-${{ matrix.language }}-*",
         "path": "tests/e2e/artifacts",
@@ -228,6 +231,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
         "List how long the groups took"
     )
     assert table["if"] == "${{ !cancelled() }}"
+    assert table["continue-on-error"] is True
     assert table["env"]["LANGUAGE"] == "${{ matrix.language }}"
     assert table["run"] == (
         'python3 tests/e2e/group_times.py "$LANGUAGE" tests/e2e/artifacts'
