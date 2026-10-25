@@ -460,7 +460,7 @@ Dependencies are pinned:
 
 Home Assistant pins its own dependencies exactly, so the test environment can carry a
 version with a known advisory that no update here can raise, such as the Pillow 12.3.0
-and the uv 0.12.23 of Home Assistant 2026.10. `osv-scanner.toml`, which OSV-Scanner and
+of Home Assistant 2026.10. `osv-scanner.toml`, which OSV-Scanner and
 the OpenSSF Scorecard read, accepts such a version with every advisory as a
 `[[PackageOverrides]]` entry, with its reason and an `effectiveUntil` date, after which
 OSV-Scanner reports it again and someone looks again. `python3 .github/blueprint.py
