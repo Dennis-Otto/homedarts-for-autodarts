@@ -13,7 +13,7 @@
 [![CI](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/ci.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/ci.yml)
 [![Coverage 100 %](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://dennis-otto.github.io/homedarts-for-autodarts/development.html#tests)
 
-[**Documentation**](https://dennis-otto.github.io/homedarts-for-autodarts/) · [**Try it live**](https://dennis-otto.github.io/homedarts-for-autodarts/demo/index.html) · [**Deutsche Anleitung**](https://dennis-otto.github.io/homedarts-for-autodarts/de/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
+[**Documentation**](https://dennis-otto.github.io/homedarts-for-autodarts/) · [**Try it live**](https://dennis-otto.github.io/homedarts-for-autodarts/demo/index.html) · [**Deutsche Anleitung**](https://dennis-otto.github.io/homedarts-for-autodarts/de/) · [Nederlands](https://dennis-otto.github.io/homedarts-for-autodarts/nl/) · [Français](https://dennis-otto.github.io/homedarts-for-autodarts/fr/) · [Español](https://dennis-otto.github.io/homedarts-for-autodarts/es/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
 
 </div>
 
@@ -257,7 +257,7 @@ The integration brings every blueprint along and keeps those you haven't changed
 
 ## Documentation
 
-Every guide is on the [documentation website](https://dennis-otto.github.io/homedarts-for-autodarts/), in English and [German](https://dennis-otto.github.io/homedarts-for-autodarts/de/), with a search.
+Every guide is on the [documentation website](https://dennis-otto.github.io/homedarts-for-autodarts/), in English and [German](https://dennis-otto.github.io/homedarts-for-autodarts/de/), with a search. The start page, the quick start, the installation and the frequently asked questions are also in [Dutch](https://dennis-otto.github.io/homedarts-for-autodarts/nl/), [French](https://dennis-otto.github.io/homedarts-for-autodarts/fr/) and [Spanish](https://dennis-otto.github.io/homedarts-for-autodarts/es/).
 
 <details>
 <summary>Every guide, one line each</summary>
@@ -293,6 +293,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/home
 
 - [Changelog](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CHANGELOG.md) and [releases](https://github.com/Dennis-Otto/homedarts-for-autodarts/releases): what every version brought; the [roadmap](https://dennis-otto.github.io/homedarts-for-autodarts/roadmap.html) shows what comes next
 - [Deutsche Dokumentation](https://dennis-otto.github.io/homedarts-for-autodarts/de/): die komplette Anleitung auf Deutsch
+- [Nederlands](https://dennis-otto.github.io/homedarts-for-autodarts/nl/) · [Français](https://dennis-otto.github.io/homedarts-for-autodarts/fr/) · [Español](https://dennis-otto.github.io/homedarts-for-autodarts/es/): the start page, the quick start, the installation and the frequently asked questions in Dutch, French and Spanish
 
 </details>
 

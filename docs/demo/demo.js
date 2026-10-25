@@ -19,8 +19,10 @@ export const AGAIN = 8000;
 // How long the note about the buttons shows.
 export const NOTICE = 4000;
 
-// The languages of the website besides English; the others read the English pages.
-export const WEBSITE_LANGUAGES = ["de"];
+// The languages of the website besides English, as mkdocs.yml builds them; the
+// others read the English pages. A language shows a page it has no version of in
+// English, in its own menu.
+export const WEBSITE_LANGUAGES = ["de", "nl", "fr", "es"];
 
 export const TEXT = {
   en: {

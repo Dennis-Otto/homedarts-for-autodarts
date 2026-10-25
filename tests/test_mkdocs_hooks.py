@@ -3,8 +3,12 @@
 import gzip
 import importlib.util
 import logging
+import re
 from pathlib import Path
 from types import SimpleNamespace
+
+import pytest
+import yaml
 
 ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -26,6 +30,17 @@ ENGLISH = page("cards.md", "cards.html")
 GERMAN = page("cards.de.md", "de/cards.html")
 # A page without a German version, on the German website.
 FALLBACK = page("releases.md", "de/releases.html")
+# A page of the Dutch website, and one that it shows in English.
+DUTCH = page("faq.nl.md", "nl/faq.html")
+IN_ENGLISH = page("games.md", "nl/games.html")
+# The note of the Dutch website on a page that it shows in English.
+NOTE = {
+    "text": "Deze pagina is er nog alleen in het Engels.",
+    "link": "Help mee met de vertaling",
+    "href": "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/480",
+}
+WITH_NOTE = SimpleNamespace(docs_dir=CONFIG.docs_dir, extra={"untranslated": NOTE})
+MKDOCS = yaml.safe_load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
 
 
 class Files:
@@ -124,6 +139,162 @@ def test_a_missing_page_of_the_other_language_warns(caplog):
     assert "cards.md links to missing.de.md, which isn't a page" in caplog.text
 
 
+def test_the_hooks_know_the_languages_of_the_website():
+    """mkdocs.yml builds them, its search knows their words, and the live demo
+    leads to their websites."""
+    i18n = MKDOCS["plugins"]["i18n"]
+    further = [
+        language["locale"]
+        for language in i18n["languages"]
+        if language["build"] and not language.get("default")
+    ]
+    assert tuple(further) == hooks.FURTHER
+    assert i18n["fallback_to_default"] is True
+    search = MKDOCS["plugins"]["search"]
+    assert search["lang"] == [hooks.ENGLISH, *hooks.FURTHER]
+    demo = (ROOT / "docs" / "demo" / "demo.js").read_text(encoding="utf-8")
+    listed = re.search(r"WEBSITE_LANGUAGES = \[([^\]]*)\]", demo)
+    assert listed and re.findall(r'"(\w+)"', listed[1]) == list(hooks.FURTHER)
+
+
+@pytest.mark.parametrize("language", ["nl", "fr", "es"])
+def test_a_further_language_names_its_menu_and_notes_its_english_pages(language):
+    """Its own words for the tabs, the footer, the description and the switch of
+    the theme, and the note on a page it shows in English, with the issue where
+    native speakers help to translate it."""
+    i18n = MKDOCS["plugins"]["i18n"]
+    settings = next(item for item in i18n["languages"] if item["locale"] == language)
+    english = [next(iter(item)) for item in MKDOCS["nav"] if isinstance(item, dict)]
+    assert set(settings["nav_translations"]) == {*english, "Changelog", "Decisions"}
+    assert settings["copyright"] != MKDOCS["copyright"]
+    assert settings["site_description"] != MKDOCS["site_description"]
+    toggles = [option["toggle"]["name"] for option in settings["theme"]["palette"]]
+    assert len(toggles) == len(MKDOCS["theme"]["palette"]) == len(set(toggles))
+    note = settings["extra"]["untranslated"]
+    assert set(note) == {"text", "link", "href"}
+    assert re.fullmatch(
+        r"https://github\.com/Dennis-Otto/homedarts-for-autodarts/issues/\d+",
+        note["href"],
+    )
+
+
+def test_the_website_of_a_page_is_the_language_of_its_folder():
+    for url, language in [
+        ("cards.html", "en"),
+        ("de/cards.html", "de"),
+        ("nl/faq.html", "nl"),
+        ("fr/decisions/x.html", "fr"),
+        ("es/index.html", "es"),
+        ("decisions/x.html", "en"),
+        ("demo/index.html", "en"),
+    ]:
+        assert hooks.website(page("x.md", url)) == language
+
+
+def test_a_link_to_any_other_language_leads_to_its_website():
+    assert markdown("[English](faq.md#top)", DUTCH) == (
+        '<a href="../faq.html#top">English</a>'
+    )
+    assert markdown("[Deutsch](faq.de.md)", DUTCH) == (
+        '<a href="../de/faq.html">Deutsch</a>'
+    )
+    assert markdown("[Nederlands](faq.nl.md)", ENGLISH) == (
+        '<a href="nl/faq.html">Nederlands</a>'
+    )
+    assert markdown("[Español](faq.es.md)", page("faq.fr.md", "fr/faq.html")) == (
+        '<a href="../es/faq.html">Español</a>'
+    )
+    assert markdown("[Nederlands](installation.nl.md)", GERMAN) == (
+        '<a href="../nl/installation.html">Nederlands</a>'
+    )
+
+
+def test_a_page_of_a_further_language_links_to_the_pages_of_its_website():
+    """Its own pages, and the English pages that its website shows for want of its
+    own, stay for MkDocs; a link to an English page that the language has a page
+    of leads to the English website, as it does on the German one."""
+    for text in [
+        "[Vragen](faq.nl.md#spelen)",
+        "[Games](games.md#start-a-game)",
+        "[Releases](releases.md)",
+    ]:
+        assert markdown(text, DUTCH) == text
+    assert markdown("[Reconfigure](installation.md#reconfigure)", IN_ENGLISH) == (
+        '<a href="../installation.html#reconfigure">Reconfigure</a>'
+    )
+    assert markdown("[Cards](cards.md)", IN_ENGLISH) == "[Cards](cards.md)"
+    assert markdown("[Devices](README.md#supported-devices)", DUTCH) == (
+        '<a href="../index.html#supported-devices">Devices</a>'
+    )
+
+
+def test_a_missing_page_of_a_further_language_warns(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert markdown("[x](cards.nl.md)", ENGLISH) == "[x](cards.nl.md)"
+    assert "cards.md links to cards.nl.md, which isn't a page" in caplog.text
+
+
+def test_a_page_shown_in_english_gets_the_note_of_its_language():
+    html = '<div lang="en">\n<h1 id="games">Games</h1>\n<p>Play.</p>\n</div>'
+    assert hooks.on_page_content(html, IN_ENGLISH, WITH_NOTE, Files()) == (
+        '<div lang="en">\n<h1 id="games">Games</h1>'
+        '<div class="admonition info untranslated" lang="nl">'
+        f"<p>{NOTE['text']} "
+        f'<a href="{NOTE["href"]}">{NOTE["link"]}</a></p></div>'
+        "\n<p>Play.</p>\n</div>"
+    )
+    # A page without a title gets it first.
+    assert hooks.on_page_content("<p>Play.</p>", IN_ENGLISH, WITH_NOTE, Files()) == (
+        '<div class="admonition info untranslated" lang="nl">'
+        f"<p>{NOTE['text']} "
+        f'<a href="{NOTE["href"]}">{NOTE["link"]}</a></p></div><p>Play.</p>'
+    )
+
+
+def test_the_note_is_written_as_html():
+    config = SimpleNamespace(
+        docs_dir=CONFIG.docs_dir,
+        extra={"untranslated": {"text": "<b>&", "link": "a < b", "href": 'x"y'}},
+    )
+    assert hooks.on_page_content("", IN_ENGLISH, config, Files()) == (
+        '<div class="admonition info untranslated" lang="nl">'
+        '<p>&lt;b&gt;&amp; <a href="x&quot;y">a &lt; b</a></p></div>'
+    )
+
+
+def test_a_page_in_its_own_language_gets_no_note():
+    """Nor a page that moved, which leads on at once, nor a page of a website whose
+    language has no note, such as the German one."""
+    html = "<h1>Games</h1>"
+    moved = page("LOCAL-CONTROL.md", "nl/LOCAL-CONTROL.html", moved="installation.md")
+    for of, config in [
+        (DUTCH, WITH_NOTE),
+        (ENGLISH, WITH_NOTE),
+        (moved, WITH_NOTE),
+        (FALLBACK, CONFIG),
+        (FALLBACK, SimpleNamespace(docs_dir=CONFIG.docs_dir, extra={})),
+    ]:
+        assert hooks.on_page_content(html, of, config, Files()) == html
+
+
+def test_a_page_shown_in_english_names_no_versions_of_its_own():
+    """It is a copy of the English page, which search engines list instead."""
+    versions = (
+        f'<link rel="alternate" href="{SITE}games.html" hreflang="en">\n    '
+        f'<link rel="alternate" href="{SITE}de/games.html" hreflang="de">'
+    )
+    output = (
+        f'<html><head><link rel="canonical" href="{SITE}games.html">{versions}'
+        '<link rel="alternate" type="application/rss+xml" href="feed.xml">'
+        "</head><body></body></html>"
+    )
+    config = SimpleNamespace(site_name="HomeDarts for Autodarts")
+    assert hooks.on_post_page(output, IN_ENGLISH, config) == output.replace(
+        versions, ""
+    )
+    assert hooks.on_post_page(output, DUTCH, config) == output
+
+
 def test_the_links_of_the_html_lead_to_pages():
     games = page("games.de.md", "de/games.html")
     html = '<a href="games.de.md#turniere">Turniere</a> <a href="cards.md">English</a>'
@@ -198,6 +369,19 @@ def test_a_start_page_is_titled_with_the_name_of_its_website():
     )
 
 
+@pytest.mark.parametrize("language", ["nl", "fr", "es"])
+def test_the_start_page_of_a_further_language_is_titled_with_the_name(language):
+    config = SimpleNamespace(site_name="HomeDarts for Autodarts")
+    title = "Start - HomeDarts for Autodarts"
+    output = hooks.on_post_page(
+        head(title, f"{SITE}{language}/index.html", shared(title)),
+        page(f"index.{language}.md", f"{language}/index.html"),
+        config,
+    )
+    assert "<title>HomeDarts for Autodarts</title>" in output
+    assert shared("HomeDarts for Autodarts") in output
+
+
 def test_the_name_of_the_website_is_written_as_html():
     output = hooks.on_post_page(
         head("Home", SITE, shared("Home")),
@@ -257,6 +441,20 @@ def test_a_moved_page_leads_to_the_german_page_on_the_german_website():
     assert moved.meta["redirect"] == "<de/releases.html from de/old.html>"
 
 
+def test_a_moved_page_leads_to_the_page_of_each_further_language():
+    moved = page("LOCAL-CONTROL.md", "fr/LOCAL-CONTROL.html", moved="installation.md")
+    french = page("installation.fr.md", "fr/installation.html")
+    hooks.on_page_markdown("# Old\n", moved, CONFIG, Files(french))
+    assert moved.meta["redirect"] == (
+        "<fr/installation.html from fr/LOCAL-CONTROL.html>"
+    )
+    moved = page("old.md", "es/old.html", moved="games.md")
+    hooks.on_page_markdown(
+        "# Old\n", moved, CONFIG, Files(page("games.md", "es/games.html"))
+    )
+    assert moved.meta["redirect"] == "<es/games.html from es/old.html>"
+
+
 def test_a_page_that_moved_nowhere_warns(caplog):
     moved = page("SETUP-DE.md", "SETUP-DE.html", moved="nothing.md")
     with caplog.at_level(logging.WARNING):
@@ -278,6 +476,17 @@ def test_the_line_back_to_the_overview_stays_on_github():
     assert markdown("# Releases\n\n[← Documentation](README.md)\n", FALLBACK) == (
         "# Releases\n"
     )
+    # With the links to every other language, on GitHub, or the one back to English.
+    assert markdown(
+        "# FAQ\n\n[← Documentation](README.md) · [Deutsch](faq.de.md) · "
+        "[Nederlands](faq.nl.md) · [Français](faq.fr.md) · [Español](faq.es.md)\n\n"
+        "Text.\n",
+        page("faq.md", "faq.html"),
+    ) == ("# FAQ\n\nText.\n")
+    assert markdown(
+        "# Vragen\n\n[← Documentatie](README.md) · [English](faq.md)\n\nTekst.\n",
+        DUTCH,
+    ) == ("# Vragen\n\nTekst.\n")
     decision = page("decisions/0001-x.md", "decisions/0001-x.html")
     assert markdown("[← Decisions](../README.md)\n\nText.\n", decision) == "\nText.\n"
 

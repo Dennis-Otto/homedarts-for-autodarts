@@ -4,7 +4,7 @@ description: "Short answers about HomeDarts for Autodarts: account, devices, onl
 
 # Frequently asked questions
 
-[← Documentation](README.md) · [Deutsch](faq.de.md)
+[← Documentation](README.md) · [Deutsch](faq.de.md) · [Nederlands](faq.nl.md) · [Français](faq.fr.md) · [Español](faq.es.md)
 
 Short answers, each with the page that has the details. Your question is missing? Ask it in [GitHub Discussions](https://github.com/Dennis-Otto/homedarts-for-autodarts/discussions).
 

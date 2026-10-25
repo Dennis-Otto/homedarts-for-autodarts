@@ -4,7 +4,7 @@ description: "Install HomeDarts for Autodarts with HACS, add your board by its a
 
 # Installation and setup
 
-[← Documentation](README.md) · [Deutsch](installation.de.md)
+[← Documentation](README.md) · [Deutsch](installation.de.md) · [Nederlands](installation.nl.md) · [Français](installation.fr.md) · [Español](installation.es.md)
 
 ## Requirements
 
