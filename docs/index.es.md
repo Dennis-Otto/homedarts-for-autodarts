@@ -65,17 +65,17 @@ HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación
 
     ---
 
-    Un marcador para una tableta o un televisor, también por Chromecast, legible desde la línea de tiro, con una pantalla de nueva partida, un cantor y un modo de reposo. Siete tarjetas del panel y un panel automático, en inglés, alemán, neerlandés, francés y español.
+    Un marcador para una tableta o un televisor, también por Chromecast, legible desde la línea de tiro, con una pantalla de nueva partida, un locutor y un modo de espera. Siete tarjetas del panel y un panel automático, en inglés, alemán, neerlandés, francés y español.
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animación: el mapa de calor pasa de los sectores a los números y a las posiciones reales de los dardos, y luego a los dardos de un jugador](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animación: el mapa de aciertos pasa de los sectores a los números y a las posiciones reales de los dardos, y luego a los dardos de un jugador](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Estadísticas con mapas de calor**
+    :material-chart-line:{ .lg .middle } **Estadísticas con mapas de aciertos**
 
     ---
 
-    Media de 3 dardos, media de los 9 primeros, porcentaje de cierre y de dobles, un mapa de calor de cada sector o de las posiciones reales de los dardos, y dónde puntúa más cada jugador por dardo. Perfiles de jugador con insignias, tendencias semanales, una clasificación, un informe semanal y un calendario de entrenamiento.
+    Media de 3 dardos, media de los 9 primeros, porcentaje de cierre y de dobles, un mapa de aciertos de cada sector o de las posiciones reales de los dardos, y dónde puntúa más cada jugador por dardo. Perfiles de jugador con insignias, tendencias semanales, una clasificación, un informe semanal y un calendario de entrenamiento.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
@@ -85,7 +85,7 @@ HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación
 
     ---
 
-    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Dieciséis blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, cantores de dardos y de entrenamiento, fotos de momentos destacados, informes, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
+    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Dieciséis blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, locutores de dardos y de entrenamiento, fotos de momentos destacados, informes, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -121,7 +121,7 @@ Todo ocurre en tu red, en menos de un segundo: el Board Manager nombra el sector
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/dart-journey-dark.png">
-  <img src="images/en/dart-journey-light.png" alt="El viaje de un dardo: un dardo se clava en el triple 20. Las cámaras de la diana lo ven, y el Board Manager en el PC de la diana nombra el sector. Un mensaje en tiempo real lo lleva por tu red a HomeDarts en Home Assistant, que actualiza las entidades, envía los eventos de la diana e ilumina el sector en las tarjetas y el marcador. Tu automatización reacciona a los eventos, por ejemplo con luces que parpadean por un 180 o un cantor. Todo dura menos de un segundo y no necesita la nube" width="560">
+  <img src="images/en/dart-journey-light.png" alt="The journey of a dart: a dart lands in triple 20. The cameras of the board see it, and the Board Manager on the board PC names the field. A realtime message carries it over your network to HomeDarts in Home Assistant, which updates the entities, sends the board events and lights up the field on the cards and the scoreboard. Your automation reacts to the events, for example with flashing lights for a 180 or a caller. All of it takes less than a second and needs no cloud" lang="en" width="560">
 </picture>
 
 [:octicons-arrow-right-24: How it works](how-it-works.md)
@@ -132,7 +132,7 @@ Frente a la aplicación de Autodarts con la extensión Tools for Autodarts, dart
 
 - **Sin nube:** HomeDarts habla con la interfaz local del Board Manager y no necesita una cuenta de Autodarts.
 - **Entidades y eventos en Home Assistant:** un evento para cada dardo, tirada, retirada de dardos, bust, leg y partido, y dieciséis blueprints que hacen algo con ellos desde el principio.
-- **Estadísticas en casa:** medias, mapas de calor, perfiles y un año de historial, guardados en Home Assistant.
+- **Estadísticas en casa:** medias, mapas de aciertos, perfiles y un año de historial, guardados en Home Assistant.
 - **También sin diana Autodarts:** en un teclado numérico o con una Granboard por Bluetooth *(experimental)*.
 - **Gratis:** código abierto con licencia MIT, sin versión de pago.
 
@@ -151,8 +151,8 @@ En inglés:
 - :material-swap-horizontal: [**Coming from another tool**](coming-from.md): las otras integraciones, los puentes MQTT, darts-caller, darts-wled y Tools for Autodarts comparados, y cómo cambiar
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md): el nuevo nombre desde la versión 2.0, y cómo HomeDarts transfiere tus dianas
 - :material-bullseye-arrow: [**Games and rules**](games.md): cada juego de un vistazo, cuatro formas de empezar uno, partidos, equipos, hándicaps, el bull-off y los torneos
-- :material-television: [**Scoreboard at the board**](scoreboard.md): una tableta o un televisor junto a la diana, en horizontal y en vertical, la pantalla de nueva partida, el cantor y el modo de reposo
-- :material-chart-line: [**Statistics and players**](statistics.md): sesiones, récords personales, mapas de calor, dónde apuntar, progreso, perfiles, logros y la clasificación
+- :material-television: [**Scoreboard at the board**](scoreboard.md): una tableta o un televisor junto a la diana, en horizontal y en vertical, la pantalla de nueva partida, el locutor y el modo de espera
+- :material-chart-line: [**Statistics and players**](statistics.md): sesiones, récords personales, mapas de aciertos, dónde apuntar, progreso, perfiles, logros y la clasificación
 - :material-home-automation: [**Automations**](automations.md): dieciséis blueprints, sus ajustes, los eventos de la diana y ejemplos listos para usar
 - :material-play-network: [**Online matches**](online-matches.md): busts, legs y partidos ganados de los partidos en línea como eventos de la diana, con Tools for Autodarts *(experimental)*
 
@@ -212,6 +212,6 @@ Funciona todo hardware en el que corra el Board Manager de Autodarts, porque la 
 
 ## Idiomas
 
-La integración habla español, inglés, alemán, neerlandés y francés: la configuración, las opciones, las entidades y sus estados, las acciones, los mensajes y las reparaciones, las tarjetas con sus editores y el cantor del marcador. Sigue el idioma de Home Assistant; una variante regional como `es-419` cuenta como su idioma.
+La integración habla español, inglés, alemán, neerlandés y francés: la configuración, las opciones, las entidades y sus estados, las acciones, los mensajes y las reparaciones, las tarjetas con sus editores y el locutor del marcador. Sigue el idioma de Home Assistant; una variante regional como `es-419` cuenta como su idioma.
 
 Este sitio está en inglés y alemán, y el inicio, el inicio rápido, la instalación y las preguntas frecuentes también en neerlandés, francés y español. Las demás páginas las muestra en inglés. ¿Hablas español? [Ayúdanos a traducir](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/482): corrige una frase o traduce una página que eches de menos, directamente en GitHub, sin programar.

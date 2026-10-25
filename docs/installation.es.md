@@ -53,7 +53,7 @@ Qué forma encaja con tu diana:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/add-board-dark.png">
-  <img src="images/en/add-board-light.png" alt="Qué forma de añadir una diana: una diana sin Autodarts usa la cuarta forma, Diana sin Autodarts, y sus dardos se introducen en el teclado numérico. Una diana Autodarts con Board Manager 2 suele aparecer sola como Diana Autodarts encontrada en Descubierto: elige Añadir y confirma. Si no, introduce la dirección del PC de la diana si la conoces, o busca dianas en esta red, que abre el formulario de la dirección si no encuentra ninguna. Cada forma con Autodarts termina en la misma diana local, un dispositivo con todas sus entidades" width="480">
+  <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
 <img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="520">

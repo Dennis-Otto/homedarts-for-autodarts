@@ -61,7 +61,7 @@ Ve a **Ajustes → Paneles de control → Añadir panel de control → HomeDarts
 2. Abre el panel de HomeDarts y su vista *Marcador*.
 3. Pon el marcador a pantalla completa y mantén la pantalla encendida mientras la tableta se carga.
 
-La [guía del marcador](scoreboard.md#set-up-the-screen) tiene los detalles y las opciones, como el cantor.
+La [guía del marcador](scoreboard.md#set-up-the-screen) tiene los detalles y las opciones, como el locutor.
 
 ## 7. Jugar tu primera partida
 
@@ -72,7 +72,7 @@ Si la diana lee mal un dardo, tócalo en la tirada y corrígelo. La [guía de lo
 ## Y después
 
 - **Luz y sonido:** los [blueprints](automations.md#blueprints) hacen parpadear tus luces con un 180, cantan las puntuaciones o hacen una foto de un momento destacado. Vienen con la integración y te esperan en la página de planos de Home Assistant.
-- **Tu progreso:** los récords personales, un mapa de calor de tus dardos, las tendencias y los logros están en la [guía de las estadísticas](statistics.md).
+- **Tu progreso:** los récords personales, un mapa de aciertos de tus dardos, las tendencias y los logros están en la [guía de las estadísticas](statistics.md).
 - **Amigos en casa:** los equipos, los hándicaps y los torneos de hasta 32 jugadores están en la [guía de los juegos](games.md).
 
 ## Si algo no funciona

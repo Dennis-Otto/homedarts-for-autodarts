@@ -65,14 +65,14 @@ Le [guide du tableau des scores](scoreboard.md#set-up-the-screen) donne les dét
 
 ## 7. Jouer votre première partie
 
-Touchez **Nouvelle partie** sur le tableau des scores. Choisissez 501, ajoutez-vous, ajoutez le **bot** avec **+ Bot** si vous jouez seul, puis touchez **Démarrer 501**. Lancez vos fléchettes : le tableau des scores compte, affiche votre chemin de finish et passe la main après chaque volée.
+Touchez **Nouvelle partie** sur le tableau des scores. Choisissez 501, ajoutez-vous, ajoutez le **bot** avec **+ Bot** si vous jouez seul, puis touchez **Démarrer 501**. Lancez vos fléchettes : le tableau des scores compte, affiche votre combinaison de finish et passe la main après chaque volée.
 
 Si la cible lit mal une fléchette, touchez-la dans la volée et corrigez-la. Le [guide des jeux](games.md#start-a-game) présente chaque jeu et les autres façons d'en lancer un.
 
 ## Et ensuite
 
 - **Lumière et son :** les [blueprints](automations.md#blueprints) font clignoter vos lampes sur un 180, annoncent les scores ou prennent une photo d'un beau coup. Ils sont livrés avec l'intégration et vous attendent sur la page des blueprints de Home Assistant.
-- **Vos progrès :** les records personnels, une carte de chaleur de vos fléchettes, les tendances et les succès sont dans le [guide des statistiques](statistics.md).
+- **Vos progrès :** les records personnels, une carte des touches de vos fléchettes, les tendances et les succès sont dans le [guide des statistiques](statistics.md).
 - **Des amis à la maison :** les équipes, les handicaps et les tournois jusqu'à 32 joueurs sont dans le [guide des jeux](games.md).
 
 ## Si quelque chose ne marche pas

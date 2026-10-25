@@ -65,17 +65,17 @@ HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden aan 
 
     ---
 
-    Een scorebord voor een tablet of tv, ook via Chromecast, leesbaar vanaf de oche, met een scherm voor een nieuw spel, een caller en een ruststand. Zeven dashboardkaarten en een automatisch dashboard, in het Engels, Duits, Nederlands, Frans en Spaans.
+    Een scorebord voor een tablet of tv, ook via Chromecast, leesbaar vanaf de oche, met een scherm voor een nieuw spel, een caller en een rustmodus. Zeven dashboardkaarten en een automatisch dashboard, in het Engels, Duits, Nederlands, Frans en Spaans.
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animatie: de heatmap wisselt van vakken naar getallen en de echte posities van de darts, en dan naar de darts van één speler](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animatie: de trefferkaart wisselt van vakken naar getallen en de echte posities van de darts, en dan naar de darts van één speler](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Statistieken met heatmaps**
+    :material-chart-line:{ .lg .middle } **Statistieken met trefferkaarten**
 
     ---
 
-    Gemiddelde per 3 darts, first 9-gemiddelde, uitgooi- en dubbelpercentage, een heatmap van elk vak of van de echte dartposities, en waar elke speler per dart het meest scoort. Spelersprofielen met badges, weektrends, een ranglijst, een weekrapport en een trainingskalender.
+    Gemiddelde per 3 darts, first 9-gemiddelde, uitgooi- en dubbelpercentage, een trefferkaart van elk vak of van de echte dartposities, en waar elke speler per dart het meest scoort. Spelersprofielen met badges, weektrends, een ranglijst, een weekrapport en een trainingskalender.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
@@ -121,7 +121,7 @@ Alles gebeurt in je eigen netwerk, in minder dan een seconde: de Board Manager b
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/dart-journey-dark.png">
-  <img src="images/en/dart-journey-light.png" alt="De reis van een dart: een dart landt in triple 20. De camera's van het bord zien hem, en de Board Manager op de pc van het bord benoemt het vak. Een realtime bericht brengt het via je netwerk naar HomeDarts in Home Assistant, dat de entiteiten bijwerkt, de bordgebeurtenissen verstuurt en het vak oplicht op de kaarten en het scorebord. Je automatisering reageert op de gebeurtenissen, bijvoorbeeld met knipperende lampen voor een 180 of een caller. Alles samen duurt minder dan een seconde en heeft geen cloud nodig" width="560">
+  <img src="images/en/dart-journey-light.png" alt="The journey of a dart: a dart lands in triple 20. The cameras of the board see it, and the Board Manager on the board PC names the field. A realtime message carries it over your network to HomeDarts in Home Assistant, which updates the entities, sends the board events and lights up the field on the cards and the scoreboard. Your automation reacts to the events, for example with flashing lights for a 180 or a caller. All of it takes less than a second and needs no cloud" lang="en" width="560">
 </picture>
 
 [:octicons-arrow-right-24: How it works](how-it-works.md)
@@ -132,7 +132,7 @@ Anders dan de Autodarts-app met de browserextensie Tools for Autodarts, darts-ca
 
 - **Zonder cloud:** HomeDarts praat met de lokale interface van de Board Manager en heeft geen Autodarts-account nodig.
 - **Entiteiten en gebeurtenissen in Home Assistant:** een gebeurtenis voor elke dart, beurt, takeout, bust, leg en wedstrijd, en zestien blueprints die er meteen iets mee doen.
-- **Statistieken thuis:** gemiddelden, heatmaps, profielen en een jaar geschiedenis, opgeslagen in Home Assistant.
+- **Statistieken thuis:** gemiddelden, trefferkaarten, profielen en een jaar geschiedenis, opgeslagen in Home Assistant.
 - **Ook zonder Autodarts-bord:** op een toetsenblok of met een Granboard via Bluetooth *(experimenteel)*.
 - **Gratis:** open source onder de MIT-licentie, zonder betaalde versie.
 
@@ -151,8 +151,8 @@ In het Engels:
 - :material-swap-horizontal: [**Coming from another tool**](coming-from.md): de andere integraties, MQTT-bruggen, darts-caller, darts-wled en Tools for Autodarts vergeleken, en hoe je overstapt
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md): de nieuwe naam sinds versie 2.0, en hoe HomeDarts je borden overneemt
 - :material-bullseye-arrow: [**Games and rules**](games.md): elk spel in één oogopslag, vier manieren om er een te starten, wedstrijden, teams, handicaps, de bull-off en toernooien
-- :material-television: [**Scoreboard at the board**](scoreboard.md): een tablet of tv naast het bord, liggend en staand, het scherm voor een nieuw spel, de caller en de ruststand
-- :material-chart-line: [**Statistics and players**](statistics.md): sessies, persoonlijke records, heatmaps, waar je moet mikken, vooruitgang, profielen, prestaties en de ranglijst
+- :material-television: [**Scoreboard at the board**](scoreboard.md): een tablet of tv naast het bord, liggend en staand, het scherm voor een nieuw spel, de caller en de rustmodus
+- :material-chart-line: [**Statistics and players**](statistics.md): sessies, persoonlijke records, trefferkaarten, waar je moet mikken, vooruitgang, profielen, prestaties en de ranglijst
 - :material-home-automation: [**Automations**](automations.md): zestien blueprints, hun instellingen, bordgebeurtenissen en kant-en-klare voorbeelden
 - :material-play-network: [**Online matches**](online-matches.md): busts, gewonnen legs en wedstrijden van onlinewedstrijden als bordgebeurtenissen, met Tools for Autodarts *(experimenteel)*
 

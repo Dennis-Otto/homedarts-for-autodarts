@@ -45,7 +45,7 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     ---
 
-    X01 de 101 à 1001 avec le chemin de finish après chaque fléchette, Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random et Hidden Cricket, et neuf jeux de fête jusqu'à huit joueurs, seul ou en match jusqu'à quatre avec manches, sets, équipes et handicaps.
+    X01 de 101 à 1001 avec la combinaison de finish après chaque fléchette, Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random et Hidden Cricket, et neuf jeux de fête jusqu'à huit joueurs, seul ou en match jusqu'à quatre avec manches, sets, équipes et handicaps.
 
     [:octicons-arrow-right-24: Games and rules](games.md)
 
@@ -69,13 +69,13 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animation : la carte de chaleur passe des segments aux numéros et aux positions réelles des fléchettes, puis aux fléchettes d'un seul joueur](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animation : la carte des touches passe des segments aux numéros et aux positions réelles des fléchettes, puis aux fléchettes d'un seul joueur](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Statistiques avec cartes de chaleur**
+    :material-chart-line:{ .lg .middle } **Statistiques avec cartes des touches**
 
     ---
 
-    Moyenne sur 3 fléchettes, moyenne des 9 premières, taux de finish et de doubles, une carte de chaleur de chaque segment ou des positions réelles des fléchettes, et l'endroit où chaque joueur marque le plus par fléchette. Des profils de joueurs avec badges, des tendances hebdomadaires, un classement, un rapport hebdomadaire et un calendrier d'entraînement.
+    Moyenne sur 3 fléchettes, moyenne des 9 premières, taux de finish et de doubles, une carte des touches de chaque segment ou des positions réelles des fléchettes, et l'endroit où chaque joueur marque le plus par fléchette. Des profils de joueurs avec badges, des tendances hebdomadaires, un classement, un rapport hebdomadaire et un calendrier d'entraînement.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
@@ -121,7 +121,7 @@ Tout se passe dans votre réseau, en moins d'une seconde : le Board Manager nom
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/dart-journey-dark.png">
-  <img src="images/en/dart-journey-light.png" alt="Le parcours d'une fléchette : une fléchette se plante dans le triple 20. Les caméras de la cible la voient, et le Board Manager sur le PC de la cible nomme le segment. Un message en temps réel le transmet par votre réseau à HomeDarts dans Home Assistant, qui met à jour les entités, envoie les événements de la cible et allume le segment sur les cartes et le tableau des scores. Votre automatisation réagit aux événements, par exemple avec des lumières qui clignotent pour un 180 ou un annonceur. Le tout prend moins d'une seconde et n'a pas besoin du cloud" width="560">
+  <img src="images/en/dart-journey-light.png" alt="The journey of a dart: a dart lands in triple 20. The cameras of the board see it, and the Board Manager on the board PC names the field. A realtime message carries it over your network to HomeDarts in Home Assistant, which updates the entities, sends the board events and lights up the field on the cards and the scoreboard. Your automation reacts to the events, for example with flashing lights for a 180 or a caller. All of it takes less than a second and needs no cloud" lang="en" width="560">
 </picture>
 
 [:octicons-arrow-right-24: How it works](how-it-works.md)
@@ -132,7 +132,7 @@ Par rapport à l'application Autodarts avec l'extension Tools for Autodarts, à 
 
 - **Sans cloud :** HomeDarts parle à l'interface locale du Board Manager et n'a besoin d'aucun compte Autodarts.
 - **Entités et événements dans Home Assistant :** un événement pour chaque fléchette, volée, retrait, bust, manche et match, et seize blueprints qui en font quelque chose tout de suite.
-- **Statistiques à la maison :** moyennes, cartes de chaleur, profils et un an d'historique, enregistrés dans Home Assistant.
+- **Statistiques à la maison :** moyennes, cartes des touches, profils et un an d'historique, enregistrés dans Home Assistant.
 - **Même sans cible Autodarts :** sur un pavé numérique ou avec une Granboard via Bluetooth *(expérimental)*.
 - **Gratuit :** open source sous licence MIT, sans version payante.
 
@@ -152,7 +152,7 @@ En anglais :
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md) : le nouveau nom depuis la version 2.0, et comment HomeDarts reprend vos cibles
 - :material-bullseye-arrow: [**Games and rules**](games.md) : chaque jeu en un coup d'œil, quatre façons d'en lancer un, les matchs, les équipes, les handicaps, le bull-off et les tournois
 - :material-television: [**Scoreboard at the board**](scoreboard.md) : une tablette ou une télévision à côté de la cible, en paysage et en portrait, l'écran de nouvelle partie, l'annonceur et le mode veille
-- :material-chart-line: [**Statistics and players**](statistics.md) : les séances, les records personnels, les cartes de chaleur, où viser, les progrès, les profils, les succès et le classement
+- :material-chart-line: [**Statistics and players**](statistics.md) : les séances, les records personnels, les cartes des touches, où viser, les progrès, les profils, les succès et le classement
 - :material-home-automation: [**Automations**](automations.md) : seize blueprints, leurs réglages, les événements de la cible et des exemples prêts à l'emploi
 - :material-play-network: [**Online matches**](online-matches.md) : les busts, manches et matchs gagnés des matchs en ligne comme événements de la cible, avec Tools for Autodarts *(expérimental)*
 

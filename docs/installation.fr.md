@@ -53,7 +53,7 @@ Quelle façon convient à votre cible :
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/add-board-dark.png">
-  <img src="images/en/add-board-light.png" alt="Quelle façon d'ajouter une cible : une cible sans Autodarts prend la quatrième façon, Cible sans Autodarts, et ses fléchettes se saisissent sur le pavé numérique. Une cible Autodarts avec Board Manager 2 apparaît en général toute seule comme Cible Autodarts détectée sous Découverts : choisissez Ajouter et confirmez. Sinon, saisissez l'adresse du PC de la cible si vous la connaissez, ou recherchez des cibles sur ce réseau, ce qui ouvre le formulaire d'adresse quand aucune cible n'est trouvée. Chaque façon avec Autodarts aboutit à la même cible locale, un appareil avec toutes ses entités" width="480">
+  <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
 <img src="images/en/setup-menu.png" alt="Le menu de configuration de HomeDarts : rechercher des cibles sur ce réseau, saisir l'adresse d'une cible, ou une cible sans Autodarts" width="520">

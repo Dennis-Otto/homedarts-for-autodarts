@@ -72,7 +72,7 @@ Leest het bord een dart verkeerd, tik dan op die dart in de beurt en verbeter he
 ## En dan?
 
 - **Licht en geluid:** de [blueprints](automations.md#blueprints) laten je lampen knipperen bij een 180, roepen de scores om of maken een foto van een hoogtepunt. Ze komen mee met de integratie en wachten op de pagina met blueprints van Home Assistant.
-- **Je vooruitgang:** persoonlijke records, een heatmap van je darts, trends en prestaties staan in de [handleiding van de statistieken](statistics.md).
+- **Je vooruitgang:** persoonlijke records, een trefferkaart van je darts, trends en prestaties staan in de [handleiding van de statistieken](statistics.md).
 - **Vrienden op bezoek:** teams, handicaps en toernooien voor maximaal 32 spelers staan in de [handleiding van de spellen](games.md).
 
 ## Als iets niet werkt

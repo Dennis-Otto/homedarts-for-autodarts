@@ -62,9 +62,9 @@ Un jugador que lanza en dos dianas tiene un perfil en cada una. [`homedarts.rest
 
 Sí: en cualquier pantalla cuyo navegador abra tu Home Assistant, como una tableta en la pared, también una tableta Fire, un televisor con navegador, un PC pequeño o un teléfono viejo. No hay que instalar nada en ella. Dale a la pantalla un usuario propio de Home Assistant y abre la vista *Marcador* del panel automático, a pantalla completa o en un navegador de quiosco. Un televisor con Chromecast o un Google Nest Hub la muestra con Home Assistant Cast, sin navegador propio. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
 
-### ¿Qué idiomas habla y qué voces tiene el cantor?
+### ¿Qué idiomas habla y qué voces tiene el locutor?
 
-Español, inglés, alemán, neerlandés y francés, según el idioma de Home Assistant: la configuración, las entidades, las tarjetas y el cantor. El cantor del marcador habla con una voz del navegador de la pantalla para ese idioma, o con los sonidos grabados de un paquete de voz, como uno de darts-caller o uno que grabes con Piper. Los blueprints del cantor de dardos y del cantor de entrenamiento hablan en el idioma de Home Assistant, a través de la conversión de texto a voz y los altavoces de tu Home Assistant. [Idiomas](index.es.md#idiomas) · [Which caller?](automations.md#which-caller)
+Español, inglés, alemán, neerlandés y francés, según el idioma de Home Assistant: la configuración, las entidades, las tarjetas y el locutor. El locutor del marcador habla con una voz del navegador de la pantalla para ese idioma, o con los sonidos grabados de un paquete de voz, como uno de darts-caller o uno que grabes con Piper. Los blueprints del locutor de dardos y del locutor de entrenamiento hablan en el idioma de Home Assistant, a través de la conversión de texto a voz y los altavoces de tu Home Assistant. [Idiomas](index.es.md#idiomas) · [Which caller?](automations.md#which-caller)
 
 ## Privacidad
 

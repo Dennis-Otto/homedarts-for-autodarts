@@ -53,7 +53,7 @@ Welke manier bij je bord past:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/add-board-dark.png">
-  <img src="images/en/add-board-light.png" alt="Welke manier om een bord toe te voegen: een dartbord zonder Autodarts krijgt de vierde manier, Dartbord zonder Autodarts, en de darts worden op het toetsenblok ingevoerd. Een Autodarts-bord met Board Manager 2 verschijnt meestal vanzelf als Autodarts-bord gevonden onder Ontdekt: kies Toevoegen en bevestig. Voer anders het adres van de pc van het bord in als je het kent, of zoek borden in dit netwerk, wat het adresformulier opent als er geen bord gevonden wordt. Elke manier met Autodarts eindigt met hetzelfde lokale bord, één apparaat met al zijn entiteiten" width="480">
+  <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
 <img src="images/en/setup-menu.png" alt="Het menu voor het instellen van HomeDarts: borden zoeken in dit netwerk, een bordadres invoeren of een dartbord zonder Autodarts" width="520">
