@@ -137,7 +137,10 @@ def test_a_store_from_before_the_modes_loads_unchanged_byte_for_byte(name):
     saved = STORES_BEFORE_MODES[name]
     restored = PracticeGame()
     restored.restore(json.loads(saved))
-    assert text(restored) == saved
+    # The number of the match came after the modes, and starts at 0.
+    stored = json.loads(text(restored))
+    assert stored.pop("serial") == 0
+    assert json.dumps(stored) == saved
 
 
 def test_an_undone_visit_comes_back_to_the_game_of_its_checkpoint():

@@ -166,7 +166,8 @@ def test_darts_name_the_game_and_the_player_at_the_board():
     # The entities show the visit with its darts numbered and the games.
     assert [throw["dart"] for throw in data["throws"]] == [1]
     assert data["practice"]["undo"] is False
-    assert data["revision"] == games.revision == 1
+    # Raised once by the start of the game, once by the dart.
+    assert data["revision"] == games.revision == 2
     assert {"training", "practice", "quality"} <= data.keys()
 
 

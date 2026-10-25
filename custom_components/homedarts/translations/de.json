@@ -678,6 +678,8 @@
               "leg_won": "Leg gewonnen",
               "match_won": "Match gewonnen",
               "turn_changed": "Spielerwechsel",
+              "game_started": "Spiel gestartet",
+              "game_ended": "Spiel beendet",
               "drill_finished": "Trainingsspiel beendet",
               "checkout_attempt": "Checkout-Versuch",
               "personal_best": "Bestleistung",
@@ -720,6 +722,28 @@
               "bobs_27": "Bob's 27",
               "streak": "Serie",
               "darts_thrown": "Geworfene Darts"
+            }
+          },
+          "mode": {
+            "name": "Modus",
+            "state": {
+              "practice": "Übung",
+              "match": "Match",
+              "party": "Partyspiel",
+              "training": "Trainingsspiel",
+              "tournament": "Turnier"
+            }
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "manual": "Von Hand",
+              "new_session": "Neue Session",
+              "first_dart": "Erster Dart",
+              "idle": "Inaktiv",
+              "won": "Gewonnen",
+              "stopped": "Gestoppt",
+              "replaced": "Ersetzt"
             }
           }
         }

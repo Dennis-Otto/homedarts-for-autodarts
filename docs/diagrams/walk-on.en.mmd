@@ -1,0 +1,22 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: How the walk-on music plays
+  accDescr: When a game starts, the blueprint looks for the song of each player in the song pack, in the order of the seats: the player's own song, such as alex.mp3, bot.mp3 for the bot, or default.mp3. Each song plays for the seconds per walk-on; a player without a song walks on in silence. The first dart ends the walk-ons at once. A game that is stopped or replaced stops the music. When the darts of the winning visit are pulled, the song of the winner plays.
+  STARTED(["game_started"]) --> SEAT["The next player, seat by seat"]
+  SEAT --> FIND{"A song in the pack?<br/>alex.mp3, bot.mp3<br/>or default.mp3"}
+  FIND -- "yes" --> SONG["The song plays for<br/>the seconds per walk-on"]
+  FIND -- "no" --> SILENT["Walks on in silence"]
+  SONG --> DART{"The first dart?"}
+  DART -- "no" --> SEAT
+  SILENT --> SEAT
+  DART -- "yes" --> STOP["The music stops"]
+  ENDED(["game_ended: stopped or replaced"]) --> STOP
+  WON(["game_ended: won"]) --> WINNER["The song of the winner"]
+  classDef start fill:#2563eb2e,stroke:#2563eb,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class STARTED,ENDED,WON start
+  class SONG,WINNER done

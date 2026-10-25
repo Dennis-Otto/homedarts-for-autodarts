@@ -1,10 +1,10 @@
 blueprint:
   name: "HomeDarts: light show"
   description: >-
-    Plays your light effects at the big moments of the game: a 180, a high
-    finish, a bust, a won leg or match, a personal best, the daily goal, a
-    won bull-off, an achievement and the winner of a tournament, and optionally
-    while you pull the darts. Every moment has
+    Plays your light effects at the big moments of the game: the start of a
+    game, a 180, a high finish, a bust, a won leg or match, a personal best,
+    the daily goal, a won bull-off, an achievement and the winner of a
+    tournament, and optionally while you pull the darts. Every moment has
     its own actions, for example a WLED preset or a flash of your room
     lights; a moment without actions stays dark.
 
@@ -23,10 +23,11 @@ blueprint:
     plays wait for it, up to nine of them.
 
 
-    Your actions can use `moment` (`maximum`, `high_finish`, `bust`, `leg`,
-    `match`, `personal_best`, `daily_goal`, `bull_off`, `achievement`,
-    `tournament`, `takeout` or `board_clear`), `who` (the player's name,
-    "Bot" for the bot, or "Player 2"), `player`
+    Your actions can use `moment` (`game_start`, `maximum`, `high_finish`,
+    `bust`, `leg`, `match`, `personal_best`, `daily_goal`, `bull_off`,
+    `achievement`, `tournament`, `takeout` or `board_clear`), `who` (the
+    player's name, "Bot" for the bot, or "Player 2"; empty at the start of a
+    game), `player`
     (1 to 4), `score` (of a 180), `checkout` (of a won leg) and
     `trigger.to_state.attributes` (every detail of the board event).
 
@@ -50,6 +51,23 @@ blueprint:
               filter:
                 - integration: homedarts
                   domain: event
+    game_start:
+      name: Game starts
+      icon: mdi:flag-variant
+      collapsed: true
+      input:
+        game_start_actions:
+          name: Actions when a game starts
+          description: >-
+            Run when a game is set up on the board, however it is started: a
+            match, a party or a training game, or the next match of a
+            tournament, for example the scene for playing. Also when a game
+            goes on after the idle end of the training session or after its
+            winning visit was undone. Needs version
+            2.1.0 or later of the integration.
+          default: []
+          selector:
+            action: {}
     maximum:
       name: "180"
       icon: mdi:fire
@@ -263,6 +281,8 @@ blueprint:
             select:
               multiple: true
               options:
+                - label: Game starts
+                  value: game_start
                 - label: "180"
                   value: maximum
                 - label: High finish
@@ -344,6 +364,7 @@ triggers:
       entity_id: !input board_events
     options:
       event_type:
+        - game_started
         - visit_thrown
         - visit_completed
         - bust
@@ -387,7 +408,7 @@ variables:
     {%- set name = event.get('name') or event.get('winner') or '' %}
     {%- if bot %}{{ bot_label }}
     {%- elif name %}{{ name | regex_replace('[{}%#\x00-\x1f]+', '') | trim }}
-    {%- elif event.get('players', 1) > 1 %}{{ player_label ~ ' ' ~ player }}
+    {%- elif event.get('players', 1) > 1 and player > 0 %}{{ player_label ~ ' ' ~ player }}
     {%- endif %}
   moment: >-
     {% set event = trigger.to_state.attributes %}
@@ -402,7 +423,8 @@ variables:
     {#- The match_won event follows and plays the match. #}
     {%- elif kind == 'leg_won' %}{{ 'high_finish' if checkout >= high_finish_minimum else 'leg' }}
     {%- else %}
-    {{- {'bust': 'bust', 'match_won': 'match', 'personal_best': 'personal_best',
+    {{- {'game_started': 'game_start', 'bust': 'bust', 'match_won': 'match',
+         'personal_best': 'personal_best',
          'daily_goal_reached': 'daily_goal', 'bull_off_won': 'bull_off',
          'achievement_unlocked': 'achievement', 'tournament_finished': 'tournament',
          'takeout_started': 'takeout',
@@ -461,6 +483,8 @@ actions:
   # A failing light never keeps the lights from being restored.
   - continue_on_error: true
     choose:
+      - conditions: "{{ moment == 'game_start' }}"
+        sequence: !input game_start_actions
       - conditions: "{{ moment == 'maximum' }}"
         sequence: !input maximum_actions
       - conditions: "{{ moment == 'high_finish' }}"

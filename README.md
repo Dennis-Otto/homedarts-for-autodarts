@@ -135,8 +135,8 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 
 ### Automate
 
-- Board events for every dart, visit, takeout, bust, won leg and match, personal best and more
-- Fifteen blueprints: light show, score display, dart and practice callers, highlight photos, reports, alerts, routines, games started and darts entered by voice, and answers from Assist about your darts, which come with the integration and update with it ([see them](#blueprints))
+- Board events for every dart, visit, takeout, bust, won leg and match, the start and end of every game, personal best and more
+- Sixteen blueprints: light show, walk-on music, score display, dart and practice callers, highlight photos, reports, alerts, routines, games started and darts entered by voice, and answers from Assist about your darts, which come with the integration and update with it ([see them](#blueprints))
 - Start any game with one action, also by voice, tell Assist your darts, as at a dart machine, and ask it "What is my average today?"
 - Online matches on play.autodarts.io through an optional bridge *(experimental)*
 
@@ -164,7 +164,7 @@ How HomeDarts compares with the Autodarts app and its browser extension, with da
 | --- | --- | --- | --- | --- |
 | **Runs without the cloud** | Yes, with the [local interface](https://dennis-otto.github.io/homedarts-for-autodarts/how-it-works.html#privacy) of the Board Manager | No, with an [Autodarts account](https://autodarts.com/) | No, darts-caller [signs in to Autodarts](https://github.com/Peschi90/darts-caller#autodarts-login) | Some of them ([details](https://dennis-otto.github.io/homedarts-for-autodarts/coming-from.html#can-it-stay)) |
 | **Entities and events in Home Assistant** | Yes, an [event](https://dennis-otto.github.io/homedarts-for-autodarts/entities.html#board-events) for every dart, visit, takeout, bust, leg and match | No | No | Sensors of the current visit or game |
-| **Blueprints** | [Fifteen blueprints](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#blueprints) | No | No | No |
+| **Blueprints** | [Sixteen blueprints](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#blueprints) | No | No | No |
 | **Light show** | [Light show](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#light-show) blueprint, for WLED or any light | WLED, with Tools | WLED, with darts-wled | Your own automations |
 | **Caller** | On the [scoreboard](https://dennis-otto.github.io/homedarts-for-autodarts/scoreboard.html#the-caller) or your [speakers](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#which-caller) | In the app, with a premium voice in [Plus](https://autodarts.com/); more with Tools | Voice packs, with darts-caller | No |
 | **Statistics kept at home** | [Yes](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html): averages, heatmaps, profiles and a year of history | No, in the Autodarts account | No | No |
@@ -189,6 +189,10 @@ The integration brings every blueprint along and keeps those you haven't changed
 - **Light show.** Your WLED presets or room lights for a 180, a high finish, a bust, a won leg or match, a personal best, an achievement, the winner of a tournament and more, and back to your normal light afterwards.
 
   [![Import the light show blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Flight_show.yaml)
+
+- **Walk-on music.** The walk-on song of every player when a game starts, like on stage, until the first dart, and the song of the winner after the match.
+
+  [![Import the walk-on music blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fwalk_on.yaml)
 
 - **Dart caller.** Every visit announced on your speakers, with a special call for 180, in the language of Home Assistant or with the recorded sounds of a voice pack.
 
@@ -273,7 +277,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/home
 - [Games and rules](https://dennis-otto.github.io/homedarts-for-autodarts/games.html): how to start a game, matches, teams, handicaps, the bull-off, the match summary, tournaments and the rules of every game
 - [Scoreboard at the board](https://dennis-otto.github.io/homedarts-for-autodarts/scoreboard.html): a tablet or TV at the board, the new game screen, tournaments, the caller and idle mode
 - [Statistics and players](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html): sessions, personal bests, heatmaps and dart positions, where to aim, doubles, player profiles, achievements, trends, the leaderboard, reports, calendar, export and backups
-- [Automations](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html): fifteen blueprints, board events and ready-to-use examples
+- [Automations](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html): sixteen blueprints, board events and ready-to-use examples
 - [Online matches](https://dennis-otto.github.io/homedarts-for-autodarts/online-matches.html): moments of online matches on play.autodarts.io in Home Assistant *(experimental)*
 
 ### Reference

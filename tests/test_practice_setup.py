@@ -110,6 +110,7 @@ async def test_visits_name_the_game_and_come_before_their_result(hass, aioclient
     await throw(hass, coordinator, T20, S20, T20)
     await throw(hass, coordinator, T20, S1, D20)
     assert [kind for kind, _ in events] == [
+        "game_started",
         *["dart_detected"] * 3,
         "visit_thrown",
         "bust",
@@ -127,8 +128,8 @@ async def test_visits_name_the_game_and_come_before_their_result(hass, aioclient
         if kind in ("dart_detected", "visit_thrown", "visit_completed")
     ]
     assert all(attributes["game"] == 101 for attributes in visits)
-    assert events[3][1]["score"] == 140
-    assert events[5][1]["thrown"] is True
+    assert events[4][1]["score"] == 140
+    assert events[6][1]["thrown"] is True
     # Training games and free play leave the game empty.
     await select_game(hass, "around_the_clock")
     await throw(hass, coordinator, S1)
