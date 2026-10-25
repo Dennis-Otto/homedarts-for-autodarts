@@ -30,6 +30,12 @@ SPEC.loader.exec_module(shards)
 Step = shards.Step
 Choice = shards.Choice
 choose = shards.choose
+WATCHDOG_SPEC = importlib.util.spec_from_file_location(
+    "e2e_watchdog", E2E / "watchdog.py"
+)
+assert WATCHDOG_SPEC is not None and WATCHDOG_SPEC.loader is not None
+watchdog = importlib.util.module_from_spec(WATCHDOG_SPEC)
+WATCHDOG_SPEC.loader.exec_module(watchdog)
 
 
 def browser_steps() -> list:
@@ -47,14 +53,17 @@ def browser_steps() -> list:
         assert isinstance(call, ast.Call), ast.unparse(call)
         assert isinstance(call.func, ast.Name) and call.func.id == "Step"
         name, group = (ast.literal_eval(argument) for argument in call.args[:2])
-        keywords = {keyword.arg: keyword.value for keyword in call.keywords}
-        as_started = ast.literal_eval(keywords.get("as_started", ast.Constant(False)))
-        found.append(Step(name, group, lambda: None, as_started))
+        keywords = {
+            keyword.arg: ast.literal_eval(keyword.value) for keyword in call.keywords
+        }
+        found.append(Step(name, group, lambda: None, **keywords))
     return found
 
 
 STEPS = browser_steps()
 NAMES = [step.name for step in STEPS]
+# The steps that a run takes, without the drills.
+RUN = [step for step in STEPS if not step.drill]
 
 
 def names(steps) -> list[str]:
@@ -99,7 +108,7 @@ def test_the_dartboard_without_autodarts_comes_last():
 def test_every_count_of_shards_runs_every_step_once_in_its_order(parts):
     chosen = [choose(STEPS, "", f"{part}/{parts}") for part in range(1, parts + 1)]
     ran = [name for shard in chosen for name in names(shard)]
-    assert sorted(ran) == sorted(NAMES)
+    assert sorted(ran) == sorted(names(RUN))
     for shard in chosen:
         assert shard, "a shard without steps"
         assert names(shard) == [name for name in NAMES if name in names(shard)]
@@ -117,8 +126,40 @@ def test_two_shards_take_every_other_group():
 
 
 def test_no_shard_is_the_whole_run():
-    assert choose(STEPS) == STEPS
-    assert choose(STEPS, " ", " ") == STEPS
+    assert choose(STEPS) == RUN
+    assert choose(STEPS, " ", " ") == RUN
+
+
+def test_the_watchdog_checks_itself_in_every_run_and_its_drill_only_when_asked():
+    # The step "the watchdog" checks on Playwright itself that a hung wait ends; the
+    # drill "a hung step" hangs on purpose, to show what a hang leaves behind.
+    assert "the watchdog" in names(RUN)
+    assert [step.name for step in STEPS if step.drill] == ["a hung step"]
+    assert names(choose(STEPS, "a hung step")) == ["a hung step"]
+    # Its group runs it when asked: the drill runs on the runner of group 3 too.
+    assert names(choose(STEPS, "a hung step", "3/4")) == ["a hung step"]
+
+
+def test_every_step_has_a_budget_that_ends_well_before_its_job_step():
+    # About three times the longest run of a step in CI and at least two minutes;
+    # with the grace for its screenshots it ends before the step of the workflow
+    # that runs browser.sh does (tests/test_e2e_workflow.py), so that the step that
+    # hung names itself.
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "e2e.yml").read_text(encoding="utf-8")
+    )
+    limits = [
+        step["timeout-minutes"] * 60
+        for job in workflow["jobs"].values()
+        for step in job["steps"]
+        if "tests/e2e/browser.sh" in step.get("run", "")
+    ]
+    assert len(limits) == 2
+    for step in RUN:
+        assert step.budget >= shards.BUDGET, step.name
+        assert step.budget + watchdog.GRACE < min(limits), step.name
+    (drill,) = [step for step in STEPS if step.drill]
+    assert drill.budget < shards.BUDGET
 
 
 @pytest.mark.parametrize(
@@ -185,6 +226,24 @@ def test_browser_steps_that_name_no_step_are_refused():
         choose(DEMO, "scoreboard,bowling")
 
 
+DRILL = [*DEMO, Step("scoreboard hangs", 1, lambda: None, drill=True)]
+
+
+def test_a_drill_runs_only_when_its_whole_name_asks_for_it():
+    assert "scoreboard hangs" not in names(choose(DRILL))
+    for part in range(1, 5):
+        assert "scoreboard hangs" not in names(choose(DRILL, "", f"{part}/4"))
+    # A beginning of its name begins only the other steps.
+    assert names(choose(DRILL, "scoreb")) == ["scoreboard", "scoreboard editor"]
+    assert names(choose(DRILL, "scoreboard hangs")) == ["scoreboard hangs"]
+    assert names(choose(DRILL, "scoreboard hangs,scoreboard editor")) == [
+        "scoreboard editor",
+        "scoreboard hangs",
+    ]
+    with pytest.raises(Choice, match=r"names no step: \['scoreboard h'\]"):
+        choose(DRILL, "scoreboard h")
+
+
 def test_a_step_outside_the_groups_is_refused():
     with pytest.raises(Choice, match="later: group 5 is not 1 to 4"):
         choose([*DEMO, Step("later", 5, lambda: None)])
@@ -197,14 +256,27 @@ needs_bash = pytest.mark.skipif(
 )
 
 # Notes every call; a call whose words contain $FAIL fails, as a browser that finds
-# a problem does, and notes $FAILED_STEP in the table of its steps as browser.py does.
+# a problem does, and notes $FAILED_STEP in the table of its steps as browser.py does,
+# as failed or as $FAILED_END, such as "took too long".
+# One whose words contain $HANG notes $FAILED_STEP as running, as browser.py does while
+# a step runs, and hangs until its demo goes down a second time, after its start.
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
+if [[ -n "${HANG:-}" && "$*" == *"$HANG"* ]]; then
+  for word in "$@"; do
+    if [[ "$word" == *:/artifacts ]]; then
+      printf '| live card | 1.0 |\\n| %s (running) | – |\\n' "$FAILED_STEP" \\
+        > "${word%:/artifacts}/browser-steps-table.md"
+    fi
+  done
+  while (($(grep -c ' down ' "$CALLS") < 2)); do sleep 0.1; done
+  exit 137
+fi
 if [[ -n "${FAIL:-}" && "$*" == *"$FAIL"* ]]; then
   for word in "$@"; do
     if [[ -n "${FAILED_STEP:-}" && "$word" == *:/artifacts ]]; then
-      printf '| live card | 1.0 |\\n| %s (failed) | 2.0 |\\n' "$FAILED_STEP" \\
-        > "${word%:/artifacts}/browser-steps-table.md"
+      printf '| live card | 1.0 |\\n| %s (%s) | 2.0 |\\n' "$FAILED_STEP" \\
+        "${FAILED_END:-failed}" > "${word%:/artifacts}/browser-steps-table.md"
     fi
   done
   echo "failed: $FAIL"
@@ -215,9 +287,10 @@ echo "ran: ${*: -1}"
 
 
 def browser_sh(
-    tmp_path: Path, **env: str
+    tmp_path: Path, command: list[str] | None = None, **env: str
 ) -> tuple[subprocess.CompletedProcess[str], list[str]]:
-    """Run browser.sh with the stand-in for docker; the result and the calls of docker."""
+    """Run browser.sh with the stand-in for docker, or a command that runs it as
+    $BROWSER_SH; the result and the calls of docker."""
     docker = tmp_path / "docker"
     docker.write_text(DOCKER, encoding="utf-8", newline="\n")
     docker.chmod(0o755)
@@ -228,6 +301,7 @@ def browser_sh(
         "DOCKER_BIN": str(docker),
         "CALLS": str(calls),
         "E2E_ARTIFACTS": str(tmp_path / "artifacts"),
+        "BROWSER_SH": str(E2E / "browser.sh"),
         **env,
     }
     # Only what a test asks for, also in CI: GitHub Actions with its annotations and
@@ -240,11 +314,12 @@ def browser_sh(
         "BROWSER_SHARD",
         "BROWSER_WORKERS",
         "BROWSER_STEPS",
+        "HANG",
     ):
         if name not in env:
             environment.pop(name, None)
     result = subprocess.run(
-        ["bash", str(E2E / "browser.sh")],
+        command or ["bash", str(E2E / "browser.sh")],
         env=environment,
         capture_output=True,
         encoding="utf-8",
@@ -391,6 +466,89 @@ def test_one_worker_names_the_step_that_failed(tmp_path):
         " bash tests/e2e/browser.sh\n"
     )
     assert any(" logs " in call for call in calls)
+
+
+@needs_bash
+@pytest.mark.parametrize(
+    ("end", "why"),
+    [
+        # The watchdog of browser.py failed the step after its budget.
+        (
+            "took too long",
+            "it took longer than its budget, and the log shows the line that it"
+            " waited at",
+        ),
+        # browser.py ended while the step ran, such as when faulthandler ended a hang
+        # two minutes after its budget.
+        (
+            "running",
+            "the browser test ended in it without a result, such as when the watchdog"
+            " ended a hang that no exception reached, and the log shows the stack of"
+            " every thread",
+        ),
+    ],
+)
+def test_a_step_that_hung_explains_itself_so(tmp_path, end, why):
+    result, _ = browser_sh(
+        tmp_path,
+        FAIL="BROWSER_SHARD=1/1",
+        FAILED_STEP="a hung step",
+        FAILED_END=end,
+        GITHUB_ACTIONS="true",
+    )
+
+    assert result.returncode == 1
+    assert result.stdout.endswith(
+        '::error title=Browser check failed::The browser check failed at the step "a'
+        f' hung step": {why}. The artifact of this job keeps the screenshots and the'
+        " logs. Run it alone: BROWSER_STEPS='a hung step' bash tests/e2e/browser.sh\n"
+    )
+
+
+@needs_bash
+def test_a_signal_stops_a_hung_run_and_names_the_step_that_still_ran(tmp_path):
+    # As GitHub stops a step of the workflow that runs out of time, which runs
+    # browser.sh with exec: the explanation names the step that browser.py noted as
+    # running, after the containers of its demo. Here SIGTERM, which GitHub sends
+    # 7.5 s after SIGINT: bash starts a script in the background with SIGINT ignored.
+    summary = tmp_path / "summary.md"
+    result, calls = browser_sh(
+        tmp_path,
+        [
+            "bash",
+            "-c",
+            'bash "$BROWSER_SH" & run=$!\n'
+            'until grep -q "^run --rm" "$CALLS"; do sleep 0.1; done\n'
+            'kill -TERM "$run"\n'
+            'wait "$run"',
+        ],
+        HANG="BROWSER_SHARD=1/1",
+        FAILED_STEP="touch screens",
+        GITHUB_ACTIONS="true",
+        GITHUB_STEP_SUMMARY=str(summary),
+    )
+
+    assert result.returncode == 143, result.stdout + result.stderr
+    assert "Stopped by SIGTERM" in result.stderr
+    command = "BROWSER_STEPS='touch screens' bash tests/e2e/browser.sh"
+    assert result.stdout.endswith(
+        "::error title=Browser check failed::The browser check failed at the step"
+        ' "touch screens" when SIGTERM stopped it: the run took longer than its step'
+        " in the workflow allows, and nothing in it ran out of time before. The"
+        f" artifact of this job keeps the screenshots and the logs. Run it alone: {command}\n"
+    )
+    assert "| touch screens (running) | – |" in summary.read_text(encoding="utf-8")
+    project = "compose --project-name homedarts_browser --file compose.yaml "
+    shown = [call.removeprefix(project) for call in calls if call.startswith(project)]
+    # First the state of its containers and its logs, last the cleanup.
+    assert shown[-6:] == [
+        "ps --all",
+        "stats --no-stream",
+        "exec -T homeassistant tail -n 100 /config/home-assistant.log",
+        "logs --no-color --tail 200",
+        "exec -T homeassistant cat /config/home-assistant.log",
+        "down --volumes --remove-orphans",
+    ]
 
 
 @needs_bash

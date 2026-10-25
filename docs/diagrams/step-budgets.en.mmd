@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: When a step of the end-to-end tests hangs
+  accDescr: Every step of the browser test, section of the screenshot tool and phase of the scenario has a budget of time, about three times its longest run in CI. A step that ends within it goes on to the next. One that takes longer gets its stack printed by the watchdog, down to the line that it waits at, and fails with its name; a hang that no exception reaches ends two minutes later, when faulthandler prints the stack of every thread and ends the process. A run that outlasts the time limit of its step in the workflow, three minutes or more before that of the job, gets SIGINT from GitHub, and the script prints the state of its containers. Either way the step fails while the job still runs, so the artifact keeps the screenshots and the logs, the PR coach explains the failure and the flaky-test bot names the step.
+
+  STEP["A step of the browser test, a section of<br/>the screenshot tool or a phase of the scenario"] -- "within its budget" --> NEXT["The next step"]
+  STEP -- "longer than<br/>its budget" --> WATCH{{"The watchdog prints the stack of the step,<br/>down to the line that it waits at, and fails it:<br/>steady heights took longer than 390 s"}}
+  WATCH -- "no exception<br/>reaches the hang" --> HARD{{"Two minutes later, faulthandler prints<br/>the stack of every thread and<br/>ends the process"}}
+  STEP -- "the run outlasts<br/>its step in<br/>the workflow" --> STOP{{"GitHub stops the step with SIGINT, and<br/>the script prints its containers, their CPU<br/>and memory and the log of Home Assistant"}}
+  WATCH --> KEEP["The step fails while the job still runs:<br/>the artifact keeps screenshots<br/>and logs, the PR coach explains<br/>the failure, the flaky-test bot<br/>names the step"]
+  HARD --> KEEP
+  STOP --> KEEP
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class WATCH,HARD,STOP bot
+  class NEXT done
+  class KEEP failed

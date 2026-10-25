@@ -96,12 +96,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # A step that hangs fails at a time limit of its own, three minutes or more
+      # before that of the job, so that the steps after it keep its logs and explain
+      # it: GitHub cancels a job at its limit, and then no step after it runs. With
+      # exec, the signal with which GitHub stops the step reaches the script itself,
+      # which prints the state of its containers before it ends
+      # (docs/development.md#when-a-step-hangs).
       - name: Render the images of the group with the frozen clock
+        timeout-minutes: 17
         env:
           LANGUAGES: ${{ matrix.language }}
           SCREENSHOT_GROUP: ${{ matrix.group }}/3
           IMAGES: tests/e2e/artifacts/rendered
-        run: bash tests/e2e/screenshots.sh
+        run: exec bash tests/e2e/screenshots.sh
       - name: List how long the sections took
         if: ${{ !cancelled() }}
         run: |
@@ -165,6 +172,7 @@ jobs:
           "$RUNNER_TEMP/venv/bin/pip" install --quiet --disable-pip-version-check \
             --require-hashes -r tests/e2e/requirements-browser.txt
       - name: Put the groups together and compare them with the committed images
+        timeout-minutes: 5
         env:
           LANGUAGES: ${{ matrix.language }}
           PYTHON: ${{ runner.temp }}/venv/bin/python

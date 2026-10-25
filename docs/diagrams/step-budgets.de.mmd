@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Wenn ein Schritt der End-to-End-Tests hängt
+  accDescr: Jeder Schritt des Browsertests, Abschnitt des Screenshot-Werkzeugs und jede Phase des Szenarios hat ein Zeitbudget, etwa das Dreifache seines längsten Laufs in der CI. Ein Schritt, der darin endet, geht zum nächsten. Bei einem, der länger braucht, gibt der Watchdog den Stack des Schritts bis zu der Zeile aus, an der er wartet, und lässt ihn mit seinem Namen fehlschlagen; ein Hänger, den keine Ausnahme erreicht, endet zwei Minuten später, wenn faulthandler den Stack jedes Threads ausgibt und den Prozess beendet. Ein Lauf, der das Zeitlimit seines Schritts im Workflow überdauert, drei Minuten oder mehr vor dem des Jobs, bekommt von GitHub SIGINT, und das Skript gibt den Zustand seiner Container aus. So oder so schlägt der Schritt fehl, während der Job noch läuft: Das Artefakt behält die Screenshots und die Protokolle, der PR-Coach erklärt den Fehler, und der Bot für unzuverlässige Tests nennt den Schritt.
+
+  STEP["Ein Schritt des Browsertests,<br/>ein Abschnitt des Screenshot-Werkzeugs<br/>oder eine Phase des Szenarios"] -- "innerhalb seines Budgets" --> NEXT["Der nächste Schritt"]
+  STEP -- "länger als<br/>sein Budget" --> WATCH{{"Der Watchdog gibt den Stack des Schritts<br/>bis zu der Zeile aus, an der er wartet,<br/>und lässt ihn fehlschlagen:<br/>steady heights took longer than 390 s"}}
+  WATCH -- "keine Ausnahme<br/>erreicht den Hänger" --> HARD{{"Zwei Minuten später gibt faulthandler<br/>den Stack jedes Threads aus und<br/>beendet den Prozess"}}
+  STEP -- "der Lauf überdauert<br/>seinen Schritt<br/>im Workflow" --> STOP{{"GitHub stoppt den Schritt mit SIGINT,<br/>und das Skript zeigt seine Container,<br/>ihre CPU, ihren Speicher<br/>und das Log von Home Assistant"}}
+  WATCH --> KEEP["Der Schritt schlägt fehl, der Job läuft weiter:<br/>Das Artefakt behält Screenshots<br/>und Protokolle, der PR-Coach erklärt<br/>den Fehler, der Bot für unzuverlässige<br/>Tests nennt den Schritt"]
+  HARD --> KEEP
+  STOP --> KEEP
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class WATCH,HARD,STOP bot
+  class NEXT done
+  class KEEP failed

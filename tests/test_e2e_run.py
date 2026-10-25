@@ -2,12 +2,14 @@
 
 run.sh runs here with a stand-in for docker that only notes what it is asked to do,
 and whose pull of the images fails as often as a test asks, as one does that the
-registry cuts off with "unexpected EOF".
+registry cuts off with "unexpected EOF", and whose scenario hangs when a test asks,
+until the containers go down.
 """
 
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -18,9 +20,14 @@ pytestmark = pytest.mark.skipif(
     shutil.which("bash") is None, reason="run.sh runs in bash"
 )
 
-# Notes every call; the first $PULL_FAILURES pulls fail.
+# Notes every call; the first $PULL_FAILURES pulls fail, and with $HANG the scenario
+# runs until the containers go down after it, as a "down" stops its "exec".
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
+if [[ -n "${HANG:-}" && "$*" == *scenario.py* ]]; then
+  while (($(grep -c ' down ' "$CALLS") < 2)); do sleep 0.1; done
+  exit 137
+fi
 if [[ "$*" == *" pull "* ]]; then
   failed=$(grep -c ' pull ' "$CALLS")
   if ((failed <= ${PULL_FAILURES:-0})); then
@@ -32,9 +39,10 @@ fi
 
 
 def run_sh(
-    tmp_path: Path, pull_failures: int
+    tmp_path: Path, pull_failures: int, command: list[str] | None = None, **env: str
 ) -> tuple[subprocess.CompletedProcess[str], list[str]]:
-    """Run run.sh with the stand-in for docker; the result and the calls of docker."""
+    """Run run.sh with the stand-in for docker, or a command that runs it as $RUN_SH;
+    the result and the calls of docker."""
     docker = tmp_path / "docker"
     docker.write_text(DOCKER, encoding="utf-8", newline="\n")
     docker.chmod(0o755)
@@ -46,11 +54,14 @@ def run_sh(
         "CALLS": str(calls),
         "PULL_FAILURES": str(pull_failures),
         "E2E_PULL_PAUSE": "0",
+        "RUN_SH": str(E2E / "run.sh"),
+        **env,
     }
-    for name in ("E2E_ARTIFACTS", "KEEP_E2E"):
-        environment.pop(name, None)
+    for name in ("E2E_ARTIFACTS", "KEEP_E2E", "HANG"):
+        if name not in env:
+            environment.pop(name, None)
     result = subprocess.run(
-        ["bash", str(E2E / "run.sh")],
+        command or ["bash", str(E2E / "run.sh")],
         env=environment,
         capture_output=True,
         encoding="utf-8",
@@ -63,6 +74,11 @@ def run_sh(
 def commands(calls: list[str]) -> list[str]:
     """What run.sh asked Compose to do, such as "pull" or "up", in its order."""
     return [call.split(" --file compose.yaml ", 1)[1].split()[0] for call in calls]
+
+
+# What a failed run shows first: the containers, what they use of the CPU and the
+# memory, and the end of the log of Home Assistant; then the logs of every container.
+DIAGNOSIS = ["ps", "stats", "exec", "logs"]
 
 
 @pytest.mark.parametrize("pull_failures", [0, 1, 2])
@@ -86,18 +102,40 @@ def test_images_that_fail_to_pull_three_times_start_no_scenario(tmp_path):
 
     assert result.returncode != 0
     # The logs of the failed run, as after any failure, and no scenario.
-    assert commands(calls) == [
-        "down",
-        "pull",
-        "pull",
-        "pull",
-        "ps",
-        "logs",
-        "exec",
-        "down",
-    ]
+    assert commands(calls) == ["down", "pull", "pull", "pull", *DIAGNOSIS, "down"]
+    assert calls[4].endswith(" ps --all")
+    assert calls[5].endswith(" stats --no-stream")
+    assert calls[6].endswith(" tail -n 300 /config/home-assistant.log")
     assert not any("scenario.py" in call for call in calls)
     assert result.stderr.count("trying again in 0 s") == 2
     assert "Pulling the images failed 3 times; the scenario did not start" in (
         result.stderr
     )
+
+
+def test_a_signal_stops_a_hung_scenario_with_the_logs_of_a_failed_run(tmp_path):
+    # As GitHub stops a step of the workflow that runs out of time: the step runs
+    # run.sh with exec, so that the signal reaches it, and run.sh shows its containers
+    # while the scenario still hangs. Here SIGTERM, which GitHub sends 7.5 s after
+    # SIGINT: bash starts a script in the background with SIGINT ignored.
+    started = time.monotonic()
+    result, calls = run_sh(
+        tmp_path,
+        0,
+        [
+            "bash",
+            "-c",
+            'bash "$RUN_SH" & run=$!\n'
+            'until grep -q scenario.py "$CALLS"; do sleep 0.1; done\n'
+            'kill -TERM "$run"\n'
+            'wait "$run"',
+        ],
+        HANG="1",
+    )
+
+    assert result.returncode == 143, result.stderr
+    assert time.monotonic() - started < 15
+    assert "Stopped by SIGTERM; the state and the logs of the containers follow." in (
+        result.stderr
+    )
+    assert commands(calls) == ["down", "pull", "up", "exec", *DIAGNOSIS, "down"]

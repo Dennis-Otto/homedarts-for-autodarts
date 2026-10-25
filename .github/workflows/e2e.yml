@@ -162,10 +162,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # A step that hangs fails at a time limit of its own, three minutes or more
+      # before that of the job, so that the steps after it keep its logs and explain
+      # it: GitHub cancels a job at its limit, and then no step after it runs. With
+      # exec, the signal with which GitHub stops the step reaches the script itself,
+      # which prints the state of its containers before it ends
+      # (docs/development.md#when-a-step-hangs).
       - name: Run Home Assistant end-to-end tests
+        timeout-minutes: 7
         env:
           HOME_ASSISTANT_IMAGE: ${{ matrix.oldest && env.OLDEST_HOME_ASSISTANT || '' }}
-        run: bash tests/e2e/run.sh
+        run: exec bash tests/e2e/run.sh
       - name: Keep logs of a failed run
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -252,10 +259,12 @@ jobs:
           node-version: 24
       - name: Install the locked packages of the frontend
         run: npm ci --ignore-scripts
+      # Its own time limit, as the scenario's: about three times its longest run.
       - name: Check the dashboard cards in a real browser
+        timeout-minutes: 12
         env:
           HOME_ASSISTANT_IMAGE: ${{ matrix.home_assistant.oldest && env.OLDEST_HOME_ASSISTANT || '' }}
-        run: bash tests/e2e/browser.sh
+        run: exec bash tests/e2e/browser.sh
       - name: Keep logs and screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -301,6 +310,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Play the live demo in a real browser
+        timeout-minutes: 7
         run: bash tests/e2e/live_demo.sh
       - name: Keep the screenshots of a failed run
         if: failure()
@@ -422,8 +432,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Their own time limits, as in the jobs above.
       - name: Run Home Assistant end-to-end tests
-        run: bash tests/e2e/run.sh
+        timeout-minutes: 7
+        run: exec bash tests/e2e/run.sh
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -432,7 +444,8 @@ jobs:
       # Every group of steps, one after another, so that Safari's WebKit shares the
       # CPU with no other browser, as in the jobs "browser".
       - name: Check the dashboard cards in a real browser
-        run: bash tests/e2e/browser.sh
+        timeout-minutes: 15
+        run: exec bash tests/e2e/browser.sh
       - name: Keep logs and screenshots of a failed run
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
