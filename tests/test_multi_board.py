@@ -2,6 +2,7 @@
 a tournament on both boards plays a match on each of them."""
 
 from datetime import timedelta
+from types import SimpleNamespace
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
@@ -13,6 +14,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.homedarts.const import DOMAIN
+from custom_components.homedarts.services import _device_entries
 
 from .local_helpers import (
     SECOND_BASE,
@@ -381,6 +383,26 @@ async def test_the_boards_of_the_action_are_checked(hass, board_and_dartboard):
     await act(hass, "stop_tournament", config_entry_id=dartboard.entry_id)
     assert state(hass, "sensor", "tournament") == "no_tournament"
     assert dartboard.runtime_data.local.games.host is None
+
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        SimpleNamespace(config_entries={"cellar", "lamp"}),
+        SimpleNamespace(
+            is_composite_device=True,
+            config_entry_id="cellar",
+            config_entries={"cellar", "lamp"},
+        ),
+    ],
+    ids=["before Home Assistant 2026.10", "a device of several entries"],
+)
+def test_a_device_of_several_entries_names_each(device):
+    """Home Assistant before 2026.10 keeps every config entry of a device in
+    config_entries, and so does a device of several entries from before it; every
+    other device has one, config_entry_id, and reading config_entries of it reports
+    the integration."""
+    assert _device_entries(device) == {"cellar", "lamp"}
 
 
 async def test_a_board_with_darts_on_it_takes_its_match_with_the_takeout(

@@ -395,10 +395,9 @@ def _board(hass: HomeAssistant, value: str) -> AutodartsGamesCoordinator:
     """A board of a tournament on several boards, by the ID of its entry, or
     of its device as the device picker of the action gives it."""
     if hass.config_entries.async_get_entry(value) is None:
-        device = dr.async_get(hass).async_get(value)
         found = [
             entry_id
-            for entry_id in (device.config_entries if device else set())
+            for entry_id in _device_entries(dr.async_get(hass).async_get(value))
             if (entry := hass.config_entries.async_get_entry(entry_id))
             and entry.domain == DOMAIN
         ]
@@ -406,6 +405,18 @@ def _board(hass: HomeAssistant, value: str) -> AutodartsGamesCoordinator:
             raise _invalid("unknown_board", board=value)
         value = sorted(found)[0]
     return _coordinator(hass, value)
+
+
+def _device_entries(device: dr.BaseDeviceEntry | None) -> set[str]:
+    """The config entries of a device. Since Home Assistant 2026.10 a device has one,
+    `config_entry_id`, and `config_entries` reports the integration, which 2027.10
+    stops; only a device of several entries from before keeps them all there."""
+    if device is None:
+        return set()
+    if getattr(device, "is_composite_device", True):
+        # Home Assistant before 2026.10, or a device of several entries.
+        return set(device.config_entries)
+    return {device.config_entry_id}
 
 
 def _invalid(key: str, **placeholders: str) -> ServiceValidationError:

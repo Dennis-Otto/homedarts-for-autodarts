@@ -18,6 +18,7 @@ from pathlib import Path
 
 import aiohttp
 from board_mock import API_KEY, BOARD_ID, GENERATION, PORT, TLS_KEY, UPDATE, VERSION
+from ha_reports import reports
 from pictures import board_photo
 from watchdog import within
 
@@ -94,6 +95,12 @@ EXPECTED_TRACEBACKS = (
     "import_module with args ('probatio.codecs',)",
 )
 MANIFEST = Path("/config/custom_components/homedarts/manifest.json")
+# A record of the log at the level of a warning or above, such as "2026-10-25
+# 01:02:03.456 WARNING (MainThread) [homeassistant.helpers.frame] Detected that ...",
+# with its message.
+WARNING_RECORD = re.compile(
+    r"\S+ \S+ (?:WARNING|ERROR|CRITICAL) \(.*?\) \[[^\]]*\] (.*)", re.DOTALL
+)
 # Every file of the cards: both modules and the texts of each language in text/.
 FRONTEND = MANIFEST.parent / "frontend"
 
@@ -2052,9 +2059,10 @@ class Scenario:
         )
 
     async def logs(self) -> None:
+        items = await self.ws("system_log/list")
         problems = [
             item
-            for item in await self.ws("system_log/list")
+            for item in items
             if (
                 item["level"] in ("ERROR", "CRITICAL")
                 or item["name"].startswith("custom_components.homedarts")
@@ -2065,15 +2073,32 @@ class Scenario:
         ]
         check(not problems, f"Home Assistant logged problems: {problems}")
         log = LOG.read_text() if LOG.exists() else ""
+        # Records start with a timestamp.
+        records = re.split(r"\n(?=\d{4}-\d{2}-\d{2} )", log)
+        # Home Assistant reports the integration, such as a deprecated call that its
+        # next release stops, in a warning of any of its modules (ha_reports.py). The
+        # system log keeps the last 50 of every level, the file keeps them all. An
+        # entry of the system log groups the messages of one call site, such as every
+        # report of the frame helper, so each of them counts on its own.
+        warnings = [message for item in items for message in item["message"]] + [
+            match.group(1)
+            for record in records
+            if (match := WARNING_RECORD.match(record.rstrip("\n")))
+        ]
+        reported = reports(
+            dict.fromkeys(warnings),
+            json.loads(MANIFEST.read_text()),
+            (await self.ws("get_config"))["version"],
+        )
+        check(not reported, f"Home Assistant reports the integration: {reported}")
         check(API_KEY not in log, "Home Assistant log contains the board API key")
         check(TLS_KEY not in log, "Home Assistant log contains the TLS key")
         check(
             self.webhook_id is not None and self.webhook_id not in log,
             "Home Assistant log contains the webhook address",
         )
-        # Records start with a timestamp; the outage of the fault injection logs
-        # its cause at debug level, every other traceback is a problem.
-        records = re.split(r"\n(?=\d{4}-\d{2}-\d{2} )", log)
+        # The outage of the fault injection logs its cause at debug level, every
+        # other traceback is a problem.
         tracebacks = [
             record
             for record in records

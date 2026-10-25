@@ -544,7 +544,7 @@ test("X01 rules, bull-off by distance and the board's config entry go with the s
   const { hass, card } = setup(
     { "switch.practice_bull_off": "on", "switch.practice_bull_off_distance": "off" },
     {},
-    { device: { primary_config_entry: "entry-7", config_entries: ["entry-7"] } }
+    { device: { config_entry_id: "entry-7", primary_config_entry: "other", config_entries: ["other"] } }
   );
   tap(card, ".lobby-toggle");
   assert.deepEqual(options(card), [

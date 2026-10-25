@@ -114,6 +114,26 @@ Tests that freeze the clock with the `freezer` fixture start at the same moment 
 
 The card logic is also fuzzed with [fast-check](https://fast-check.dev/): thousands of random and hostile inputs per run check that escaping, bed geometry, the heatmap and the history parser never break.
 
+### Home Assistant's warnings about the integration
+
+Home Assistant warns in the logs of its own modules, not in that of the integration, when the integration uses what a coming release removes or blocks the event loop, and asks the user to report it: *Detected that custom integration 'homedarts' accesses … This will stop working in Home Assistant 2027.10* from its frame helper, *Detected blocking call to open … inside the event loop by custom integration 'homedarts'* from its loop protection, and *The deprecated function … was called from homedarts* for a deprecated constant, function or class. Each of them names the integration in the same words, `custom integration 'homedarts'`, *the author of the 'homedarts' custom integration*, or the issue tracker of the manifest after *create a bug report at*, and so does every other warning that asks to report a problem of the integration, such as an entity with a state class that its device class doesn't allow. The warning of the loader at every start, *We found a custom integration homedarts which has not been tested*, names it without quotes and is no report.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/ha-reports-dark.png">
+  <img src="images/en/ha-reports-light.png" alt="Home Assistant's warnings about the integration: Home Assistant warns in the logs of its own modules when the integration uses what a coming release removes or blocks the event loop - a deprecated call, a deprecated constant or function, a blocking call - and asks to report it to the integration. pytest checks the log of every test once it is torn down, the end-to-end scenario checks the system log and the log file in its phase logs, on every pull request that changes them and every night against the beta of Home Assistant. A warning that names the integration fails the test or the scenario with the message of Home Assistant, unless it is a known report whose release has not come yet. A failed nightly run against the beta becomes an issue of the workflow Bot health, before the release reaches the users." width="560">
+</picture>
+
+Such a warning fails every test, also one marked `expected_errors`, whatever its logger: `pytest_runtest_teardown` in `tests/conftest.py` checks the log of each test once every fixture is torn down, and the failure quotes Home Assistant, with the phase and the logger:
+
+```text
+AssertionError: The log of the test shows problems:
+  call: homeassistant.helpers.frame: Detected that custom integration 'homedarts' accesses `DeviceEntry.config_entries`, which is deprecated because a device belongs to a single config entry; use `DeviceEntry.config_entry_id` instead at custom_components/homedarts/services.py, line 401: … This will stop working in Home Assistant 2027.10.0, please create a bug report at https://github.com/Dennis-Otto/homedarts-for-autodarts/issues
+```
+
+The end-to-end scenario fails in its phase `logs` on the same warnings, at every level of the system log and in the log file, which keeps them all where the system log keeps the last 50. Home Assistant turns on its loop protection only in a real start, so only the scenario sees a blocking call. The words of a report are in `tests/e2e/ha_reports.py`, which both use; `tests/test_log_guard.py` makes each kind of report with Home Assistant itself and checks that it fails a test and the scenario, so a beta that changes the words fails there first. Every night the end-to-end tests run against the beta of Home Assistant too, and the next release's warnings fail that run, which the **Bot health** workflow reports as an issue, before the release reaches the users.
+
+Fix what a warning names. When the integration can't follow it yet, such as when Home Assistant offers no replacement before the release that stops the old way, add it to `KNOWN` in `tests/e2e/ha_reports.py`: a part of its message, the reason, and the release of Home Assistant from which it fails the tests again, such as `Known(text="accesses hass.data directly", reason="…", until="2027.1")`. The beta reaches that release first.
+
 ### Timers of the cards
 
 A card on a dashboard runs timers: the countdown to the next match of a tournament, the time the result or the summary of a match shows, and idle mode; the training card follows the board events through Home Assistant's history stream. Only leaving the page stops them, in `disconnectedCallback`. Home Assistant can still hand a card new states after it left the page, so a card starts a timer or a stream only while it is on the page (`isConnected`). When it comes back, `connectedCallback` updates it, and that starts them again.
@@ -394,7 +414,8 @@ Every pull request, and every push to `main`, runs:
 A new commit to a pull request cancels the older, still running checks of that
 pull request; runs on `main` are never canceled. Every night the end-to-end tests
 run in full, also against the current Home Assistant beta, as an early warning
-before the next release. Pull requests replay the same derandomized Hypothesis examples on
+before the next release, which fails on each warning of the beta about the
+integration ([Home Assistant's warnings about the integration](#home-assistants-warnings-about-the-integration)). Pull requests replay the same derandomized Hypothesis examples on
 every run; every night the **Property tests** workflow runs the property and
 state-machine tests with a new random seed. Its summary names the seed, and
 running the workflow with that seed replays a failure. OpenSSF Scorecard evaluates
@@ -469,7 +490,9 @@ bot with a new recording, starts that one job and none of Home Assistant:
 
 A renamed file counts by its old name too. When the API fails, or a pull request
 changes more files than the API lists (3000), the tests run. Every push to `main`,
-every night and every manual run tests everything.
+every night and every manual run tests everything. Every night they also run against the beta of
+Home Assistant, and fail on each of its warnings that the integration uses what its
+next release stops ([Home Assistant's warnings about the integration](#home-assistants-warnings-about-the-integration)).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/e2e-gate-dark.png">
