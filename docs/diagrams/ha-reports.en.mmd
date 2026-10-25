@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Home Assistant's warnings about the integration
+  accDescr: Home Assistant warns in the logs of its own modules when the integration uses what a coming release removes or blocks the event loop - a deprecated call, a deprecated constant or function, a blocking call - and asks to report it to the integration. pytest checks the log of every test once it is torn down, the end-to-end scenario checks the system log and the log file in its phase logs, on every pull request that changes them and every night against the beta of Home Assistant. A warning that names the integration fails the test or the scenario with the message of Home Assistant, unless it is a known report whose release has not come yet. A failed nightly run against the beta becomes an issue of the workflow Bot health, before the release reaches the users.
+
+  HA["Home Assistant warns in its own log:<br/>Detected that custom integration 'homedarts' ...,<br/>Detected blocking call ... by custom integration 'homedarts',<br/>The deprecated ... was used from homedarts"] --> PYTEST{{"pytest: the log of every test,<br/>once it is torn down,<br/>whatever the logger"}}
+  HA --> SCENARIO{{"The end-to-end scenario, phase logs:<br/>the system log and the log file"}}
+  PYTEST --> KNOWN{"A known report,<br/>before its release?"}
+  SCENARIO --> KNOWN
+  KNOWN -- "yes" --> PASS["Passes, until the release<br/>in KNOWN of ha_reports.py"]
+  KNOWN -- "no" --> FAIL["Fails with the message<br/>of Home Assistant"]
+  FAIL -- "every night against the beta" --> ISSUE["An issue of the workflow Bot health,<br/>before the release reaches the users"]
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class PYTEST,SCENARIO,KNOWN bot
+  class PASS done
+  class FAIL,ISSUE failed

@@ -78,9 +78,11 @@ autofix = """A runner that stopped needs a run again, not a fix."""
 title = "The end-to-end scenario in Home Assistant"
 problem = """The scenario of `tests/e2e/run.sh` failed in a real Home Assistant in
 Docker, with a simulated Board Manager: the onboarding, the setup, a control, darts in
-real time, a fault of the board, persistence, the diagnostics or the removal. The log
-names the phase and the assertion that failed; the artifact `e2e-scenario-*` keeps the
-logs of Home Assistant and of the simulated board."""
+real time, a fault of the board, persistence, the diagnostics, the removal, or the
+phase `logs`, which also fails on each warning of Home Assistant that the integration
+uses what a coming release stops or blocks its event loop. The log names the phase and
+the assertion that failed; the artifact `e2e-scenario-*` keeps the logs of Home
+Assistant and of the simulated board."""
 why = """It is the one test that runs the integration as it is installed, against a
 board that answers as a real one does: on Board Manager 1, on Board Manager 2 with its
 discovery by mDNS, and on the oldest Home Assistant that `hacs.json` promises."""
@@ -145,13 +147,18 @@ should show."""
 title = "The end-to-end tests with the beta of Home Assistant"
 problem = """The scenario or a step of the cards in a real browser failed with the
 beta of the next release of Home Assistant, which the nightly and the manual runs
-test. The log names the phase or the step; the artifact `e2e-beta-*` keeps the logs
-and the screenshots."""
+test, or the beta warned that the integration uses what a coming release stops or
+blocks its event loop, such as "Detected that custom integration 'homedarts' ...
+This will stop working in Home Assistant 2027.1", which fails the phase `logs`. The
+log names the phase or the step, and quotes such a warning; the artifact `e2e-beta-*`
+keeps the logs and the screenshots."""
 why = """It warns a week or two before a release of Home Assistant breaks the
 integration or its cards for the people who update first. Main doesn't require it."""
 fix = """Find what changed in the beta, in the log and in the release notes of Home
-Assistant, and adapt the integration or the cards. The tests run with the beta on your
-machine as well:"""
+Assistant, and adapt the integration or the cards; for a warning, change the code at
+the file and line it names. One the integration can't follow yet goes into `KNOWN` of
+`tests/e2e/ha_reports.py`, with its reason and the release it fails again from. The
+tests run with the beta on your machine as well:"""
 commands = [
   "HOME_ASSISTANT_IMAGE=ghcr.io/home-assistant/home-assistant:beta BOARD_MANAGER=2 bash tests/e2e/run.sh",
   "HOME_ASSISTANT_IMAGE=ghcr.io/home-assistant/home-assistant:beta bash tests/e2e/browser.sh",
