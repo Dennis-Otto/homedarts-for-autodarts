@@ -107,7 +107,7 @@ The test suite covers:
 - the training rules and every platform;
 - repairs, diagnostics and the dashboard card registration;
 - every blueprint, run by Home Assistant's automation engine, also on the real board events of a practice match, with checks that every event type and attribute a blueprint reads exists and that every import link opens the right file;
-- every dashboard card, card form and the dashboard strategy with its editor, rendered in a [happy-dom](https://github.com/capricorn86/happy-dom) browser DOM against a simulated Home Assistant: every game, every option, every language, controls with their confirmation, the caller and escaping of player names;
+- every dashboard card, card form and the dashboard strategy with its editor, rendered in a [happy-dom](https://github.com/capricorn86/happy-dom) browser DOM against a simulated Home Assistant: every game, every option, every language, controls with their confirmation, the caller, and [hostile text](#hostile-text-in-the-cards) in every view, which never turns into markup;
 - the documentation: every relative link, heading anchor and image of the Markdown files resolves, the repository's own absolute links in the README lead to existing files, every image has a description and exists in both languages, and the card picker links to existing sections (`tests/test_docs_links.py`).
 
 Tests that freeze the clock with the `freezer` fixture start at the same moment in every run: noon on a Wednesday in the time zone of the test harness, `QUIET_MOMENT` in `tests/conftest.py`, unless a test names its own with `@pytest.mark.freeze_time`. The clock is frozen before every other fixture of the test, so `hass` and the integration of a board start at that moment too. A test that moves the clock on, such as by an hour to the next read of the board PC, so never crosses a midnight or the time of the weekly report by chance. The frozen clock used to start at the real time, and a test that ran in the last hour of a week heard the weekly report.
@@ -139,6 +139,19 @@ A card on a dashboard runs timers: the countdown to the next match of a tourname
 Mocked timers (`context.mock.timers`) end with their test and do not count. To check that a card starts no timer, a test compares `timers()` of `dom.mjs` before and after, as *a scoreboard that left the page starts no countdown and no timer of the tournament* in `tests/frontend/tournament.test.mjs` does.
 
 The cards of a test leave the page with it because a card that stayed made `npm test` fail at random on a slow machine (#106). The countdown of a waiting tournament redrew a card of an earlier test every second, also while a later test mocked `setTimeout`. The card then cleared its idle timer with the mock, which clears nothing, so the real timer ran on after the cards had left the page. `dom.mjs` ends the mocks before the cards leave, so they clear their real timers with the real `clearTimeout`.
+
+### Hostile text in the cards
+
+The cards build their markup from template strings and escape every text that goes into it. Text reaches them from places a user does not fully control: names from the online bridge, voice commands and the Board Manager, friendly names and the names of other boards. A single text that slipped through would run script in Home Assistant with the user's login. `tests/frontend/hostile-text.test.mjs` shows that none does. It takes the states of real games, those of the recording of the [live demo](#live-demo-of-the-website), and fixtures of what the recording does not show: a team match, a party game with lives, a round robin on two boards, the board PC with a camera problem, players linked to persons with their pictures and darts entered by hand. Then it makes their texts hostile:
+
+- every text of every state that a card reads, the names of the board, the answers of Home Assistant and the card's options, at once, instead of the texts and after them, with a payload that leaves every place where a card writes text: the text, an attribute in either quotes or none, a list of options, a text field, a style and a title;
+- every address alone, such as the picture of a person, as a `javascript:` link;
+- the name of each player wherever the player appears, as the online bridge, a voice command or the Board Manager may name a player;
+- any few texts of any view, which fast-check picks.
+
+Every card shows them in each view of the recording, with the options that show the most of it, and as a user explores it: every control once, and what a tap opens, such as the new game screen and the menu and dialogs of a profile. The test then looks at everything the card shows, in every shadow root, for an element that runs or loads something, an event handler, a `javascript:` address or a marker of the payloads. The automatic dashboard and the editors get hostile names too: the strategy hands them only to cards that keep them text, and the editors to the form of Home Assistant as data.
+
+A new card or option joins the test with its entry in `CARDS`, and a view that the recording does not reach with a fixture beside `TEAM_MATCH`. The first test fails when a fixture no longer shows what it is for, and when the scoreboard lacks a view of a game of the recording.
 
 ## Docker end-to-end test
 
