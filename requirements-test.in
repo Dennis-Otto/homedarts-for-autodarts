@@ -2,7 +2,7 @@ pytest-homeassistant-custom-component==0.13.375
 ruff==0.17.1
 PyTurboJPEG==2.5.0
 mypy==2.4.0
-hypothesis==6.170.1
+hypothesis==6.170.2
 # Assist, which the voice blueprints talk to in tests/test_voice_blueprints.py, at
 # the versions of the conversation manifest of the Home Assistant above.
 hassil==3.12.1
