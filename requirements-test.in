@@ -1,8 +1,8 @@
 pytest-homeassistant-custom-component==0.13.375
-ruff==0.17.0
+ruff==0.17.1
 PyTurboJPEG==2.5.0
 mypy==2.4.0
-hypothesis==6.169.0
+hypothesis==6.170.1
 # Assist, which the voice blueprints talk to in tests/test_voice_blueprints.py, at
 # the versions of the conversation manifest of the Home Assistant above.
 hassil==3.12.1
@@ -12,4 +12,4 @@ gazetteer-matcher==1.1.0
 # custom_components/homedarts/granboard.py, depends on its usb integration, whose
 # packages pytest-homeassistant-custom-component does not bring.
 aiousbwatcher==1.1.2
-serialx==1.11.0
+serialx==1.14.0
