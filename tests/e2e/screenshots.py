@@ -22,7 +22,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import monotonic
 
-from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, probe
+from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, edit_card, loaded, probe
 from PIL import Image
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -132,12 +132,7 @@ SEEK = (
     + ")()) { for (const animation of card.shadowRoot.getAnimations()) {"
     " animation.pause(); animation.currentTime = time; } } }"
 )
-EDIT_CARD = (
-    "() => { const [card] = ("
-    + FIND_CARDS
-    + ")(); card.dispatchEvent(new CustomEvent('ll-edit-card', {bubbles: true,"
-    " composed: true, detail: {path: [0, 0, 0]}})); }"
-)
+EDIT_CARD = edit_card(FIND_CARDS)
 
 
 def control(changes: dict) -> None:

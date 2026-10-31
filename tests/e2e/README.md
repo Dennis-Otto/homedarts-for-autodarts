@@ -30,9 +30,9 @@ GitHub at the time limit of its step, prints the state of its containers and the
 of the log of Home Assistant (`diagnose.sh`); see
 [When a step hangs](../../docs/development.md#when-a-step-hangs).
 
-The script pulls the image of Home Assistant before the containers start, up to
-three times 10 seconds apart, so that a pull the registry cuts off doesn't fail the
-scenario.
+The scenario and the browser test pull their images before the containers start, up
+to three times 10 seconds apart, so that a pull the registry cuts off doesn't fail
+them.
 
 The scenario uses only Home Assistant's public REST and WebSocket APIs and verifies:
 

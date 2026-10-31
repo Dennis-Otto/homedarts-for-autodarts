@@ -20,6 +20,7 @@ from pathlib import Path
 from pages import (
     CARDS_DRAWN,
     STATES,
+    edit_card,
     expect_state,
     probe,
     run_until,
@@ -3010,10 +3011,7 @@ def editor(
         f"() => ({cards})().some((card) => card.shadowRoot?.querySelector('{ready}'))",
         timeout=30000,
     )
-    page.evaluate(
-        f"() => ({cards})()[0].dispatchEvent(new CustomEvent('ll-edit-card',"
-        " {bubbles: true, composed: true, detail: {path: [0, 0, 0]}}))"
-    )
+    page.evaluate(edit_card(cards))
     page.locator("hui-form-editor ha-form").first.wait_for(timeout=15000)
     fields = page.evaluate(f"() => ({FORM_EDITORS})()[0].schema.length")
     check(fields == rows, f"{view} form has {fields} rows")

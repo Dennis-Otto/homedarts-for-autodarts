@@ -161,6 +161,24 @@ class Unsettled(AssertionError):
     """A page that did not reach what the test waits for."""
 
 
+def edit_card(cards: str) -> str:
+    """A page function that opens the form of the first card that the page function
+    `cards` finds, as its pencil does in the edit mode of a dashboard: with the path
+    that Home Assistant gave the frame of the card. Home Assistant 2026.11 takes the
+    path as it is, so a fixed one opens the first card of the first view."""
+    return f"""
+() => {{
+  let frame = ({cards})()[0];
+  while (frame.localName !== 'hui-card-edit-mode') {{
+    frame = frame.parentNode ?? frame.host;
+  }}
+  frame.dispatchEvent(new CustomEvent('ll-edit-card', {{
+    bubbles: true, composed: true, detail: {{path: frame.path}},
+  }}));
+}}
+"""
+
+
 def probe(target: Page | BrowserContext) -> None:
     """Follow the websocket of every page of a context, or of one page, from its load."""
     target.add_init_script(WS_PROBE)
