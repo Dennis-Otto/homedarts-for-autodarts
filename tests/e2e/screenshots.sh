@@ -17,7 +17,7 @@ REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 PROJECT_NAME="${E2E_PROJECT_NAME:-autodarts_demo}"
 # Keep the image version equal to playwright in requirements-browser.in.
-PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright/python:v1.63.0-noble@sha256:72bd171a9ffc2b4b59532aaa6210e21014d07093120dc25528870c0b840da1f0"
+PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright/python:v1.64.1-noble@sha256:330d401ae23c905896a0c26c66c36fc971b621519e7b11b435a8328d7bf6e031"
 # A Tuesday evening, three days after the highlight photos of the demo.
 export DEMO_TIME="${DEMO_TIME:-2026-09-29T20:30:00+02:00}"
 # How many groups GROUPS in screenshots.py has.
