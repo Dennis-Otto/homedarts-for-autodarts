@@ -28,7 +28,9 @@ CONTRIBUTING = (
 )
 
 # The words of the menus of Home Assistant, as its frontend has them in its
-# translations (hass_frontend/static/translations of Home Assistant 2026.11): the
+# translations (hass_frontend/static/translations of frontend 20260930.5, which
+# Home Assistant 2026.10.4 ships, and the same in 2026.11.0b2; 2026.8.0 still has
+# Dashboard toevoegen, Toevoegen and Home Assistant herstarten in Dutch): the
 # steps of a path such as **Settings → Dashboards**, which this test collects from the
 # pages and from the last dialog of the setup.
 MENU_STEPS = {
@@ -66,7 +68,7 @@ MENU_STEPS = {
 # Its buttons, from the same files. HACS has no translations: its frontend comes in
 # English alone, so its button is Download in every language.
 BUTTONS = {
-    "nl": ("Toevoegen", "Voeg kaart toe", "Herstart Home Assistant", "Download"),
+    "nl": ("Voeg toe", "Voeg kaart toe", "Herstart Home Assistant", "Download"),
     "fr": ("Ajouter", "Ajouter une carte", "Redémarrer Home Assistant", "Download"),
     "es": ("Añadir", "Añadir tarjeta", "Reiniciar Home Assistant", "Download"),
 }
@@ -129,6 +131,7 @@ SLIPS = {
         "takeout",
         "pc van het bord",
         "Apparaten & diensten",
+        "Toevoegen**",
     ),
     "fr": (
         "cartes des touches",
@@ -268,6 +271,14 @@ def test_a_button_says_what_home_assistant_and_hacs_say(language):
         assert f"**{button}**" in text, button
 
 
+@pytest.mark.parametrize("page", ("README", "getting-started", "installation"))
+def test_the_german_pages_name_the_button_of_hacs_as_it_is(page):
+    # German has no list of buttons here, but HACS is in English for everyone.
+    text = read(f"{page}.de")
+    assert "**Download**" in text, page
+    assert "**Herunterladen**" not in text, page
+
+
 @pytest.mark.parametrize("language", LANGUAGES)
 @pytest.mark.parametrize("page", QUOTES)
 def test_a_page_quotes_the_integration_word_for_word(language, page):
@@ -339,8 +350,19 @@ def test_a_page_with_all_of_the_english_page_keeps_up_with_it(language, page):
     # that adds a section or a link shows here until the translation follows.
     english = read(page)
     translation = read(f"{page}.{language}")
-    assert HEADING.findall(translation) == HEADING.findall(english)
-    assert targets(translation, page) == targets(english, page)
+    way_out = (
+        f"Add it to docs/{page}.{language}.md as well, in English if you can't "
+        "translate it: see CONTRIBUTING.md#translations."
+    )
+    assert HEADING.findall(translation) == HEADING.findall(english), (
+        f"docs/{page}.{language}.md does not have the headings of docs/{page}.md. "
+        f"{way_out}"
+    )
+    missing = targets(english, page) ^ targets(translation, page)
+    assert not missing, (
+        f"docs/{page}.{language}.md and docs/{page}.md differ in these links: "
+        f"{sorted(missing)}. {way_out}"
+    )
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

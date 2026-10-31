@@ -60,7 +60,7 @@ Welke manier bij je bord past:
 
 ### 1. Automatisch gevonden (Board Manager 2)
 
-Board Manager 2 meldt zich in het netwerk aan (mDNS, `_autodarts-board._tcp`). Home Assistant toont dan **Autodarts-bord gevonden** onder **Instellingen → Apparaten en diensten → Ontdekt**. Selecteer **Toevoegen** en bevestig. Het venster noemt het adres, de versie van de Board Manager en het aantal camera's.
+Board Manager 2 meldt zich in het netwerk aan (mDNS, `_autodarts-board._tcp`). Home Assistant toont dan **Autodarts-bord gevonden** onder **Instellingen → Apparaten en diensten → Ontdekt**. Selecteer **Voeg toe** en bevestig. Het venster noemt het adres, de versie van de Board Manager en het aantal camera's.
 
 Krijgt het bord later een nieuw IP-adres, dan werkt de aanmelding het ingestelde adres automatisch bij.
 
@@ -76,7 +76,7 @@ Kies **Bordadres invoeren** en voer het IP-adres of de hostnaam van de bord-pc i
 
 <img src="images/en/setup-local.png" alt="Het formulier om het adres en de poort van de Board Manager in te voeren" width="520">
 
-De integratie leest het ID van het bord uit de Board Manager. Ze weigert adressen die niet bereikbaar zijn of waar nog geen bord is ingericht.
+De integratie leest het ID van het bord uit de Board Manager. Ze weigert adressen die niet bereikbaar zijn of waar nog geen bord is ingesteld.
 
 > **Tip:** geef de bord-pc een vast IP-adres in je router. Met Board Manager 2 houdt de automatische aanmelding het adres sowieso actueel.
 

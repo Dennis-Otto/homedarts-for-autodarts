@@ -41,7 +41,7 @@ HACS is de winkel voor integraties en kaarten van de community, zoals deze. Volg
 
 [![Open je Home Assistant en begin met het instellen van HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Met Board Manager 2 vindt Home Assistant het bord meestal vanzelf: **Instellingen → Apparaten en diensten** toont **Autodarts-bord gevonden** onder *Ontdekt*. Selecteer **Toevoegen** en bevestig.
+Met Board Manager 2 vindt Home Assistant het bord meestal vanzelf: **Instellingen → Apparaten en diensten** toont **Autodarts-bord gevonden** onder *Ontdekt*. Selecteer **Voeg toe** en bevestig.
 
 Selecteer anders de knop hierboven en kies **Borden zoeken in dit netwerk**, of **Bordadres invoeren** met het IP-adres van de bord-pc. Je hebt geen Autodarts-account nodig.
 
