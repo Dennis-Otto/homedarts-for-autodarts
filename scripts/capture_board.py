@@ -91,12 +91,15 @@ SECRET = re.compile(
 # camera and every throw has an "id", every camera model a "name".
 IDENTITY = re.compile(
     r"(?:board|account|user|owner|customer|tenant|player|member|person|device|machine"
-    r"|computer|hardware|installation|instance|session|linkserver|network|wifi)s?"
+    r"|computer|hardware|installation|instance|session|linkserver|network|wifi"
+    r"|client|server|host|system)s?"
     r"(?:id|name)s?$"
+    r"|^(?:user|owner|account|login|uid)s?$"
     r"|(?:display|nick|full|first|last|sur|real)name$"
     r"|(?:uuid|guid|hostname|serial(?:number|no)?|e?mail(?:address)?|mac(?:address)?"
     r"|b?ssid|streamingto)s?$"
-    r"|(?:^|local|public|lan|wan|host|remote)ip(?:v[46])?(?:address)?s?$"
+    r"|(?:^|local|public|external|client|server|lan|wan|host|remote)ip(?:v[46])?"
+    r"(?:addr(?:ess)?)?s?$"
 )
 # The keys that say nothing without the key above them: the "name" of "linkServer".
 VAGUE = ("id", "name")
@@ -129,10 +132,15 @@ MAC = re.compile(
     r"(?<![0-9A-Fa-f:-])(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}(?![0-9A-Fa-f:-])"
 )
 # The serial number in the description of a camera, such as
-# "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0".
+# "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0". Up to the
+# next "&" it may hold spaces, as "USB CAM 01" does; in other texts it ends at one.
 SERIAL = re.compile(
-    r"(?i:(?<=serial=)|(?<=serialnumber=)|(?<=serial_number=))[^&,;\s\"'\\]+"
+    r"(?i:(?<=serial=)|(?<=serialnumber=)|(?<=serial_number=))"
+    r"(?:[^&,;\n\"'\\]+(?=&)|[^&,;\s\"'\\]+)"
 )
+# What JSON writes for a line break, a tab or a backslash: its letters are no part of
+# what follows, as the "n" in "signed in\nplayer@example.com" is not.
+JSON_ESCAPE = re.compile(r"\\(?:[nrtbf\\]|u[0-9A-Fa-f]{4})")
 # Board Manager versions as they name a folder of recordings.
 VERSION = re.compile(r"v?(\d{1,4}(?:\.\d{1,6}){0,3}(?:-[0-9A-Za-z.]{1,32})?)")
 
@@ -293,6 +301,9 @@ def redact(value: Any, found: dict[str, str]) -> Any:
             return [walk(entry, key) for entry in item]
         if secret_at(key, item):
             return placeholder(key)
+        # A number that equals a secret can't be told from it, and leftovers() sees it.
+        if type(item) is int and len(str(item)) >= SHORTEST_SECRET:
+            return found.get(str(item), item)
         return text(item) if isinstance(item, str) else item
 
     return walk(value)
@@ -301,11 +312,14 @@ def redact(value: Any, found: dict[str, str]) -> Any:
 def alternation(texts: Iterable[str]) -> re.Pattern[str]:
     """A pattern that finds any of the texts, the longest where several start, and
     nothing without texts. Digits alone count only as a number of their own: the
-    serial number "000000" is not in the 1.0000000000000002 of a calibration."""
+    serial number "000000" is not in the 1.0000000000000002 of a calibration, but
+    "48151623" is in "lost board 48151623." and "48151623.boards.example"."""
     unique = sorted(set(texts), key=lambda item: (-len(item), item))
     return re.compile(
         "|".join(
-            rf"(?<![\d.]){item}(?![\d.])" if item.isdigit() else re.escape(item)
+            rf"(?<!\d)(?<!\d\.){item}(?!\d)(?!\.\d)"
+            if item.isdigit()
+            else re.escape(item)
             for item in unique
         )
         or "(?!)"
@@ -332,7 +346,8 @@ def leftovers(content: str, found: dict[str, str]) -> list[str]:
         for match in search.findall(content)
         if match in written and match not in allowed
     }
-    left.update(item.what for item in IDENTIFYING if item.is_left_in(content))
+    plain = JSON_ESCAPE.sub(" ", content)
+    left.update(item.what for item in IDENTIFYING if item.is_left_in(plain))
     return sorted(left)
 
 

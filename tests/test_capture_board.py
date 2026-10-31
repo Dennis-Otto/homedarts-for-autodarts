@@ -312,11 +312,25 @@ def test_a_key_is_the_same_key_in_every_spelling(spellings, name):
         "serialNumber",
         "serial_no",
         "macAddress",
+        # What a person or a host goes by, without "id" or "name".
+        "user",
+        "owner",
+        "account",
+        "login",
+        "uid",
+        "clientId",
+        "hostId",
+        "systemId",
+        "serverName",
         "wifiSsid",
         "ipv6",
         "ipAddress",
         "publicIp",
         "localIpv4",
+        "ipAddr",
+        "ip_addr",
+        "externalIp",
+        "clientIp",
         # Secrets, also in the middle of a key and as a list.
         "privateKey",
         "tlsCertificate",
@@ -343,10 +357,10 @@ def test_a_key_of_a_later_board_manager_is_recognised(key):
 @pytest.mark.parametrize(
     ("answer", "placeholder"),
     [
-        ({"account": {"id": "zq-real-value"}}, "private-account-id"),
+        ({"account": {"id": "zq-real-value"}}, "private-account"),
         ({"board": {"id": "zq-real-value"}}, PLACEHOLDERS["board_id"]),
         ({"boards": [{"id": "zq-real-value"}]}, "private-boards-id"),
-        ({"user": {"name": "zq-real-value"}}, "private-user-name"),
+        ({"user": {"name": "zq-real-value"}}, "private-user"),
         ({"linkServer": {"name": "zq-real-value"}}, "private-linkServer-name"),
         ({"link_server": {"name": "zq-real-value"}}, "private-link_server-name"),
         ({"token": {"value": "zq-real-value"}}, "private-token"),
@@ -373,6 +387,8 @@ def test_a_number_can_be_an_id_too(key):
             "config.json": {
                 key: number,
                 "link": f"https://boards.example/{number}/live",
+                "log": f"lost board {number}.",
+                "url": f"{number}.boards.example",
                 "serial": "000000",
                 "fps": [29.0000005],
                 "homography": [1.0000000000000002, 148151623.5],
@@ -387,6 +403,8 @@ def test_a_number_can_be_an_id_too(key):
     config = json.loads(content["config.json"])
     assert config[key] == capture_board.placeholder(key)
     assert str(number) not in config["link"]
+    assert str(number) not in config["log"]
+    assert str(number) not in config["url"]
     # The digits of an ID or a serial number inside other numbers are no leftover.
     assert config["fps"] == [29.0000005]
     assert config["homography"] == [1.0000000000000002, 148151623.5]
@@ -479,6 +497,11 @@ def test_what_says_nothing_about_a_person_or_a_device_stays():
             f"serial_number={PLACEHOLDERS['serial']}",
             "a serial number",
         ),
+        (
+            "vid=1&serial=USB CAM 01&location=1",
+            f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
+            "a serial number",
+        ),
     ],
 )
 def test_what_identifies_a_device_or_a_person_goes_under_any_key(text, replaced, what):
@@ -487,6 +510,57 @@ def test_what_identifies_a_device_or_a_person_goes_under_any_key(text, replaced,
     assert capture_board.secrets({"note": replaced}) == {}
     assert capture_board.leftovers(replaced, {}) == []
     assert capture_board.leftovers(text, {}) == [what]
+
+
+@pytest.mark.parametrize("escape", ["\n", "\r", "\t", "\b", "\f", "\\", "\x01"])
+def test_the_escape_of_a_recording_is_no_part_of_what_follows_it(escape):
+    # The placeholder after a line break is no leftover, as it would be with the "n".
+    clean = json.dumps(f"signed in{escape}{PLACEHOLDERS['email']}")
+    assert capture_board.leftovers(clean, {}) == []
+    # And the letter of an escape doesn't hide an address behind it.
+    for address, what in (
+        ("fe80::1", "an IPv6 address"),
+        ("b8:27:eb:12:34:56", "a MAC address"),
+        ("192.168.1.50", "a private IPv4 address"),
+    ):
+        assert capture_board.leftovers(json.dumps(f"a{escape}{address}"), {}) == [what]
+
+
+@pytest.mark.parametrize(
+    ("answer", "secret"),
+    [
+        ({"sessionId": 123456, "bytes": 123456}, "123456"),
+        (
+            {"cam": "vid=1&serial=200901010001&location=1", "bytes": 200901010001},
+            "200901010001",
+        ),
+    ],
+)
+def test_a_number_that_equals_a_secret_does_not_stop_the_recording(answer, secret):
+    _, content = capture_board.files(
+        {"version.txt": "2.2.0", "config.json": answer}, [], [], "", None
+    )
+
+    assert secret not in content["config.json"]
+
+
+def test_a_serial_number_of_digits_goes_at_the_end_of_a_sentence():
+    number = "200901010001"
+    _, content = capture_board.files(
+        {
+            "version.txt": "2.2.0",
+            "config.json": {
+                "cam": f"vid=1&serial={number}&location=1",
+                "log": f"lost camera {number}.",
+            },
+        },
+        [],
+        [],
+        "",
+        None,
+    )
+
+    assert number not in content["config.json"]
 
 
 def test_a_serial_number_goes_wherever_the_board_names_it():
