@@ -87,7 +87,7 @@ plugins:
   # start, the installation and the frequently asked questions (decision 0027). A
   # page without a version in a language is shown in English there, which search
   # engines don't list twice, with the note of extra.untranslated, which links to
-  # the issue where native speakers help to translate it (scripts/mkdocs_hooks.py).
+  # the section of CONTRIBUTING.md that shows how to translate it (scripts/mkdocs_hooks.py).
   # The theme of a language names the switch between light and dark in its words.
   # https://ultrabug.github.io/mkdocs-static-i18n/
   i18n:
@@ -117,7 +117,7 @@ plugins:
         build: true
         site_name: "HomeDarts for Autodarts"
         copyright: "© 2026 Trkal en de bijdragers van HACSAutodarts; 2026 Dennis Otto<br>HomeDarts for Autodarts is een onofficiële integratie van de community, niet verbonden aan Autodarts."
-        site_description: "HomeDarts for Autodarts, de Home Assistant-integratie voor Autodarts-borden en elk dartbord: lokale realtime besturing van het bord, X01, Cricket, party- en trainingsspellen, toernooien en een bot, spelersstatistieken met trefferkaarten, zeven dashboardkaarten en zestien blueprints, spellen starten met je stem. Geen cloudaccount nodig."
+        site_description: "HomeDarts for Autodarts, de Home Assistant-integratie voor Autodarts-borden en elk dartbord: lokale realtime besturing van het bord, X01, Cricket, party- en trainingsspellen, toernooien en een bot, spelersstatistieken met heatmaps, zeven dashboardkaarten en zestien blueprints, spellen starten met je stem. Geen cloudaccount nodig."
         nav_translations:
           Home: Start
           Get started: Aan de slag
@@ -135,13 +135,13 @@ plugins:
           untranslated:
             text: "Deze pagina is er nog alleen in het Engels."
             link: "Help mee met de vertaling"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/480"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
       - locale: fr
         name: Français
         build: true
         site_name: "HomeDarts for Autodarts"
         copyright: "© 2026 Trkal et les contributeurs de HACSAutodarts ; 2026 Dennis Otto<br>HomeDarts for Autodarts est une intégration non officielle de la communauté, sans lien avec Autodarts."
-        site_description: "HomeDarts for Autodarts, l'intégration Home Assistant pour les cibles Autodarts et toute cible de fléchettes : contrôle local en temps réel, X01, Cricket, jeux de fête et d'entraînement, tournois et un bot, statistiques des joueurs avec cartes des touches, sept cartes de tableau de bord et seize blueprints, parties lancées à la voix. Sans compte cloud."
+        site_description: "HomeDarts for Autodarts, l'intégration Home Assistant pour les cibles Autodarts et toute cible de fléchettes : contrôle local en temps réel, X01, Cricket, jeux de soirée et d'entraînement, tournois et un bot, statistiques des joueurs avec cartes de chaleur, sept cartes de tableau de bord et seize blueprints, parties lancées à la voix. Sans compte cloud."
         nav_translations:
           Home: Accueil
           Get started: Premiers pas
@@ -159,13 +159,13 @@ plugins:
           untranslated:
             text: "Cette page n'existe encore qu'en anglais."
             link: "Aidez-nous à la traduire"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/481"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
       - locale: es
         name: Español
         build: true
         site_name: "HomeDarts for Autodarts"
         copyright: "© 2026 Trkal y los colaboradores de HACSAutodarts; 2026 Dennis Otto<br>HomeDarts for Autodarts es una integración no oficial de la comunidad, sin relación con Autodarts."
-        site_description: "HomeDarts for Autodarts, la integración de Home Assistant para dianas Autodarts y cualquier diana: control local en tiempo real, X01, Cricket, juegos de fiesta y de entrenamiento, torneos y un bot, estadísticas con mapas de aciertos, siete tarjetas del panel y dieciséis blueprints, partidas por voz. Sin cuenta en la nube."
+        site_description: "HomeDarts for Autodarts, la integración de Home Assistant para dianas Autodarts y cualquier diana: control local en tiempo real, X01, Cricket, juegos de fiesta y de entrenamiento, torneos y un bot, estadísticas con mapas de calor, siete tarjetas del panel y dieciséis blueprints, partidas por voz. Sin cuenta en la nube."
         nav_translations:
           Home: Inicio
           Get started: Primeros pasos
@@ -183,7 +183,7 @@ plugins:
           untranslated:
             text: "Esta página todavía solo está en inglés."
             link: "Ayúdanos a traducirla"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/482"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
 
 # Links in the HTML of a page, links to the start pages of GitHub and links to the
 # other language lead to the pages of the website, as the links of the Markdown do.

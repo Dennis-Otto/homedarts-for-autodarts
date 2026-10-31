@@ -15,7 +15,7 @@ Cette page décrit l'installation et l'ajout d'une cible. La reconfiguration, le
 | Home Assistant | **2026.8** ou plus récent ([pourquoi 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md), en anglais) |
 | Cible Autodarts | Installée et en état de marche dans le Board Manager d'Autodarts : **Board Manager 2**, Autodarts 2 sans écran (headless, recommandé, testé jusqu'à la version 2.0.2), ou le **Board Manager 1** classique. Selon un joueur, **Autodarts Desktop** 2.0.2 sous Linux fonctionne aussi. Autodarts Desktop sous Windows et les **appareils de Winmau** comme Autodarts X ou Lens n'ont pas encore été testés ; [dites-nous](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) comment cela se passe avec le vôtre |
 | Réseau | Home Assistant atteint le PC de la cible sur le réseau local, par défaut sur le port TCP **3180** |
-| Sans Autodarts | N'importe quelle cible : vous saisissez les fléchettes sur un pavé numérique, voir [Play without Autodarts](without-autodarts.md) ; il ne faut alors ni PC de la cible ni réseau vers la cible |
+| Sans Autodarts | N'importe quelle cible : vous saisissez les fléchettes sur un pavé numérique, voir [Play without Autodarts](without-autodarts.md) ; il ne faut alors ni PC pour la cible ni réseau jusqu'à elle |
 
 L'intégration n'a besoin d'**aucun identifiant Autodarts, mot de passe ni clé d'API**. Elle ne modifie jamais l'enregistrement de votre cible auprès d'Autodarts. Elle n'a pas non plus de lien avec le cloud d'Autodarts : Autodarts ne délivre pas d'identifiants client aux intégrations tierces ([décision 0025](decisions/0025-no-cloud-link.md), en anglais).
 
@@ -25,17 +25,17 @@ L'intégration n'a besoin d'**aucun identifiant Autodarts, mot de passe ni clé 
 
 [![Ouvrez votre Home Assistant et affichez ce dépôt dans HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Dennis-Otto&repository=homedarts-for-autodarts&category=integration)
 
-1. Choisissez le bouton ci-dessus, ou ouvrez **HACS** dans Home Assistant, recherchez **HomeDarts** et ouvrez-la.
-2. Choisissez **Télécharger**.
+1. Sélectionnez le bouton ci-dessus, ou ouvrez **HACS** dans Home Assistant, recherchez **HomeDarts** et ouvrez-la.
+2. Sélectionnez **Download**.
 3. Redémarrez Home Assistant.
 
-HACS présente les nouvelles versions comme une mise à jour dans **Paramètres → Mises à jour**. La fenêtre de mise à jour affiche les notes de version. HACS installe le paquet de version signé `homedarts.zip`, le même fichier que pour une [installation manuelle](#à-la-main).
+HACS présente les nouvelles versions comme une mise à jour dans **Paramètres → Mises à jour**. La fenêtre de mise à jour affiche les notes de version. HACS installe le paquet de version signé `homedarts.zip`, le même fichier que pour une [installation manuelle](#manuellement).
 
 L'intégration fait partie des dépôts par défaut de HACS depuis le 20 octobre 2026 ([hacs/default#11306](https://github.com/hacs/default/pull/11306)). Si vous l'aviez ajoutée avant comme dépôt personnalisé, vous n'avez rien à faire : HACS ne la liste plus parmi les dépôts personnalisés et garde votre installation et ses mises à jour.
 
 Vous voulez tester les bêtas ? [Betas for testers](installation.md#betas-for-testers) explique comment HACS les propose.
 
-### À la main
+### Manuellement
 
 1. Téléchargez `homedarts.zip` de la dernière version sur [GitHub](https://github.com/Dennis-Otto/homedarts-for-autodarts/releases). Il contient les fichiers de l'intégration, sans dossier autour.
 2. Créez le dossier `custom_components/homedarts` dans votre configuration de Home Assistant et décompressez-y le fichier. Le résultat est `config/custom_components/homedarts/manifest.json`.
@@ -60,7 +60,7 @@ Quelle façon convient à votre cible :
 
 ### 1. Détection automatique (Board Manager 2)
 
-Board Manager 2 s'annonce sur le réseau (mDNS, `_autodarts-board._tcp`). Home Assistant affiche alors **Cible Autodarts détectée** sous **Paramètres → Appareils et services → Découverts**. Choisissez **Ajouter** et confirmez. La fenêtre indique l'adresse, la version du Board Manager et le nombre de caméras.
+Board Manager 2 s'annonce sur le réseau (mDNS, `_autodarts-board._tcp`). Home Assistant affiche alors **Cible Autodarts détectée** sous **Paramètres → Appareils et services → Découvertes**. Sélectionnez **Ajouter** et confirmez. La fenêtre indique l'adresse, la version du Board Manager et le nombre de caméras.
 
 Si la cible reçoit plus tard une nouvelle adresse IP, l'annonce met à jour automatiquement l'adresse configurée.
 
@@ -82,7 +82,7 @@ L'intégration lit l'identifiant de la cible dans le Board Manager. Elle refuse 
 
 ### 4. Une cible sans Autodarts
 
-Choisissez **Cible sans Autodarts : saisir soi-même chaque fléchette** et donnez un nom à la cible, comme *Garage*. Vous saisissez ses fléchettes sur le pavé numérique de la carte en direct et du tableau des scores, et les jeux, l'entraînement et les statistiques fonctionnent comme avec Autodarts ; [Play without Autodarts](without-autodarts.md) explique tout. Une maison peut en avoir plusieurs, à côté de cibles Autodarts, et chacune peut [recevoir plus tard sa cible Autodarts](without-autodarts.md#autodarts-later).
+Choisissez **Cible sans Autodarts : saisir soi-même chaque fléchette** et donnez un nom à la cible, comme *Garage*. Vous saisissez ses fléchettes sur le pavé numérique de la carte en direct et du tableau des scores, et les jeux, l'entraînement et les statistiques fonctionnent comme avec Autodarts ; [Play without Autodarts](without-autodarts.md) explique tout. Vous pouvez en avoir plusieurs, à côté de cibles Autodarts, et chacune peut [recevoir plus tard sa cible Autodarts](without-autodarts.md#autodarts-later).
 
 <img src="images/en/setup-manual.png" alt="Le formulaire d'une cible sans Autodarts, avec le nom Dartboard rempli" width="520">
 
