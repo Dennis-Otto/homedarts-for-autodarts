@@ -77,6 +77,10 @@ trap cleanup EXIT
 # Relative Compose paths also work with Git Bash on Windows.
 cd "${SCRIPT_DIR}"
 
+# The image of Home Assistant before any demo starts, as in run.sh: inside "up" of
+# demo.sh, a pull that the registry cuts off would end the job.
+in_background pull_images "${COMPOSE[@]}" pull --quiet --policy missing
+
 for language in ${LANGUAGES:-en de}; do
 	for group in "${groups[@]}"; do
 		echo "Group ${group} of ${GROUP_COUNT} in ${language}, from a fresh demo"
