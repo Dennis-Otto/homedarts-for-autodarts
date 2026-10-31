@@ -357,6 +357,30 @@ def test_a_system_read_of_an_earlier_board_manager_stays_as_it_is(version):
     assert board_system(raw) == raw
 
 
+async def test_a_board_rolled_back_from_2_1_is_set_up_anew(hass, aioclient_mock):
+    er.async_get(hass).async_get_or_create(
+        "button", "homedarts", "board-1_start_streams"
+    )
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    connect(coordinator, running_2_1())
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=2)
+    assert state(hass, "button", "start_streams") == "unavailable"
+    # Board Manager 1 has no /api/system: its version reloads the entry, so nothing
+    # of 2.1 outlives the client, neither its pace nor the commands it hides.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{BASE}/api/system", status=404)
+    mock_board(aioclient_mock)
+    await reread(hass, coordinator)
+    assert entry.runtime_data.local is not coordinator
+    coordinator = entry.runtime_data.local
+    connect(coordinator, recorded("1.0.7", "state.json"))
+    assert coordinator.client.interface_2_1 is False
+    assert coordinator.update_interval == timedelta(seconds=30)
+    assert state(hass, "button", "start_streams") != "unavailable"
+
+
 @pytest.mark.usefixtures("telemetry")
 async def test_every_entity_reads_the_right_value_on_board_manager_2_1(
     hass, aioclient_mock

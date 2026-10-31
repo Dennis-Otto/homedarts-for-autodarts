@@ -90,7 +90,8 @@ the containers, what they use of the CPU and the memory, and the end of the log 
 Home Assistant."""
 why = """It is the one test that runs the integration as it is installed, against a
 board that answers as a real one does: on Board Manager 1, on Board Manager 2 with its
-discovery by mDNS, and on the oldest Home Assistant that `hacs.json` promises."""
+discovery by mDNS, on Board Manager 2.1 with the new shape of its answers, and on the
+oldest Home Assistant that `hacs.json` promises."""
 fix = """Run the scenario of the job that failed on your machine with Docker, fix what
 it shows, and push. For a warning of Home Assistant about the integration, change the
 code at the file and line it names; one the integration can't follow yet goes into
@@ -104,6 +105,7 @@ answer of the board that never came. A phase that only grew slower gets a larger
 commands = [
   "BOARD_MANAGER=1 bash tests/e2e/run.sh",
   "BOARD_MANAGER=2 bash tests/e2e/run.sh",
+  "BOARD_MANAGER=2.1 bash tests/e2e/run.sh",
 ]
 docs = "docs/development.md#docker-end-to-end-test"
 autofix = """A scenario that fails needs a person, who knows what the integration

@@ -65,7 +65,7 @@ VERSIONS = sorted(path.name for path in RECORDINGS.iterdir() if path.is_dir())
 # What BOARD_MANAGER says to the end-to-end double, by the version it answers as.
 GENERATIONS = [(1, "1.0.7"), (2, "2.0.0"), ("2.1", "2.1.0")]
 # The doubles the capture script can record: on 2.1 it still leaves the board ID in a
-# recording, see issue 526.
+# recording. The fix of issue 526 removes this constant and captures all GENERATIONS.
 CAPTURED = GENERATIONS[:2]
 # The routes of a Board Manager that its version doesn't have.
 ABSENT = {
