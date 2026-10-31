@@ -26,7 +26,8 @@ MAX_TEXT = 255
 # Notifications the integration follows; the board may send others.
 EVENT_KINDS = ("state", "motion_state", "cam_state", "stats", "cam_stats")
 # Board Manager 2.1 writes status and event in camelCase, "takeoutInProgress"
-# where 2.0 wrote "Takeout in progress".
+# where 2.0 wrote "Takeout in progress", and the keys of its settings, "boardId"
+# where 2.0 wrote "board_id".
 CAMEL_CASE_WORD = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 COMMANDS = {
     "start": ("PUT", "/api/start"),
@@ -117,7 +118,9 @@ def _config_summary(raw: Any, path: str) -> dict[str, Any]:
     """Only identity and supported controls; never auth, TLS or camera secrets."""
     if not isinstance(raw, dict):
         raise AutodartsProtocolError(path)
-    auth, cam, motion = (raw.get(key) or {} for key in ("auth", "cam", "motion"))
+    auth, cam, motion = (
+        _snake_case(raw.get(key) or {}) for key in ("auth", "cam", "motion")
+    )
     if not all(isinstance(section, dict) for section in (auth, cam, motion)):
         raise AutodartsProtocolError(path)
     result = {
@@ -130,6 +133,45 @@ def _config_summary(raw: Any, path: str) -> dict[str, Any]:
     if motion.get("standby_minutes") in STANDBY_MINUTES:
         result["standby_minutes"] = motion["standby_minutes"]
     return result
+
+
+def _snake_case(section: Any) -> Any:
+    """A section of the settings with the keys of Board Manager 2.0."""
+    if not isinstance(section, dict):
+        return section
+    return {
+        "_".join(CAMEL_CASE_WORD.split(key)).lower(): value
+        for key, value in section.items()
+    }
+
+
+def _spelled(key: str, section: dict[str, Any]) -> str | None:
+    """A key of the settings as this board spells it; None if it has no such key."""
+    first, *others = key.split("_")
+    camel_case = first + "".join(word.capitalize() for word in others)
+    return next((name for name in (camel_case, key) if name in section), None)
+
+
+def has_interface_2_1(raw: dict[str, Any]) -> bool:
+    """Whether an answer to /api/system has the shape of Board Manager 2.1."""
+    return isinstance(raw.get("status"), dict)
+
+
+def board_system(raw: dict[str, Any]) -> dict[str, Any]:
+    """The answer to /api/system in the shape of Board Manager 2.0.
+
+    Board Manager 2.1 keeps the version, the link and the update under status, the
+    state under turn and the motion readings under vantage. An answer of 2.0 stays
+    as it is. The settings in it keep their spelling; _config_summary reads both.
+    """
+    if not has_interface_2_1(raw):
+        return raw
+    return {
+        **raw,
+        **raw["status"],
+        "state": board_state(_dict(raw.get("turn"))),
+        "motion": _dict(_dict(raw.get("vantage")).get("motion")),
+    }
 
 
 def board_state(raw: dict[str, Any]) -> dict[str, Any]:
@@ -191,6 +233,9 @@ class AutodartsLocalClient:
         self._command_lock = asyncio.Lock()
         # Socket frames that were no known notification, for diagnostics.
         self.ignored_frames = 0
+        # The last answer to /api/system had the shape of Board Manager 2.1: its
+        # motion readings come from that read, and its socket sends only states.
+        self.interface_2_1 = False
 
     async def _request(
         self,
@@ -268,7 +313,9 @@ class AutodartsLocalClient:
         The raw answer also carries the board API key and TLS key; only the
         fields below ever leave this client.
         """
-        raw = await self._object("/api/system")
+        answer = await self._object("/api/system")
+        self.interface_2_1 = has_interface_2_1(answer)
+        raw = board_system(answer)
         stats = _dict(raw.get("stats"))
         cameras = raw.get("camStats")
         if not isinstance(cameras, list):
@@ -287,6 +334,7 @@ class AutodartsLocalClient:
                 "memory_bytes": number(stats.get("memoryBytes")),
                 "update_available": version_text(raw.get("updateAvailable")),
                 "cloud_link": _text(raw.get("link")),
+                "calibrating_cameras": number(raw.get("calibratingCams")),
             },
         }
 
@@ -458,24 +506,31 @@ class AutodartsLocalClient:
                     return
                 raise
 
-    async def set_config_switch(self, key: str, enabled: bool) -> None:
-        if key not in CONFIG_SWITCHES or not isinstance(enabled, bool):
-            raise ValueError("Unsupported board setting")
+    async def _write_setting(self, section: str, key: str, value: object) -> None:
+        """Change one setting, in the spelling of the board.
+
+        The board tells its spelling right before the write, because an update may
+        have changed it since the last read. A setting it doesn't report is not
+        written at all: nothing says what it would make of the key.
+        """
         async with self._command_lock:
+            settings = _dict((await self._object("/api/config")).get(section))
+            spelled = _spelled(key, settings)
+            if spelled is None:
+                raise AutodartsEndpointMissing("Setting not supported by this board")
             await self._request(
                 "PATCH",
                 "/api/config",
-                payload={"cam": {key: enabled}},
+                payload={section: {spelled: value}},
                 response_type="none",
             )
+
+    async def set_config_switch(self, key: str, enabled: bool) -> None:
+        if key not in CONFIG_SWITCHES or not isinstance(enabled, bool):
+            raise ValueError("Unsupported board setting")
+        await self._write_setting("cam", key, enabled)
 
     async def set_standby_minutes(self, minutes: int) -> None:
         if minutes not in STANDBY_MINUTES:
             raise ValueError("Unsupported standby duration")
-        async with self._command_lock:
-            await self._request(
-                "PATCH",
-                "/api/config",
-                payload={"motion": {"standby_minutes": minutes}},
-                response_type="none",
-            )
+        await self._write_setting("motion", "standby_minutes", minutes)

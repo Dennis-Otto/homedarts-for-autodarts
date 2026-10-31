@@ -28,7 +28,7 @@ from custom_components.homedarts.practice import PracticeGame
 
 # When the unit tests of the games take their steps, which take the time.
 NOW = datetime(2026, 10, 1, 20, 0, tzinfo=UTC)
-# What Board Manager 1.0.7, 2.0.0 and 2.0.2 answer, redacted by
+# What Board Manager 1.0.7, 2.0.0, 2.0.2 and 2.1.0 answer, redacted by
 # scripts/capture_board.py; the double of the Docker end-to-end test answers like
 # them too, and tests/test_board_contract.py holds both doubles to them.
 RECORDINGS = Path(__file__).parent / "fixtures" / "board_manager"
@@ -82,26 +82,31 @@ def mock_board(
         text=recorded(recording, "version.txt") if version is None else version,
     )
     for path, name in READINGS.items():
-        mock.get(f"{base}{path}", json=recorded(recording, name))
+        # A route the board of the recording doesn't have stays without an answer:
+        # a read of it fails the test.
+        if (RECORDINGS / recording / name).exists():
+            mock.get(f"{base}{path}", json=recorded(recording, name))
 
 
 def local_entry_data(board_id="board-1", host="192.0.2.10"):
     return {"board_id": board_id, "host": host, "port": 3180}
 
 
-def mock_board_v2(mock, *, system=None, state=None, host=None, base=BASE):
+def mock_board_v2(
+    mock, *, system=None, state=None, host=None, recording="2.0.0", base=BASE
+):
     """A Board Manager 2 board: /api/system instead of upstream routes."""
     mock.get(
         f"{base}/api/system",
-        json=recorded("2.0.0", "system.json") if system is None else deepcopy(system),
+        json=recorded(recording, "system.json") if system is None else deepcopy(system),
     )
     mock.get(
         f"{base}/api/host",
-        json=recorded("2.0.0", "host.json") if host is None else deepcopy(host),
+        json=recorded(recording, "host.json") if host is None else deepcopy(host),
     )
     mock.put(f"{base}/api/upstream/connect", status=404)
     mock.put(f"{base}/api/upstream/disconnect", status=404)
-    mock_board(mock, state=state, recording="2.0.0", base=base)
+    mock_board(mock, state=state, recording=recording, base=base)
 
 
 # A second board in the same home: its own ID, address and two cameras.

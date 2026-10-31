@@ -1,0 +1,8 @@
+{
+  "board_manager": "2.1.0",
+  "captured": "2026-10-31",
+  "source": "scripts/capture_board.py",
+  "absent": [
+    "/api/state/motion"
+  ]
+}

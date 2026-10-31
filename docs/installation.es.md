@@ -13,7 +13,7 @@ Esta página describe la instalación y cómo añadir una diana. La reconfigurac
 | Requisito | Detalles |
 | --- | --- |
 | Home Assistant | **2026.8** o posterior ([por qué 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md), en inglés) |
-| Diana Autodarts | Instalada y funcionando en el Board Manager de Autodarts: **Board Manager 2**, Autodarts 2 sin pantalla (headless, recomendado, probado hasta la versión 2.0.2), o el **Board Manager 1** clásico. Según un jugador, **Autodarts Desktop** 2.0.2 en Linux también funciona. Autodarts Desktop en Windows y los **dispositivos de Winmau** como Autodarts X o Lens aún no se han probado; [cuéntanos](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) cómo funciona con el tuyo |
+| Diana Autodarts | Instalada y funcionando en el Board Manager de Autodarts: **Board Manager 2**, Autodarts 2 sin pantalla (headless, recomendado, probado hasta la versión 2.1.0), o el **Board Manager 1** clásico. Según un jugador, **Autodarts Desktop** 2.0.2 en Linux también funciona. Autodarts Desktop en Windows y los **dispositivos de Winmau** como Autodarts X o Lens aún no se han probado; [cuéntanos](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) cómo funciona con el tuyo |
 | Red | Home Assistant llega al PC de la diana en la red local, por defecto en el puerto TCP **3180** |
 | Sin Autodarts | Cualquier diana: introduces los dardos en un teclado numérico, consulta [Play without Autodarts](without-autodarts.md); no necesita ni un PC en la diana ni una red hasta la diana |
 

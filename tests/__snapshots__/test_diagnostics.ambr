@@ -352,6 +352,7 @@
         'standby_minutes': 15,
       }),
       'system': dict({
+        'calibrating_cameras': None,
         'cloud_link': 'connected',
         'update_available': '2.0.2',
       }),

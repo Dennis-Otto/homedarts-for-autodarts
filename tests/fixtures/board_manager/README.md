@@ -13,6 +13,11 @@ the Board Manager becomes a change of a recording, and both test suites follow i
 | [`1.0.7`](1.0.7/) | Board Manager 1, the classic app | Built from the shapes the integration was developed against |
 | [`2.0.0`](2.0.0/) | Board Manager 2, headless | Built from the shapes the integration was developed against |
 | [`2.0.2`](2.0.2/) | Board Manager 2, headless | Built from the shapes the integration was developed against, with the takeout that 2.0.2 sometimes never finishes |
+| [`2.1.0`](2.1.0/) | Board Manager 2, headless, in the shape of 2.1 | A real board with its detection running; its socket while the detection stopped, started and stopped again |
+
+No dart was thrown on the board of `2.1.0`. The frames of a real board of 2.1.0 with
+real darts and takeouts, from another board, are in
+[`board_manager_2.1.0_frames.jsonl`](../board_manager_2.1.0_frames.jsonl).
 
 `capture.json` of each folder says where it comes from: `captured` is the day of a
 capture of a real board, or `null` for a recording built from the documented shapes,

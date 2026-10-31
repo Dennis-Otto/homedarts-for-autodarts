@@ -34,6 +34,8 @@ BUTTONS = {
 }
 # Board Manager 2 has no routes to connect or disconnect its cloud link.
 V1_BUTTONS = ("connect", "disconnect")
+# Board Manager 2.1 has no routes to start or stop the streams of its cameras.
+NOT_ON_2_1 = ("start_streams", "stop_streams")
 
 
 async def async_setup_entry(
@@ -80,6 +82,12 @@ class AutodartsButton(AutodartsBoardEntity, ButtonEntity):
         self._attr_entity_category = category
         if command == "restart":
             self._attr_device_class = ButtonDeviceClass.RESTART
+
+    @property
+    def available(self) -> bool:
+        return super().available and not (
+            self._command in NOT_ON_2_1 and self.coordinator.client.interface_2_1
+        )
 
     async def async_press(self) -> None:
         await self.coordinator.async_action(

@@ -24,6 +24,7 @@ Ein Board ist ein Integrationseintrag mit einer Verbindung: direkt zum Board Man
 | Abgleich, solange Echtzeitereignisse ankommen | HTTP-Lesen | Alle 30 Sekunden; alle 10 Sekunden bei Board Manager 2, der Kameraänderungen nicht meldet |
 | Ersatz ohne Echtzeitereignisse | HTTP-Lesen | Alle 2 Sekunden; alle 15 Sekunden, wenn das Board seit etwa einer halben Minute fehlt |
 | Board Manager 2 | Ein gemeinsamer Aufruf von `/api/system` pro Intervall | Wie oben |
+| Board Manager 2.1 | Sein Socket sendet nur den Zustand: Bewegung, Kameras und Bildraten kommen mit der Abfrage von `/api/system` | Alle 2 Sekunden, solange die Erkennung läuft, sonst alle 10 Sekunden |
 | Board-PC-Details bei Board Manager 2 | HTTP-Lesen von `/api/host`; übernommen werden nur System, Prozessor und Softwareversionen | Beim Start, stündlich und nach einem Board-Manager-Update |
 | Einstellungen und Version bei Board Manager 1 | HTTP-Lesen | Alle 30 Sekunden und nach jeder Aktion |
 

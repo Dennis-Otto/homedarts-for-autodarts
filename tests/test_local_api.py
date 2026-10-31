@@ -12,7 +12,7 @@ from custom_components.homedarts.local_api import (
     AutodartsLocalCommandError,
 )
 
-from .local_helpers import BASE, STATE, mock_board
+from .local_helpers import BASE, STATE, mock_board, recorded
 
 
 async def test_read_real_response_shapes_and_discard_secrets(client, aioclient_mock):
@@ -82,18 +82,20 @@ async def test_timeout_does_not_duplicate_command(client):
 
 
 async def test_setting_changes_only_patch_requested_fields(client, aioclient_mock):
+    aioclient_mock.get(f"{BASE}/api/config", json=recorded("2.0.2", "config.json"))
     aioclient_mock.patch(f"{BASE}/api/config", json={"auth": {"api_key": "private"}})
     await client.set_config_switch("auto_calibrate", False)
     await client.set_standby_minutes(30)
-    assert [call[2] for call in aioclient_mock.mock_calls] == [
+    assert [call[2] for call in aioclient_mock.mock_calls if call[0] == "PATCH"] == [
         {"cam": {"auto_calibrate": False}},
         {"motion": {"standby_minutes": 30}},
     ]
+    calls = len(aioclient_mock.mock_calls)
     with pytest.raises(ValueError):
         await client.set_config_switch("api_key", True)
     with pytest.raises(ValueError):
         await client.set_standby_minutes(0)
-    assert len(aioclient_mock.mock_calls) == 2
+    assert len(aioclient_mock.mock_calls) == calls
 
 
 @pytest.mark.parametrize("body", [[], {}, {"running": "false"}])

@@ -3,8 +3,8 @@
 The suite mounts `custom_components/homedarts` read-only into a real Home Assistant
 container and connects it to a deterministic Board Manager double. The double runs
 from the same pinned Home Assistant image, so it needs no additional image. It
-answers like the [recorded Board Manager](../fixtures/board_manager/README.md) 1.0.7
-or 2.0.0, which `compose.yaml` mounts next to it, with the board ID and keys of the
+answers like the [recorded Board Manager](../fixtures/board_manager/README.md) 1.0.7,
+2.0.0 or 2.1.0, which `compose.yaml` mounts next to it, with the board ID and keys of the
 test and the state of the board it simulates; `tests/test_board_contract.py` fails
 when one of its answers takes another shape than its recording. CI runs
 the scenario on every push to `main`, every night, and in every pull request that

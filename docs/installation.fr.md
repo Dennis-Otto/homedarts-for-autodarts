@@ -13,7 +13,7 @@ Cette page décrit l'installation et l'ajout d'une cible. La reconfiguration, le
 | Élément | Détails |
 | --- | --- |
 | Home Assistant | **2026.8** ou plus récent ([pourquoi 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md), en anglais) |
-| Cible Autodarts | Installée et en état de marche dans le Board Manager d'Autodarts : **Board Manager 2**, Autodarts 2 sans écran (headless, recommandé, testé jusqu'à la version 2.0.2), ou le **Board Manager 1** classique. Selon un joueur, **Autodarts Desktop** 2.0.2 sous Linux fonctionne aussi. Autodarts Desktop sous Windows et les **appareils de Winmau** comme Autodarts X ou Lens n'ont pas encore été testés ; [dites-nous](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) comment cela se passe avec le vôtre |
+| Cible Autodarts | Installée et en état de marche dans le Board Manager d'Autodarts : **Board Manager 2**, Autodarts 2 sans écran (headless, recommandé, testé jusqu'à la version 2.1.0), ou le **Board Manager 1** classique. Selon un joueur, **Autodarts Desktop** 2.0.2 sous Linux fonctionne aussi. Autodarts Desktop sous Windows et les **appareils de Winmau** comme Autodarts X ou Lens n'ont pas encore été testés ; [dites-nous](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) comment cela se passe avec le vôtre |
 | Réseau | Home Assistant atteint le PC de la cible sur le réseau local, par défaut sur le port TCP **3180** |
 | Sans Autodarts | N'importe quelle cible : vous saisissez les fléchettes sur un pavé numérique, voir [Play without Autodarts](without-autodarts.md) ; il ne faut alors ni PC de la cible ni réseau vers la cible |
 

@@ -136,11 +136,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 1: classic Board Manager app, 2: headless board with /api/system and mDNS.
+          # 1: classic Board Manager app, 2: headless board with /api/system and mDNS,
+          # 2.1: the new shape of its answers.
           - name: Board Manager 1
             board_manager: 1
           - name: Board Manager 2
             board_manager: 2
+          - name: Board Manager 2.1
+            board_manager: "2.1"
           - name: Home Assistant 2026.8.0
             board_manager: 2
             oldest: true

@@ -19,7 +19,7 @@ description: "Develop the integration: the building blocks of the cards, the tes
 | `tests/` | Unit and integration tests with `pytest-homeassistant-custom-component` |
 | `tests/frontend/` | Node tests of the card logic and of every card element in a browser DOM, including property-based tests with fast-check, and of the translation bot |
 | `tests/e2e/` | Docker end-to-end test, demo instance, browser test and screenshot tool |
-| `tests/fixtures/board_manager/` | [Recorded answers](#recorded-board-manager-answers) of Board Manager 1.0.7, 2.0.0 and 2.0.2, which both doubles of the Board Manager answer like |
+| `tests/fixtures/board_manager/` | [Recorded answers](#recorded-board-manager-answers) of Board Manager 1.0.7, 2.0.0, 2.0.2 and 2.1.0, which both doubles of the Board Manager answer like |
 | `docs/` | Documentation and the [website](https://dennis-otto.github.io/homedarts-for-autodarts/), each German translation next to its page as `<name>.de.md` |
 | `scripts/` | The checks, the [translation bot](#translation-bot) and the tools for media and diagrams |
 | `.github/` | Workflows, issue forms, the labels in `labels.toml` and the settings of the [issue assistant](#issue-assistant) in `issue-assistant/` |
@@ -181,17 +181,18 @@ The [end-to-end test](https://github.com/Dennis-Otto/homedarts-for-autodarts/blo
 ```sh
 BOARD_MANAGER=1 bash tests/e2e/run.sh
 BOARD_MANAGER=2 bash tests/e2e/run.sh   # includes discovery by mDNS
+BOARD_MANAGER=2.1 bash tests/e2e/run.sh # the same, with the answers of Board Manager 2.1
 ```
 
 The log shows the seconds of every phase, such as `Scenario phase: resilience (46.3 s)`. A phase that hangs fails after its budget of time with the line that it waits at, as a step of the browser test does (see [When a step hangs](#when-a-step-hangs)).
 
 ### Recorded Board Manager answers
 
-The unit tests and the end-to-end test each talk to a double of the Board Manager: `tests/local_helpers.py` registers its answers with the HTTP mock of Home Assistant's tests, and `tests/e2e/board_mock.py` serves them in a container of its own. Both answer like the recordings in [`tests/fixtures/board_manager/`](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/tests/fixtures/board_manager/README.md): one folder per Board Manager version, 1.0.7, 2.0.0 and 2.0.2, with one file per route the integration reads, the frames of the socket while darts are thrown and taken out, and `capture.json`, which says where the recording comes from. The double of the end-to-end test puts the board ID and keys of the test and the state of the board it simulates over its recording; that of the unit tests answers exactly as recorded, unless a test gives answers of its own.
+The unit tests and the end-to-end test each talk to a double of the Board Manager: `tests/local_helpers.py` registers its answers with the HTTP mock of Home Assistant's tests, and `tests/e2e/board_mock.py` serves them in a container of its own. Both answer like the recordings in [`tests/fixtures/board_manager/`](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/tests/fixtures/board_manager/README.md): one folder per Board Manager version, 1.0.7, 2.0.0, 2.0.2 and 2.1.0, with one file per route the integration reads, the frames of the socket while darts are thrown and taken out, and `capture.json`, which says where the recording comes from. The double of the end-to-end test puts the board ID and keys of the test and the state of the board it simulates over its recording; that of the unit tests answers exactly as recorded, unless a test gives answers of its own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/board-recordings-dark.png">
-  <img src="images/en/board-recordings-light.png" alt="Recorded Board Manager answers: scripts/capture_board.py records what a real board answers and replaces its ID, its keys and the addresses of its network by placeholders. The recordings of Board Manager 1.0.7, 2.0.0 and 2.0.2 in tests/fixtures/board_manager are what the double of the unit tests and that of the Docker end-to-end test answer. tests/test_board_contract.py checks that both answer every route in the shape of its recording, that the integration reads every recording and that none keeps a secret, and fails when a double drifts." width="480">
+  <img src="images/en/board-recordings-light.png" alt="Recorded Board Manager answers: scripts/capture_board.py records what a real board answers and replaces its ID, its keys and the addresses of its network by placeholders. The recordings of Board Manager 1.0.7, 2.0.0, 2.0.2 and 2.1.0 in tests/fixtures/board_manager are what the double of the unit tests and that of the Docker end-to-end test answer. tests/test_board_contract.py checks that both answer every route in the shape of its recording, that the integration reads every recording and that none keeps a secret, and fails when a double drifts." width="480">
 </picture>
 
 `tests/test_board_contract.py` holds both doubles to the recordings. It fails when the double of the end-to-end test answers a route, or sends a frame, with other keys or types than its recording, when the double of the unit tests answers anything else than its recording, when the integration rejects a recording or ignores one of its frames, and when a recording keeps a secret. It also records the double of the end-to-end test with the capture script and compares the result with the recording.

@@ -55,6 +55,9 @@ POLL_INTERVAL = timedelta(seconds=2)
 STREAM_POLL_INTERVAL = timedelta(seconds=30)
 # Board Manager 2 announces no camera changes, so it is read more often.
 STREAM_POLL_INTERVAL_V2 = timedelta(seconds=10)
+# The quick reads of Board Manager 2.1 report the frame rates and the load as often
+# as those reads, which a timer may start a second early.
+TELEMETRY_SECONDS = 8
 # A board that stays away, for example while its PC is off, is asked less often.
 OFFLINE_POLL_INTERVAL = timedelta(seconds=15)
 OFFLINE_AFTER_FAILURES = 10
@@ -222,6 +225,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self._takeout_unsub: CALLBACK_TYPE | None = None
         # Resets of a stuck takeout since the last dart on the board.
         self._takeout_resets = 0
+        # When a read last reported the frame rates and the load.
+        self._telemetry_reported = 0.0
 
     def _restore(self, saved: object) -> None:
         super()._restore(saved)
@@ -373,6 +378,13 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             _LOGGER.info("Realtime events from the Board Manager are available again")
 
     def _poll_interval(self) -> timedelta:
+        if self.client.interface_2_1 and self.stream_connected:
+            # Board Manager 2.1 reports its motion only in /api/system, so a running
+            # detection is read as often as a board without a socket. Its socket
+            # sends nothing but changes of the state: a stopped detection rests,
+            # although no frame may ever show that the socket works.
+            running = (self.data or {}).get("local", {}).get("running") is True
+            return POLL_INTERVAL if running else STREAM_POLL_INTERVAL_V2
         if self._stream_live:
             return (
                 STREAM_POLL_INTERVAL_V2
@@ -802,10 +814,21 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self._process(data, fields, "poll")
         if self.last_update_success and data == self.data:
             # Every entity updates when anything else changed; without such a
-            # change only those of the readings do. Each poll reports the
-            # frame rates and the load anew.
-            self._publish({Topic.TELEMETRY, *changed})
+            # change only those of the readings do.
+            self._publish(self._with_telemetry(changed))
         return data
+
+    def _with_telemetry(self, topics: set[Topic]) -> set[Topic]:
+        """Each poll reports the frame rates and the load anew; the quick reads of
+        Board Manager 2.1 as often as the polls of 2.0, for the recorder's sake."""
+        now = time.monotonic()
+        if (
+            self.client.interface_2_1
+            and now - self._telemetry_reported < TELEMETRY_SECONDS
+        ):
+            return topics - {Topic.TELEMETRY}
+        self._telemetry_reported = now
+        return {Topic.TELEMETRY, *topics}
 
     @callback
     def _offline(self, error: str) -> None:

@@ -171,7 +171,7 @@ Wie sich HomeDarts mit der Autodarts-App und ihrer Browser-Erweiterung, mit dart
 
 **Home Assistant ab 2026.8** mit [HACS](https://hacs.xyz) und ein Autodarts-Board in deinem Netzwerk oder eine beliebige Dartscheibe, deren Darts du auf einem Tastenfeld eingibst ([Spielen ohne Autodarts](https://dennis-otto.github.io/homedarts-for-autodarts/de/without-autodarts.html)), oder ein Granboard in Reichweite des Bluetooth von Home Assistant ([Granboard](https://dennis-otto.github.io/homedarts-for-autodarts/de/granboard.html), experimentell). Ein Autodarts-Konto brauchst du nicht.
 
-- **Board Manager 2**, also Autodarts 2 ohne Bildschirm, ist empfohlen und bis 2.0.2 getestet; der klassische **Board Manager 1** funktioniert auch.
+- **Board Manager 2**, also Autodarts 2 ohne Bildschirm, ist empfohlen und bis 2.1.0 getestet; der klassische **Board Manager 1** funktioniert auch.
 - Laut dem Bericht eines Spielers funktioniert auch **Autodarts Desktop** 2.0.2 unter Linux.
 - Autodarts Desktop unter Windows und Winmau-Autodarts-Geräte wie Autodarts X sind noch nicht getestet; ein [Kompatibilitätsbericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) hilft, ob es klappt oder nicht.
 
@@ -351,7 +351,7 @@ Die Blueprints sind auf Englisch beschriftet. Die Caller, der Trainings- und der
 
 | Aufbau | Unterstützt | Getestet mit |
 | --- | --- | --- |
-| Board Manager 2: Autodarts 2 ohne Bildschirm (Headless) | 2.x | 2.0.0 und 2.0.2 |
+| Board Manager 2: Autodarts 2 ohne Bildschirm (Headless) | 2.x | 2.0.0, 2.0.2 und 2.1.0 |
 | Board Manager 1 (klassische App) | 1.x | 1.0.7 |
 | Autodarts Desktop unter Linux | Funktioniert laut Spielerbericht | 2.0.2 unter Ubuntu 24.04 ([Bericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/105)) |
 | Autodarts Desktop unter Windows und anderen Systemen | Noch nicht getestet | – |
@@ -361,7 +361,13 @@ Die Blueprints sind auf Englisch beschriftet. Die Caller, der Trainings- und der
 
 Jede Board-Hardware, auf der der Autodarts Board Manager läuft, funktioniert, weil die Integration mit dem Board Manager spricht, nicht mit den Kameras. Einträge „laut Spielerbericht“ hat ein Spieler an seinem eigenen Board getestet, nicht das Projekt.
 
-Seit September 2026 beschreibt die Doku von Autodarts den Board Manager als Browser-Oberfläche von Autodarts 0.x, die ab Version 2 nicht mehr unterstützt wird. Die lokale Schnittstelle auf Port 3180, die die Integration nutzt, antwortet mit Autodarts 2.0.2 weiterhin. Ändert ein Update sie, zeigt die Integration eine Reparaturmeldung, statt still auszufallen (siehe [Fehlerbehebung](troubleshooting.de.md#reparaturen)). Läuft dein Setup nicht in der Tabelle, hilft ein [Kompatibilitätsbericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml), auch wenn alles klappt.
+Seit September 2026 beschreibt die Doku von Autodarts den Board Manager als Browser-Oberfläche von Autodarts 0.x, die ab Version 2 nicht mehr unterstützt wird. Die lokale Schnittstelle auf Port 3180, die die Integration nutzt, antwortet mit Autodarts 2.1.0 weiterhin. Ändert ein Update sie, zeigt die Integration eine Reparaturmeldung, statt still auszufallen (siehe [Fehlerbehebung](troubleshooting.de.md#reparaturen)). Läuft dein Setup nicht in der Tabelle, hilft ein [Kompatibilitätsbericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml), auch wenn alles klappt.
+
+Mit **Board Manager 2.1** funktioniert die Integration wie bisher, mit diesen Unterschieden:
+
+- Der Schalter *Automatisch nachkalibrieren* ist nicht verfügbar, weil Board Manager 2.1 diese Option nicht mehr hat. *Beim Start kalibrieren* und *Verzerrungskorrektur* bleiben.
+- Die Tasten *Kamerastreams starten* und *Kamerastreams stoppen* sind nicht verfügbar, weil Board Manager 2.1 diese Befehle nicht mehr hat. Die Liveansicht der Kameras funktioniert ohne sie.
+- *Hand erkannt*, *Bild stabil*, *Darts teilweise entfernt* und *Darts vollständig entfernt* aktualisieren sich alle 2 Sekunden, solange die Erkennung läuft, weil das Board diese Werte nicht mehr von sich aus sendet. Eine Hand, die nur einen Moment am Board ist, kann dabei fehlen.
 
 ## Sprachen
 
