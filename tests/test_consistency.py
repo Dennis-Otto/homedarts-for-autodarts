@@ -912,3 +912,50 @@ def test_osv_overrides_accept_only_the_pinned_versions():
             f"override of {name} {version} from osv-scanner.toml and run "
             "python3 .github/blueprint.py advisories --fix (from blueprint 1.0.8 on)"
         )
+
+
+def node_packages() -> dict[str, dict[str, Any]]:
+    """The packages of package-lock.json by their folder, such as node_modules/eslint."""
+    lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+    return lock["packages"]
+
+
+def test_node_tools_install_minimatch_with_the_fix_of_its_advisory():
+    # GHSA-g3hv-75wg-m249, a denial of service by a pattern, is fixed from minimatch
+    # 11.0.1 on and the OpenSSF Scorecard reports the version below it. ESLint and its
+    # config array still ask for ^10, so without the override of package.json npm goes
+    # back to the 10.2.6 with the advisory.
+    versions = [
+        package["version"]
+        for path, package in node_packages().items()
+        if path.endswith("node_modules/minimatch")
+    ]
+    assert versions, "no package needs minimatch any more: remove this test"
+    for version in versions:
+        assert tuple(map(int, version.split("."))) >= (11, 0, 1), (
+            f"minimatch {version} has GHSA-g3hv-75wg-m249: raise it in the overrides "
+            "of package.json and run npm install --package-lock-only --ignore-scripts"
+        )
+
+
+def test_node_overrides_leave_with_the_update_that_fixes_them():
+    # An override raises a package that a tool asks for in a range too old for its fix.
+    # It stays only while such a range exists, like an entry of osv-scanner.toml, or it
+    # would hold the package back from the updates of the tools that ask for it.
+    manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    packages = node_packages()
+    for name, version in manifest.get("overrides", {}).items():
+        assert packages[f"node_modules/{name}"]["version"] == version, (
+            f"run npm install --package-lock-only --ignore-scripts for {name} {version}"
+        )
+        ranges = [
+            package["dependencies"][name]
+            for package in packages.values()
+            if name in package.get("dependencies", {})
+        ]
+        major = version.split(".")[0]
+        assert any(not spec.startswith(f"^{major}.") for spec in ranges), (
+            f"everything that needs {name} now takes {name} {version}: remove its "
+            "override from package.json and run "
+            "npm install --package-lock-only --ignore-scripts"
+        )

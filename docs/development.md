@@ -471,6 +471,13 @@ pinned version, and into `allow-ghsas` of the dependency review. A consistency t
 as soon as the test base moves past an accepted version, so an exception leaves with the
 update that fixes it. The integration itself ships no Python dependencies.
 
+A Node tool can ask for a package in a range that its fix is outside of, such as ESLint
+with minimatch 10, whose advisory GHSA-g3hv-75wg-m249 is fixed only in minimatch 11. Such a
+package gets the fixed version as an `overrides` entry of `package.json`, which Renovate
+keeps current. The checks of `eslint.config.mjs` show that the tool still works with it, and a
+consistency test fails as soon as every tool takes that version, so the override leaves
+with the update that makes it needless.
+
 Renovate keeps the Python and Node tools, the Actions, the new commits of the HACS
 and hassfest actions, which follow a branch instead of releases, and the images
 current, also the Playwright and Mermaid images that the scripts under `tests/e2e/`
