@@ -25,6 +25,9 @@ CLOSING = (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSING, aiohttp.WSMsgType
 MAX_TEXT = 255
 # Notifications the integration follows; the board may send others.
 EVENT_KINDS = ("state", "motion_state", "cam_state", "stats", "cam_stats")
+# Board Manager 2.1 writes status and event in camelCase, "takeoutInProgress"
+# where 2.0 wrote "Takeout in progress".
+CAMEL_CASE_WORD = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 COMMANDS = {
     "start": ("PUT", "/api/start"),
     "stop": ("PUT", "/api/stop"),
@@ -129,6 +132,47 @@ def _config_summary(raw: Any, path: str) -> dict[str, Any]:
     return result
 
 
+def board_state(raw: dict[str, Any]) -> dict[str, Any]:
+    """The state of the board in the shape of Board Manager 2.0.
+
+    Board Manager 2.1 sends no numThrows, each dart flat with segmentName,
+    segmentNumber, bed, multiplier, coordsX and coordsY, and its status and event
+    in camelCase. A state of 2.0 or of the classic app stays as it is.
+    """
+    state = dict(raw)
+    for key in ("status", "event"):
+        if key in state:
+            state[key] = _phrase(state[key])
+    throws = state.get("throws")
+    if isinstance(throws, list):
+        state["throws"] = [_dart(dart) for dart in throws]
+        if "numThrows" not in state:
+            state["numThrows"] = len(throws)
+    return state
+
+
+def _phrase(value: object) -> object:
+    """A status or event of Board Manager 2.1 in the words of 2.0."""
+    if not isinstance(value, str) or " " in value:
+        return value
+    return " ".join(CAMEL_CASE_WORD.split(value)).capitalize()
+
+
+def _dart(raw: object) -> object:
+    """A flat dart of Board Manager 2.1 with its segment and coordinates nested."""
+    if not isinstance(raw, dict) or "segment" in raw or "segmentNumber" not in raw:
+        return raw
+    return {
+        "segment": {
+            "name": raw.get("segmentName"),
+            "number": raw.get("segmentNumber"),
+            "bed": raw.get("bed"),
+            "multiplier": raw.get("multiplier"),
+        },
+        "coords": {"x": raw.get("coordsX"), "y": raw.get("coordsY")},
+    }
+
+
 def _dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
@@ -211,7 +255,7 @@ class AutodartsLocalClient:
         state = await self._object("/api/state")
         if not isinstance(state.get("running"), bool):
             raise AutodartsProtocolError("/api/state")
-        return state
+        return board_state(state)
 
     async def get_config(self) -> dict[str, Any]:
         """Return only identity and supported controls, never auth/camera secrets."""
@@ -349,7 +393,7 @@ class AutodartsLocalClient:
             else (None, None)
         )
         if kind in EVENT_KINDS and isinstance(data, dict):
-            return kind, data
+            return kind, board_state(data) if kind == "state" else data
         self.ignored_frames += 1
         return None
 
