@@ -25,7 +25,9 @@
 
 ## Quick start
 
-You need Home Assistant 2026.8 or newer with [HACS](https://hacs.xyz), and an Autodarts board in your network or any dartboard whose darts you enter on a keypad ([requirements](#requirements)).
+You need Home Assistant 2026.8 or newer with [HACS](https://hacs.xyz), and an Autodarts board in your network or any dartboard whose darts you enter on a keypad ([requirements](#requirements)). Once HomeDarts is installed, the rest takes under a minute:
+
+<img src="https://raw.githubusercontent.com/Dennis-Otto/homedarts-for-autodarts/main/docs/images/en/setup.webp" alt="Animation: the setup in five steps with captions, at the screen of a phone. 1: Home Assistant shows the board that it found under Discovered in Devices & services. 2: Add, and Submit in the dialog Autodarts board found; the board is set up and its device page opens. 3: Settings, Dashboards, Add dashboard. 4: the search finds HomeDarts, the title HomeDarts, Create. 5: the new dashboard opens on its live view, then on its scoreboard, which counts three triple 20s up to 180" width="100%">
 
 1. **Install with HACS, then restart Home Assistant.**
 
@@ -39,7 +41,7 @@ You need Home Assistant 2026.8 or newer with [HACS](https://hacs.xyz), and an Au
 
    Choose **Search for boards on this network** or **Enter board address** and confirm. Without Autodarts, choose **Dartboard without Autodarts: enter every dart yourself**.
 
-3. **Add the cards.** Create a complete dashboard in one step: **Settings → Dashboards → Add dashboard → HomeDarts**. Or edit a dashboard, choose **Add card** and search for *HomeDarts*.
+3. **Add the cards.** Create a complete dashboard in one step: **Settings → Dashboards → Add dashboard → HomeDarts**, give it a title and select **Create**. Or edit a dashboard, choose **Add card** and search for *HomeDarts*.
 
 New to Home Assistant? [From zero to the scoreboard](https://dennis-otto.github.io/homedarts-for-autodarts/getting-started.html) takes you from nothing to the scoreboard next to your board. The [installation guide](https://dennis-otto.github.io/homedarts-for-autodarts/installation.html) covers manual installation, reconfiguration, updates and removal.
 

@@ -25,6 +25,7 @@ IMAGES = ROOT / "docs" / "images"
 MEDIA = ROOT / "docs" / "media"
 ANIMATIONS = (
     "hero",
+    "setup",
     "scoreboard",
     "celebration",
     "wild-mouse",

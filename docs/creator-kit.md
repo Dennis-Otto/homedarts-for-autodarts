@@ -74,6 +74,7 @@ Recorded in the demo with a simulated board. MP4 works in video editors, on Redd
 | The scoreboard during a 501 match | [MP4](media/scoreboard-en.mp4) · [GIF](media/scoreboard-en.gif) | [MP4](media/scoreboard-de.mp4) · [GIF](media/scoreboard-de.gif) |
 | Confetti for a 180 on the scoreboard | [MP4](media/celebration-en.mp4) · [GIF](media/celebration-en.gif) | [MP4](media/celebration-de.mp4) · [GIF](media/celebration-de.gif) |
 | Wild Mouse with doubles, triples and three in a bed | [MP4](media/wild-mouse-en.mp4) · [GIF](media/wild-mouse-en.gif) | [MP4](media/wild-mouse-de.mp4) · [GIF](media/wild-mouse-de.gif) |
+| The setup, from the discovered board to the scoreboard | [MP4](media/setup-en.mp4) · [GIF](media/setup-en.gif) | [MP4](media/setup-de.mp4) · [GIF](media/setup-de.gif) |
 | A match against the bot | [MP4](media/bot-match-en.mp4) · [GIF](media/bot-match-en.gif) | [MP4](media/bot-match-de.mp4) · [GIF](media/bot-match-de.gif) |
 | Choosing the next game on the tablet | [MP4](media/lobby-en.mp4) · [GIF](media/lobby-en.gif) | [MP4](media/lobby-de.mp4) · [GIF](media/lobby-de.gif) |
 | A tournament with its bracket | [MP4](media/tournament-bracket-en.mp4) · [GIF](media/tournament-bracket-en.gif) | [MP4](media/tournament-bracket-de.mp4) · [GIF](media/tournament-bracket-de.gif) |

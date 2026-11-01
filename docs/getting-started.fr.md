@@ -41,7 +41,9 @@ HACS est la boutique des intégrations et des cartes de la communauté, comme ce
 
 [![Ouvrez votre Home Assistant et commencez à configurer HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Avec Board Manager 2, Home Assistant trouve en général la cible tout seul : **Paramètres → Appareils et services** affiche **Cible Autodarts détectée** sous *Découvertes*. Sélectionnez **Ajouter** et confirmez.
+Avec Board Manager 2, Home Assistant trouve en général la cible tout seul : **Paramètres → Appareils et services** affiche **Cible Autodarts détectée** sous *Découvertes*. Sélectionnez **Ajouter** et confirmez. L'animation montre le chemin d'ici jusqu'au tableau des scores, en moins d'une minute.
+
+<img src="images/en/setup.webp" alt="Animation : la configuration en cinq étapes légendées, en anglais, sur l'écran d'un téléphone. 1 : Home Assistant affiche la cible trouvée sous Découvertes. 2 : ajouter et confirmer dans la fenêtre Cible Autodarts détectée ; la cible est configurée et sa page d'appareil s'ouvre. 3 : paramètres, tableaux de bord, ajouter un tableau de bord. 4 : la recherche trouve HomeDarts, le titre HomeDarts, créer. 5 : le nouveau tableau de bord s'ouvre sur la vue en direct, puis sur le tableau des scores, qui compte trois triples 20 jusqu'à 180" width="100%">
 
 Sinon, sélectionnez le bouton ci-dessus, puis choisissez **Rechercher des cibles sur ce réseau**, ou **Saisir l'adresse de la cible** avec l'adresse IP du PC de la cible. Aucun compte Autodarts n'est nécessaire.
 
@@ -51,7 +53,7 @@ Le [guide d'installation](installation.fr.md#ajouter-votre-cible) explique chacu
 
 ## 5. Créer le tableau de bord
 
-Allez dans **Paramètres → Tableaux de bord → Ajouter un tableau de bord → HomeDarts**. Un clic crée un tableau de bord complet pour votre cible, avec des vues pour la partie en direct, le tableau des scores, l'entraînement, les joueurs et la cible. Il se met à jour tout seul quand vous ajoutez une cible ou qu'une version suivante apporte de nouvelles vues.
+Allez dans **Paramètres → Tableaux de bord → Ajouter un tableau de bord → HomeDarts**. Donnez-lui un titre et sélectionnez **Créer** : cela crée un tableau de bord complet pour votre cible, avec des vues pour la partie en direct, le tableau des scores, l'entraînement, les joueurs et la cible. Il se met à jour tout seul quand vous ajoutez une cible ou qu'une version suivante apporte de nouvelles vues.
 
 <img src="images/en/dashboard-strategy.png" alt="La vue d'entraînement du tableau de bord automatique" width="760">
 

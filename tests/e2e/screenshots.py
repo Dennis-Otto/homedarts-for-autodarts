@@ -23,7 +23,7 @@ from pathlib import Path
 from time import monotonic
 
 from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, open_card_form, probe
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from watchdog import GRACE, budget, deadline, wake_playwright
@@ -891,14 +891,17 @@ def killer_animation(page: Page) -> None:
 
 
 # A finger on the screen: a ring where the next tap lands, for the animations.
+# A popover, because only that shows above the dialogs of Home Assistant.
 TAP = """
 ([x, y]) => {
   const ring = document.createElement('div');
   ring.id = 'demo-tap';
-  ring.style.cssText = `position:fixed;left:${x - 24}px;top:${y - 24}px;width:48px;height:48px;` +
+  ring.popover = 'manual';
+  ring.style.cssText = `position:fixed;inset:auto;margin:0;padding:0;left:${x - 24}px;top:${y - 24}px;width:48px;height:48px;` +
     'border-radius:50%;background:rgba(255,255,255,.3);border:3px solid rgba(255,255,255,.9);' +
     'box-shadow:0 0 14px rgba(0,0,0,.6);z-index:10000;pointer-events:none';
   document.body.append(ring);
+  ring.showPopover();
 }
 """
 UNTAP = "() => document.getElementById('demo-tap')?.remove()"
@@ -3581,6 +3584,273 @@ def manual_board(page: Page) -> None:
 # The groups of images --------------------------------------------------------------
 
 
+# The quick start, from the discovered board to the scoreboard --------------------------
+
+# Square and narrow: Home Assistant lays itself out as on a phone, and the picture reads
+# at the width of a phone as well as across the column of a README on a big screen.
+SETUP_WINDOW = {"width": 600, "height": 600}
+SETUP_WIDTH = 900
+SETUP_CAPTIONS = {
+    "en": (
+        "Home Assistant finds your board by itself",
+        "Select Add and confirm: no account",
+        "Settings → Dashboards → Add dashboard",
+        "Choose HomeDarts and give it a title",
+        "Your scoreboard, in under a minute",
+    ),
+    "de": (
+        "Home Assistant findet dein Board selbst",
+        "Hinzufügen wählen und bestätigen: kein Konto nötig",
+        "Einstellungen → Dashboards → Dashboard hinzufügen",
+        "HomeDarts wählen und einen Titel geben",
+        "Deine Anzeigetafel, in unter einer Minute",
+    ),
+}
+# The words of Home Assistant on the buttons of the way there.
+SETUP_BUTTONS = {
+    "en": {
+        "add": "Add",
+        "add integration": "Add integration",
+        "submit": "Submit",
+        "finish": "Skip and finish",
+        "add dashboard": "Add dashboard",
+        "create": "Create",
+    },
+    "de": {
+        "add": "Hinzufügen",
+        "add integration": "Integration hinzufügen",
+        "submit": "OK",
+        "finish": "Überspringen und fertigstellen",
+        "add dashboard": "Dashboard hinzufügen",
+        "create": "Erstellen",
+    },
+}
+# The band with the caption, in pixels of the window: room for two lines on every
+# frame, so that the picture keeps its height. Liberation Sans comes with the Playwright
+# image.
+CAPTION_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+CAPTION_HEIGHT = 84
+CAPTION_TEXT = 25
+CAPTION_MARGIN = 16
+CAPTION_BADGE = 44
+CAPTION_BAND = (1, 87, 155)
+CAPTION_INK = (255, 255, 255)
+# What a new user has: a board that Home Assistant found, no entry for it, no dashboard
+# of HomeDarts. The entry goes, and Home Assistant finds the announced board again by
+# itself.
+FRESH_START = """
+async () => {
+  const hass = document.querySelector('home-assistant').hass;
+  const entries = await hass.callApi('GET', 'config/config_entries/entry?domain=homedarts');
+  for (const entry of entries) {
+    await hass.callApi('DELETE', `config/config_entries/entry/${entry.entry_id}`);
+  }
+  for (const dashboard of await hass.callWS({ type: 'lovelace/dashboards/list' })) {
+    if (dashboard.url_path.startsWith('homedarts')) {
+      await hass.callWS({ type: 'lovelace/dashboards/delete', dashboard_id: dashboard.id });
+    }
+  }
+}
+"""
+# The integration kept a backup of the removed board and offers it to the board that
+# came back, on the settings page; a new user has no such backup.
+NO_BACKUP_NOTE = """
+async () => {
+  const hass = document.querySelector('home-assistant').hass;
+  const { issues } = await hass.callWS({ type: 'repairs/list_issues' });
+  for (const issue of issues.filter((issue) => issue.domain === 'homedarts')) {
+    await hass.callWS({
+      type: 'repairs/ignore_issue', domain: issue.domain, issue_id: issue.issue_id, ignore: true,
+    });
+  }
+}
+"""
+# The address of the simulated board in the Docker network depends on the machine: every
+# picture shows the same one, as it might look in a home network.
+SHOWN_ADDRESS = r"""
+() => {
+  (function show(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const text = walker.currentNode;
+      const shown = text.data.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '192.168.1.50');
+      if (shown !== text.data) text.data = shown;
+    }
+    root.querySelectorAll('*').forEach((el) => el.shadowRoot && show(el.shadowRoot));
+  })(document);
+}
+"""
+
+
+def caption_lines(text: str, font: ImageFont.FreeTypeFont, width: float) -> list[str]:
+    """A caption broken into the two lines of its band at most, or a clear failure."""
+    lines = [""]
+    for word in text.split():
+        joined = f"{lines[-1]} {word}".strip()
+        if font.getlength(joined) <= width:
+            lines[-1] = joined
+        else:
+            lines.append(word)
+    if len(lines) > 2 or any(font.getlength(line) > width for line in lines):
+        raise ValueError(f"The caption does not fit in two lines: {text}")
+    return lines
+
+
+def with_caption(frame: Image.Image, step: int, text: str) -> Image.Image:
+    """A frame under the band with the number of its step and its caption."""
+    scale = frame.width / SETUP_WINDOW["width"]
+    height = round(CAPTION_HEIGHT * scale)
+    framed = Image.new("RGB", (frame.width, height + frame.height), CAPTION_BAND)
+    framed.paste(frame.convert("RGB"), (0, height))
+    draw = ImageDraw.Draw(framed)
+    margin, badge = CAPTION_MARGIN * scale, CAPTION_BADGE * scale
+    top = (height - badge) / 2
+    draw.ellipse((margin, top, margin + badge, top + badge), fill=CAPTION_INK)
+    font = ImageFont.truetype(CAPTION_FONT, round(CAPTION_TEXT * scale))
+    draw.text(
+        (margin + badge / 2, height / 2),
+        str(step),
+        font=font,
+        fill=CAPTION_BAND,
+        anchor="mm",
+    )
+    left = margin * 2 + badge
+    lines = caption_lines(text, font, frame.width - left - margin)
+    draw.multiline_text(
+        (left, height / 2),
+        "\n".join(lines),
+        font=font,
+        fill=CAPTION_INK,
+        anchor="lm",
+        spacing=round(4 * scale),
+    )
+    return framed
+
+
+class CaptionRecorder(Recorder):
+    """Frames of the whole window, each under the caption of its step."""
+
+    def __init__(self, page: Page, captions: tuple[str, ...]) -> None:
+        super().__init__(page)
+        self.captions = captions
+        self.step = 1
+
+    def shot(self, duration: int, wait: bool = True) -> None:
+        self.page.evaluate(SHOWN_ADDRESS)
+        settle(self.page, wait)
+        image = Image.open(io.BytesIO(self.page.screenshot(animations="allow")))
+        caption = self.captions[self.step - 1]
+        self.frames.append(with_caption(image, self.step, caption))
+        self.durations.append(duration)
+
+
+def quiet(page: Page) -> None:
+    """Wait until a page of the settings, without cards, has what Home Assistant sends."""
+    page.wait_for_function(WEBSOCKET_QUIET, arg=QUIET, timeout=15000, polling=POLL)
+    page.evaluate(FRAMES)
+
+
+def tap_to(
+    page: Page,
+    recorder: CaptionRecorder,
+    target,
+    arrives,
+    hold: int,
+    step: int | None = None,
+) -> None:
+    """Show the finger on the target, tap it, and show what it opens once it has, under
+    the caption of the next step if it begins there."""
+    box = target.bounding_box()
+    page.evaluate(TAP, [box["x"] + box["width"] / 2, box["y"] + box["height"] / 2])
+    recorder.shot(600)
+    page.evaluate(UNTAP)
+    target.click()
+    arrives.wait_for(timeout=30000)
+    rest_pointer(page)
+    quiet(page)
+    recorder.step = step or recorder.step
+    recorder.shot(hold)
+
+
+def setup_animation(page: Page) -> None:
+    """The way from the discovered board to the scoreboard, as a new user goes it,
+    through the app and at the pace of a hand on a phone, with one cut to the settings."""
+    words = SETUP_BUTTONS[LANGUAGE]
+
+    def button(name: str):
+        return page.get_by_role("button", name=words[name], exact=True).first
+
+    pull_darts()
+    page.goto(f"{HA}/config/integrations/dashboard")
+    button("add integration").wait_for(timeout=30000)
+    quiet(page)
+    page.evaluate(FRESH_START)
+    # Home Assistant finds the board again, and the card comes by itself.
+    button("add").wait_for(timeout=60000)
+    rest_pointer(page)
+    quiet(page)
+    recorder = CaptionRecorder(page, SETUP_CAPTIONS[LANGUAGE])
+    recorder.shot(3000)
+
+    # Add the board, and the board is there.
+    tap_to(page, recorder, button("add"), button("submit"), 3000, step=2)
+    tap_to(page, recorder, button("submit"), button("finish"), 3200)
+    page.evaluate(NO_BACKUP_NOTE)
+    # Home Assistant goes on to the page of the new device.
+    tap_to(page, recorder, button("finish"), page.locator("ha-device-info-card"), 1500)
+
+    # Settings, Dashboards, Add dashboard.
+    recorder.step = 3
+    settings = page.locator("a[href='/config/lovelace/dashboards']").first
+    # No single tap leads there: the arrow of the page goes back through the integrations
+    # and the steps that the dialogs of the setup left in the history of the browser. So
+    # the picture cuts to the settings without showing a tap, and the caption names the way.
+    page.evaluate(NAVIGATE, "/config/dashboard")
+    settings.wait_for(timeout=30000)
+    rest_pointer(page)
+    quiet(page)
+    recorder.shot(1800)
+    settings.scroll_into_view_if_needed()
+    add_dashboard = button("add dashboard")
+    tap_to(page, recorder, settings, add_dashboard, 1600)
+
+    # HomeDarts, with a title.
+    search = page.locator("ha-dialog-new-dashboard input").first
+    tap_to(page, recorder, add_dashboard, search, 1000, step=4)
+    search.fill("HomeDarts")
+    choice = page.locator("ha-dialog-new-dashboard").get_by_text(
+        "HomeDarts", exact=True
+    )
+    choice.wait_for(timeout=15000)
+    recorder.shot(2000)
+    title = page.locator("dialog-lovelace-dashboard-detail input").first
+    tap_to(page, recorder, choice, title, 700)
+    title.fill("HomeDarts")
+    rest_pointer(page)
+    recorder.shot(1600)
+    row = page.locator("ha-data-table").get_by_text("HomeDarts", exact=True).first
+    tap_to(page, recorder, button("create"), row, 1600)
+
+    # The dashboard, and its scoreboard.
+    scoreboard_tab = page.get_by_role("tab").nth(1)
+    tap_to(page, recorder, row, scoreboard_tab, 2000, step=5)
+    tap_to(
+        page,
+        recorder,
+        scoreboard_tab,
+        page.locator(f"{SCOREBOARD} .single .big").first,
+        2400,
+    )
+    # The first darts of the evening.
+    for count, score in ((1, "60"), (2, "120"), (3, "180")):
+        control({"event": "Throw detected", "throws": [T20] * count})
+        wait_card(
+            page, f"r.querySelector('.big')?.textContent === '{score}'", SCOREBOARD
+        )
+        recorder.shot(4000 if count == 3 else 1000)
+    recorder.save("setup", width=SETUP_WIDTH)
+
+
 def cards(browser: Browser) -> None:
     """The cards in both colour schemes and on a phone, their editors, the setup and
     the device page."""
@@ -3849,12 +4119,27 @@ def manual(browser: Browser) -> None:
     context.close()
 
 
+def setup(browser: Browser) -> None:
+    """The quick start, from the discovered board to the scoreboard. Last of its group:
+    it removes the board of the demo and sets it up again as new."""
+    context = new_context(
+        browser,
+        viewport=SETUP_WINDOW,
+        device_scale_factor=2,
+        locale=LOCALE,
+        color_scheme="dark",
+    )
+    setup_animation(context.new_page())
+    context.close()
+
+
 SECTIONS: dict[str, Callable[[Browser], None]] = {
     "cards": cards,
     "live": live,
     "practice": practice,
     "games": games,
     "more games": more_games,
+    "setup": setup,
     "corrections": corrections,
     "formats": formats,
     "people": people,
@@ -3871,7 +4156,8 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 GROUPS = (
     # The cards before the games, whose legs would end the graphs of the week.
     ("cards", "live", "practice", "games"),
-    ("more games",),
+    # The quick start removes the board of the demo: last in its group.
+    ("more games", "setup"),
     # The players play their own matches. The dartboard without Autodarts last: its
     # second board would be the first of the cards without one.
     ("people", "manual"),
@@ -3892,6 +4178,8 @@ SECONDS = {
     "practice": 25.0,
     "games": 240.0,
     "more games": 284.0,
+    # Came later: the mean of both languages in run 41328996823.
+    "setup": 29.0,
     "people": 214.0,
     "corrections": 53.0,
     "formats": 122.0,

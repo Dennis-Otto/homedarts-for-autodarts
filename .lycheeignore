@@ -1,2 +1,8 @@
 # Links that the link check of this repository skips, one regular expression per
 # line, each with its reason above it. The rules of every repository are in lychee.toml.
+
+# The pictures of this repository on main, which the README needs as absolute
+# addresses for HACS: a pull request that adds a picture can't show it on main before
+# its merge, and tests/test_docs_links.py checks in every pull request that each of
+# these addresses leads to a file of the repository.
+^https://raw\.githubusercontent\.com/Dennis-Otto/homedarts-for-autodarts/main/docs/images/
