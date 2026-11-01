@@ -652,7 +652,7 @@ def test_the_key_knows_everything_that_the_render_step_gets(name):
     assert render["run"] == "exec bash tests/e2e/screenshots.sh"
     assert render["env"] == {
         "LANGUAGES": "${{ matrix.language }}",
-        "SCREENSHOT_GROUP": "${{ matrix.group }}/3",
+        "SCREENSHOT_GROUP": "${{ matrix.group }}/4",
         "IMAGES": "tests/e2e/artifacts/rendered",
     }
     assert render_key.FORMAT == 1
