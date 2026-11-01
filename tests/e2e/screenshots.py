@@ -3781,24 +3781,24 @@ GROUPS = (
     ("corrections", "formats", "tournaments", "calendar"),
 )
 # The seconds of each section on a runner of GitHub, the mean of both languages in
-# the visual check of 1 November 2026 (run 00000000000). No group may take more than
+# the visual check of 1 November 2026 (run 41288192544). No group may take more than
 # SLOWER of group_times.py times the seconds of the shortest
 # (tests/test_screenshot_groups.py), and the job that puts the groups of a language
 # together marks one that did. Each job also starts its demo (STARTUP): with four
 # groups, the longest job stays within nine minutes, and the runners take about as
 # many minutes as with three.
 SECONDS = {
-    "cards": 46.0,
-    "live": 28.0,
+    "cards": 43.0,
+    "live": 27.0,
     "practice": 25.0,
-    "games": 249.0,
+    "games": 240.0,
     "more games": 284.0,
-    "people": 235.0,
-    "corrections": 55.0,
-    "formats": 124.0,
-    "tournaments": 110.0,
-    "calendar": 10.0,
-    "manual": 50.0,
+    "people": 214.0,
+    "corrections": 53.0,
+    "formats": 122.0,
+    "tournaments": 109.0,
+    "calendar": 9.0,
+    "manual": 46.0,
 }
 # The seconds of a job of a group before its first section and after its last: it
 # pulls Home Assistant and starts its demo, about two and a half minutes, and keeps
@@ -3812,7 +3812,7 @@ BUDGETS = {
     "games": 510.0,
     "more games": 570.0,
     "formats": 270.0,
-    "people": 480.0,
+    "people": 450.0,
     "tournaments": 240.0,
 }
 
