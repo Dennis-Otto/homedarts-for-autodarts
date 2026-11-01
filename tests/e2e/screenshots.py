@@ -3030,6 +3030,34 @@ def blueprint_form(view: Page, blueprint: str, name: str, height: int) -> None:
     view.close()
 
 
+# The names of the automation blueprints that Home Assistant knows, which its list shows.
+BLUEPRINT_NAMES = """
+async () => {
+  const hass = document.querySelector('home-assistant').hass;
+  const blueprints = await hass.callWS({ type: 'blueprint/list', domain: 'automation' });
+  return Object.values(blueprints).flatMap((blueprint) => blueprint.metadata?.name ?? []);
+}
+"""
+
+
+def require_every_blueprint(view: Page) -> None:
+    """Fail if the window cuts off a row of the list: it draws only the rows in view,
+    so a new blueprint would otherwise drop out of the picture without a word."""
+    bottom = view.viewport_size["height"]
+    cut_off = []
+    names = view.evaluate(BLUEPRINT_NAMES)
+    for name in names:
+        row = view.get_by_text(name, exact=True)
+        box = row.first.bounding_box() if row.count() else None
+        if box is None or box["y"] + box["height"] > bottom:
+            cut_off.append(name)
+    if cut_off or not names:
+        raise AssertionError(
+            f"The list of {len(names)} blueprints doesn't fit into the {bottom} px of"
+            f" the window, raise the height in blueprints_page(): {cut_off}"
+        )
+
+
 def blueprints_page(page: Page) -> None:
     """The blueprints of the integration in Home Assistant, and two of their forms."""
     # So high that the list shows every blueprint: it only draws the rows in view.
@@ -3037,6 +3065,7 @@ def blueprints_page(page: Page) -> None:
         page, viewport={"width": 1280, "height": 1180}, device_scale_factor=2
     )
     view = blueprint_list(context)
+    require_every_blueprint(view)
     page_shot(view, "blueprints")
     blueprint_form(view, "HomeDarts: light show", "blueprint-light-show", 900)
     # So high that its short form shows whole, with the sections that open closed.
