@@ -235,6 +235,8 @@ test("badges show the next goal, the progress and when they were earned", () => 
   assert.equal(badgesHtml(players[1], ui, false), "");
   const unknown = badgesHtml({ badges: [{ ...players[1].badges[0], id: "future" }] }, ui);
   assert.match(unknown, /mdi:medal-outline/);
+  const plans = badgesHtml({ badges: [{ ...players[1].badges[0], id: "plans_finished" }] }, ui);
+  assert.match(plans, /mdi:clipboard-check-outline/);
 });
 
 test("weeks of a trend come with their sums, the newest last", () => {

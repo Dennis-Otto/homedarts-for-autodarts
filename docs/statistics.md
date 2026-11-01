@@ -170,7 +170,7 @@ Every named player of a practice game gets a profile with lifetime numbers: legs
 
 <img src="images/en/players-badges.png" alt="Badges of a player on the players card: earned tiers in bronze, silver and gold, each with the next goal, the progress towards it and a progress bar" width="620">
 
-Named players unlock achievements in tiers of bronze, silver, gold and, for the streak, platinum: from the first 180 to a hundred, from a ton-plus checkout to 170, a leg in 18, 15 or 12 darts, a nine-darter, a hat trick, every double hit once, nine marks in Cricket, a Shanghai, the best Around the Clock and Bob's 27, days in a row and darts thrown. The players card shows every badge with the next goal and the progress towards it.
+Named players unlock achievements in tiers of bronze, silver, gold and, for the streak, platinum: from the first 180 to a hundred, from a ton-plus checkout to 170, a leg in 18, 15 or 12 darts, a nine-darter, a hat trick, every double hit once, nine marks in Cricket, a Shanghai, the best Around the Clock and Bob's 27, days in a row, darts thrown and finished training plans. The players card shows every badge with the next goal and the progress towards it.
 
 - Each new tier fires `achievement_unlocked`, for a [notification](automations.md#celebrate-an-achievement) or the [light show](automations.md#light-show). Nothing plays or speaks unless an automation does.
 - On the first start after the update, what the profiles already prove unlocks quietly.

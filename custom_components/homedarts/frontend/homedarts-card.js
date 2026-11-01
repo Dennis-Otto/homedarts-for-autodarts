@@ -1478,6 +1478,14 @@ function planOffer(state) {
   };
 }
 
+// The offer starts a game, so it follows the options of the new game screen:
+// none with the screen off, and only games the screen offers.
+function offeredPlan(offer, config) {
+  if (config.lobby === false || !offer) return null;
+  const wanted = Array.isArray(config.lobby_games) && config.lobby_games.length ? config.lobby_games.map(String) : null;
+  return !wanted || offer.drills.every((drill) => wanted.includes(drill)) ? offer : null;
+}
+
 const planName = (plan, ui) => (Object.hasOwn(PLAN_PRESETS, plan.key) ? ui.t(PLAN_PRESETS[plan.key]) : plan.name);
 
 // "Step 2 of 4: Bob's 27".
@@ -4125,6 +4133,7 @@ const ACHIEVEMENT_ICONS = {
   bobs_27: "mdi:target",
   streak: "mdi:fire",
   darts_thrown: "mdi:arrow-projectile-multiple",
+  plans_finished: "mdi:clipboard-check-outline",
 };
 // Bronze, silver, gold and platinum; an achievement of a single tier is gold.
 const TIER_COLORS = ["#c07a3c", "#a9b6c4", GOLD, "#5fd0e8"];
@@ -7985,7 +7994,7 @@ function livePanel(view, ui) {
     const { plan } = view;
     return {
       title: plan ? planTitle(plan, ui) : t(`drill_${view.drill.kind}`),
-      meta: plan ? planMeta(plan, ui) : factsText(parts.facts),
+      meta: [plan ? planMeta(plan, ui) : "", factsText(parts.facts)].filter(Boolean).join(" · "),
       big: parts.big,
       route: parts.note,
       rows: "",
@@ -11216,8 +11225,8 @@ function createElements(Base) {
       } else if (tournament.label) {
         meta = [tournament.label, meta].filter(Boolean).join(" · ");
       } else if (view.mode === "idle") {
-        // Nobody taps a stream. Side by side, the two take the room of one.
-        const offer = overlay ? "" : planOfferHtml(planOffer(this._state("practice")), ui);
+        // Side by side, the two take the room of one. A stream has lobby: false, as nobody taps it.
+        const offer = planOfferHtml(offeredPlan(planOffer(this._state("practice")), this._config), ui);
         const open = games.length ? `<button type="button" class="lobby-cta" data-lobby="open">${escapeHtml(t("lobby_open"))}</button>` : "";
         if (offer || open) main += `<div class="idle-actions">${offer}${open}</div>`;
       } else if (view.plan && !overlay) {

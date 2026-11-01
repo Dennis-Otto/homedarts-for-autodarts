@@ -1436,7 +1436,7 @@
         },
         "name": {
           "name": "Name",
-          "description": "The name of a plan given by its steps."
+          "description": "The name of a plan given by its steps, or of the plan to start."
         },
         "steps": {
           "name": "Steps",

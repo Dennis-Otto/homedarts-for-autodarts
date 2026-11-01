@@ -339,12 +339,13 @@ class PlanRunner:
         self, key: str | None, name: str | None, steps: list[Any] | None
     ) -> Plan:
         """The plan that start_plan asks for: given by its steps, by its key or
-        name, or with neither the plan of the day."""
+        name in either field, or with none of them the plan of the day."""
         if steps is not None:
             plan = parse_plan({"name": name or UNNAMED, "steps": steps})
             if plan is None:
                 raise ActionRefused("invalid_plan")
             return plan
+        key = key or name
         if key is None:
             return self.today()
         found = self.find(key)
@@ -447,8 +448,10 @@ class PlanRunner:
     def _named(plan: Plan, practice: PracticeGame) -> dict[str, Any]:
         return {
             "plan": plan.key,
-            "name": plan.name,
-            "player": practice.names[0] or None,
+            "plan_name": plan.name,
+            # As in the other events: who threw, and from which seat.
+            "name": practice.names[0] or None,
+            "player": 1,
         }
 
     def _end(

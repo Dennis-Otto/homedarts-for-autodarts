@@ -170,7 +170,7 @@ Jeder Spieler mit Namen bekommt im Übungsspiel ein Profil mit Werten über sein
 
 <img src="images/de/players-badges.png" alt="Abzeichen eines Spielers auf der Spielerkarte: erreichte Stufen in Bronze, Silber und Gold, jede mit dem nächsten Ziel, dem Fortschritt dorthin und einem Fortschrittsbalken" width="620">
 
-Spieler mit Namen schalten Erfolge in Stufen frei, Bronze, Silber, Gold und für die Serie Platin: von der ersten 180 bis zur hundertsten, vom Checkout ab 100 bis zur 170, ein Leg in 18, 15 oder 12 Darts, ein Neun-Darter, ein Hattrick, jedes Double einmal getroffen, neun Marks im Cricket, ein Shanghai, das beste Around the Clock und Bob's 27, Tage in Folge und geworfene Darts. Die Spielerkarte zeigt jedes Abzeichen mit dem nächsten Ziel und dem Fortschritt dorthin.
+Spieler mit Namen schalten Erfolge in Stufen frei, Bronze, Silber, Gold und für die Serie Platin: von der ersten 180 bis zur hundertsten, vom Checkout ab 100 bis zur 170, ein Leg in 18, 15 oder 12 Darts, ein Neun-Darter, ein Hattrick, jedes Double einmal getroffen, neun Marks im Cricket, ein Shanghai, das beste Around the Clock und Bob's 27, Tage in Folge, geworfene Darts und beendete Trainingspläne. Die Spielerkarte zeigt jedes Abzeichen mit dem nächsten Ziel und dem Fortschritt dorthin.
 
 - Jede neue Stufe meldet `achievement_unlocked`, für eine [Benachrichtigung](automations.de.md#einen-erfolg-feiern) oder die [Lichtshow](automations.de.md#light-show). Nichts spielt oder spricht, solange keine Automation es tut.
 - Beim ersten Start nach dem Update wird still freigeschaltet, was die Profile schon belegen.

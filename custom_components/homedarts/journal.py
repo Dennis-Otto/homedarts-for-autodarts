@@ -72,18 +72,27 @@ class Locale(NamedTuple):
     highest: str
     decimal: str
     plan: str
+    step: str
     steps: str
 
 
 LOCALES = {
-    "en": Locale("Training", "Darts", "Max", ".", "Training plan", "steps"),
-    "de": Locale("Training", "Darts", "Max", ",", "Trainingsplan", "Schritte"),
-    "nl": Locale("Training", "darts", "Max", ",", "Trainingsplan", "stappen"),
+    "en": Locale("Training", "Darts", "Max", ".", "Training plan", "step", "steps"),
+    "de": Locale(
+        "Training", "Darts", "Max", ",", "Trainingsplan", "Schritt", "Schritte"
+    ),
+    "nl": Locale("Training", "darts", "Max", ",", "Trainingsplan", "stap", "stappen"),
     "fr": Locale(
-        "Entraînement", "fléchettes", "Max", ",", "Plan d'entraînement", "étapes"
+        "Entraînement",
+        "fléchettes",
+        "Max",
+        ",",
+        "Plan d'entraînement",
+        "étape",
+        "étapes",
     ),
     "es": Locale(
-        "Entrenamiento", "dardos", "Máx.", ",", "Plan de entrenamiento", "pasos"
+        "Entrenamiento", "dardos", "Máx.", ",", "Plan de entrenamiento", "paso", "pasos"
     ),
 }
 # Calendar events last at least this long, also a session of one dart.
@@ -266,13 +275,13 @@ def plan_entry(saved: object) -> dict[str, Any] | None:
     """A finished training plan as the journal keeps it, or None if invalid."""
     if not isinstance(saved, dict):
         return None
-    key, name = saved.get("plan"), saved.get("name")
+    key, name = saved.get("plan"), saved.get("plan_name")
     started, ended = _moment(saved.get("started")), _moment(saved.get("ended"))
     if not (isinstance(key, str) and isinstance(name, str) and ended is not None):
         return None
     return {
         "plan": key,
-        "name": name,
+        "plan_name": name,
         "started": started.isoformat() if started else None,
         "ended": ended.isoformat(),
         "steps": _count(saved.get("steps")),
@@ -282,13 +291,14 @@ def plan_entry(saved: object) -> dict[str, Any] | None:
 
 def plan_title(entry: dict[str, Any], language: str = "en") -> str:
     """For example "Training plan · Doubles day", in the language of the calendar."""
-    name = plan_name(entry["plan"], entry["name"], language)
+    name = plan_name(entry["plan"], entry["plan_name"], language)
     return f"{locale(language).plan} · {name}"
 
 
 def plan_description(entry: dict[str, Any], language: str = "en") -> str:
     words = locale(language)
-    return f"{entry['steps']} {words.steps} · {entry['darts']} {words.darts}"
+    steps = words.step if entry["steps"] == 1 else words.steps
+    return f"{entry['steps']} {steps} · {entry['darts']} {words.darts}"
 
 
 def _team_scores(entry: dict[str, Any]) -> list[tuple[str, int]] | None:

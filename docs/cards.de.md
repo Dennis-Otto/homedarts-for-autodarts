@@ -349,8 +349,8 @@ Seiten ohne Inhalt werden übersprungen. Ein Dart, ein neues Spiel oder ein Tipp
 | `call_route` | Wahrheitswert | `false` | Den Weg eines Checkouts ansagen, auch nach jedem Dart, der einen anderen lässt |
 | `call_target` | Wahrheitswert | `false` | Das nächste Ziel eines Trainings- oder Partyspiels ansagen, etwa Doppel 16 |
 | `caller_voice` | Text | leer | Ein [Voice-Pack](scoreboard.de.md#voice-packs): der Name eines Ordners in `/media/homedarts/voices` mit aufgenommenen Ansagen, etwa eines Packs von darts-caller; leer ist die Stimme des Browsers |
-| `lobby` | Wahrheitswert | `true` | Die [Spielauswahl](#spielauswahl) anbieten |
-| `lobby_games` | Liste von Spielen | jedes Spiel | Die Spiele, die die Spielauswahl anbietet, etwa `["501", cricket, killer]` |
+| `lobby` | Wahrheitswert | `true` | Die [Spielauswahl](#spielauswahl) und den [Plan des Tages](games.de.md#trainingspläne) anbieten |
+| `lobby_games` | Liste von Spielen | jedes Spiel | Die Spiele, die die Spielauswahl anbietet, etwa `["501", cricket, killer]`; den Plan des Tages gibt es nur, wenn alle seine Spiele dazugehören |
 | `idle` | Wahrheitswert | `true` | Den [Ruhemodus](#ruhemodus) einschalten |
 | `idle_after` | Sekunden, 10–3600 | `180` | Zeit ohne Darts und Tippen, bis der Ruhemodus beginnt |
 | `idle_interval` | Sekunden, 3–120 | `10` | Zeit, die jede Seite zu sehen ist |

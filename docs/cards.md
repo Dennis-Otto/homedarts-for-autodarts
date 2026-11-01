@@ -349,8 +349,8 @@ Panels with nothing to show are skipped. A dart, a new game or a tap anywhere en
 | `call_route` | boolean | `false` | Call the route of a checkout, also after each dart that leaves another one |
 | `call_target` | boolean | `false` | Call the next target of a training or party game, such as Double 16 |
 | `caller_voice` | text | empty | A [voice pack](scoreboard.md#voice-packs): the name of a folder of `/media/homedarts/voices` with recorded calls, such as a pack of darts-caller; empty is the browser's voice |
-| `lobby` | boolean | `true` | Offer the [new game screen](#new-game-screen) |
-| `lobby_games` | list of games | every game | The games the new game screen offers, for example `["501", cricket, killer]` |
+| `lobby` | boolean | `true` | Offer the [new game screen](#new-game-screen) and the [plan of the day](games.md#training-plans) |
+| `lobby_games` | list of games | every game | The games the new game screen offers, for example `["501", cricket, killer]`; the plan of the day is offered only if all its games are among them |
 | `idle` | boolean | `true` | Switch [idle mode](#idle-mode) on |
 | `idle_after` | seconds, 10–3600 | `180` | Time without darts and taps before idle mode starts |
 | `idle_interval` | seconds, 3–120 | `10` | Time each panel shows |

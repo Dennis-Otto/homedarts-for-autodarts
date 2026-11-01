@@ -92,6 +92,8 @@ Die Anzeigetafel passt sich der Form des Bildschirms an. Mit `full_height: true`
 
 Tippe zwischen den Spielen auf **Neues Spiel** unter dem Punktestand, während eines Spiels oben rechts. Einige Sekunden nach dem Ende eines Matches oder Trainingsspiels öffnet sich die Auswahl auch von selbst, mit der letzten Wahl für eine Revanche; ein stattdessen geworfener Dart schließt sie wieder.
 
+Neben **Neues Spiel** startet ein Tippen den [Plan des Tages](games.de.md#trainingspläne). Während ein Plan läuft, nennt die Kopfzeile den aktuellen Schritt, und **Überspringen** und **Stoppen** unter dem Punktestand verlassen den Schritt oder beenden den Plan, jeweils nach einem zweiten Tippen.
+
 <img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet öffnet Neues Spiel die Spielauswahl, Cricket wird gewählt, Sam kommt zu Alex dazu, die Legs pro Satz steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
 
 1. **Spiel:** X01, die Cricket-Spiele, die Partyspiele und die Trainingsspiele, in Gruppen. `lobby_games` beschränkt die Auswahl auf die Spiele, die ihr spielt. Unter den Spielen erklärt *So wird gespielt* das gewählte Spiel in ein, zwei Sätzen, für Gäste, die es noch nie gespielt haben, und *Alle Regeln* öffnet seine Regeln auf der Dokumentations-Website.

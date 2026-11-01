@@ -467,7 +467,8 @@ class BoardGames:
             raise ActionRefused("invalid_player_name")
         events = self.plans.start(chosen, self.practice, now)
         if player is not None:
-            self.practice.set_name(0, self.practice.profiles.spelled(player))
+            # The others rest now, so a seat with this name gives it up.
+            self.practice.rename(0, self.practice.profiles.spelled(player))
         return events
 
     def next_plan_step(self, now: datetime) -> list[Event]:
@@ -492,7 +493,7 @@ class BoardGames:
         for kind, attributes in events:
             if kind == "plan_finished" and attributes["completed"]:
                 moved += self.progress.plan_finished(
-                    attributes["player"], self.practice, now
+                    attributes["name"], self.practice, now
                 )
         return moved
 

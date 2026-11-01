@@ -92,6 +92,8 @@ The scoreboard adapts to the shape of the screen. With `full_height: true` it is
 
 Tap **New game** below the score between games, or at the top right during a game. The screen also opens by itself a few seconds after a match or a training game ends, with the last choice ready for a rematch; a dart thrown instead closes it again.
 
+Beside **New game**, one tap starts the [plan of the day](games.md#training-plans). While a plan runs, the header says which step you are on, and **Skip** and **Stop** below the score leave the step or end the plan, each after a second tap.
+
 <img src="images/en/lobby.webp" alt="Animation: on the tablet, New game opens the screen, Cricket is chosen, Sam joins Alex, the legs per set go up to three and the game starts on the scoreboard" width="760">
 
 1. **Game:** X01, the Cricket games, the party games and the training games, grouped. `lobby_games` limits the choice to the games you play. Below the games, *How to play* explains the chosen game in a sentence or two, for guests who have never played it, and *All rules* opens its rules on the documentation website.

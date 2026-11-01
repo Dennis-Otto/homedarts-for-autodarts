@@ -208,6 +208,14 @@ test("the overlay of a stream has nothing to tap", () => {
   assert.equal($(scoreboard(IDLE, { overlay: "chroma" }).card, ".plan-offer"), null);
 });
 
+test("the offer follows the options of the new game screen", () => {
+  assert.equal($(scoreboard(IDLE, { lobby: false }).card, ".plan-offer"), null);
+  assert.equal($(scoreboard(IDLE, { lobby_games: ["501", "cricket"] }).card, ".plan-offer"), null);
+  assert.equal($(scoreboard(IDLE, { lobby_games: ["501", "checkout"] }).card, ".plan-offer"), null);
+  assert.notEqual($(scoreboard(IDLE, { lobby_games: ["checkout", "catch_40"] }).card, ".plan-offer"), null);
+  assert.notEqual($(scoreboard(IDLE, { lobby_games: [] }).card, ".plan-offer"), null);
+});
+
 test("the preview of the card picker starts nothing", () => {
   const { card, hass } = scoreboard(IDLE);
   card.preview = true;
@@ -227,7 +235,9 @@ test("the new game screen hides the buttons of a plan", () => {
 test("the live card shows the step with Skip and Stop", () => {
   const { card, hass } = live(PLAYING);
   assert.equal(text(card, ".practice-title"), "Step 2 of 4: Bob's 27");
-  assert.equal(text(card, ".practice-meta"), "Doubles day · 12 / 60 darts");
+  const meta = text(card, ".practice-meta");
+  assert.ok(meta.startsWith("Doubles day · 12 / 60 darts · "), meta);
+  assert.match(meta, /25/);
   assert.equal($(card, ".practice-plan").hidden, false);
   $$(card, ".practice-plan button")[0].click();
   assert.equal(hass.calls.length, 0);

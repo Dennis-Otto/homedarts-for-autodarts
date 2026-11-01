@@ -1436,7 +1436,7 @@
         },
         "name": {
           "name": "Naam",
-          "description": "De naam van een plan dat met zijn stappen wordt gegeven."
+          "description": "De naam van een plan dat met zijn stappen wordt gegeven, of van het plan dat moet starten."
         },
         "steps": {
           "name": "Stappen",

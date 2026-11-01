@@ -274,8 +274,9 @@ def test_every_plan_of_the_integration_runs_to_its_end(key):
     assert not any(step["skipped"] for step in steps)
     assert len(ended) == 1
     assert ended[0]["plan"] == key
-    assert ended[0]["name"] == plan.name
-    assert ended[0]["player"] == "Alex"
+    assert ended[0]["plan_name"] == plan.name
+    assert ended[0]["name"] == "Alex"
+    assert ended[0]["player"] == 1
     assert ended[0]["reason"] == "finished"
     assert ended[0]["completed"] is True
     assert ended[0]["played"] == len(plan.steps)
@@ -316,8 +317,9 @@ def test_a_step_with_a_limit_moves_on_with_the_visit_that_reaches_it():
     (step,) = named(announced, "plan_step_finished")
     assert step == {
         "plan": "Evening",
-        "name": "Evening",
-        "player": None,
+        "plan_name": "Evening",
+        "name": None,
+        "player": 1,
         "step": 1,
         "steps": 3,
         "drill": "around_the_clock",
@@ -526,6 +528,22 @@ def test_an_own_plan_is_found_by_its_name_in_any_case():
     assert games.practice.drill == "singles"
 
 
+def test_a_name_without_steps_names_the_plan_to_start():
+    games = BoardGames(Reports(), NOW)
+    games.plans.custom = own_plans(
+        [{"name": "Evening", "steps": [{"drill": "singles"}]}]
+    )
+    games.start_plan(NOW, name="evening")
+    assert games.plans.plan.key == "Evening"
+    assert refusal(lambda: games.start_plan(NOW, name="Morning")) == (
+        "unknown_plan",
+        {"plan": "Morning"},
+    )
+    # The field for a key goes first.
+    games.start_plan(NOW, "warm_up", name="Evening")
+    assert games.plans.plan.key == "warm_up"
+
+
 def test_a_player_keeps_the_spelling_of_the_profile():
     games = planned([{"drill": "doubles", "darts": 1}], player="Alex")
     throw(games, MISS)
@@ -533,6 +551,13 @@ def test_a_player_keeps_the_spelling_of_the_profile():
     games.practice.profiles.players["alex"] = SimpleNamespace(name="Alex")
     games.start_plan(NOW, "warm_up", player="alex")
     assert games.practice.names[0] == "Alex"
+
+
+def test_a_name_is_one_player_when_a_plan_starts():
+    games = BoardGames(Reports(), NOW)
+    games.practice.names[:2] = ["Sam", "Alex"]
+    games.start_plan(NOW, "warm_up", player="ALEX")
+    assert games.practice.names[:2] == ["ALEX", ""]
 
 
 def test_the_checkout_training_of_a_step_stays_among_its_finishes():
@@ -830,7 +855,7 @@ async def test_the_summary_of_the_week_says_how_many_plans_were_finished(hass):
 def finished_plan(**changes):
     return {
         "plan": "doubles_day",
-        "name": "Doubles day",
+        "plan_name": "Doubles day",
         "completed": True,
         "steps": 3,
         "darts": 120,
@@ -846,7 +871,7 @@ def test_the_calendar_shows_a_finished_plan():
     # Announced twice, kept once; only a plan played to its end counts.
     assert journal.add_plan(finished_plan()) is False
     assert journal.add_plan(finished_plan(completed=False)) is False
-    assert journal.add_plan(finished_plan(name=3)) is False
+    assert journal.add_plan(finished_plan(plan_name=3)) is False
     event = journal.latest()
     assert event.summary == "Training plan · Doubles day"
     assert event.description == "3 steps · 120 Darts"
@@ -864,12 +889,28 @@ def test_the_calendar_names_a_plan_in_its_language():
     assert event.description == "3 Schritte · 120 Darts"
 
 
+@pytest.mark.parametrize(
+    ("language", "word"),
+    [
+        ("en", "step"),
+        ("de", "Schritt"),
+        ("nl", "stap"),
+        ("fr", "étape"),
+        ("es", "paso"),
+    ],
+)
+def test_the_calendar_counts_one_step_in_the_singular(language, word):
+    journal = TrainingJournal(lambda: language)
+    journal.add_plan(finished_plan(steps=1))
+    assert journal.latest().description.startswith(f"1 {word} · ")
+
+
 def test_the_journal_keeps_its_plans_through_a_restart_and_a_merge():
     journal = TrainingJournal()
     journal.add_plan(finished_plan())
     restored = TrainingJournal()
     saved = journal.stored()
-    saved["plans"] = [*saved["plans"], "broken", {"plan": "x", "name": "y"}]
+    saved["plans"] = [*saved["plans"], "broken", {"plan": "x", "plan_name": "y"}]
     restored.restore(saved)
     assert restored.plans == journal.plans
     assert restored.plans[0]["started"] == "2026-10-01T19:30:00+00:00"
