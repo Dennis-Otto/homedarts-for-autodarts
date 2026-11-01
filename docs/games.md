@@ -10,7 +10,7 @@ Your Autodarts board plays games in Home Assistant itself: X01 from 101 to 1001,
 
 <img src="images/en/lobby.webp" alt="Animation: on the tablet at the board, New game opens the game screen, Cricket is chosen, Sam joins Alex, the legs per set go up to three and the game starts on the scoreboard" width="760">
 
-**On this page:** [All games at a glance](#all-games-at-a-glance) · [Start a game](#start-a-game) · [At the board](#at-the-board) · [Corrections and darts entered by hand](#corrections-and-darts-entered-by-hand) · [Matches, legs and sets](#matches-legs-and-sets) · [Match summary](#match-summary) · [Teams](#teams) · [Start scores (handicap)](#start-scores-handicap) · [Bull-off](#bull-off) · [Playing against the bot](#playing-against-the-bot) · [Tournaments](#tournaments) · [X01](#x01) · [Cricket games](#cricket-games) · [Party games](#party-games) · [Training games](#training-games) · [Statistics](#statistics)
+**On this page:** [All games at a glance](#all-games-at-a-glance) · [Start a game](#start-a-game) · [At the board](#at-the-board) · [Corrections and darts entered by hand](#corrections-and-darts-entered-by-hand) · [Matches, legs and sets](#matches-legs-and-sets) · [Match summary](#match-summary) · [Teams](#teams) · [Start scores (handicap)](#start-scores-handicap) · [Bull-off](#bull-off) · [Playing against the bot](#playing-against-the-bot) · [Tournaments](#tournaments) · [X01](#x01) · [Cricket games](#cricket-games) · [Party games](#party-games) · [Training games](#training-games) · [Training plans](#training-plans) · [Statistics](#statistics)
 
 ## All games at a glance
 
@@ -527,6 +527,49 @@ Eight classic drills for one player. Each follows the darts of the current visit
 
 - One visit at each number from 1 to 20 and then at the bull (`25`).
 - Every dart in a bed of the number scores a point per mark: a single 1, a double 2, a triple 3; the outer bull 1 and the bullseye 2. At most 186 points.
+
+## Training plans
+
+A training plan plays several [training games](#training-games) in a row. On the [scoreboard](cards.md#scoreboard-card) and the [live card](cards.md#live-card), the header says where you are, such as *Step 2 of 4: Bob's 27*, and the next game starts when one ends. *Skip* goes to the next step and *Stop* ends the plan and its game, each with a second tap.
+
+<img src="images/en/training-plan.webp" alt="Animation: the idle scoreboard offers the plan of the day, Doubles day. One tap starts it, and the header reads Step 1 of 3: Doubles training. Skip, tapped twice, moves on to Step 2 of 3: Bob's 27" width="760">
+
+Four plans come with the integration:
+
+| Plan | Key | Steps |
+| --- | --- | --- |
+| Warm-up 15 minutes | `warm_up` | Around the Clock for 45 darts, the singles training for 10 visits, the doubles training for 30 darts |
+| Doubles day | `doubles_day` | The doubles training for 60 darts, Bob's 27, the checkout training for 10 visits at the finishes up to 40 |
+| Checkout day | `checkout_day` | The checkout training for 12 visits at the finishes from 41 to 100, Catch 40 for 20 visits, the 121 checkout for 12 visits |
+| JDC week | `jdc_week` | Around the Clock for 30 darts, the JDC Challenge, Catch 40 for 10 visits |
+
+**The plan of the day:** when no game is on the board, the scoreboard offers today's plan with one tap: on Monday and Thursday *Warm-up 15 minutes*, on Tuesday and Friday *Doubles day*, on Wednesday and Sunday *Checkout day* and on Saturday *JDC week*. Once you finished it, the offer says so, and you can start it again. An own plan with `weekdays` takes the place of the plan on these days.
+
+**Your own plans** are a list in YAML, either in the options of the board (*Settings → Devices & services → HomeDarts → Configure*) or in the action [`homedarts.start_plan`](entities.md#training-plans-homedartsstart_plan):
+
+```yaml
+- name: Tuesday evening
+  weekdays: [tuesday]
+  steps:
+    - drill: around_the_clock
+      darts: 30
+    - drill: bobs_27
+    - drill: checkout
+      rounds: 10
+      options:
+        low: 40
+        high: 100
+```
+
+A plan has a name and up to 12 steps, and a board up to 20 own plans. A step names its game as `drill`: `around_the_clock`, `doubles`, `checkout`, `bobs_27`, `checkout_121`, `catch_40`, `jdc_challenge` or `singles`. At most one of these says what ends the step, and it also ends once its game does:
+
+- `darts`: with the visit that reaches this many darts;
+- `rounds`: after this many visits;
+- `until: finished`: with the end of the game, the default. The checkout training and the 121 checkout never end by themselves, so they need `darts` or `rounds`.
+
+With `options`, the checkout training stays among the finishes from `low` to `high`.
+
+A plan is for one player, like every training game, and goes on after a restart of Home Assistant in the middle of a step. A visit that ended a step cannot be [undone](#corrections-and-darts-entered-by-hand), as the next game is on the board by then. Another game that you start on the board ends the plan, and no plan starts during a tournament. [`plan_step_finished` and `plan_finished`](entities.md#board-events) announce the results, the [weekly report](entities.md#weekly-report) and the [training calendar](entities.md#training-calendar) count the finished plans, and the [achievement](entities.md#achievements) *Training plans* has its tiers at 1, 10 and 100.
 
 ## Statistics
 

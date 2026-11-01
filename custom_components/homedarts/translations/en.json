@@ -123,18 +123,23 @@
         "data": {
           "online_bridge": "Receive online matches from Tools for Autodarts",
           "online_bridge_remote": "Accept calls from outside your home network",
-          "online_bridge_new_address": "Create a new secret address"
+          "online_bridge_new_address": "Create a new secret address",
+          "plans": "Own training plans"
         },
         "data_description": {
           "online_bridge": "Opens a secret webhook address for the browser extension. The next step shows it.",
           "online_bridge_remote": "Only for an https address through Home Assistant Cloud or your own domain. Off: only devices in your home network can call the address.",
-          "online_bridge_new_address": "The current address stops working. Enter the new one in Tools for Autodarts."
+          "online_bridge_new_address": "The current address stops working. Enter the new one in Tools for Autodarts.",
+          "plans": "A list in YAML: every plan with a `name`, its `steps` and, if you like, the `weekdays` on which it is the plan of the day. The page Training plans of the documentation has an example. An empty list is none."
         }
       },
       "online_bridge": {
         "title": "Address for Tools for Autodarts",
         "description": "After you submit, Home Assistant accepts moments of online matches at this secret address:\n\n`{url}`\n\nIn Tools for Autodarts, turn on **WLED**, choose **Import CSV** and paste the lines below. Each line creates an effect of type URL that calls the address with `?event=` and its trigger. Import only the lines you need: Tools for Autodarts plays one effect per trigger and picks one at random when several share a trigger.\n\n```\n{effects}\n```\n\nThe *Online bridge last event* sensor shows the last moment that arrived. Keep the address to yourself: whoever knows it can send moments of a game to your Home Assistant."
       }
+    },
+    "error": {
+      "invalid_plans": "These plans are not valid. Every plan needs a name of its own and one to twelve steps. Every step names a training game as `drill` and at most one of `darts`, `rounds` and `until`. The checkout training and the 121 ladder never end by themselves and need `darts` or `rounds`."
     }
   },
   "entity": {
@@ -683,6 +688,8 @@
               "game_started": "Game started",
               "game_ended": "Game ended",
               "drill_finished": "Training game finished",
+              "plan_step_finished": "Training plan step finished",
+              "plan_finished": "Training plan finished",
               "checkout_attempt": "Checkout attempt",
               "personal_best": "Personal best",
               "daily_goal_reached": "Daily goal reached",
@@ -723,7 +730,8 @@
               "around_the_clock": "Around the Clock",
               "bobs_27": "Bob's 27",
               "streak": "Streak",
-              "darts_thrown": "Darts thrown"
+              "darts_thrown": "Darts thrown",
+              "plans_finished": "Training plans"
             }
           },
           "mode": {
@@ -951,6 +959,18 @@
     },
     "no_dart": {
       "message": "The current visit has no dart {dart}."
+    },
+    "no_plan": {
+      "message": "No training plan is being played on this board."
+    },
+    "unknown_plan": {
+      "message": "There is no training plan called {plan}. Use warm_up, doubles_day, checkout_day, jdc_week or the name of a plan of your own."
+    },
+    "invalid_plan": {
+      "message": "These steps make no training plan. A plan has one to twelve steps. Every step names a training game as drill and at most one of darts, rounds and until. The checkout training and the 121 ladder need darts or rounds."
+    },
+    "plan_in_tournament": {
+      "message": "A tournament is being played on this board. Stop it first to start a training plan."
     },
     "bot_dart": {
       "message": "The darts of the bot cannot be corrected."
@@ -1204,6 +1224,12 @@
     "report_new_bests": {
       "message": "{count} new personal bests."
     },
+    "report_plan": {
+      "message": "1 training plan finished."
+    },
+    "report_plans": {
+      "message": "{count} training plans finished."
+    },
     "training_summary": {
       "message": "{darts} darts, 3-dart average {average}, highest visit {highest}."
     },
@@ -1414,6 +1440,52 @@
         "bot_level": {
           "name": "Bot level",
           "description": "Play against the bot in X01 and the Cricket games: the 3-dart average it plays, 20 to 120; 0 plays without the bot. The bot takes the seat after the players."
+        }
+      }
+    },
+    "start_plan": {
+      "name": "Start training plan",
+      "description": "Starts a training plan on the board: several training games in a row. Name a plan, give its steps, or give neither for the plan of the day.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "The board. Needed only with more than one board."
+        },
+        "plan": {
+          "name": "Plan",
+          "description": "A plan that comes with the integration, or the name of a plan of your own from the options of the board."
+        },
+        "name": {
+          "name": "Name",
+          "description": "The name of a plan given by its steps, or of the plan to start."
+        },
+        "steps": {
+          "name": "Steps",
+          "description": "The steps in order, in place of a plan. Each names a training game as `drill` and, if you like, the `darts` or `rounds` it may take, or `until: finished`, the default. With `options`, such as `low: 40` and `high: 100`, the checkout training stays among these finishes."
+        },
+        "player": {
+          "name": "Player",
+          "description": "Who trains. Without a name, player 1 stays."
+        }
+      }
+    },
+    "next_plan_step": {
+      "name": "Skip training plan step",
+      "description": "Leaves the current step of the training plan for the next one. After the last step, the plan is finished.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "The board. Needed only with more than one board."
+        }
+      }
+    },
+    "stop_plan": {
+      "name": "Stop training plan",
+      "description": "Stops the training plan and its game on the board.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Board",
+          "description": "The board. Needed only with more than one board."
         }
       }
     },
@@ -1886,6 +1958,14 @@
         "knockout": "Knockout",
         "double_knockout": "Double elimination",
         "groups_knockout": "Groups and knockout"
+      }
+    },
+    "plan": {
+      "options": {
+        "warm_up": "Warm-up 15 minutes",
+        "doubles_day": "Doubles day",
+        "checkout_day": "Checkout day",
+        "jdc_week": "JDC week"
       }
     }
   }

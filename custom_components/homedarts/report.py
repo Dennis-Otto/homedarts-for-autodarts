@@ -51,6 +51,7 @@ COUNTS = (
     "darts_at_double",
     "checkouts",
     "daily_goals",
+    "plans",
 )
 # Numbers of a report as the event and the sensor carry them.
 REPORT_NUMBERS = (
@@ -65,6 +66,7 @@ REPORT_NUMBERS = (
     "matches",
     "streak",
     "daily_goals",
+    "plans",
 )
 REPORT_VALUES = ("average", "average_change", "highest_visit", "checkout_rate")
 SAVE_DELAY = 10
@@ -224,6 +226,8 @@ class WeeklyReport:
             count["sessions"] += int(_count(value("darts")) > 0)
         elif kind == "daily_goal_reached":
             count["daily_goals"] += 1
+        elif kind == "plan_finished":
+            count["plans"] += int(value("completed") is True)
         elif kind == "personal_best" and (best := _restored_best(attributes)):
             self.bests.insert(0, best)
             del self.bests[REPORT_BESTS:]
@@ -292,6 +296,7 @@ class WeeklyReport:
             "matches": count["matches"],
             "streak": streak,
             "daily_goals": count["daily_goals"],
+            "plans": count["plans"],
             "personal_bests": [dict(best) for best in self.bests],
         }
 
@@ -477,16 +482,20 @@ class BoardReports:
         finished sessions, matches and legs."""
         coordinator = self._coordinator
         practice = coordinator.games.practice
+        plans = False
         for kind, attributes in events:
             self.report.observe(kind, attributes, now)
+            if kind == "plan_finished":
+                plans = self.journal.add_plan(attributes) or plans
         for kind, _ in booked or []:
             self.report.booked(kind)
         legs = self.report.book_legs(practice.legs, practice.leg_stats)
         if events or booked or legs:
             self._save_report()
-        if self.journal.sync(
+        synced = self.journal.sync(
             coordinator.games.training.history, practice.profiles.matches, now
-        ):
+        )
+        if synced or plans:
             self._save_journal()
 
     def _save_report(self) -> None:

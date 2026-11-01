@@ -26,6 +26,7 @@ from .local_api import number
 from .manual import ManualDarts
 from .modes import VisitRefused
 from .moments import stamp
+from .plans import PlanRunner
 from .practice import MAX_PLAYERS, TEAM_PLAYERS, PracticeGame
 from .profiles import clean_name, valid_name
 from .progress import Progress
@@ -102,13 +103,14 @@ class Checkpoint:
     """Everything a player's visit changes when it is booked, as it was before,
     to undo the visit: the practice game, where the visit's darts landed, the
     progress of the players at the board, the weekly report and the journal,
-    and the personal bests."""
+    the personal bests and the step of a training plan."""
 
     practice: dict[str, Any]
     positions: list[tuple[float, float] | None]
     progress: dict[str, Any]
     reports: dict[str, Any]
     records: dict[str, Any]
+    plan: dict[str, int]
 
 
 class BoardGames:
@@ -127,6 +129,8 @@ class BoardGames:
         self.records = PersonalRecords()
         self.progress = Progress()
         self.tournament = TournamentDirector()
+        # The training plan on the board, which plays training games in a row.
+        self.plans = PlanRunner(now.date())
         # The start and the end of the games, for game_started and game_ended.
         self.life = GameLifecycle()
         # The key of the board, the ID of its entry in Home Assistant, by which
@@ -169,6 +173,8 @@ class BoardGames:
         self.progress.restore(stored.get("progress"), self.practice.profiles, now)
         self.tournament.restore(stored.get("tournament"))
         self.practice.hold = self.tournament.waiting
+        self.plans.day = now.date()
+        self.plans.restore(stored.get("plan"), self.practice)
         self.life.restore(stored.get("lifecycle"))
         if isinstance(saved, dict) and "lifecycle" not in saved:
             self.life.adopt(
@@ -179,13 +185,14 @@ class BoardGames:
 
     def stored(self) -> dict[str, Any]:
         """Training sessions, the practice game, personal bests, the players'
-        progress and the tournament, saved together."""
+        progress, the tournament and the training plan, saved together."""
         return {
             **self.training.stored(),
             "practice": self.practice.stored(),
             "records": self.records.stored(),
             "progress": self.progress.stored(),
             "tournament": self.tournament.stored(),
+            "plan": self.plans.stored(),
             "lifecycle": self.life.stored(),
         }
 
@@ -226,6 +233,7 @@ class BoardGames:
         """Training, practice game and records follow the darts on the board."""
         announced = self._announced
         changed = False
+        self.plans.day = now.date()
         observed = self.training.observe(state, now)
         completed = any(kind == "visit_completed" for kind, _ in observed)
         # The weekly report and the personal bests before they count a
@@ -271,6 +279,7 @@ class BoardGames:
         """Book the pulled darts in the practice game and the players' progress;
         with empty, the player at the board passes, see PracticeGame.finish_visit."""
         pending = self.progress.before(self.practice)
+        thrown = len(pending.booking.darts)
         # The bot's darts are nobody's training.
         if self.training.active and not bot:
             self.progress.session_visit(pending.booking)
@@ -278,6 +287,8 @@ class BoardGames:
         events = self.practice.finish_visit(empty, now=now)
         booked = self._booked(pending.legs_total, decided)
         events += self.progress.after(pending, self.practice, now)
+        # The step of a training plan may be over, once its game booked the visit.
+        events += self._plan_moved(self.plans.booked(self.practice, thrown, now), now)
         # A won game ends before a tournament starts its next match.
         ended = self._game_events(now)
         # A tournament takes the result once the practice game booked it; the
@@ -342,6 +353,7 @@ class BoardGames:
             progress=self.progress.checkpoint(self.practice.names),
             reports=reports,
             records=records,
+            plan=self.plans.checkpoint(),
         )
 
     def _publish(self, data: dict[str, Any], announced: bool) -> None:
@@ -377,7 +389,12 @@ class BoardGames:
         """The practice game for the entities, and whether the last visit of a
         player can be undone now."""
         undo = self._undo is not None and self.training.can_undo()
-        return {**self.practice.snapshot(), "undo": undo}
+        return {
+            **self.practice.snapshot(),
+            "undo": undo,
+            "plan": self.plans.snapshot(),
+            "plan_of_the_day": self.plans.offer(),
+        }
 
     def snapshots(self) -> dict[str, Any]:
         """The training session and the practice game for the entities, with
@@ -397,6 +414,7 @@ class BoardGames:
             kind == "session_ended" and attributes.get("reason") == "idle"
             for kind, attributes in events
         )
+        self.plans.day = now.date()
         self._undo = None
         self.revision += 1
         return recorded + self._game_events(now, idle=idle)
@@ -405,15 +423,22 @@ class BoardGames:
         self, now: datetime, *, darts: bool = False, idle: bool = False
     ) -> list[Event]:
         """The start and the end of the games since the last step, see
-        GameLifecycle.follow."""
+        GameLifecycle.follow, after the end of a training plan that another
+        game took the place of."""
         director, board = self._seat()
-        return self.life.follow(
-            self.practice,
-            stamp(now),
-            tournament=director.running and not director.waiting_at(board),
-            darts=darts,
-            idle=idle,
-        )
+        replaced = self.plans.follow(self.practice, now)
+        if replaced:
+            self._undo = None
+        return [
+            *(self._recorded(replaced, now) if replaced else []),
+            *self.life.follow(
+                self.practice,
+                stamp(now),
+                tournament=director.running and not director.waiting_at(board),
+                darts=darts,
+                idle=idle,
+            ),
+        ]
 
     def follow_game(self, now: datetime) -> list[Announcement]:
         """The start and the end of the games after another board of a
@@ -422,6 +447,56 @@ class BoardGames:
             (kind, attributes, "training")
             for kind, attributes in self._game_events(now)
         ]
+
+    # -- training plans ----------------------------------------------------------
+
+    def start_plan(
+        self,
+        now: datetime,
+        plan: str | None = None,
+        name: str | None = None,
+        steps: list[Any] | None = None,
+        player: str | None = None,
+    ) -> list[Event]:
+        """Start a training plan: given by its steps, by its key or name, or
+        else the plan of the day. It takes the place of the game on the board,
+        but no match of a tournament gives way to it."""
+        if self.host is not None or self.tournament.running:
+            raise ActionRefused("plan_in_tournament")
+        chosen = self.plans.choose(plan, name, steps)
+        if player is not None and not valid_name(player):
+            raise ActionRefused("invalid_player_name")
+        events = self.plans.start(chosen, self.practice, now)
+        if player is not None:
+            # The others rest now, so a seat with this name gives it up.
+            self.practice.rename(0, self.practice.profiles.spelled(player))
+        return events
+
+    def next_plan_step(self, now: datetime) -> list[Event]:
+        """Skip the step being played: its result stays as it is."""
+        if self.plans.plan is None:
+            raise ActionRefused("no_plan")
+        return self._plan_moved(self.plans.skip(self.practice, now), now)
+
+    def stop_plan(self, now: datetime) -> list[Event]:
+        """Stop the training plan and the game of its step."""
+        if self.plans.plan is None:
+            raise ActionRefused("no_plan")
+        return self.plans.stop(self.practice, now)
+
+    def _plan_moved(self, events: list[Event], now: datetime) -> list[Event]:
+        """The events of a step of a plan that ended, and the achievements of a
+        plan that this finished. The game of the next step is on the board, so
+        the last visit cannot be undone."""
+        if events:
+            self._undo = None
+        moved = list(events)
+        for kind, attributes in events:
+            if kind == "plan_finished" and attributes["completed"]:
+                moved += self.progress.plan_finished(
+                    attributes["name"], self.practice, now
+                )
+        return moved
 
     # -- tournaments -------------------------------------------------------------
 
@@ -859,6 +934,7 @@ class BoardGames:
         checkpoint, self._undo = self._undo, None
         # Booked again once it ends, the visit must not count twice.
         self.progress.rewind(checkpoint.progress)
+        self.plans.rewind(checkpoint.plan)
         self._reports.rewind(checkpoint.reports)
         self.records.rewind(checkpoint.records)
         self.practice.rewind(checkpoint.practice, darts, checkpoint.positions, now)

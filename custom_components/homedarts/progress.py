@@ -77,6 +77,7 @@ COUNTERS = (
     "high_finish",
     "around_the_clock",
     "bobs_27",
+    "plans",
 )
 
 
@@ -411,6 +412,20 @@ class Progress:
             results = practice.drills[pending.drill].results
             if results and results[0] is not pending.result:
                 self._result(results[0], practice.names[0])
+        return self._announced_unlocks(practice, now)
+
+    def plan_finished(
+        self, name: str | None, practice: PracticeGame, now: datetime
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """A training plan played to its end by player 1, who may have no name."""
+        if (player := self._player(name)) is None:
+            return []
+        player.counters["plans"] += 1
+        return self._announced_unlocks(practice, now)
+
+    def _announced_unlocks(
+        self, practice: PracticeGame, now: datetime
+    ) -> list[tuple[str, dict[str, Any]]]:
         if not self.enabled:
             return []
         # The bot's seat keeps the name of whoever sat there before.
@@ -519,6 +534,7 @@ class Progress:
             **best,
             "streak": player.best_streak,
             "darts_thrown": counters["darts"],
+            "plans_finished": counters["plans"],
         }
 
     def _unlock(

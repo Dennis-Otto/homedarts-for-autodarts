@@ -119,6 +119,7 @@ def test_darts_visits_and_results_count_for_the_week():
         "matches": 1,
         "streak": 4,
         "daily_goals": 1,
+        "plans": 0,
     }
     assert len(bests) == REPORT_BESTS
     assert bests[0] == {"record": "highest_visit", "value": 11, "name": None}
