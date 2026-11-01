@@ -19,6 +19,13 @@
         'reconnect_delay_seconds': 1,
         'socket': None,
       }),
+      'stuck_hand': dict({
+        'failed_restarts': 0,
+        'last_restart': None,
+        'restarts': 0,
+        'seen': False,
+        'waiting': False,
+      }),
       'stuck_takeout': dict({
         'failed_resets': 0,
         'free': True,
@@ -274,6 +281,13 @@
         'receiving': False,
         'reconnect_delay_seconds': 1,
         'socket': None,
+      }),
+      'stuck_hand': dict({
+        'failed_restarts': 0,
+        'last_restart': None,
+        'restarts': 0,
+        'seen': False,
+        'waiting': False,
       }),
       'stuck_takeout': dict({
         'failed_resets': 0,

@@ -1,8 +1,8 @@
 """The Board Manager of a board: realtime events, HTTP reads and recovery.
 
 AutodartsLocalCoordinator follows the board with its push notifications and
-reconciles them with periodic reads; it frees stuck takeouts, raises the
-repair issues of the board and runs its actions. The reads besides the state
+reconciles them with periodic reads; it frees stuck takeouts, notices a hand the
+board sees all the time, raises the repair issues of the board and runs its actions. The reads besides the state
 are in BoardReads (reads.py), the generation of the Board Manager in
 BoardGeneration (generation.py). The training and the games run in
 AutodartsGamesCoordinator, which it extends; a dartboard without Autodarts
@@ -47,6 +47,7 @@ from .local_api import (
 )
 from .online import ONLINE_EVENT_TYPES
 from .reads import BoardReads
+from .stuck_hand import STUCK_HAND_SECONDS, HandWatch
 from .topics import BoardTopics, Topic
 from .tournament import TOURNAMENT_EVENTS
 
@@ -85,6 +86,10 @@ STUCK_TAKEOUT_SECONDS = 10
 # Resets in a row, a period apart, before a board that stays stuck is left to
 # its player; a dart on the board allows them again.
 STUCK_TAKEOUT_RESETS = 3
+# A stop of a real board took 0.1 seconds. A start before its end could get lost and
+# leave the detection off, so a restart reads the board this often and this far apart.
+STOP_READS = 10
+STOP_READ_SECONDS = 0.5
 # High-rate push values: their sensors show them with the next poll, and only a
 # camera alarm they raise or clear shows at once.
 TELEMETRY = ("stats", "camera_stats")
@@ -103,6 +108,8 @@ EVENT_TYPES = [
     "dart_corrected",
     "takeout_started",
     "takeout_finished",
+    "stuck_hand",
+    "stuck_hand_cleared",
     "status_changed",
     "visit_thrown",
     "visit_completed",
@@ -134,6 +141,7 @@ ISSUES = (
     "wrong_board",
     "board_manager_1",
     "calibration",
+    "stuck_hand",
     "board_moved",
     "board_access_denied",
     "unsupported_response",
@@ -170,6 +178,10 @@ class ConnectionStats:
     takeout_resets: int = 0
     failed_takeout_resets: int = 0
     last_takeout_reset: datetime | None = None
+    # Restarts of a detection stuck on a hand, and those the board did not accept.
+    hand_restarts: int = 0
+    failed_hand_restarts: int = 0
+    last_hand_restart: datetime | None = None
 
 
 class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
@@ -218,11 +230,16 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self._observed_state: dict[str, Any] | None = None
         self._observed_motion: dict[str, Any] | None = None
         self._taking_out = False
+        # A restart of the detection ends a takeout, and says so.
+        self._restarting_detection = False
         # Reset the board when it keeps a takeout without darts; a stored setting.
         self.free_stuck_takeout = True
         self._takeout_unsub: CALLBACK_TYPE | None = None
         # Resets of a stuck takeout since the last dart on the board.
         self._takeout_resets = 0
+        # A hand Board Manager 2.1 sees all the time, and the wait for it to count so.
+        self._hand = HandWatch()
+        self._hand_unsub: CALLBACK_TYPE | None = None
         # When a read last reported the frame rates and the load.
         self._telemetry_reported = 0.0
         # When Board Manager 2.1 last sent its motion, and the watch for its end.
@@ -268,6 +285,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 await self._stream_task
             self._stream_task = None
         self._cancel_takeout()
+        self._cancel_hand_wait()
         self._end_motion_frames()
         async with self._poll_lock:
             pass
@@ -409,6 +427,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self.games.training.suspend()
         self._observed_motion = None
         self._cancel_takeout()
+        self._cancel_hand_wait()
+        self._hand.nothing_known()
 
     def _message(
         self, kind: str, payload: dict[str, Any]
@@ -575,6 +595,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         if "motion" in fields:
             self._observe_motion(self.readings.get("motion", {}), state, source)
         self._watch_takeout(data)
+        self._watch_hand(data)
         data["camera_problems"] = self._health.update(
             data, self.readings, time.monotonic()
         )
@@ -591,7 +612,11 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             state.get("running") is not True
             or str(status).lower() in LIFECYCLE_STATUSES
         ):
-            self._taking_out = False
+            if self._restarting_detection:
+                # The board freed by a restart never reports the end of its takeout.
+                self._finish_takeout(source)
+            else:
+                self._taking_out = False
         elif marker in ("takeout started", "takeout in progress"):
             self._start_takeout(source)
         elif marker == "takeout finished" or state.get("numThrows") == 0:
@@ -723,8 +748,137 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self.free_stuck_takeout = enabled
         self._takeout_resets = 0
         self._watch_takeout(self.data or {})
+        self._watch_hand(self.data or {})
         self.store.save_later()
         self.async_update_listeners()
+
+    # -- a hand the board sees all the time, see stuck_hand.py ---------------------
+
+    @callback
+    def _watch_hand(self, data: dict[str, Any]) -> None:
+        """Board Manager 2.1 only: time a hand whose picture stands still, and act on
+        what it comes to. Earlier versions stay as they are. _takeout_stuck can't help
+        here: the hand holds its reset back, and only a stop and a start are proven to
+        clear this."""
+        self._cancel_hand_wait()
+        if self._shutting_down or not self.client.interface_2_1:
+            return
+        state = data.get("local") or {}
+        motion = self.readings.get("motion") or {}
+        hand = motion.get("isHand")
+        if (
+            state.get("running") is not True
+            or str(state.get("status", "")).lower() in LIFECYCLE_STATUSES
+            or hand is None
+            or self.connection.failures
+        ):
+            self._hand.nothing_known()
+            return
+        now = time.monotonic()
+        if not hand:
+            if self._hand.no_hand(now):
+                ir.async_delete_issue(self.hass, DOMAIN, self._issue_id("stuck_hand"))
+                self._emit("stuck_hand_cleared", {}, self._motion_source())
+            return
+        left = self._hand.hand(motion, now)
+        if left:
+            self._hand_unsub = async_call_later(self.hass, left, self._hand_wait_over)
+            return
+        self._report_stuck_hand()
+        if self._may_restart_detection(state):
+            self._hand.restarted = True
+            self._entry.async_create_task(
+                self.hass, self._async_free_hand(), f"{DOMAIN} restart detection"
+            )
+
+    @callback
+    def _hand_wait_over(self, _now: datetime) -> None:
+        self._hand_unsub = None
+        self._watch_hand(self.data or {})
+
+    @callback
+    def _cancel_hand_wait(self) -> None:
+        if self._hand_unsub:
+            self._hand_unsub()
+            self._hand_unsub = None
+
+    def _motion_source(self) -> str:
+        return "websocket" if self._motion_frames_arrive() else "poll"
+
+    @callback
+    def _report_stuck_hand(self) -> None:
+        """The notice comes back when a repair took it and the hand stayed; the event
+        comes once for each occurrence."""
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._issue_id("stuck_hand"),
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="stuck_hand",
+            data={"entry_id": self._entry.entry_id},
+        )
+        if not self._hand.reported:
+            self._hand.reported = True
+            _LOGGER.info(
+                "Board Manager has seen a hand that does not move for %s seconds and "
+                "detects no darts",
+                STUCK_HAND_SECONDS,
+            )
+            self._emit("stuck_hand", {}, self._motion_source())
+
+    def _may_restart_detection(self, state: dict[str, Any]) -> bool:
+        """Once for each occurrence, under the switch that frees a stuck takeout, on an
+        empty board and with no game running that the integration knows of: a match on
+        play.autodarts.io doesn't show here, and on a stuck board it counts no darts."""
+        games = self.games
+        count = state.get("numThrows")
+        return (
+            self.free_stuck_takeout
+            and not self._hand.restarted
+            and type(count) is int
+            and count == 0
+            and not games.life.running
+            and not games.tournament.running
+            and games.host is None
+        )
+
+    async def _async_free_hand(self) -> None:
+        """Restart the detection by itself. The notice stays until a running detection
+        shows no hand, also when this fails."""
+        connection = self.connection
+        try:
+            await self.async_restart_detection()
+        except HomeAssistantError:
+            connection.failed_hand_restarts += 1
+            _LOGGER.warning(
+                "Board Manager kept seeing a hand and did not take a restart of its "
+                "detection, which may be off now: start the detection"
+            )
+        else:
+            connection.hand_restarts += 1
+            connection.last_hand_restart = dt_util.utcnow()
+            _LOGGER.info("Restarted the detection of a board that kept seeing a hand")
+
+    async def async_restart_detection(self) -> None:
+        """Stop the detection and start it again, each command sent once."""
+        self._restarting_detection = True
+        try:
+            await self.async_action(self._restart_detection)
+        finally:
+            self._restarting_detection = False
+
+    async def _restart_detection(self) -> None:
+        client = self.client
+        await client.command("stop")
+        for _ in range(STOP_READS):
+            # A read that fails tells nothing, and must not leave the detection off.
+            with suppress(AutodartsApiError):
+                state = await client.get_state()
+                if str(state.get("status", "")).lower() == "stopped":
+                    break
+            await asyncio.sleep(STOP_READ_SECONDS)
+        await client.command("start")
 
     # -- repair issues -----------------------------------------------------------
 
@@ -1007,6 +1161,15 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 "resets_in_a_row": self._takeout_resets,
                 "last_reset": connection.last_takeout_reset.isoformat()
                 if connection.last_takeout_reset
+                else None,
+            },
+            "stuck_hand": {
+                "seen": self._hand.reported,
+                "waiting": self._hand_unsub is not None,
+                "restarts": connection.hand_restarts,
+                "failed_restarts": connection.failed_hand_restarts,
+                "last_restart": connection.last_hand_restart.isoformat()
+                if connection.last_hand_restart
                 else None,
             },
         }

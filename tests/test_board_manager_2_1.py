@@ -35,6 +35,8 @@ from .local_helpers import (
     BASE,
     RECORDINGS,
     entity_id,
+    hand_flags,
+    hand_recording,
     local_entry_data,
     mock_board,
     mock_board_v2,
@@ -557,7 +559,7 @@ async def test_the_motion_of_2_1_comes_from_the_system_read(hass, aioclient_mock
     answer(
         aioclient_mock,
         "/api/system",
-        json=motion_2_1(isHand=True, isStable=False, isTakeoutPartial=True),
+        json=motion_2_1(**hand_flags(isHand=True, isTakeoutPartial=True)),
     )
     await reread(hass, coordinator)
     assert state(hass, "binary_sensor", "hand_detected") == "on"
@@ -751,15 +753,12 @@ async def test_commands_of_an_earlier_board_manager_stay_offered(hass, aioclient
     assert state(hass, "button", "start_streams") != "unavailable"
 
 
-# A takeout on an empty board. The hand flag of the real board never turned on in the
-# live test, as no dart was thrown, so the tests of it rest on the shape of the recording.
-EMPTY_TAKEOUT = {
-    "connected": True,
-    "event": "takeoutStarted",
-    "running": True,
-    "status": "takeoutInProgress",
-    "throws": [],
-}
+# A takeout on an empty board, as a real board sent it, stuck on a hand that wasn't there.
+EMPTY_TAKEOUT = next(
+    row["data"] for row in hand_recording("stuck_hand_start") if row["type"] == "state"
+)
+# The flags of a real hand at the board.
+A_HAND = hand_flags(isHand=True)
 
 
 async def empty_takeout(hass, aioclient_mock):
@@ -782,7 +781,7 @@ async def test_a_hand_in_the_system_read_holds_back_a_stuck_takeout(
 ):
     coordinator = await empty_takeout(hass, aioclient_mock)
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
-    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
+    answer(aioclient_mock, "/api/system", json=motion_2_1(**A_HAND))
     await reread(hass, coordinator)
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
     answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
@@ -794,7 +793,7 @@ async def test_a_stuck_takeout_is_not_reset_with_a_hand_at_the_board(
     hass, aioclient_mock, freezer
 ):
     coordinator = await empty_takeout(hass, aioclient_mock)
-    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
+    answer(aioclient_mock, "/api/system", json=motion_2_1(**A_HAND))
     await reread(hass, coordinator)
     await pass_time(hass, freezer, 30)
     assert resets(aioclient_mock) == 0
@@ -809,7 +808,7 @@ async def test_a_stuck_takeout_is_not_reset_with_a_hand_at_the_board(
 
 @pytest.mark.parametrize(
     "look",
-    [{"json": motion_2_1(isHand=True)}, {"status": 500}],
+    [{"json": motion_2_1(**A_HAND)}, {"status": 500}],
     ids=["a hand", "no answer"],
 )
 async def test_the_board_is_looked_at_right_before_its_reset(

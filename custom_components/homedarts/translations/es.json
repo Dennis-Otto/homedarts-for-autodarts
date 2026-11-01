@@ -674,6 +674,8 @@
               "dart_corrected": "Dardo corregido",
               "takeout_started": "Retirada iniciada",
               "takeout_finished": "Retirada terminada",
+              "stuck_hand": "Mano atascada",
+              "stuck_hand_cleared": "Mano atascada resuelta",
               "status_changed": "Cambio de estado",
               "visit_thrown": "Tirada lanzada",
               "visit_completed": "Tirada completada",
@@ -1256,6 +1258,21 @@
         "abort": {
           "calibration_failed": "La diana no ha aceptado la calibración. Inténtalo de nuevo o calibra desde la tarjeta de estado de la diana Autodarts.",
           "board_unavailable": "La diana no está cargada. Comprueba la conexión e inténtalo de nuevo."
+        }
+      }
+    },
+    "stuck_hand": {
+      "title": "El tablero Autodarts ve una mano todo el tiempo",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Reiniciar la detección",
+            "description": "Desde hace más de un minuto el tablero indica una mano delante de él que no se mueve, y mientras tanto no detecta dardos. La causa probable es un cambio de luz con la detección en marcha, por ejemplo al encender un aro de luz. Una calibración no lo resuelve; detener e iniciar la detección, sí.\n\n¿Reiniciar la detección ahora? Aparta antes la mano del tablero.\n\nPara que no vuelva a ocurrir, cambia la luz antes de iniciar la detección, o reiníciala después de cambiarla."
+          }
+        },
+        "abort": {
+          "restart_failed": "El tablero no aceptó el reinicio. Inténtalo de nuevo, o detén e inicia la detección con su interruptor.",
+          "board_unavailable": "El tablero no está cargado. Comprueba la conexión e inténtalo de nuevo."
         }
       }
     },

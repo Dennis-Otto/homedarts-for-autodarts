@@ -1,0 +1,3 @@
+{"socket":"/api/events/system","t":0.116,"type":"vantage","data":{"vantage":{"motion":{"isHand":null,"isDart":null,"isStable":null,"isTakeoutFull":null,"isTakeoutPartial":null,"isWaiting":null,"numDarts":null,"motionClass":null}}}}
+{"socket":"/api/events/system","t":18.67,"type":"state","data":{"connected":true,"event":"takeoutStarted","running":true,"status":"takeoutInProgress","throws":[]}}
+{"socket":"/api/events","t":18.712,"type":"state","data":{"connected":true,"event":"takeoutStarted","running":true,"status":"takeoutInProgress","throws":[]}}

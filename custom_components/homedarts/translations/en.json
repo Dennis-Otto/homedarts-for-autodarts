@@ -674,6 +674,8 @@
               "dart_corrected": "Dart corrected",
               "takeout_started": "Takeout started",
               "takeout_finished": "Takeout finished",
+              "stuck_hand": "Stuck hand",
+              "stuck_hand_cleared": "Stuck hand cleared",
               "status_changed": "Status changed",
               "visit_thrown": "Visit thrown",
               "visit_completed": "Visit completed",
@@ -1255,6 +1257,21 @@
         },
         "abort": {
           "calibration_failed": "The board did not accept the calibration. Try again, or calibrate from the board status card.",
+          "board_unavailable": "The board is not loaded. Check the connection and try again."
+        }
+      }
+    },
+    "stuck_hand": {
+      "title": "Autodarts board sees a hand all the time",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restart the detection",
+            "description": "For over a minute the board has reported a hand in front of it that does not move, and it detects no darts while it does. The likely cause is light that changed while the detection ran, such as a light ring that was switched on. A calibration does not clear this; stopping and starting the detection does.\n\nRestart the detection now? Take your hand away from the board first.\n\nTo keep this from coming back, switch the light before the detection starts, or restart the detection after switching it."
+          }
+        },
+        "abort": {
+          "restart_failed": "The board did not accept the restart. Try again, or stop and start the detection with its switch.",
           "board_unavailable": "The board is not loaded. Check the connection and try again."
         }
       }

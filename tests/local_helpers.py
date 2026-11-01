@@ -32,6 +32,29 @@ NOW = datetime(2026, 10, 1, 20, 0, tzinfo=UTC)
 # scripts/capture_board.py; the double of the Docker end-to-end test answers like
 # them too, and tests/test_board_contract.py holds both doubles to them.
 RECORDINGS = Path(__file__).parent / "fixtures" / "board_manager"
+
+
+def hand_recording(name: str) -> list[dict[str, Any]]:
+    """The frames of a recording of real hands on Board Manager 2.1, see the README of
+    the recordings: each with its socket and its moment in seconds."""
+    path = RECORDINGS.parent / f"board_manager_2.1.0_{name}.jsonl"
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def hand_flags(**wanted) -> dict[str, Any]:
+    """The motion of the first frame of the real hands with the flags wanted."""
+    motions = (
+        row["data"]["vantage"]["motion"]
+        for row in hand_recording("hand")
+        if row["type"] == "vantage"
+    )
+    return next(
+        motion
+        for motion in motions
+        if all(motion[key] == value for key, value in wanted.items())
+    )
+
+
 # The routes the integration reads, other than /api/system and /api/host of
 # Board Manager 2, by the file of their answer.
 READINGS = {

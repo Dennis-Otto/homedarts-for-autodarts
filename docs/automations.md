@@ -776,6 +776,48 @@ actions:
 mode: queued
 ```
 
+### Restart the detection after the light
+
+On Board Manager 2.1, light switched while the detection runs can leave the board [seeing a hand all the time](entities.md#a-hand-the-board-sees-all-the-time), and a calibration doesn't clear it. So a routine restarts the detection after the light, here with a second for the stop to end. The second automation tells you when the board gets stuck anyway.
+
+```yaml
+alias: Darts - board light on
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.board_presence
+    to: "on"
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.board_light
+  - action: switch.turn_off
+    target:
+      entity_id: switch.autodarts_board_detection
+  - delay:
+      seconds: 1
+  - action: switch.turn_on
+    target:
+      entity_id: switch.autodarts_board_detection
+mode: single
+```
+
+```yaml
+alias: Darts - the board sees a hand all the time
+triggers:
+  - trigger: event.received
+    target:
+      entity_id: event.autodarts_board_events
+    options:
+      event_type:
+        - stuck_hand
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      title: Darts
+      message: The board sees a hand all the time and detects no darts.
+mode: single
+```
+
 ### Notify a camera problem
 
 ```yaml

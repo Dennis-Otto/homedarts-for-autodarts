@@ -674,6 +674,8 @@
               "dart_corrected": "Dart gecorrigeerd",
               "takeout_started": "Verwijderen van de darts gestart",
               "takeout_finished": "Verwijderen van de darts voltooid",
+              "stuck_hand": "Vastgelopen hand",
+              "stuck_hand_cleared": "Vastgelopen hand opgelost",
               "status_changed": "Status gewijzigd",
               "visit_thrown": "Beurt gegooid",
               "visit_completed": "Beurt afgerond",
@@ -1255,6 +1257,21 @@
         },
         "abort": {
           "calibration_failed": "Het bord heeft de kalibratie niet geaccepteerd. Probeer het opnieuw of kalibreer via de bordstatuskaart.",
+          "board_unavailable": "Het bord is niet geladen. Controleer de verbinding en probeer het opnieuw."
+        }
+      }
+    },
+    "stuck_hand": {
+      "title": "Autodarts-bord ziet voortdurend een hand",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Detectie opnieuw starten",
+            "description": "Het bord meldt al meer dan een minuut een hand voor zich die niet beweegt, en detecteert intussen geen darts. Waarschijnlijk is het licht veranderd terwijl de detectie liep, bijvoorbeeld door een lichtring die werd ingeschakeld. Een kalibratie lost dit niet op; de detectie stoppen en starten wel.\n\nDe detectie nu opnieuw starten? Haal eerst je hand van het bord.\n\nOm te voorkomen dat dit terugkomt, schakel je het licht voordat de detectie start, of start je de detectie daarna opnieuw."
+          }
+        },
+        "abort": {
+          "restart_failed": "Het bord heeft de herstart niet geaccepteerd. Probeer het opnieuw, of stop en start de detectie met de schakelaar.",
           "board_unavailable": "Het bord is niet geladen. Controleer de verbinding en probeer het opnieuw."
         }
       }
