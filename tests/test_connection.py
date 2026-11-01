@@ -793,5 +793,7 @@ async def test_diagnostics_tell_how_the_connection_went(hass, aioclient_mock):
         "reconnect_delay_seconds": 1,
         "last_close": None,
         "ignored_frames": 0,
+        "socket": None,
+        "motion_frames": False,
     }
     assert "192.0.2.10" not in str(diagnostics)
