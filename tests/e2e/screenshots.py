@@ -3005,11 +3005,8 @@ def settings_texts(page: Page) -> None:
     )
 
 
-def blueprints_page(page: Page) -> None:
-    """The blueprints of the integration in Home Assistant, and the light show's form."""
-    context = own_context(
-        page, viewport={"width": 1280, "height": 900}, device_scale_factor=2
-    )
+def blueprint_list(context: BrowserContext) -> Page:
+    """A new page with the blueprints of Home Assistant, in the texts of the settings."""
     view = context.new_page()
     view.goto(f"{HA}/config/blueprint/dashboard")
     view.get_by_text("HomeDarts: light show").first.wait_for(timeout=60000)
@@ -3019,12 +3016,33 @@ def blueprints_page(page: Page) -> None:
         "Automations" if LANGUAGE == "en" else "Automationen", exact=True
     ).first.wait_for(timeout=30000)
     view.wait_for_timeout(1500)
-    page_shot(view, "blueprints")
+    return view
+
+
+def blueprint_form(view: Page, blueprint: str, name: str, height: int) -> None:
+    """The form of a blueprint of the list, as the picture `name`; closes the page."""
     # A blueprint opens a new automation with its form.
-    view.get_by_text("HomeDarts: light show").first.click()
+    view.get_by_text(blueprint).first.click()
     view.wait_for_url("**/config/automation/edit/new", timeout=30000)
+    view.set_viewport_size({"width": 1280, "height": height})
     view.wait_for_timeout(3000)
-    page_shot(view, "blueprint-light-show")
+    page_shot(view, name)
+    view.close()
+
+
+def blueprints_page(page: Page) -> None:
+    """The blueprints of the integration in Home Assistant, and two of their forms."""
+    # So high that the list shows every blueprint: it only draws the rows in view.
+    context = own_context(
+        page, viewport={"width": 1280, "height": 1180}, device_scale_factor=2
+    )
+    view = blueprint_list(context)
+    page_shot(view, "blueprints")
+    blueprint_form(view, "HomeDarts: light show", "blueprint-light-show", 900)
+    # So high that its short form shows whole, with the sections that open closed.
+    blueprint_form(
+        blueprint_list(context), "HomeDarts: walk-on music", "blueprint-walk-on", 1150
+    )
     context.close()
 
 
