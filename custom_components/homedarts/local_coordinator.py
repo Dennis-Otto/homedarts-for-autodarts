@@ -41,6 +41,7 @@ from .local_api import (
     AutodartsLocalClient,
     AutodartsProtocolError,
     camera_state_summary,
+    motion_flags,
     number,
     stats_summary,
 )
@@ -55,6 +56,9 @@ POLL_INTERVAL = timedelta(seconds=2)
 STREAM_POLL_INTERVAL = timedelta(seconds=30)
 # Board Manager 2 announces no camera changes, so it is read more often.
 STREAM_POLL_INTERVAL_V2 = timedelta(seconds=10)
+# Board Manager 2.1 sends its motion 30 times a second, a real board with gaps of up to
+# a quarter of a second. Frames that stay away this long leave the motion to the read.
+MOTION_SILENCE_SECONDS = 2
 # The quick reads of Board Manager 2.1 report the frame rates and the load as often
 # as those reads, which a timer may start a second early.
 TELEMETRY_SECONDS = 8
@@ -81,14 +85,6 @@ STUCK_TAKEOUT_SECONDS = 10
 # Resets in a row, a period apart, before a board that stays stuck is left to
 # its player; a dart on the board allows them again.
 STUCK_TAKEOUT_RESETS = 3
-MOTION_FLAGS = (
-    "isWaiting",
-    "isStable",
-    "isDart",
-    "isHand",
-    "isTakeoutPartial",
-    "isTakeoutFull",
-)
 # High-rate push values: their sensors show them with the next poll, and only a
 # camera alarm they raise or clear shows at once.
 TELEMETRY = ("stats", "camera_stats")
@@ -227,6 +223,9 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self._takeout_resets = 0
         # When a read last reported the frame rates and the load.
         self._telemetry_reported = 0.0
+        # When Board Manager 2.1 last sent its motion, and the watch for its end.
+        self._motion_frame_at: float | None = None
+        self._motion_watch: CALLBACK_TYPE | None = None
 
     def _restore(self, saved: object) -> None:
         super()._restore(saved)
@@ -267,6 +266,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 await self._stream_task
             self._stream_task = None
         self._cancel_takeout()
+        self._end_motion_frames()
         async with self._poll_lock:
             pass
 
@@ -326,6 +326,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         finally:
             live, self._stream_live = self._stream_live, False
             self.stream_connected = False
+            self._end_motion_frames()
             self.update_interval = self._poll_interval()
             if connected_at is not None:
                 self._suspend_tracking()
@@ -379,12 +380,17 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
 
     def _poll_interval(self) -> timedelta:
         if self.client.interface_2_1 and self.stream_connected:
-            # Board Manager 2.1 reports its motion only in /api/system, so a running
-            # detection is read as often as a board without a socket. Its socket
-            # sends nothing but changes of the state: a stopped detection rests,
-            # although no frame may ever show that the socket works.
+            # While Board Manager 2.1 sends its motion on the socket, the read only
+            # reconciles. Without those frames only /api/system reports the motion, so
+            # a running detection is read as often as a board without a socket. A
+            # stopped detection rests, although no frame may ever show that a socket
+            # works.
             running = (self.data or {}).get("local", {}).get("running") is True
-            return POLL_INTERVAL if running else STREAM_POLL_INTERVAL_V2
+            return (
+                POLL_INTERVAL
+                if running and not self._motion_frames_arrive()
+                else STREAM_POLL_INTERVAL_V2
+            )
         if self._stream_live:
             return (
                 STREAM_POLL_INTERVAL_V2
@@ -411,7 +417,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 ("local", payload) if isinstance(payload.get("running"), bool) else None
             )
         if kind == "motion_state":
-            return "motion", self._motion(payload)
+            return "motion", motion_flags(payload)
         if kind == "cam_state":
             return "camera_state", camera_state_summary(payload)
         if kind == "stats":
@@ -437,6 +443,9 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             or not self._identity_valid
             or self._shutting_down
         ):
+            return
+        if kind == "vantage":
+            self._receive_motion_frame(payload)
             return
         message = self._message(kind, payload)
         if message is None:
@@ -484,6 +493,48 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             # Frame rates arrive several times a second: the next poll shows them.
             self._publish(changed)
 
+    @callback
+    def _receive_motion_frame(self, motion: dict[str, bool]) -> None:
+        """The motion of Board Manager 2.1, 30 times a second: only a value that
+        changed goes further, and a frame compares with what entities show, so that
+        the next one puts right whatever a read said before it."""
+        self._stream_active()
+        self._motion_frame_at = time.monotonic()
+        if self._motion_watch is None:
+            self._watch_motion_frames(None)
+        if motion != self.readings.get("motion"):
+            self._revisions["motion"] = self._revisions.get("motion", 0) + 1
+            self._receive_reading("motion", motion)
+
+    def _motion_frames_arrive(self) -> bool:
+        at = self._motion_frame_at
+        return at is not None and time.monotonic() - at < MOTION_SILENCE_SECONDS
+
+    @callback
+    def _watch_motion_frames(self, _now: datetime | None) -> None:
+        """Look again every so often whether frames arrive. Once they stopped, with
+        the socket open and silent or sending only the rest, the read takes over at
+        once instead of with its next slow turn, so no entity stays at an old value."""
+        self._motion_watch = None
+        if self._motion_frames_arrive():
+            self._motion_watch = async_call_later(
+                self.hass, MOTION_SILENCE_SECONDS, self._watch_motion_frames
+            )
+            return
+        self._motion_frame_at = None
+        self.update_interval = self._poll_interval()
+        if self.update_interval == POLL_INTERVAL:
+            self._entry.async_create_task(
+                self.hass, self.async_refresh(), f"{DOMAIN} motion read"
+            )
+
+    @callback
+    def _end_motion_frames(self) -> None:
+        self._motion_frame_at = None
+        if self._motion_watch:
+            self._motion_watch()
+            self._motion_watch = None
+
     def _read(self, readings: dict[str, Any]) -> set[Topic]:
         """Keep new readings; the topics whose readings they change."""
         previous, self.readings = self.readings, readings
@@ -501,14 +552,6 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 self.topics.async_publish(topic)
 
     # -- the board's state and takeouts ------------------------------------------
-
-    @staticmethod
-    def _motion(payload: dict[str, Any]) -> dict[str, Any]:
-        return {
-            key: payload[key]
-            for key in MOTION_FLAGS
-            if isinstance(payload.get(key), bool)
-        }
 
     def _start_takeout(self, source: str) -> None:
         if not self._taking_out:
@@ -555,10 +598,13 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
     def _observe_motion(
         self, motion: dict[str, Any], state: dict[str, Any], source: str
     ) -> None:
-        """A hand at the board starts a takeout; an empty board finishes it."""
+        """A hand at the board starts a takeout; an empty board finishes it. With
+        the frames of Board Manager 2.1, its state says so at the same moment, and an
+        empty board comes before the hand is gone: the state alone tells."""
         previous = self._observed_motion
         if (
             previous is not None
+            and not self._motion_frames_arrive()
             and state.get("running") is True
             and str(state.get("status", "")).lower() not in LIFECYCLE_STATUSES
         ):
@@ -731,6 +777,7 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 self.connection.poll_seconds = round(time.monotonic() - started, 3)
                 self._report_protocol()
                 self.update_interval = self._poll_interval()
+        await self.client.leave_first_socket()
         return data
 
     async def _poll(self) -> dict[str, Any]:
@@ -795,11 +842,15 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             data["board_pc"] = self.reads.host
         fields = set()
         motion = reads["motion"]
+        if self._motion_frames_arrive() and state.get("running") is True:
+            # The frames are newer than any read, whose answer would only flip the
+            # entities until the next frame. A stopped detection sends no more of them.
+            motion = None
         for field, value in {
             "local": state,
             "stats": reads["stats"],
             "camera_stats": reads["camera_stats"],
-            "motion": None if motion is None else self._motion(motion),
+            "motion": None if motion is None else motion_flags(motion),
             "camera_state": reads["camera_state"],
         }.items():
             values = data if field == "local" else readings
@@ -921,6 +972,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
                 "reconnect_delay_seconds": connection.reconnect_delay,
                 "last_close": connection.last_close,
                 "ignored_frames": self.client.ignored_frames,
+                "socket": self.client.socket_path,
+                "motion_frames": self._motion_frames_arrive(),
             },
             "stuck_takeout": {
                 "free": self.free_stuck_takeout,

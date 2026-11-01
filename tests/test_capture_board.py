@@ -7,6 +7,7 @@ of the end-to-end test with it."""
 import importlib.util
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import aiohttp
 import pytest
@@ -793,3 +794,208 @@ def test_the_command_line_says_when_the_board_did_not_answer(
 
     assert capture_board.main(["192.0.2.10"]) == 1
     assert "The board did not answer as expected" in capsys.readouterr().err
+
+
+# -- the second socket of Board Manager 2.1 -------------------------------------------
+
+
+def second_socket_board(frames, second, close=True):
+    """A board with its second socket, which sends the frames."""
+    app = board(frames, close=close)
+
+    async def system_events(request):
+        socket = web.WebSocketResponse()
+        await socket.prepare(request)
+        for frame in second:
+            await socket.send_str(frame)
+        if close:
+            await socket.close()
+        else:
+            await socket.receive()
+        return socket
+
+    app.router.add_get(capture_board.SYSTEM_EVENTS, system_events)
+    return app
+
+
+def vantage_frame(**flags) -> dict:
+    motion = {"seq": 1, "isHand": False, "isStable": True, **flags}
+    return {"type": "vantage", "data": {"vantage": {"motion": motion, "seq": 1}}}
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_a_capture_records_the_second_socket_of_a_board(tmp_path):
+    second = ['{"type":"state","data":{}}', '{"type":"board","data":{}}', "no json"]
+
+    folder = await record(second_socket_board(['{"a":1}'], second), tmp_path)
+
+    assert (folder / capture_board.SYSTEM_FRAMES).read_text() == (
+        '{"type":"state","data":{}}\n{"type":"board","data":{}}\n'
+    )
+    assert (folder / "ws-frames.jsonl").read_text() == '{"a":1}\n'
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_the_first_socket_ends_the_recording_of_the_second(tmp_path):
+    app = second_socket_board(['{"a":1}', '{"a":2}'], ['{"type":"state"}'], close=False)
+
+    folder = await record(app, tmp_path, limit=2)
+
+    assert (folder / "ws-frames.jsonl").read_text() == '{"a":1}\n{"a":2}\n'
+    assert (folder / capture_board.SYSTEM_FRAMES).read_text() == '{"type":"state"}\n'
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_a_board_without_the_second_socket_gets_no_file_of_it(tmp_path):
+    second = ['{"type":"state"}']
+    folder = await record(second_socket_board(['{"a":1}'], second), tmp_path)
+    assert (folder / capture_board.SYSTEM_FRAMES).exists()
+
+    # A recording of the board after a rollback leaves nothing of the earlier one.
+    await record(board(['{"a":1}']), tmp_path)
+
+    assert not (folder / capture_board.SYSTEM_FRAMES).exists()
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_a_second_socket_that_breaks_ends_the_capture_with_its_error(tmp_path):
+    real = capture_board.read_frames
+
+    async def read_frames(session, base, seconds, *args, **kwargs):
+        if kwargs.get("path") == capture_board.SYSTEM_EVENTS:
+            raise aiohttp.ClientConnectionError("gone")
+        return await real(session, base, seconds, *args, **kwargs)
+
+    with patch.object(capture_board, "read_frames", read_frames):
+        with pytest.raises(aiohttp.ClientConnectionError):
+            await record(board(['{"a":1}']), tmp_path)
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_a_first_socket_that_breaks_also_ends_the_second(tmp_path):
+    real = capture_board.read_frames
+    second_ended = []
+
+    async def read_frames(session, base, seconds, *args, **kwargs):
+        if kwargs.get("path") == capture_board.SYSTEM_EVENTS:
+            try:
+                return await real(session, base, seconds, *args, **kwargs)
+            finally:
+                second_ended.append(True)
+        raise aiohttp.ClientConnectionError("gone")
+
+    app = second_socket_board([], ['{"type":"state"}'], close=False)
+    with patch.object(capture_board, "read_frames", read_frames):
+        with pytest.raises(aiohttp.ClientConnectionError):
+            await record(app, tmp_path)
+    assert second_ended
+
+
+def test_a_recording_keeps_what_repeats_only_when_it_says_something_new(freezer):
+    keep = capture_board.Repeats().keep
+    still = vantage_frame()
+    # The first of a kind, and not the same again within the ten seconds.
+    assert keep(still)
+    assert not keep(vantage_frame(frames=2))
+    freezer.tick(9)
+    assert not keep(still)
+    # A flag that changed shows at once, and again when it changes back.
+    assert keep(vantage_frame(isHand=True))
+    assert not keep(vantage_frame(isHand=True))
+    assert keep(still)
+    # One every ten seconds, so that a recording shows what a quiet board sends.
+    freezer.tick(capture_board.REPEATS_KEPT_SECONDS)
+    assert keep(still)
+
+
+def test_a_recording_keeps_the_load_every_ten_seconds_and_a_new_setting_at_once(
+    freezer,
+):
+    keep = capture_board.Repeats().keep
+    assert keep({"type": "stats", "data": {"stats": {"cpuPercent": 1.5}}})
+    assert not keep({"type": "stats", "data": {"stats": {"cpuPercent": 2.5}}})
+    settings = {"type": "vantageConfig", "data": {"fps": 30}}
+    assert keep(settings)
+    assert not keep(settings)
+    assert keep({"type": "vantageConfig", "data": {"fps": 15}})
+    freezer.tick(capture_board.REPEATS_KEPT_SECONDS)
+    assert keep({"type": "stats", "data": {"stats": {"cpuPercent": 3.5}}})
+
+
+@pytest.mark.parametrize(
+    "frame",
+    [
+        {"type": "state", "data": {}},
+        {"type": "board", "data": {}},
+        {"type": "calibration", "data": {}},
+        {"type": "something new"},
+        {"no type": 1},
+        [],
+        "text",
+        1,
+    ],
+)
+def test_a_recording_keeps_everything_that_does_not_repeat(frame):
+    keep = capture_board.Repeats().keep
+    assert keep(frame)
+    assert keep(frame)
+
+
+@pytest.mark.parametrize(
+    "frame",
+    [
+        {"type": "vantage"},
+        {"type": "vantage", "data": []},
+        {"type": "vantage", "data": {"vantage": None}},
+        {"type": "vantage", "data": {"vantage": {"motion": None}}},
+        {"type": "vantage", "data": {"vantage": {"motion": []}}},
+    ],
+)
+def test_a_motion_frame_without_a_motion_says_no_flags(frame):
+    assert capture_board.motion_flags(frame) == {}
+
+
+def test_the_second_socket_is_redacted_like_everything_else():
+    second = [
+        {
+            "type": "board",
+            "data": {
+                "status": {
+                    "version": "2.1.0",
+                    "boardId": BOARD_ID,
+                    "linkServer": {
+                        "name": "the server of my club",
+                        "streamingTo": "192.168.1.77",
+                        "interfaces": [{"mac": "aa:bb:cc:dd:ee:ff"}],
+                    },
+                }
+            },
+        },
+        vantage_frame(hostname=f"{HOSTNAME}.lan", serial="SERIALNUMBER1"),
+    ]
+
+    _, content = capture_board.files(
+        answers(), FRAMES, [], ADDRESS, "2026-11-01", second
+    )
+
+    text = content[capture_board.SYSTEM_FRAMES]
+    for private in (
+        BOARD_ID,
+        HOSTNAME,
+        "the server of my club",
+        "192.168.1.77",
+        "aa:bb:cc:dd:ee:ff",
+        "SERIALNUMBER1",
+    ):
+        assert private not in text
+    assert '"seq":1' in text
+    assert capture_board.secrets(json.loads(line) for line in text.splitlines()) == {}
+
+
+def test_a_secret_only_the_second_socket_knows_goes_from_every_file():
+    second = [{"type": "board", "data": {"status": {"boardId": "second-only-id"}}}]
+    frames = [{"type": "state", "data": {"note": "second-only-id"}}]
+
+    _, content = capture_board.files(answers(), frames, [], ADDRESS, None, second)
+
+    assert "second-only-id" not in "".join(content.values())

@@ -563,7 +563,7 @@ Per-camera entities carry a `camera` attribute with the camera number, which the
 | Darts partially removed | Binary sensor, *Diagnostic* | Some darts are removed. |
 | Darts fully removed | Binary sensor, *Diagnostic*, *Disabled* | All darts are removed. |
 
-These sensors are *off* while the detection is stopped, starting, stopping or calibrating. On Board Manager 2.1, they update every 2 seconds while the detection runs, because the board no longer sends these readings by itself. They change with nearly every dart and takeout, and each change is recorded. The live card shows a hand at the board and a takeout from the first and third, so these two are enabled; the other two start disabled. Boards set up with an earlier version keep all four enabled; disable those you do not need in the entity settings.
+These sensors are *off* while the detection is stopped, starting, stopping or calibrating. On Board Manager 2.1, they come from its second socket the moment they change; only if that socket stays away do they update every 2 seconds while the detection runs. They change with nearly every dart and takeout, and each change is recorded. The live card shows a hand at the board and a takeout from the first and third, so these two are enabled; the other two start disabled. Boards set up with an earlier version keep all four enabled; disable those you do not need in the entity settings.
 
 ## Cameras
 

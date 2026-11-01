@@ -563,7 +563,7 @@ Die Entitäten einer einzelnen Kamera tragen das Attribut `camera` mit der Kamer
 | Darts teilweise entfernt | Binärsensor, *Diagnose* | Einige Darts sind entfernt. |
 | Darts vollständig entfernt | Binärsensor, *Diagnose*, *Deaktiviert* | Alle Darts sind entfernt. |
 
-Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese Sensoren *aus*. Mit Board Manager 2.1 aktualisieren sie sich alle 2 Sekunden, solange die Erkennung läuft, weil das Board diese Werte nicht mehr von sich aus sendet. Sie ändern sich mit fast jedem Dart und jeder Entnahme, und jede Änderung wird aufgezeichnet. Die Live-Karte zeigt eine Hand am Board und eine Entnahme mit dem ersten und dritten Sensor, deshalb sind diese beiden aktiv; die anderen beiden werden deaktiviert angelegt. Bei einem mit einer früheren Version eingerichteten Board bleiben alle vier aktiv; nicht benötigte deaktivierst du in den Entitätseinstellungen.
+Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese Sensoren *aus*. Mit Board Manager 2.1 kommen sie im Moment ihrer Änderung über seinen zweiten Socket; nur wenn dieser ausbleibt, aktualisieren sie sich alle 2 Sekunden, solange die Erkennung läuft. Sie ändern sich mit fast jedem Dart und jeder Entnahme, und jede Änderung wird aufgezeichnet. Die Live-Karte zeigt eine Hand am Board und eine Entnahme mit dem ersten und dritten Sensor, deshalb sind diese beiden aktiv; die anderen beiden werden deaktiviert angelegt. Bei einem mit einer früheren Version eingerichteten Board bleiben alle vier aktiv; nicht benötigte deaktivierst du in den Entitätseinstellungen.
 
 ## Kameras
 
