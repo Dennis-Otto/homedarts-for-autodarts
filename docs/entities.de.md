@@ -189,7 +189,7 @@ Der **Trainingskalender** (`calendar.*_trainingskalender`) zeigt deine beendeten
 - **Sessions** reichen von ihrem Beginn bis zu ihrem Ende. Die Beschreibung nennt die 180er, die 140+- und 100+-Aufnahmen und die höchste Aufnahme (*Max*).
 - **Matches** mehrerer Spieler, in jedem Spiel, reichen vom ersten bis zum entscheidenden Dart. Der Titel zeigt die gewonnenen Sätze, oder die Legs, wenn ein Satz das Match entscheidet; Spieler ohne Namen erscheinen als `#1` bis `#4` und der Bot als *Bot*, und ein Team-Match nennt beide Teams, etwa *501 · Alex & Kim 1:0 Sam & Lea*. Die Beschreibung nennt Average, Marks pro Runde oder Punkte jedes Spielers. Matches von vor Version 1.6 kennen ihren ersten Dart nicht und erscheinen als eine Minute.
 - **Ein Jahr Verlauf.** Der Kalender behält die Sessions und Matches der letzten 365 Tage, höchstens je 3.000. Nach dem Update übernimmt er die letzten 20 bereits gespeicherten Sessions und Matches.
-- **Zustand:** Der Kalender ist *aus*, weil nichts bevorsteht. Seine Attribute zeigen die Session oder das Match, das zuletzt endete.
+- **Zustand:** Der Kalender ist *aus*, weil nichts bevorsteht. Seine Attribute zeigen die Session oder das Match, das zuletzt endete. In der Stunde, die sich wiederholt, wenn die Uhren zurückgestellt werden, bleiben sie leer, bis die Uhr dessen Ende wieder erreicht.
 
 Kalender-Auslöser und die Aktion `calendar.get_events` funktionieren wie bei jedem Kalender, etwa um die Sessions eines Monats in einer Vorlage zu zählen.
 
