@@ -14,6 +14,8 @@ Dein Board ist schnell genug für Automationen, die *während* des Spiels passie
 
 Blueprints sind fertige Automationen, und die Integration bringt alle sechzehn mit: Sobald dein erstes Board eingerichtet ist, stehen sie auf der Blueprint-Seite, **Einstellungen → Automationen & Szenen → Blueprints**. Blueprint wählen, Board und Geräte auswählen, fertig. Sie brauchen Home Assistant ab 2026.8, und jedes Update der Integration bringt ihre neuen Versionen mit, siehe [Updates der Blueprints](#updates-der-blueprints).
 
+[![Home Assistant öffnen und deine Blueprints anzeigen.](https://my.home-assistant.io/badges/blueprints.svg)](https://my.home-assistant.io/redirect/blueprints/)
+
 Du weißt nicht, welcher passt? Geh davon aus, was dein Zuhause tun soll:
 
 <picture>

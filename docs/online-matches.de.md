@@ -8,7 +8,7 @@ description: "Spiel online auf play.autodarts.io und lass Home Assistant mitfeie
 
 Spiel online auf play.autodarts.io und lass Home Assistant mitfeiern: Überwerfen, gewonnene Legs und Matches und die Darts deiner Gegner kommen als Board-Ereignisse an, für die Lichtshow, einen Caller oder eine Benachrichtigung, wenn dein Turnier-Match bereit ist.
 
-**Auf dieser Seite:** [So funktioniert es](#so-funktioniert-es) · [Brücke einrichten](#brücke-einrichten) · [Trigger und Ereignisse](#trigger-und-ereignisse) · [Sicherheit](#sicherheit) · [Grenzen](#grenzen)
+**Auf dieser Seite:** [So funktioniert es](#so-funktioniert-es) · [Brücke einrichten](#brücke-einrichten) · [Trigger und Ereignisse](#trigger-und-ereignisse) · [Sicherheit](#sicherheit) · [Grenzen](#grenzen) · [Mehrere Konten an einem Bildschirm](#mehrere-konten-an-einem-bildschirm)
 
 ## So funktioniert es
 
@@ -90,3 +90,7 @@ mode: single
   - Eine reine http-Adresse in deinem Heimnetz wie `http://homeassistant.local:8123`, wenn der Browser die Aufrufe durchlässt: Erlaube in den Website-Einstellungen von Chrome oder Edge *Unsichere Inhalte* für play.autodarts.io, und erlaube den Zugriff auf Geräte in deinem lokalen Netzwerk, wenn der Browser fragt.
   - Was du auch wählst: Der Sensor *Letztes Ereignis der Online-Brücke* zeigt, ob die Momente ankommen.
 - **Nur Board-Ereignisse.** Online-Momente zählen nicht für die Trainingssession, das Übungsspiel oder die Bestleistungen.
+
+## Mehrere Konten an einem Bildschirm
+
+Mehrere Spieler an einem Bildschirm, jeder online mit dem eigenen Autodarts-Konto, müssten sich für jeden Wechsel ab- und wieder anmelden. Die Chrome-Erweiterung [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/de/), vom Autor dieser Integration, hält jedes Konto bereit: Ein Tipp auf eine Kachel bringt dieses Konto aufs Board, ohne Anmelden. Sie braucht kein Home Assistant, und die Integration sieht die Darts auf deinem Board, egal wer angemeldet ist.

@@ -53,7 +53,9 @@ The [installation guide](installation.md#add-your-board) explains the ways in de
 
 ## 5. Create the dashboard
 
-Go to **Settings → Dashboards → Add dashboard → HomeDarts**. Give it a title and select **Create**: that makes a complete dashboard for your board, with views for the live game, the scoreboard, training, the players and the board. It updates itself when you add a board or a later version brings new views.
+[![Open your Home Assistant instance and show your dashboards.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+The button opens **Settings → Dashboards**. There, select **Add dashboard → HomeDarts**, give it a title and select **Create**: that makes a complete dashboard for your board, with views for the live game, the scoreboard, training, the players and the board. It updates itself when you add a board or a later version brings new views.
 
 <img src="images/en/dashboard-strategy.png" alt="The training view of the automatic dashboard" width="760">
 

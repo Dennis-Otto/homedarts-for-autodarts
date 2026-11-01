@@ -53,7 +53,9 @@ Le [guide d'installation](installation.fr.md#ajouter-votre-cible) explique chacu
 
 ## 5. Créer le tableau de bord
 
-Allez dans **Paramètres → Tableaux de bord → Ajouter un tableau de bord → HomeDarts**. Donnez-lui un titre et sélectionnez **Créer** : cela crée un tableau de bord complet pour votre cible, avec des vues pour la partie en direct, le tableau des scores, l'entraînement, les joueurs et la cible. Il se met à jour tout seul quand vous ajoutez une cible ou qu'une version suivante apporte de nouvelles vues.
+[![Ouvrez votre Home Assistant et affichez vos tableaux de bord.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+Le bouton ouvre **Paramètres → Tableaux de bord**. Sélectionnez-y **Ajouter un tableau de bord → HomeDarts**, donnez-lui un titre et sélectionnez **Créer** : cela crée un tableau de bord complet pour votre cible, avec des vues pour la partie en direct, le tableau des scores, l'entraînement, les joueurs et la cible. Il se met à jour tout seul quand vous ajoutez une cible ou qu'une version suivante apporte de nouvelles vues.
 
 <img src="images/en/dashboard-strategy.png" alt="La vue d'entraînement du tableau de bord automatique" width="760">
 

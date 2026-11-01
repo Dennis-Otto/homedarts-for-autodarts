@@ -44,6 +44,10 @@ Yes. Set up a dartboard without Autodarts and enter every dart on the keypad of 
 
 Yes, on play.autodarts.io as before. The integration sees the darts on your own board then: `dart_detected`, `visit_thrown` and the takeout arrive as usual. Busts, won legs and matches happen in the browser; the optional online bridge brings them into Home Assistant with the browser extension Tools for Autodarts *(experimental)*. [Online matches](online-matches.md)
 
+### Several players with their own Autodarts accounts at one display?
+
+Yes, online on play.autodarts.io: the Chrome extension [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), by the author of this integration, keeps everyone's account ready, and one tap on a tile switches players, with no signing in. It needs no Home Assistant, and the integration sees the darts on your board whoever is signed in. [Online matches](online-matches.md#several-accounts-at-one-display)
+
 ### The board read a dart wrong. How do I correct it?
 
 Tap the dart on the scoreboard and choose where it landed, on the keys or on a picture of the board. In automations, `homedarts.correct_dart` does the same, and `homedarts.undo_visit` takes the last visit back. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
