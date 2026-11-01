@@ -1679,10 +1679,11 @@ class Scenario:
         check(said == wanted, f"Assist answered {said!r}, not {wanted!r}")
 
     async def card(self) -> None:
-        """The bundled dashboard card and the strategy's own small module are served
-        and loaded without a resource, from the folder of one version with the texts
-        of every language, and the card module is compressed. Both modules are
-        dashboard resources too, which Home Assistant Cast loads from its own origin."""
+        """The small module with the stand-ins of the cards and the strategy is served
+        and loaded without a resource, from the folder of one version with the card
+        module and the texts of every language, and the card module is compressed but
+        on no page yet. The small module is a dashboard resource too, which Home
+        Assistant Cast loads from its own origin."""
         version = json.loads(await asyncio.to_thread(MANIFEST.read_text))["version"]
         files = {
             path.relative_to(FRONTEND).as_posix(): path.read_bytes()
@@ -1738,17 +1739,21 @@ class Scenario:
             "homedarts-leaderboard-card",
         ):
             check(f'"{element}"' in source, f"Card element {element} missing")
+            check(
+                f'"{element}"' in sources[strategy_url],
+                f"The small module has no stand-in for {element}",
+            )
         async with self.session.get(f"{HA}/") as response:
             page = await response.text()
-        check(url in page, "Dashboards do not load the HomeDarts card")
-        check(strategy_url in page, "Dashboards do not load the strategy module")
+        check(url not in page, "Every page loads the whole card module")
+        check(strategy_url in page, "Dashboards do not load the small module")
         resources = [
             (item["type"], item["url"])
             for item in await self.ws("lovelace/resources")
             if item["url"].startswith("/homedarts/")
         ]
         check(
-            resources == [("module", strategy_url), ("module", url)],
+            resources == [("module", strategy_url)],
             f"The dashboard resources for Cast are {resources}",
         )
         cast = "https://cast.home-assistant.io"

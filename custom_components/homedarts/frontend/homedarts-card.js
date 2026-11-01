@@ -18,6 +18,11 @@
  * Card editors are forms of Home Assistant (getConfigForm); only the strategy,
  * which Home Assistant offers no form for, brings its own editor element.
  *
+ * Home Assistant loads homedarts-strategy.js on every page, whose stand-ins for the
+ * cards and the strategy import this module on the first use of one of them, and become
+ * what createElements makes. On its own, as in the demo of the website, this module
+ * registers everything itself.
+ *
  * The texts of the cards are one module per language in text/, a small file for its
  * translators. The integration serves this folder at the address of its version, so
  * the imports below get the texts of this very version (card.py).
@@ -8224,7 +8229,8 @@ function scrollerOf(node) {
 
 // Elements ------------------------------------------------------------------
 
-// Elements are created on demand: Home Assistant replaces HTMLElement while it boots.
+// Elements are created on demand: Home Assistant replaces HTMLElement while it boots, and
+// the stand-ins of homedarts-strategy.js become cards on a base class of their own.
 function createElements(Base) {
   class CardBase extends Base {
     static keys = {};
@@ -12145,8 +12151,8 @@ function register() {
 // which shows dashboards on a TV and loads this module as a dashboard resource.
 const APP_ELEMENTS = ["home-assistant", "hc-main"];
 
-// Home Assistant loads this module in parallel with its own app, which then swaps in
-// a scoped custom element registry. Elements defined before that swap stay invisible
+// A resource in YAML loads this module in parallel with Home Assistant's app, which then
+// swaps in a scoped custom element registry. Elements defined before that swap stay invisible
 // to dashboards, so the cards wait for the app element; other hosts get them after a timeout.
 async function frontendReady(timeout = 30000) {
   const registry = window.customElements;

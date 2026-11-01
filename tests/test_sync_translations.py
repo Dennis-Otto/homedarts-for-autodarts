@@ -1,7 +1,9 @@
 """scripts/sync_translations.py brings the translation files in step with strings.json:
 en.json becomes its copy, and every other language takes its order and loses the texts
-that it no longer has. The fix bot runs it when a check fails, so it changes nothing
-but what a command may change, and leaves a file that is right byte for byte."""
+that it no longer has. The table of the card picker in the small module of every page
+becomes the copy of the texts of the cards. The fix bot runs it when a check fails, so
+it changes nothing but what a command may change, and leaves a file that is right byte
+for byte."""
 
 import importlib.util
 import json
@@ -9,6 +11,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -26,12 +29,21 @@ SOURCE = {
     },
     "services": {"start": {"name": "Start"}},
 }
+# The small module of every page, as far as the script reads it.
+STRATEGY = "custom_components/homedarts/frontend/homedarts-strategy.js"
+MODULE = (
+    "const STRATEGY_TYPE = 1;\n\n{table}\n\nconst CARDS = [];\nconst OTHER = {{}};\n"
+)
 
 
 def files(root: Path, translations: dict[str, str], source: object = SOURCE) -> Path:
     """A repository with strings.json and the translation files of the languages."""
     integration = root / "custom_components" / "homedarts"
     (integration / "translations").mkdir(parents=True)
+    (integration / "frontend" / "text").mkdir(parents=True)
+    (integration / "frontend" / "homedarts-strategy.js").write_text(
+        MODULE.format(table="const PICKER_TEXT = {};"), encoding="utf-8", newline="\n"
+    )
     (integration / "strings.json").write_text(
         json.dumps(source, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
@@ -173,9 +185,67 @@ def test_main_says_what_it_changed_and_fails_for_what_remains(tmp_path, capsys):
     assert "translations/de.json misses 4 of the texts" in err
 
 
+def card_texts(folder: Path, **languages: dict[str, str]) -> Path:
+    """The modules of the texts of the cards, as a translator edits them, beside the
+    translation files in folder; the small module that takes their picker texts."""
+    texts = folder.parent / "frontend" / "text"
+    for language, lines in languages.items():
+        (texts / f"{language}.js").write_text(
+            "// The texts of the dashboard cards, with a { in this comment.\n"
+            f"export default {json.dumps(lines, indent=2, ensure_ascii=False)};\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+    return folder.parent / "frontend" / "homedarts-strategy.js"
+
+
+def test_the_card_picker_gets_a_copy_of_the_texts_of_the_cards(tmp_path, capsys):
+    strategy = card_texts(
+        files(tmp_path, {}),
+        en={"visit": "Visit", "picker_live": "Live", "picker_live_x": 'Say "hi"'},
+        fr={"visit": "Volée", "picker_live": "En direct : été"},
+    )
+
+    sync_translations.main([], tmp_path)
+
+    # In the order of the languages' names, without the texts of the cards themselves,
+    # with the letters of the language as they are and the invisible spaces as escapes.
+    table = (
+        "const PICKER_TEXT = {\n"
+        '  "en": {\n'
+        '    "picker_live": "Live",\n'
+        '    "picker_live_x": "Say \\"hi\\""\n'
+        "  },\n"
+        '  "fr": {\n'
+        '    "picker_live": "En direct\\u00a0: été"\n'
+        "  }\n"
+        "};"
+    )
+    assert strategy.read_text(encoding="utf-8") == MODULE.format(table=table)
+    assert f"{STRATEGY}: in step with the texts of the cards now." in (
+        capsys.readouterr().out
+    )
+
+    # Once in step, the module keeps every byte, however often the bot runs.
+    with patch.object(Path, "write_text") as write:
+        assert sync_translations.sync_picker(tmp_path) == []
+    write.assert_not_called()
+
+
+def test_the_card_picker_of_this_repository_is_in_step():
+    strategy = (ROOT / STRATEGY).read_text(encoding="utf-8")
+    folder = ROOT / sync_translations.FRONTEND / "text"
+    assert sync_translations.with_picker_table(strategy, folder) == strategy, (
+        "python scripts/sync_translations.py copies the picker_* texts of "
+        "frontend/text/ to the table of homedarts-strategy.js"
+    )
+
+
 def test_main_says_when_everything_is_in_step(tmp_path, capsys):
     folder = files(tmp_path, {})
     shutil.copyfile(folder.parent / "strings.json", folder / "en.json")
+    card_texts(folder, en={"picker_live": "Live"})
+    assert sync_translations.sync_picker(tmp_path)
 
     assert sync_translations.main([], tmp_path) == 0
 

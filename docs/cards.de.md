@@ -525,14 +525,14 @@ Wird das gewählte Board aus Home Assistant entfernt, sagt das Dashboard das, st
 
 ## Home Assistant Cast
 
-[Home Assistant Cast](https://www.home-assistant.io/integrations/cast/#home-assistant-cast) zeigt ein Dashboard über einen Chromecast auf einem Fernseher oder auf einem Google Nest Hub, ohne Browser auf dem Gerät. Die Karten und das automatische Dashboard funktionieren dort auch: Cast lädt die Dashboard-Ressourcen von Home Assistant, und die Integration hält ihre beiden Module dort, `homedarts-strategy.js` und `homedarts-card.js`, im Ordner ihrer Version unter `/homedarts/`, etwa `/homedarts/1.16.0-0123abcd/homedarts-card.js`. Sie bringt sie mit jedem Start von Home Assistant auf den neuesten Stand und entfernt sie mit ihrem letzten Board. *Einstellungen → Dashboards → ⋮ → Ressourcen* listet sie, wenn in deinem Benutzerprofil der erweiterte Modus an ist. Im Browser ändert sich nichts: Er lädt jedes Modul einmal, als Ressource wie als Teil von Home Assistant.
+[Home Assistant Cast](https://www.home-assistant.io/integrations/cast/#home-assistant-cast) zeigt ein Dashboard über einen Chromecast auf einem Fernseher oder auf einem Google Nest Hub, ohne Browser auf dem Gerät. Die Karten und das automatische Dashboard funktionieren dort auch: Cast lädt die Dashboard-Ressourcen von Home Assistant, und die Integration hält ihr kleines Modul dort, `homedarts-strategy.js`, im Ordner ihrer Version unter `/homedarts/`, etwa `/homedarts/1.16.0-0123abcd/homedarts-strategy.js`. Dieses Modul holt die Karten nach, sobald das Dashboard eine zeigt. Die Integration bringt es mit jedem Start von Home Assistant auf den neuesten Stand und entfernt es mit ihrem letzten Board; eine Ressource für `homedarts-card.js` aus einem früheren Release verschwindet von selbst. *Einstellungen → Dashboards → ⋮ → Ressourcen* listet das Modul, wenn in deinem Benutzerprofil der erweiterte Modus an ist. Im Browser ändert sich nichts: Er lädt es einmal, als Ressource wie als Teil von Home Assistant.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/de/cast-dark.png">
-  <img src="images/de/cast-light.png" alt="Wie die Karten über Home Assistant Cast auf einen Fernseher kommen: Ein Handy auf cast.home-assistant.io oder die Aktion cast.show_lovelace_view streamt ein Dashboard. Der Chromecast öffnet den Empfänger von Home Assistant Cast, der sich über HTTPS bei Home Assistant anmeldet und das Dashboard und seine Ressourcen liest. Die Integration hält ihre beiden Module dort, unter der Adresse ihrer Version, von jedem Start von Home Assistant, bis ihr letztes Board gelöscht ist. Der Empfänger lädt die Strategie und die Karten von Home Assistant, und der Fernseher zeigt das Dashboard mit der Anzeigetafel." width="560">
+  <img src="images/de/cast-light.png" alt="Wie die Karten über Home Assistant Cast auf einen Fernseher kommen: Ein Handy auf cast.home-assistant.io oder die Aktion cast.show_lovelace_view streamt ein Dashboard. Der Chromecast öffnet den Empfänger von Home Assistant Cast, der sich über HTTPS bei Home Assistant anmeldet und das Dashboard und seine Ressourcen liest. Die Integration hält ihr kleines Modul dort, unter der Adresse ihrer Version, von jedem Start von Home Assistant, bis ihr letztes Board gelöscht ist. Der Empfänger lädt das Modul von Home Assistant, das für die erste Karte des Dashboards die Karten nachholt, und der Fernseher zeigt das Dashboard mit der Anzeigetafel." width="560">
 </picture>
 
-- **Ressourcen in YAML:** Hält deine Konfiguration die Ressourcen in YAML (`resource_mode: yaml` oder das ältere `mode: yaml` unter `lovelace:`), kann die Integration keine hinzufügen. Trage die beiden Zeilen dann selbst ein und starte Home Assistant neu:
+- **Ressourcen in YAML:** Hält deine Konfiguration die Ressourcen in YAML (`resource_mode: yaml` oder das ältere `mode: yaml` unter `lovelace:`), kann die Integration keine hinzufügen. Trage die Zeilen dann selbst ein und starte Home Assistant neu:
 
   ```yaml
   lovelace:
@@ -540,11 +540,9 @@ Wird das gewählte Board aus Home Assistant entfernt, sagt das Dashboard das, st
     resources:
       - url: /homedarts/homedarts-strategy.js
         type: module
-      - url: /homedarts/homedarts-card.js
-        type: module
   ```
 
-  Ohne Version in der Adresse fragt der Browser bei jedem Laden nach, ob sich das Modul geändert hat, und behält so nie ein altes. Er lädt die Karten unter dieser Adresse ein zweites Mal, also trage die Zeilen nur ein, wenn du streamst.
+  Ohne Version in der Adresse fragt der Browser bei jedem Laden nach, ob sich das Modul geändert hat, und behält so nie ein altes. Er lädt das Modul unter dieser Adresse ein zweites Mal, also trage die Zeilen nur ein, wenn du streamst. Zeilen für `homedarts-card.js` aus einem früheren Release können weg: Sie laden alle Karten auf jedem Dashboard.
 - **Nach einem Update** startest du Home Assistant neu und streamst das Dashboard noch einmal.
 
 Die Anleitung [Anzeigetafel am Board](scoreboard.de.md#auf-dem-fernseher-mit-home-assistant-cast) zeigt, wie die Anzeigetafel auf den Fernseher neben dem Board kommt.

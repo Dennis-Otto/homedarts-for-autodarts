@@ -6,7 +6,7 @@ description: "The seven dashboard cards: live board, training, board status, sco
 
 [← Documentation](README.md) · [Deutsch](cards.de.md)
 
-The integration includes seven cards. Home Assistant loads them automatically, so no dashboard resource and no separate HACS download are needed; for [Home Assistant Cast](#home-assistant-cast), the integration keeps them in the dashboard resources itself. Each card:
+The integration includes seven cards. Home Assistant loads them automatically, so no dashboard resource and no separate HACS download are needed, and a page without a darts card loads less than 20 KB of them: the cards themselves come with the first card on a page; for [Home Assistant Cast](#home-assistant-cast), the integration keeps them in the dashboard resources itself. Each card:
 
 - has a visual editor and follows your theme (light or dark) and [language](README.md#languages) (English, German, Dutch, French or Spanish);
 - adapts to its width, from a phone to a wall tablet;
@@ -525,14 +525,14 @@ If the chosen board is removed from Home Assistant, the dashboard says so instea
 
 ## Home Assistant Cast
 
-[Home Assistant Cast](https://www.home-assistant.io/integrations/cast/#home-assistant-cast) shows a dashboard on a TV through a Chromecast, or on a Google Nest Hub, without a browser on the device. The cards and the automatic dashboard work there too: Cast loads the dashboard resources of Home Assistant, and the integration keeps its two modules there, `homedarts-strategy.js` and `homedarts-card.js`, in the folder of its version under `/homedarts/`, such as `/homedarts/1.16.0-0123abcd/homedarts-card.js`. It brings them up to date with every start of Home Assistant and removes them with its last board. *Settings → Dashboards → ⋮ → Resources* lists them when advanced mode is on in your user profile. Browsers stay as they are: they load each module once, as a resource and as part of Home Assistant.
+[Home Assistant Cast](https://www.home-assistant.io/integrations/cast/#home-assistant-cast) shows a dashboard on a TV through a Chromecast, or on a Google Nest Hub, without a browser on the device. The cards and the automatic dashboard work there too: Cast loads the dashboard resources of Home Assistant, and the integration keeps its small module there, `homedarts-strategy.js`, in the folder of its version under `/homedarts/`, such as `/homedarts/1.16.0-0123abcd/homedarts-strategy.js`. That module brings the cards along as soon as the dashboard shows one. The integration brings it up to date with every start of Home Assistant and removes it with its last board; a resource for `homedarts-card.js` from an earlier release goes by itself. *Settings → Dashboards → ⋮ → Resources* lists the module when advanced mode is on in your user profile. Browsers stay as they are: they load it once, as a resource and as part of Home Assistant.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/cast-dark.png">
-  <img src="images/en/cast-light.png" alt="How the cards reach a TV through Home Assistant Cast: a phone at cast.home-assistant.io or the action cast.show_lovelace_view casts a dashboard. The Chromecast opens the receiver of Home Assistant Cast, which signs in to Home Assistant over HTTPS and reads the dashboard and its resources. The integration keeps both of its modules there, at the address of its version, from every start of Home Assistant until its last board is deleted. The receiver loads the strategy and the cards from Home Assistant, and the TV shows the dashboard with the scoreboard." width="560">
+  <img src="images/en/cast-light.png" alt="How the cards reach a TV through Home Assistant Cast: a phone at cast.home-assistant.io or the action cast.show_lovelace_view casts a dashboard. The Chromecast opens the receiver of Home Assistant Cast, which signs in to Home Assistant over HTTPS and reads the dashboard and its resources. The integration keeps its small module there, at the address of its version, from every start of Home Assistant until its last board is deleted. The receiver loads the module from Home Assistant, which brings the cards along for the first card of the dashboard, and the TV shows the dashboard with the scoreboard." width="560">
 </picture>
 
-- **Resources in YAML:** if your configuration keeps the resources in YAML (`resource_mode: yaml`, or the older `mode: yaml`, under `lovelace:`), the integration can't add any. Add the two lines yourself and restart Home Assistant:
+- **Resources in YAML:** if your configuration keeps the resources in YAML (`resource_mode: yaml`, or the older `mode: yaml`, under `lovelace:`), the integration can't add any. Add the lines yourself and restart Home Assistant:
 
   ```yaml
   lovelace:
@@ -540,11 +540,9 @@ If the chosen board is removed from Home Assistant, the dashboard says so instea
     resources:
       - url: /homedarts/homedarts-strategy.js
         type: module
-      - url: /homedarts/homedarts-card.js
-        type: module
   ```
 
-  Without a version in the address, browsers ask on every load whether the module changed, so they never keep an old one. They load the cards a second time at this address, so add the lines only if you cast.
+  Without a version in the address, browsers ask on every load whether the module changed, so they never keep an old one. They load the module a second time at this address, so add the lines only if you cast. Lines for `homedarts-card.js` from an earlier release can go: they load all the cards on every dashboard.
 - **After an update,** restart Home Assistant and cast the dashboard again.
 
 The guide [scoreboard at the board](scoreboard.md#on-a-tv-with-home-assistant-cast) shows how to cast the scoreboard to the TV next to the board.

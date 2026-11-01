@@ -259,7 +259,8 @@ fix = """Fix what the output names: ESLint fixes most of its rules by itself, an
 test` names the test that failed and each line that no test runs. The commands of
 autofix also bring the files in step that the tests check and that a command makes
 from others: `translations/en.json` and the order of the other languages from
-`strings.json`, and the blueprints that the integration ships. Then run the checks of
+`strings.json`, the table of the card picker in `homedarts-strategy.js` from the texts
+of the cards, and the blueprints that the integration ships. Then run the checks of
 this project again:"""
 commands = [
   "npm ci",

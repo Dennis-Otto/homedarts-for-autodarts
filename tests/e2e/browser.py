@@ -40,6 +40,7 @@ from playwright.sync_api import (
     Page,
     Playwright,
     Request,
+    Response,
     Route,
     sync_playwright,
 )
@@ -350,12 +351,101 @@ def page_errors(page: Page, problems: list[str]) -> list[str]:
 
 
 def fresh_loads(browser: Browser) -> None:
-    # Home Assistant boots in parallel with the card module; every load must register it.
+    # Home Assistant boots in parallel with the small module; every load must register it.
     for attempt in range(LOADS):
         page, problems = open_board(browser)
         check(page.evaluate(RENDERED) == 1, f"Load {attempt + 1}: card not rendered")
         errors = page_errors(page, problems)
         check(not errors, f"Load {attempt + 1}: {errors}")
+        page.close()
+
+
+# A dashboard of Home Assistant's own cards alone, and what the pickers offer of ours.
+PLAIN_DASHBOARD = "homedarts-plain"
+PLAIN_TEXT = "A dashboard without darts"
+SAVE_PLAIN_DASHBOARD = """
+async ([path, content]) => {
+  const hass = document.querySelector('home-assistant').hass;
+  await hass.callWS({
+    type: 'lovelace/dashboards/create', url_path: path, title: 'Plain', mode: 'storage',
+    show_in_sidebar: false, require_admin: false,
+  });
+  await hass.callWS({
+    type: 'lovelace/config/save', url_path: path,
+    config: { views: [{ title: 'Plain', cards: [{ type: 'markdown', content }] }] },
+  });
+}
+"""
+REMOVE_PLAIN_DASHBOARD = """
+async (path) => {
+  const hass = document.querySelector('home-assistant').hass;
+  const dashboards = await hass.callWS({ type: 'lovelace/dashboards/list' });
+  const dashboard = dashboards.find((item) => item.url_path === path);
+  await hass.callWS({ type: 'lovelace/dashboards/delete', dashboard_id: dashboard.id });
+}
+"""
+OFFERED = """
+() => ({
+  cards: (window.customCards || []).filter((card) => card.type.startsWith('homedarts-')).map((card) => card.name),
+  strategies: (window.customStrategies || []).filter((known) => known.type === 'homedarts').map((known) => known.description),
+  defined: customElements.get('homedarts-scoreboard-card') !== undefined,
+})
+"""
+# The most JavaScript of the integration that a page without a card may load.
+SMALL_MODULE_BYTES = 20_000
+
+
+def without_cards(browser: Browser) -> None:
+    """A dashboard without a darts card loads the small module alone, far less than the
+    card module, and the pickers offer every card all the same. The first card on the
+    page then loads the card module, once, and becomes a card."""
+    page = browser.new_page(locale="en-US", viewport={"width": 1280, "height": 1000})
+    page.add_init_script(CAPTURE_ERRORS)
+    page.goto(f"{HA}/profile")
+    page.wait_for_function(
+        "() => document.querySelector('home-assistant')?.hass?.connected",
+        timeout=30000,
+    )
+    page.evaluate(SAVE_PLAIN_DASHBOARD, [PLAIN_DASHBOARD, PLAIN_TEXT])
+    try:
+        modules: list[Response] = []
+
+        # A function of its own: the sync API takes no built-in such as modules.append.
+        def received(response: Response) -> None:
+            if "/homedarts/" in response.url and ".js" in response.url:
+                modules.append(response)
+
+        page.on("response", received)
+        page.goto(f"{HA}/{PLAIN_DASHBOARD}/0")
+        page.get_by_text(PLAIN_TEXT).wait_for(timeout=30000)
+        page.wait_for_load_state("networkidle")
+        names = [response.url.rpartition("/")[2] for response in modules]
+        check(names == ["homedarts-strategy.js"], f"A page without cards loads {names}")
+        loaded = sum(len(response.body()) for response in modules)
+        check(
+            loaded < SMALL_MODULE_BYTES,
+            f"A page without cards loads {loaded} bytes of JavaScript",
+        )
+        offered = page.evaluate(OFFERED)
+        check(
+            len(offered["cards"]) == 7 and "HomeDarts scoreboard" in offered["cards"],
+            f"The card picker offers {offered['cards']}",
+        )
+        check(
+            len(offered["strategies"]) == 1 and offered["defined"],
+            f"The automatic dashboard or the cards are missing: {offered}",
+        )
+
+        show(page, f"{HA}/homedarts-demo/board")
+        names = [response.url.rpartition("/")[2] for response in modules]
+        check(
+            names.count("homedarts-card.js") == 1,
+            f"The first card on the page loads {names}",
+        )
+        errors = page_errors(page, [])
+        check(not errors, f"Console problems: {errors}")
+    finally:
+        page.evaluate(REMOVE_PLAIN_DASHBOARD, PLAIN_DASHBOARD)
         page.close()
 
 
@@ -3748,6 +3838,7 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
         Step("training card", 1, lambda: training(browser), as_started=True),
         Step("live card", 1, lambda: visit(browser), as_started=True),
         Step("fresh loads", 1, lambda: fresh_loads(browser)),
+        Step("a page without cards", 1, lambda: without_cards(browser)),
         Step("doubles scale", 1, lambda: doubles_scale(browser)),
         Step("practice game", 1, lambda: practice(browser)),
         Step("progress and leaderboard", 1, lambda: progress(browser)),
