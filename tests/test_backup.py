@@ -18,6 +18,7 @@ from homeassistant.exceptions import (
     Unauthorized,
 )
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homedarts import backup
@@ -147,7 +148,8 @@ async def test_a_deleted_board_comes_back_as_it_was_from_its_backup(
     issue = offer(hass, again)
     assert issue is not None and issue.is_persistent and issue.is_fixable
     assert issue.translation_placeholders["board"] == again.title
-    assert issue.translation_placeholders["date"][:4] == str(date.today().year)
+    # In the time zone of Home Assistant, not in that of the machine.
+    assert issue.translation_placeholders["date"][:4] == str(dt_util.now().year)
 
     result = await fix(hass, hass_client, issue.issue_id)
     assert result["type"] == "create_entry"
