@@ -481,7 +481,7 @@ def test_a_host_that_the_wait_leaves_out_is_one_that_a_job_allows():
         for key in HOSTS
         for endpoint in harden_runner(JOBS[key])["allowed-endpoints"].split()
     }
-    assert NOT_ASKED <= allowed_hosts
+    assert allowed_hosts >= NOT_ASKED
 
 
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)

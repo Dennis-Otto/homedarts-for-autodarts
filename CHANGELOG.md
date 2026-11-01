@@ -4,10 +4,6 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
-### Fixed
-
-- **Checks that failed or hung at random on a host they may reach:** every job of the end-to-end tests, the visual check, the screenshot bot and the translation bot now first waits until Harden-Runner lets its hosts through, for two minutes at most. A pull request no longer waits for a check that fails on an address that Harden-Runner never saw.
-
 ## [2.2.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.1...v2.2.0) (2026-11-01)
 
 ### Features
