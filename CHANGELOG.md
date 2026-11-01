@@ -6,25 +6,27 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## [2.2.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.1...v2.2.0) (2026-11-01)
 
-
 ### Features
 
-* a rating per player and fair start scores from it ([#554](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/554)) ([aa0f1c4](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/aa0f1c41e6d166128e258c44d68f31bb65865d6c))
-* read Hand detected from the second socket of Board Manager 2.1 ([#542](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/542)) ([e274a73](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/e274a7329223c6fe32891fdb754102c2a0900294))
-* training plans that run several training games in a row, with a plan of the day ([#558](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/558)) ([04e189e](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/04e189ef22d02ebd1772e4ed5d23d998af5668ba))
+- **A rating for every player:** an Elo rating, starting at 1000, says who beats whom. Every match of X01 or a Cricket game between named players from the same start score moves it, partners split the change of their team, and undoing the deciding visit takes it back. The players card shows it, the leaderboard card ranks it, and `match_won` carries `rating_changes`.
+- **Fair start scores:** *Fair start* on the new game screen and `fair_start: true` in `homedarts.start_game` work the start scores of an X01 game out from the players' averages of the last 30 legs, so nobody has to guess a handicap. The strongest player keeps the game's score, teams and the bot count too, and − and + still change the scores.
+- **A bot at your level:** the bot's row on the new game screen offers *At my level*, which sets the bot to the players' average.
+- **Training plans:** a plan plays several training games in a row, and the scoreboard and the live card show *Step 2 of 4: Bob's 27* with *Skip* and *Stop*. Four plans come with the integration: *Warm-up 15 minutes*, *Doubles day*, *Checkout day* and *JDC week*. Your own come from the options of the board or with the new action `homedarts.start_plan`.
+- **Plan of the day:** with no game on the board, the scoreboard offers today's plan with one tap, a different one by weekday.
+- **Finished plans count:** the events `plan_step_finished` and `plan_finished` tell the results, and the weekly report, the training calendar and the new achievement *Training plans* count them. A plan goes on after a restart of Home Assistant in the middle of a step.
 
+### Fixed
 
-### Bug fixes
+- **Start scores of a team match:** the new game screen sent a start score for every partner, which the action refused. It now sends one per team, and partners show and change one score.
+- **Two icons that never showed:** the section *Games* of the walk-on music blueprint and the action *Link player to person* named icons that Material Design Icons doesn't have. They show a scoreboard and a person with a check mark now.
+- **The generated dashboard on Board Manager 2.1:** the board view no longer lists *Automatic recalibration*, a row that could only say unavailable, because Board Manager 2.1 no longer has this option. On Board Manager 2.0 the row stays, also while the board is away.
+- **The training calendar when the clocks go back:** a training session or match that ends around the end of daylight saving time no longer makes the calendar fail with *Failed to validate CalendarEvent*: the calendar shows it with its real length. In the hour that repeats, a session or match from the first pass of that hour no longer keeps Home Assistant busy; the attributes of the calendar stay empty until the first update after the clock reaches its end again.
+- **A board that sees a hand all the time on Board Manager 2.1:** when a board keeps reporting a hand that doesn't move for a minute, it detects no darts, and a calibration doesn't help. This happened on a real board when its light ring was switched on with the detection running. A repair notice now says so and restarts the detection when you confirm it, and the events `stuck_hand` and `stuck_hand_cleared` let an automation react. While *Free a stuck takeout* is on, the integration restarts the detection by itself, once, if no game it runs itself is running and no dart is on the board; a match on play.autodarts.io doesn't hold it back. If a routine switches the board's light, switch it before the detection starts, or restart the detection after it.
 
-* finish what Board Manager 2.1 left over ([#538](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/538)) ([65d30df](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/65d30df57083f3ade428be878d5a71616b013ee0))
-* keep a calendar event across the end of daylight saving time ([#549](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/549)) ([f46859c](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/f46859c0b035539495a070e4027f2d37aab23e3a))
-* notice a board that sees a hand all the time on Board Manager 2.1 ([#550](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/550)) ([64bf8a9](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/64bf8a94bada6179bcb9563aabfea80d9202b93f))
-* show the walk-on music form in the docs and repair two icons that never showed ([#544](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/544)) ([18bddff](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/18bddff812837fc63f59cbe2049a53cc5f928eef))
+### Improved
 
-
-### Performance
-
-* the longest screenshot group takes less time ([#540](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/540)) ([9746d53](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/9746d5371f86d6e4fe75f741f0e9074fb4be57f7))
+- **Pictures of a pull request sooner:** the visual check and the screenshot bot render the images of the documentation in four groups side by side instead of three. A contributor who changes a card waits at most about nine minutes for its pictures, where the longest group took up to eleven, and the runners take about as long as before. The players and their matches no longer have to follow the other games, and matches that only lead up to a picture play as fast as Home Assistant takes them.
+- **On Board Manager 2.1, *Hand detected* shows at once:** it and the other motion sensors change the moment the board sees it, also for a takeout too short for the read every 2 seconds. The integration follows the second socket of the board, which sends the darts as well, and reads the board less often meanwhile. If that socket is missing or stops sending, it reads every 2 seconds as before. `scripts/capture_board.py` records this socket too. Thanks to @mharmuth, who recorded this socket (#521).
 
 ## [2.1.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.0...v2.1.1) (2026-11-01)
 
