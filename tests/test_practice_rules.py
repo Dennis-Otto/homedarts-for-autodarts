@@ -169,7 +169,9 @@ def test_a_visit_score_counts_as_the_rules_say(start, points, double_out):
     try:
         darts = game.score_visit(points)
     except VisitRefused as refused:
-        assert refused.key == "visit_impossible"
+        # Only some of the generated visits are refused, so pytest.raises
+        # does not fit.
+        assert refused.key == "visit_impossible"  # noqa: PT017
         assert points not in VISIT_TOTALS or (
             not double_out and points == 180 and start in (60, 120)
         )

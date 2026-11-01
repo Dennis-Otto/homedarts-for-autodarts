@@ -7,6 +7,7 @@ detection running. Of the 30 frames of the motion a second, the recordings keep 
 which a flag changed, so the tests send the others.
 """
 
+import itertools
 import json
 from datetime import timedelta
 from unittest.mock import PropertyMock, patch
@@ -103,7 +104,7 @@ def takeouts(rows: list[dict]) -> list[dict[str, float]]:
     states = [row for row in second_socket(rows) if row["type"] == "state"]
     started = [row["t"] for row in states if row["data"]["event"] == "takeoutStarted"]
     hand = [(t, flags["isHand"]) for t, flags in changes(rows)]
-    rises = [t for (t, on), (_, was) in zip(hand[1:], hand) if on and not was]
+    rises = [t for (_, was), (t, on) in itertools.pairwise(hand) if on and not was]
     for start in started:
         rise = max(t for t in rises if t <= start)
         finished = min(
@@ -338,7 +339,7 @@ def test_what_only_the_first_socket_sends_is_overtaken_at_once():
     second = [row["data"] for row in states if row["socket"] == SYSTEM_EVENTS]
     alone = [
         (row, after)
-        for row, after in zip(first, first[1:])
+        for row, after in itertools.pairwise(first)
         if row["data"] not in second
     ]
     assert [row["data"]["event"] for row, _ in alone] == ["started", "takeoutStarted"]
@@ -598,9 +599,11 @@ async def test_a_restart_starts_only_after_the_stop_ended(hass, at_board):
 
 async def test_a_stop_that_never_shows_its_end_still_gets_its_start(hass, at_board):
     _, coordinator, board = at_board
-    with patch("custom_components.homedarts.local_coordinator.STOP_READ_SECONDS", 0):
-        with patch.object(board, "show"):
-            await coordinator.async_restart_detection()
+    with (
+        patch("custom_components.homedarts.local_coordinator.STOP_READ_SECONDS", 0),
+        patch.object(board, "show"),
+    ):
+        await coordinator.async_restart_detection()
     assert board.commands == ["stop", "start"]
 
 

@@ -43,9 +43,11 @@ def wait_forever() -> None:
 @pytest.mark.parametrize("failure", [Overrun, Hung])
 def test_a_step_that_hangs_fails_soon_after_its_budget(capfd, failure):
     started = time.monotonic()
-    with pytest.raises(failure, match=r"^a hung step took longer than 0\.2 s$"):
-        with watchdog.budget("a hung step", 0.2, failure):
-            wait_forever()
+    with (
+        pytest.raises(failure, match=r"^a hung step took longer than 0\.2 s$"),
+        watchdog.budget("a hung step", 0.2, failure),
+    ):
+        wait_forever()
 
     assert time.monotonic() - started < 2
     printed = capfd.readouterr().err
@@ -67,9 +69,11 @@ def test_a_step_that_ends_in_time_passes_and_leaves_no_alarm_behind():
 @needs_signals
 def test_a_budget_in_another_runs_out_on_its_own():
     with watchdog.budget("a step", 5) as outer:
-        with pytest.raises(Overrun, match="^a wait took longer than 0.2 s$"):
-            with watchdog.budget("a wait", 0.2):
-                wait_forever()
+        with (
+            pytest.raises(Overrun, match=r"^a wait took longer than 0\.2 s$"),
+            watchdog.budget("a wait", 0.2),
+        ):
+            wait_forever()
         # The step goes on, within its own budget.
         assert not outer.fired
     assert not outer.fired
@@ -85,18 +89,26 @@ def test_a_step_that_goes_on_after_its_time_ran_out_fails_nevertheless():
         woken.set()
         return frame
 
-    with pytest.raises(Overrun, match="^a step took longer than 0.2 s$") as raised:
-        with watchdog.budget("a step", 0.2, wake=wake):
-            woken.wait()
+    with (
+        pytest.raises(Overrun, match=r"^a step took longer than 0\.2 s$") as raised,
+        watchdog.budget("a step", 0.2, wake=wake),
+    ):
+        woken.wait()
     assert raised.value.__cause__ is None
 
     # What the step raises afterwards, such as the cancellation of a call of
     # Playwright, is the cause.
     woken.clear()
-    with pytest.raises(Overrun) as raised:
-        with watchdog.budget("a step", 0.2, wake=wake):
-            woken.wait()
-            raise asyncio.CancelledError
+
+    def cancelled_once_woken() -> None:
+        woken.wait()
+        raise asyncio.CancelledError
+
+    with (
+        pytest.raises(Overrun) as raised,
+        watchdog.budget("a step", 0.2, wake=wake),
+    ):
+        cancelled_once_woken()
     assert isinstance(raised.value.__cause__, asyncio.CancelledError)
 
 
@@ -189,7 +201,7 @@ async def test_a_phase_that_fails_fails_as_it_did():
     async def failing() -> None:
         raise Hung("a check of the phase")
 
-    with pytest.raises(Hung, match="^a check of the phase$"):
+    with pytest.raises(Hung, match=r"^a check of the phase$"):
         await watchdog.within("A phase", 5, failing())
 
 
@@ -239,9 +251,13 @@ async def never() -> None:
 @needs_signals
 def test_a_wait_in_playwright_ends_cancelled_and_playwright_goes_on(bridge, capfd):
     started = time.monotonic()
-    with pytest.raises(Overrun, match="^a hung call took longer than 0.2 s$") as raised:
-        with watchdog.budget("a hung call", 0.2, wake=watchdog.wake_playwright):
-            bridge.call(never())  # the line that the step waits at
+    with (
+        pytest.raises(
+            Overrun, match=r"^a hung call took longer than 0\.2 s$"
+        ) as raised,
+        watchdog.budget("a hung call", 0.2, wake=watchdog.wake_playwright),
+    ):
+        bridge.call(never())  # the line that the step waits at
 
     assert time.monotonic() - started < 2
     assert isinstance(raised.value.__cause__, asyncio.CancelledError)
@@ -257,9 +273,13 @@ def test_a_wait_in_playwright_ends_cancelled_and_playwright_goes_on(bridge, capf
 def test_a_wait_of_the_step_itself_beside_playwright_fails_where_it_waits(bridge):
     assert bridge.call(asyncio.sleep(0, "started")) == "started"
 
-    with pytest.raises(Overrun, match="^a hung step took longer than 0.2 s$") as raised:
-        with watchdog.budget("a hung step", 0.2, wake=watchdog.wake_playwright):
-            wait_forever()
+    with (
+        pytest.raises(
+            Overrun, match=r"^a hung step took longer than 0\.2 s$"
+        ) as raised,
+        watchdog.budget("a hung step", 0.2, wake=watchdog.wake_playwright),
+    ):
+        wait_forever()
 
     assert raised.value.__cause__ is None
     assert bridge.call(asyncio.sleep(0, "still there")) == "still there"

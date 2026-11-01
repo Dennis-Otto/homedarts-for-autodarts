@@ -177,7 +177,7 @@ def test_a_checkout_asked_for_where_none_exists_is_refused():
 
 
 @pytest.mark.parametrize(
-    "setup,points,darts,at_double,key",
+    ("setup", "points", "darts", "at_double", "key"),
     [
         ({"game": 0}, 60, None, None, "visit_not_x01"),
         ({"winner": 0}, 60, None, None, "visit_not_x01"),
@@ -344,7 +344,7 @@ async def test_darts_entered_by_hand_give_way_to_the_visit_score(hass):
 
 
 @pytest.mark.parametrize(
-    "data,key",
+    ("data", "key"),
     [
         ({"score": 179}, "visit_impossible"),
         ({"score": 60, "darts": 1, "darts_at_double": 2}, "visit_at_double"),

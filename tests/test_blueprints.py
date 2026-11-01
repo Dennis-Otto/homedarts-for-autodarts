@@ -9,7 +9,7 @@ import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, quote, urlsplit
@@ -144,8 +144,10 @@ async def saved(hass, name: str, inputs: dict, note: str = "") -> None:
             }
         ]
     }
-    Path(hass.config.path("configuration.yaml")).write_text(
-        safe_dump(config), encoding="utf-8"
+    await hass.async_add_executor_job(
+        Path(hass.config.path("configuration.yaml")).write_text,
+        safe_dump(config),
+        "utf-8",
     )
     if "automation" in hass.config.components:
         await hass.services.async_call(
@@ -327,7 +329,7 @@ def photo_name(call) -> str:
     assert call.data["folder"] == "", call.data["folder"]
     assert call.data["camera"] == "camera.autodarts_board_camera_1"
     stem = photo_stem(
-        datetime(2026, 9, 26), call.data["player"], str(call.data["label"])
+        datetime(2026, 9, 26, tzinfo=UTC), call.data["player"], str(call.data["label"])
     )
     return stem[20:] + ".jpg"
 
@@ -2374,7 +2376,10 @@ async def test_highlight_photo_hands_the_saved_file_to_the_actions(
         ("", ""),
     ]
     # Every photo the actions get is on disk.
-    assert [Path(sent[camera]["photo"]).read_bytes() for camera in "123"] == [JPEG] * 3
+    assert [
+        await hass.async_add_executor_job(Path(sent[camera]["photo"]).read_bytes)
+        for camera in "123"
+    ] == [JPEG] * 3
 
 
 async def test_a_photo_that_was_not_saved_gets_no_file_and_no_address(

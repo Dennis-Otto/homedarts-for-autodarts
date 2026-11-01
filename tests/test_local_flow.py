@@ -63,7 +63,7 @@ async def create_after_error(hass, aioclient_mock, result):
 
 
 @pytest.mark.parametrize(
-    "failure,error",
+    ("failure", "error"),
     [
         ("offline", "cannot_connect_local"),
         ("refused", "board_access_denied"),
@@ -101,7 +101,7 @@ async def test_local_setup_detects_legacy_duplicate(hass, aioclient_mock):
 
 
 @pytest.mark.parametrize(
-    "board_id,reason",
+    ("board_id", "reason"),
     [("board-1", "reconfigure_successful"), ("board-2", "wrong_board")],
 )
 async def test_reconfigure_gives_an_entry_without_address_its_board(

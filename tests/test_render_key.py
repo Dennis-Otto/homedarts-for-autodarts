@@ -321,7 +321,7 @@ def test_the_newest_trusted_run_gives_its_images(answers):
 
 def test_a_run_that_is_not_trusted_gives_nothing(answers):
     # The listing says the branch is of this repository, its run says a fork.
-    known, asked = answers
+    known, _asked = answers
     known[LISTING] = {
         "artifacts": [artifact(2, created="2026-10-25T08:00:00Z"), artifact(1)]
     }
@@ -523,7 +523,7 @@ def test_an_answer_of_an_unexpected_shape_renders_anew(step, answers, capsys, li
 
 
 def test_a_run_whose_answer_lacks_its_fields_is_not_taken(step, answers):
-    outputs, summary = step
+    outputs, _summary = step
     known, _ = answers
     known[LISTING] = {"artifacts": [artifact(42)]}
     known[run_path(42)] = {"name": "Visual check"}

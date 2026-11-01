@@ -289,7 +289,9 @@ class AutodartsLocalClient:
         *,
         payload: dict[str, Any] | None = None,
         response_type: str = "json",
-        timeout: int = 10,
+        # The timeout stays in here, where it becomes the connection error of
+        # this client, instead of in every caller.
+        timeout: int = 10,  # noqa: ASYNC109
     ) -> Any:
         try:
             async with asyncio.timeout(timeout):

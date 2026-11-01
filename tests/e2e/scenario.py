@@ -228,7 +228,8 @@ def check(condition: bool, message: str) -> None:
         raise E2EFailure(message)
 
 
-async def wait_for(probe, description: str, timeout: float = 30):
+# The timeout stays in here, as the failure names what the last probe found.
+async def wait_for(probe, description: str, timeout: float = 30):  # noqa: ASYNC109
     """Poll an async probe until it returns a truthy value."""
     deadline = time.monotonic() + timeout
     last = None
@@ -377,7 +378,12 @@ class Scenario:
     async def state(self, key: str) -> dict:
         return await self.api("GET", f"/api/states/{self.entity(key)}")
 
-    async def expect_states(self, expected: dict[str, str], timeout: float = 30):
+    # The timeout goes on to wait_for, which says why it takes one.
+    async def expect_states(
+        self,
+        expected: dict[str, str],
+        timeout: float = 30,  # noqa: ASYNC109
+    ):
         async def probe():
             actual = {key: (await self.state(key))["state"] for key in expected}
             return actual == expected or None
@@ -722,9 +728,10 @@ class Scenario:
         store = Path(f"/config/.storage/homedarts.{entry_id}.training")
 
         async def persisted():
-            if not store.exists():
+            if not await asyncio.to_thread(store.exists):
                 return None
-            return json.loads(store.read_text())["data"]["darts"] == 2
+            saved = await asyncio.to_thread(store.read_text)
+            return json.loads(saved)["data"]["darts"] == 2
 
         await wait_for(persisted, "the persisted training session", timeout=20)
 
@@ -1196,9 +1203,10 @@ class Scenario:
         store = Path(f"/config/.storage/homedarts.{entry_id}.journal")
 
         async def persisted():
-            if not store.exists():
+            if not await asyncio.to_thread(store.exists):
                 return None
-            return len(json.loads(store.read_text())["data"]["sessions"]) == 1 or None
+            saved = await asyncio.to_thread(store.read_text)
+            return len(json.loads(saved)["data"]["sessions"]) == 1 or None
 
         await wait_for(persisted, "the persisted training journal", timeout=30)
 
@@ -1675,7 +1683,7 @@ class Scenario:
         and loaded without a resource, from the folder of one version with the texts
         of every language, and the card module is compressed. Both modules are
         dashboard resources too, which Home Assistant Cast loads from its own origin."""
-        version = json.loads(MANIFEST.read_text())["version"]
+        version = json.loads(await asyncio.to_thread(MANIFEST.read_text))["version"]
         files = {
             path.relative_to(FRONTEND).as_posix(): path.read_bytes()
             for path in FRONTEND.rglob("*.js")
@@ -1791,9 +1799,9 @@ class Scenario:
 
     async def gallery(self) -> None:
         """The media browser lists the highlight photos by month and serves them."""
-        GALLERY.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(GALLERY.mkdir, parents=True, exist_ok=True)
         photo = board_photo(["T20", "T20", "T20"])
-        (GALLERY / PHOTO).write_bytes(photo)
+        await asyncio.to_thread((GALLERY / PHOTO).write_bytes, photo)
         outside = GALLERY.parents[1] / "e2e-outside.jpg"
         outside.write_bytes(photo)
         try:
@@ -1864,7 +1872,10 @@ class Scenario:
                 in error["message"],
                 f"save_highlight with a disabled camera: {error}",
             )
-            photos = sorted(path.name for path in GALLERY.iterdir())
+            photos = sorted(
+                path.name
+                for path in await asyncio.to_thread(lambda: list(GALLERY.iterdir()))
+            )
             check(photos == [PHOTO], f"Photos in the gallery: {photos}")
         finally:
             (GALLERY / PHOTO).unlink()
@@ -2045,7 +2056,9 @@ class Scenario:
         )
         await self.api("DELETE", f"/api/config/config_entries/entry/{entry_id}")
         check(
-            not Path(f"/config/.storage/homedarts.{entry_id}.training").exists(),
+            not await asyncio.to_thread(
+                Path(f"/config/.storage/homedarts.{entry_id}.training").exists
+            ),
             "The training of the board without Autodarts was not deleted",
         )
 
@@ -2090,18 +2103,22 @@ class Scenario:
         says so. Home Assistant brings its frontend only here, not to the unit tests."""
         import hass_frontend
 
-        names = Path(hass_frontend.__file__).with_name("static") / "mdi/iconList.json"
-        known = {icon["name"] for icon in json.loads(names.read_text(encoding="utf-8"))}
-        missing = {
-            f"{path.name}: mdi:{name}"
-            for folder in ICON_FILES
-            for path in Path(folder).rglob("*")
-            if path.suffix in (".js", ".json", ".py", ".yaml")
-            for name in re.findall(
-                r"mdi:([a-z0-9-]+)", path.read_text(encoding="utf-8")
-            )
-            if name not in known
-        }
+        def named_but_unknown() -> set[str]:
+            names = Path(hass_frontend.__file__).with_name("static")
+            icons = json.loads((names / "mdi/iconList.json").read_text("utf-8"))
+            known = {icon["name"] for icon in icons}
+            return {
+                f"{path.name}: mdi:{name}"
+                for folder in ICON_FILES
+                for path in Path(folder).rglob("*")
+                if path.suffix in (".js", ".json", ".py", ".yaml")
+                for name in re.findall(
+                    r"mdi:([a-z0-9-]+)", path.read_text(encoding="utf-8")
+                )
+                if name not in known
+            }
+
+        missing = await asyncio.to_thread(named_but_unknown)
         check(not missing, f"Icons that the frontend doesn't have: {sorted(missing)}")
 
     async def second_socket(self) -> None:
@@ -2197,7 +2214,11 @@ class Scenario:
             )
         ]
         check(not problems, f"Home Assistant logged problems: {problems}")
-        log = LOG.read_text() if LOG.exists() else ""
+        log = (
+            await asyncio.to_thread(LOG.read_text)
+            if await asyncio.to_thread(LOG.exists)
+            else ""
+        )
         # Records start with a timestamp.
         records = re.split(r"\n(?=\d{4}-\d{2}-\d{2} )", log)
         # Home Assistant reports the integration, such as a deprecated call that its
@@ -2212,7 +2233,7 @@ class Scenario:
         ]
         reported = reports(
             dict.fromkeys(warnings),
-            json.loads(MANIFEST.read_text()),
+            json.loads(await asyncio.to_thread(MANIFEST.read_text)),
             (await self.ws("get_config"))["version"],
         )
         check(not reported, f"Home Assistant reports the integration: {reported}")
@@ -2253,7 +2274,9 @@ class Scenario:
         check(not remaining, f"Entities remain after removal: {remaining}")
         for store in ("training", "report", "journal"):
             check(
-                not Path(f"/config/.storage/homedarts.{entry_id}.{store}").exists(),
+                not await asyncio.to_thread(
+                    Path(f"/config/.storage/homedarts.{entry_id}.{store}").exists
+                ),
                 f"The {store} store was not deleted with the integration",
             )
 

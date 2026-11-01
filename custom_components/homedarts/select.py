@@ -54,10 +54,10 @@ async def async_setup_entry(
 
 class AutodartsStandbySelect(AutodartsBoardEntity, SelectEntity):
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_options = [str(value) for value in STANDBY_MINUTES]
 
     def __init__(self, coordinator: AutodartsLocalCoordinator) -> None:
         super().__init__(coordinator, "standby_minutes")
+        self._attr_options = [str(value) for value in STANDBY_MINUTES]
 
     @property
     def available(self) -> bool:
@@ -77,10 +77,9 @@ class AutodartsStandbySelect(AutodartsBoardEntity, SelectEntity):
 class AutodartsPracticeGame(AutodartsStoredEntity, SelectEntity):
     """X01, a Cricket, party or training game; a choice starts it anew."""
 
-    _attr_options = ["off", *GAME_OPTIONS]
-
     def __init__(self, coordinator: AutodartsGamesCoordinator) -> None:
         super().__init__(coordinator, "practice_game")
+        self._attr_options = ["off", *GAME_OPTIONS]
 
     @property
     def current_option(self) -> str:
@@ -145,10 +144,10 @@ class AutodartsGolfHoles(AutodartsStoredEntity, SelectEntity):
     """Nine or 18 holes of Golf; a change starts a game of Golf anew."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_options = [str(holes) for holes in GOLF_HOLES]
 
     def __init__(self, coordinator: AutodartsGamesCoordinator) -> None:
         super().__init__(coordinator, "practice_golf_holes")
+        self._attr_options = [str(holes) for holes in GOLF_HOLES]
 
     @property
     def current_option(self) -> str:
@@ -163,10 +162,10 @@ class AutodartsWorldOrder(AutodartsStoredEntity, SelectEntity):
     Round the World anew."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_options = list(WORLD_ORDERS)
 
     def __init__(self, coordinator: AutodartsGamesCoordinator) -> None:
         super().__init__(coordinator, "practice_round_the_world_order")
+        self._attr_options = list(WORLD_ORDERS)
 
     @property
     def current_option(self) -> str:
@@ -180,10 +179,10 @@ class AutodartsReportDay(AutodartsStoredEntity, SelectEntity):
     """The weekday on which the weekly report ends the week."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_options = list(WEEKDAYS)
 
     def __init__(self, coordinator: AutodartsGamesCoordinator) -> None:
         super().__init__(coordinator, "weekly_report_day")
+        self._attr_options = list(WEEKDAYS)
 
     @property
     def current_option(self) -> str:

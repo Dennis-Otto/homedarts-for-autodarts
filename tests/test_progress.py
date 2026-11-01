@@ -651,7 +651,7 @@ def sums(**fields) -> list[int]:
 
 
 def test_a_merge_adds_up_the_progress_of_both_names():
-    monday = datetime(2026, 9, 21).date()
+    monday = datetime(2026, 9, 21, tzinfo=UTC).date()
     weeks = [(monday - timedelta(weeks=ago)).isoformat() for ago in range(14)]
     sam = progress_of(
         "Sam",

@@ -88,7 +88,7 @@ class VisitRefused(ValueError):
         self.placeholders = placeholders
 
 
-class GameMode(ABC):
+class GameMode:
     """No game, and the base of the games: what a mode tells the match frame."""
 
     # The game as events and storage name it: 501, cricket or killer; 0 for
@@ -260,7 +260,7 @@ class DrillMode(GameMode):
         self.training.on_board = checkpoint.get("drill_on_board", 0)
 
 
-class MatchMode(GameMode):
+class MatchMode(GameMode, ABC):
     """A game that players play as a match: X01, the Cricket games and the
     party games."""
 

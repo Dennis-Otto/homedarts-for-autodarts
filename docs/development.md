@@ -93,6 +93,8 @@ npm ci
 
 `scripts/check.sh` runs what the CI runs: the text checks, the version of every file, ShellCheck, Ruff, strict mypy and pytest, failing below 100 % line and branch coverage; then `scripts/check-project.sh` checks the MIT terms of both licenses, lints the JavaScript with ESLint's recommended rules (`eslint.config.mjs`) and runs `npm test`, the tests of the cards with fuzzing by fast-check and those of the [translation bot](#translation-bot), failing below 100 % lines, branches and functions. `git config core.hooksPath .githooks` runs it before every push. The [repository blueprint](https://github.com/Dennis-Otto/repo-blueprint) keeps `scripts/check.sh` and the workflows the same in every repository; what only this integration needs belongs in `scripts/check-project.sh`, `e2e.yml` and `translations.yml`.
 
+Ruff lints the Python with the rule sets that `pyproject.toml` selects: `E`, `F`, `W` and `I` (pycodestyle, Pyflakes and the order of the imports), `B` (likely bugs, such as a closure over a loop variable), `ASYNC` (blocking calls and busy waits in async code), `DTZ` (a date or time without a time zone), `LOG` (how the code calls `logging`), `PT` (the style of pytest), and `UP`, `SIM`, `C4`, `PIE` and `RUF` (shorter, more current code and the rules of Ruff itself). `E501`, `PT018` and `RUF001` stay off, each with its reason there. `ruff check --fix .` makes the fixes that Ruff can make, as the fix bot does in a pull request. A line that has to stay as it is gets a `# noqa` with the rule, and a comment beside it with the reason.
+
 Without a local Python, run the same in Docker:
 
 ```sh

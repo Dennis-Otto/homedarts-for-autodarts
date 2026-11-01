@@ -155,7 +155,7 @@ STATES = [
 ]
 
 # The draw needs no cryptographic randomness.
-_RANDOM = random.Random()  # noqa: S311
+_RANDOM = random.Random()
 # Earlier than every stored time, for a match without one.
 _EPOCH = datetime.min.replace(tzinfo=UTC)
 
@@ -277,7 +277,7 @@ def fits_groups(count: int, groups: int, advance: int) -> bool:
         return False
     smallest, largest = count // groups, -(-count // groups)
     return (
-        MIN_ENTRANTS <= smallest and largest <= MAX_ROUND_ROBIN and advance < smallest
+        smallest >= MIN_ENTRANTS and largest <= MAX_ROUND_ROBIN and advance < smallest
     )
 
 
@@ -932,9 +932,12 @@ class Tournament:
         settings of the boards to go back to."""
         for number, (seat, stored) in enumerate(zip(self.seats, saved, strict=True)):
             index = stored.get("match")
-            if type(index) is int and 0 <= index < len(self.matches):
-                if self.free_for(number, index):
-                    seat.match = index
+            if (
+                type(index) is int
+                and 0 <= index < len(self.matches)
+                and self.free_for(number, index)
+            ):
+                seat.match = index
             if number:
                 seat.saved = valid_settings(stored.get("saved"))
         self.refresh()
@@ -1244,9 +1247,12 @@ class TournamentDirector:
         renamed."""
         key = name.strip().casefold()
         tournament = self.tournament
-        if self.running and tournament is not None:
-            if any(player.casefold() == key for player in tournament.players):
-                raise ActionRefused("player_in_tournament", name=name.strip())
+        if (
+            self.running
+            and tournament is not None
+            and any(player.casefold() == key for player in tournament.players)
+        ):
+            raise ActionRefused("player_in_tournament", name=name.strip())
 
     def forget(self, name: str) -> None:
         """Take a deleted player off the setup of the next tournament; a player
@@ -1585,10 +1591,7 @@ class TournamentDirector:
         last = tournament.last_played(number if tournament.several else None)
         due = self._due_at(number)
         numbers = tournament.numbers()
-        if finished:
-            status = FINISHED
-        else:
-            status = WAITING if current is None else PLAYING
+        status = FINISHED if finished else WAITING if current is None else PLAYING
         return {
             "status": status,
             "format": tournament.format,

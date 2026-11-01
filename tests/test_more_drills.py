@@ -92,7 +92,7 @@ def test_a_bust_in_121_voids_only_its_visit():
 
 
 def test_the_121_ladder_plays_every_score_up_to_170():
-    assert LADDER == tuple(range(121, 171))
+    assert tuple(range(121, 171)) == LADDER
     drill = LadderDrill()
     drill.target = drill.start = 158
     throw(drill, "T20", "T20", "D19")

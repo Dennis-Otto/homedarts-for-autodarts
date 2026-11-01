@@ -484,7 +484,9 @@ async def test_woken_reconnect_starts_the_back_off_over(hass, aioclient_mock):
         await done.wait()
         assert await hass.config_entries.async_unload(entry.entry_id)
     bases = [1, 2, 1, 2]
-    assert all(0.8 * base <= delay <= base for delay, base in zip(waits, bases))
+    assert all(
+        0.8 * base <= delay <= base for delay, base in zip(waits, bases, strict=True)
+    )
 
 
 @pytest.mark.expected_errors
@@ -589,7 +591,7 @@ async def test_board_that_refuses_access_raises_a_repair(
 
 
 @pytest.mark.parametrize(
-    "status,key", [(403, "board_access_denied"), (404, "not_supported")]
+    ("status", "key"), [(403, "board_access_denied"), (404, "not_supported")]
 )
 async def test_actions_the_board_refuses_explain_why(hass, aioclient_mock, status, key):
     entry = await setup_local(hass, aioclient_mock)

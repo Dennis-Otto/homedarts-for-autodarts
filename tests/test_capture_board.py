@@ -78,7 +78,10 @@ def answers_2_1():
         "auth": {"apiKey": API_KEY, "boardId": BOARD_ID},
         "cam": {
             "autoCalibrateOnStart": False,
-            "cams": [camera(port, serial) for port, serial in zip((3, 4, 8), SERIALS)],
+            "cams": [
+                camera(port, serial)
+                for port, serial in zip((3, 4, 8), SERIALS, strict=True)
+            ],
         },
         "host": {"port": "3180", "tlsCert": TLS_CERT, "tlsKey": TLS_KEY, "tlsPort": ""},
         "linkServer": {"enabled": True, "interfaces": [ADDRESS], "name": LINK_SERVER},
@@ -993,9 +996,11 @@ async def test_a_second_socket_that_breaks_ends_the_capture_with_its_error(tmp_p
             raise aiohttp.ClientConnectionError("gone")
         return await real(session, base, seconds, *args, **kwargs)
 
-    with patch.object(capture_board, "read_frames", read_frames):
-        with pytest.raises(aiohttp.ClientConnectionError):
-            await record(board(['{"a":1}']), tmp_path)
+    with (
+        patch.object(capture_board, "read_frames", read_frames),
+        pytest.raises(aiohttp.ClientConnectionError),
+    ):
+        await record(board(['{"a":1}']), tmp_path)
 
 
 @pytest.mark.usefixtures("socket_enabled")
@@ -1012,9 +1017,11 @@ async def test_a_first_socket_that_breaks_also_ends_the_second(tmp_path):
         raise aiohttp.ClientConnectionError("gone")
 
     app = second_socket_board([], ['{"type":"state"}'], close=False)
-    with patch.object(capture_board, "read_frames", read_frames):
-        with pytest.raises(aiohttp.ClientConnectionError):
-            await record(app, tmp_path)
+    with (
+        patch.object(capture_board, "read_frames", read_frames),
+        pytest.raises(aiohttp.ClientConnectionError),
+    ):
+        await record(app, tmp_path)
     assert second_ended
 
 

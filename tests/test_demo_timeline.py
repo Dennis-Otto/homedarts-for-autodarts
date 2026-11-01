@@ -2,6 +2,7 @@
 
 import json
 import os
+from functools import partial
 from pathlib import Path
 
 from .demo_timeline import DEVICE, FORMAT, dump, record
@@ -80,7 +81,9 @@ async def test_the_demo_plays_every_game_to_its_end(hass, aioclient_mock, freeze
     assert all("aim" in found for answer in answers for found in answer.values())
     # Only a recording that passed every check above replaces the website's.
     if target := os.environ.get("DEMO_TIMELINE"):
-        Path(target).write_text(text, encoding="utf-8", newline="\n")
+        await hass.async_add_executor_job(
+            partial(Path(target).write_text, text, encoding="utf-8", newline="\n")
+        )
 
 
 def test_the_website_has_a_recording_of_this_format():

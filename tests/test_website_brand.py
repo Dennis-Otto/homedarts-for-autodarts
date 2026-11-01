@@ -8,6 +8,7 @@ it can read, and every table names its columns, which screen readers announce.
 """
 
 import colorsys
+import itertools
 import re
 from pathlib import Path
 
@@ -37,7 +38,7 @@ MkDocsLoader.add_multi_constructor(
 
 
 def load(path: Path) -> dict:
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=MkDocsLoader)  # noqa: S506
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=MkDocsLoader)
 
 
 MKDOCS = load(ROOT / "mkdocs.yml")
@@ -218,7 +219,7 @@ def table_headers(text: str) -> list[list[str]]:
     lines = text.splitlines()
     return [
         [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
-        for line, below in zip(lines, lines[1:], strict=False)
+        for line, below in itertools.pairwise(lines)
         if line.lstrip().startswith("|")
         and re.fullmatch(r"\s*\|?(\s*:?-{3,}:?\s*\|)+\s*(:?-{3,}:?\s*)?", below)
     ]

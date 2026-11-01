@@ -23,6 +23,8 @@ from custom_components.homedarts import voices
 from custom_components.homedarts.const import DOMAIN
 from custom_components.homedarts.voices import pack_words, sound_key, valid_pack
 
+from .local_helpers import until
+
 ENGINE = "tts.piper"
 MP3 = b"ID3 a recorded call"
 
@@ -452,10 +454,9 @@ async def test_one_pack_at_a_time(hass, tmp_path, engine, integration):
     engine.wait = asyncio.Event()
     first = hass.async_create_task(generate(hass))
     await asyncio.sleep(0)
-    while (
-        voices.GENERATING not in hass.data or not hass.data[voices.GENERATING].locked()
-    ):
-        await asyncio.sleep(0)
+    await until(
+        lambda: voices.GENERATING in hass.data and hass.data[voices.GENERATING].locked()
+    )
     with pytest.raises(ServiceValidationError) as error:
         await generate(hass, pack="second")
     assert error.value.translation_key == "voice_pack_busy"

@@ -11,7 +11,7 @@ import importlib.util
 import json
 import os
 import time
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -342,7 +342,9 @@ async def seed_journal(demo: Scenario, entry_id: str) -> None:
     key = f"homedarts.{entry_id}.journal"
     now = datetime.now(ZoneInfo("Europe/Berlin"))
     journal = {"version": 1, "minor_version": 1, "key": key, "data": week_journal(now)}
-    Path(f"/config/.storage/{key}").write_text(json.dumps(journal))
+    await asyncio.to_thread(
+        Path(f"/config/.storage/{key}").write_text, json.dumps(journal)
+    )
     await demo.ws("config_entries/disable", entry_id=entry_id, disabled_by=None)
     await wait_for(lambda: state("loaded"), "the entry with a week in its calendar")
 
@@ -462,9 +464,11 @@ async def weekly_report(demo: Scenario) -> None:
         "use_blueprint": {"path": "Dennis-Otto/weekly_report.yaml", "input": inputs},
     }
     folder = Path("/config/automations")
-    folder.mkdir(exist_ok=True)
+    await asyncio.to_thread(folder.mkdir, exist_ok=True)
     # JSON is YAML, too.
-    (folder / "weekly_report.yaml").write_text(json.dumps([automation]))
+    await asyncio.to_thread(
+        (folder / "weekly_report.yaml").write_text, json.dumps([automation])
+    )
     await demo.api("POST", "/api/services/automation/reload", json={})
 
     async def loaded():
@@ -554,7 +558,10 @@ async def history(demo: Scenario, entry_id: str) -> None:
     """Weeks of practice of three players, written while the entry is disabled."""
     await demo.ws("config_entries/disable", entry_id=entry_id, disabled_by="user")
     await wait_for(lambda: demo.entry_is("not_loaded"), "the disabled entry")
-    seed(Path(f"/config/.storage/homedarts.{entry_id}.training"), date.today())
+    seed(
+        Path(f"/config/.storage/homedarts.{entry_id}.training"),
+        datetime.now().astimezone().date(),
+    )
     await demo.ws("config_entries/disable", entry_id=entry_id, disabled_by=None)
     await wait_for(lambda: demo.entry_is("loaded"), "the enabled entry")
     # The badges the weeks earned unlock quietly.

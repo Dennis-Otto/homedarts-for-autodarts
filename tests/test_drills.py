@@ -83,8 +83,8 @@ def test_doubles_training_needs_the_double_ring_and_the_bullseye():
 
 
 def test_the_checkout_training_picks_every_score_three_darts_finish():
-    assert CHECKOUT_SCORES == tuple(score for score in range(2, 171) if checkout(score))
-    assert BOGEY_NUMBERS == set(range(2, 171)) - set(CHECKOUT_SCORES)
+    assert tuple(score for score in range(2, 171) if checkout(score)) == CHECKOUT_SCORES
+    assert set(range(2, 171)) - set(CHECKOUT_SCORES) == BOGEY_NUMBERS
 
 
 def test_checkout_training_books_attempts_on_three_visits():

@@ -89,14 +89,14 @@ class Caller:
                     "summary": self.summary(attributes),
                 }
             call = self.call(kind, attributes)
-        except (KeyError, IndexError, ValueError):
+        except (KeyError, IndexError, ValueError) as error:
             # A broken translation must not stop the games: the event comes
             # without words, and the blueprints say their own.
-            self._broken(f"the {kind} event")
+            self._broken(f"the {kind} event", error)
             return {}
         return {} if call is None else {"call": call}
 
-    def _broken(self, what: str) -> None:
+    def _broken(self, what: str, error: Exception) -> None:
         """Log once that a message of the language fails to format."""
         if not self._failed:
             self._failed = True
@@ -105,7 +105,7 @@ class Caller:
                 "without words until the language reloads",
                 self.language,
                 what,
-                exc_info=True,
+                exc_info=error,
             )
 
     # -- the callers -------------------------------------------------------------
@@ -286,6 +286,6 @@ class Caller:
                 highest=_number(session.get("highest_visit")),
                 count=maximums,
             )
-        except (KeyError, IndexError, ValueError):
-            self._broken("the summary of the training report")
+        except (KeyError, IndexError, ValueError) as error:
+            self._broken("the summary of the training report", error)
             return None
