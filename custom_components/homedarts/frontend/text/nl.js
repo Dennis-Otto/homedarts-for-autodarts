@@ -505,7 +505,7 @@ export default {
   "doubles": "Dubbels",
   "misses": "Missers",
   "triple_rate": "Triplepercentage",
-  "heatmap": "Trefferkaart",
+  "heatmap": "Heatmap",
   "heatmap_label": "Dartbord, gekleurd naar hoe vaak elk vak is geraakt",
   "top": "Meest geraakt",
   "history": "Recente beurten",

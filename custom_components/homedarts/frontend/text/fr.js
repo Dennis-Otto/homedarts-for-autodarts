@@ -505,7 +505,7 @@ export default {
   "doubles": "Doubles",
   "misses": "Ratés",
   "triple_rate": "Taux de triples",
-  "heatmap": "Carte des touches",
+  "heatmap": "Carte de chaleur",
   "heatmap_label": "Cible colorée selon la fréquence à laquelle chaque zone a été touchée",
   "top": "Zones les plus touchées",
   "history": "Dernières volées",
