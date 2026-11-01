@@ -523,7 +523,7 @@ Jedes Zurücksetzen steht auf Stufe Info im Protokoll, und die [Diagnosedaten](t
 | Entität | Typ | Beschreibung |
 | --- | --- | --- |
 | Beim Start kalibrieren | Schalter, *Konfiguration* | Kalibriert beim Start der Erkennung. |
-| Automatisch nachkalibrieren | Schalter, *Konfiguration* | Der Board Manager kalibriert bei Bedarf selbst nach. Mit Board Manager 2.1 nicht verfügbar, weil er diese Option nicht mehr hat. |
+| Automatisch nachkalibrieren | Schalter, *Konfiguration* | Der Board Manager kalibriert bei Bedarf selbst nach. Mit Board Manager 2.1 nicht verfügbar, weil er diese Option nicht mehr hat; das erzeugte Dashboard lässt ihn dort weg. |
 | Verzerrungskorrektur | Schalter, *Konfiguration* | Korrigiert die Linsenverzerrung bei der Kalibrierung. |
 | Kamera-Standby | Auswahl, *Konfiguration* | Versetzt die Kameras nach 5, 10, 15, 30 oder 60 Minuten ohne Nutzung in den Standby. |
 

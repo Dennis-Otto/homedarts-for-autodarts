@@ -365,7 +365,7 @@ Seit September 2026 beschreibt die Doku von Autodarts den Board Manager als Brow
 
 Mit **Board Manager 2.1** funktioniert die Integration wie bisher, mit diesen Unterschieden:
 
-- Der Schalter *Automatisch nachkalibrieren* ist nicht verfügbar, weil Board Manager 2.1 diese Option nicht mehr hat. *Beim Start kalibrieren* und *Verzerrungskorrektur* bleiben.
+- Der Schalter *Automatisch nachkalibrieren* ist nicht verfügbar, weil Board Manager 2.1 diese Option nicht mehr hat, und das erzeugte Dashboard lässt ihn weg. *Beim Start kalibrieren* und *Verzerrungskorrektur* bleiben.
 - Die Tasten *Kamerastreams starten* und *Kamerastreams stoppen* sind nicht verfügbar, weil Board Manager 2.1 diese Befehle nicht mehr hat. Die Liveansicht der Kameras funktioniert ohne sie.
 - *Hand erkannt*, *Bild stabil*, *Darts teilweise entfernt* und *Darts vollständig entfernt* aktualisieren sich alle 2 Sekunden, solange die Erkennung läuft, weil das Board diese Werte nicht mehr von sich aus sendet. Eine Hand, die nur einen Moment am Board ist, kann dabei fehlen.
 
