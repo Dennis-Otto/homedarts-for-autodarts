@@ -18,7 +18,7 @@
  */
 
 const STRATEGY_TYPE = "homedarts";
-const STRATEGY_ELEMENT = `ll-strategy-dashboard-${STRATEGY_TYPE}`;
+const STRATEGY_ELEMENT = "ll-strategy-dashboard-homedarts";
 // The documentation website, in English and in German under de/.
 const DOCUMENTATION = "https://dennis-otto.github.io/homedarts-for-autodarts";
 const STRATEGY_DOCS = ["cards.html#automatic-dashboard", "de/cards.html#automatisches-dashboard"];
@@ -182,6 +182,7 @@ const waiting = new WeakMap();
 function upgrade(element, Card, kept) {
   const properties = Object.entries(element);
   for (const [name] of properties) delete element[name];
+  waiting.delete(element);
   become(element, Card);
   try {
     if ("config" in kept) element.setConfig(kept.config);
