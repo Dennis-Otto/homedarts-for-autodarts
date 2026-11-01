@@ -25,7 +25,7 @@ A board is one config entry with one connection: directly to the Board Manager i
 | Fallback without realtime events | HTTP read | Every 2 seconds; every 15 seconds once the board has been away for about half a minute |
 | Board Manager 2 | One combined read of `/api/system` per interval | As above |
 | Board Manager 2.1 | One socket, its second, `/api/events/system`, which sends the state and the motion: only what changed reaches an entity. Cameras and frame rates come with the read of `/api/system` | Immediately, and the read every 10 seconds |
-| Board Manager 2.1 without that socket or its motion | The first socket, `/api/events`, or the second without motion: the motion comes with the read of `/api/system` as well | Every 2 seconds while the detection runs, within 4 seconds of the last frame; else every 10 seconds |
+| Board Manager 2.1 without that socket or its motion | The first socket, `/api/events`, or the second without motion: the motion comes with the read of `/api/system` as well | Every 2 seconds while the detection runs, within 4 seconds of the last frame; else every 10 seconds; the sensors of the frame rates and the load report about every 10 seconds |
 | Board PC details, Board Manager 2 | HTTP read of `/api/host`; only the system, processor and software versions are kept | At start, every hour and after a Board Manager update |
 | Board Manager 1 settings and version | HTTP read | Every 30 seconds, and after every action |
 

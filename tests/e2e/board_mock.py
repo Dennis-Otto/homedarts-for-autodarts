@@ -67,6 +67,16 @@ EVENTS = "/api/events"
 SYSTEM_EVENTS = "/api/events/system"
 # As often as the second socket of the real board sends its motion, per second.
 MOTION_FRAMES = 30
+# The kinds of frame this double sends on it, and those of them only a change sends:
+# a recording made while the detection runs has none of those.
+SECOND_SOCKET_CHANGES = frozenset({"calibration", "cams"})
+SECOND_SOCKET_KINDS = SECOND_SOCKET_CHANGES | {
+    "state",
+    "board",
+    "vantage",
+    "stats",
+    "vantageConfig",
+}
 
 COMMANDS = {
     ("PUT", "/api/start"): {"running": True, "status": "Throw", "event": "Started"},
@@ -246,8 +256,8 @@ class Board:
         for client in list(self.second_sockets):
             await client.send_json(self.status_frame())
             if self.state["running"] != running:
-                await client.send_json(self.frames["calibration"])
-                await client.send_json(self.frames["cams"])
+                for kind in SECOND_SOCKET_CHANGES & self.frames.keys():
+                    await client.send_json(self.frames[kind])
 
 
 def routes(board: Board) -> web.RouteTableDef:

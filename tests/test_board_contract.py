@@ -348,25 +348,24 @@ def test_the_second_socket_sends_every_frame_of_the_first():
 
 def test_the_recording_of_the_second_socket_shows_what_the_integration_reads():
     second = system_frames("2.1.0")
-    # The kinds of the board, the changes of its motion and its end with the detection.
-    assert {frame["type"] for frame in second} == {
-        "state",
-        "board",
-        "vantage",
-        "stats",
-        "vantageConfig",
-        "calibration",
-        "cams",
-    }
+    # The kinds the double repeats and the integration reads. The next recording, with
+    # darts or made while the detection runs, may hold others and not hold a change.
+    assert {frame["type"] for frame in second} >= (
+        board_mock.SECOND_SOCKET_KINDS - board_mock.SECOND_SOCKET_CHANGES
+    )
+    # A stop ends the motion with a frame without any, so not all of them have one.
     motions = [
-        frame["data"]["vantage"] for frame in second if frame["type"] == "vantage"
+        frame["data"]["vantage"]
+        for frame in second
+        if frame["type"] == "vantage" and frame["data"]["vantage"]
     ]
-    assert motions[-1] is None
+    assert motions
     for key in ("isHand", "isStable", "isTakeoutPartial", "isTakeoutFull"):
-        assert all(type(motion["motion"][key]) is bool for motion in motions[:-1])
-    # A recording stays small: the board sent 30 of these a second.
+        assert all(type(motion["motion"][key]) is bool for motion in motions)
+    # A recording stays small: the board sends about 2 MB of these a minute, and a
+    # visit keeps each change of its flags.
     path = RECORDINGS / "2.1.0" / capture_board.SYSTEM_FRAMES
-    assert path.stat().st_size < 32 * 1024
+    assert path.stat().st_size < 1024 * 1024
 
 
 async def test_the_end_to_end_double_sends_the_second_socket_like_its_recording():
@@ -386,7 +385,7 @@ async def test_the_end_to_end_double_sends_the_second_socket_like_its_recording(
             )
             kinds = set()
             hand = False
-            while kinds != set(recording) or not hand:
+            while kinds != set(recording) & board_mock.SECOND_SOCKET_KINDS or not hand:
                 sent = await socket.receive_json(timeout=5)
                 kinds.add(sent["type"])
                 assert shape(sent) in recording[sent["type"]], sent["type"]
@@ -409,6 +408,21 @@ async def test_the_end_to_end_double_of_an_earlier_board_has_no_second_socket(
             await session.ws_connect(path)
     assert refused.value.status == 404
     assert app[board_mock.BOARD].unexpected == [f"GET {capture_board.SYSTEM_EVENTS}"]
+
+
+async def test_the_end_to_end_double_plays_a_recording_without_a_start():
+    # Made while the detection ran, a recording has no calibration and no cams.
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    del double.frames["calibration"], double.frames["cams"]
+    start = {"running": True, "status": "throw", "event": "started"}
+    async with serve(app) as (server, session):
+        path = server.make_url(capture_board.SYSTEM_EVENTS)
+        async with session.ws_connect(path):
+            await until(lambda: double.second_sockets)
+            control = server.make_url("/control/state")
+            async with session.post(control, json=start) as response:
+                assert response.status == 200
 
 
 async def test_the_second_socket_of_the_end_to_end_double_has_its_faults():

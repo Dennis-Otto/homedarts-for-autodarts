@@ -17,7 +17,8 @@ capture.json. A route the board doesn't have is listed there as absent.
 Board Manager 2.1 has a second socket, /api/events/system, whose frames go to
 ws-system-frames.jsonl. It sends its motion 30 times a second and some other frames
 once a second, so of those the recording keeps the first, each one that says
-something new and one every ten seconds: a minute stays below 30 kB.
+something new and one every ten seconds: a minute of a board nobody stands at stays
+below 30 kB, and a visit adds each change of its flags.
 
 The answers carry the board's ID and API key, its TLS key, the serial numbers of
 its cameras and the name and addresses of the board PC. They are replaced by the
