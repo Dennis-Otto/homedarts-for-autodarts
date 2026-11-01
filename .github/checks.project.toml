@@ -195,8 +195,8 @@ who decides how the integration follows it."""
 [check."render (*)"]
 title = "The images of the documentation"
 problem = """An image of the documentation couldn't be rendered from the demo, with its
-frozen clock, for the language and the group of the check: a card didn't come up, or
-a step of `tests/e2e/screenshots.py` ran out of time. The log names the image; the
+frozen clock, for the language and the group of the check: the integration or a card
+didn't come up, or a step of `tests/e2e/screenshots.py` ran out of time. The log names the image; the
 artifact `visual-failure-*` keeps a screenshot of the page. A section that hangs fails
 after its budget with `Watchdog: The section … took longer than … s. It waits here:`
 and the stack of the section, down to the line that waits; a run that the step of the
@@ -207,19 +207,20 @@ this repository, takes the images of that run instead of rendering them, and its
 summary says `Reused from run …` (`tests/e2e/render_key.py`); a download of them that
 fails renders the group anew."""
 why = """Every picture of the README and of the website comes from these images. An
-image that can't be rendered shows a card that no longer comes up in the demo, and the
-documentation would fall behind the cards."""
+image that can't be rendered shows an integration or a card that no longer comes up in
+the demo, and the documentation would fall behind them."""
 fix = """A section that only grew slower gets a larger budget in `BUDGETS` of
 `tests/e2e/screenshots.py`, about twice its seconds in the summary of the job. Else
-render the group on your machine with Docker, fix the card or the step of the
-screenshot tool that failed, put the committed images back, and push:"""
+render the group on your machine with Docker, fix the integration, the blueprint, the
+card or the step of the screenshot tool that failed, put the committed images back,
+and push:"""
 commands = [
   "SCREENSHOT_GROUP=2/3 LANGUAGES=en bash tests/e2e/visual.sh",
   "git checkout -- docs/images",
 ]
 docs = "docs/development.md#visual-check"
-autofix = """An image that can't be rendered needs a person, who finds why the card or
-the demo didn't come up. An image that only looks different is no failure: the
+autofix = """An image that can't be rendered needs a person, who finds why the
+integration, the card or the demo didn't come up. An image that only looks different is no failure: the
 screenshot bot renders it anew after the merge."""
 
 [check."compare (*)"]
