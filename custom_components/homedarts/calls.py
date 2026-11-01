@@ -259,6 +259,8 @@ class Caller:
         bests = report.get("personal_bests")
         if count := (len(bests) if isinstance(bests, list) else 0):
             parts.append(self._counted("report_new_best", "report_new_bests", count))
+        if plans := report.get("plans"):
+            parts.append(self._counted("report_plan", "report_plans", plans))
         return " ".join(parts)
 
     # -- the training report -----------------------------------------------------

@@ -83,6 +83,9 @@ else:
     import voluptuous as vol
 
 SERVICE_START_GAME = "start_game"
+SERVICE_START_PLAN = "start_plan"
+SERVICE_NEXT_PLAN_STEP = "next_plan_step"
+SERVICE_STOP_PLAN = "stop_plan"
 SERVICE_DELETE_PLAYER = "delete_player"
 SERVICE_RENAME_PLAYER = "rename_player"
 SERVICE_EXPORT = "export"
@@ -237,6 +240,17 @@ START_TOURNAMENT_SCHEMA = vol.Schema(
 
 # Actions that only name the board.
 BOARD_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string})
+# Which plan: by its name, by its steps, or with neither the plan of the day. The
+# games check the steps, as they check those of the options.
+START_PLAN_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        vol.Exclusive("plan", "plan"): vol.All(cv.string, vol.Length(min=1)),
+        vol.Exclusive("steps", "plan"): vol.All(cv.ensure_list, [dict]),
+        vol.Optional("name"): cv.string,
+        vol.Optional("player"): cv.string,
+    }
+)
 
 
 DELETE_PLAYER_SCHEMA = vol.Schema(
@@ -757,6 +771,33 @@ def async_setup_services(hass: HomeAssistant) -> None:
             target_score=call.data.get("target_score"),
         )
         return game
+
+    async def start_plan(call: ServiceCall) -> None:
+        coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+        await coordinator.async_start_plan(
+            plan=call.data.get("plan"),
+            name=call.data.get("name"),
+            steps=call.data.get("steps"),
+            player=call.data.get("player"),
+        )
+
+    async def next_plan_step(call: ServiceCall) -> None:
+        coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+        await coordinator.async_next_plan_step()
+
+    async def stop_plan(call: ServiceCall) -> None:
+        coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+        await coordinator.async_stop_plan()
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_START_PLAN, start_plan, schema=START_PLAN_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_NEXT_PLAN_STEP, next_plan_step, schema=BOARD_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_STOP_PLAN, stop_plan, schema=BOARD_SCHEMA
+    )
 
     async def delete_player(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))

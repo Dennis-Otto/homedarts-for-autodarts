@@ -123,18 +123,23 @@
         "data": {
           "online_bridge": "Recibir partidos en línea de Tools for Autodarts",
           "online_bridge_remote": "Aceptar llamadas desde fuera de tu red doméstica",
-          "online_bridge_new_address": "Crear una nueva dirección secreta"
+          "online_bridge_new_address": "Crear una nueva dirección secreta",
+          "plans": "Planes de entrenamiento propios"
         },
         "data_description": {
           "online_bridge": "Abre una dirección de webhook secreta para la extensión del navegador. El siguiente paso te la muestra.",
           "online_bridge_remote": "Solo para una dirección https a través de Home Assistant Cloud o de tu propio dominio. Desactivado: solo los dispositivos de tu red doméstica pueden llamar a la dirección.",
-          "online_bridge_new_address": "La dirección actual deja de funcionar. Introduce la nueva en Tools for Autodarts."
+          "online_bridge_new_address": "La dirección actual deja de funcionar. Introduce la nueva en Tools for Autodarts.",
+          "plans": "Una lista en YAML: cada plan con un `name`, sus `steps` y, si quieres, los `weekdays` en los que es el plan del día. La página Planes de entrenamiento de la documentación tiene un ejemplo. Una lista vacía significa ningún plan."
         }
       },
       "online_bridge": {
         "title": "Dirección para Tools for Autodarts",
         "description": "Cuando pulses Enviar, Home Assistant aceptará momentos de partidos en línea en esta dirección secreta:\n\n`{url}`\n\nEn Tools for Autodarts, activa **WLED**, elige **Import CSV** y pega las líneas de abajo. Cada línea crea un efecto de tipo URL que llama a la dirección con `?event=` y su desencadenante. Importa solo las líneas que necesites: Tools for Autodarts reproduce un efecto por desencadenante y, si varios comparten el mismo desencadenante, elige uno al azar.\n\n```\n{effects}\n```\n\nEl sensor *Último evento del puente en línea* muestra el último momento recibido. No compartas la dirección: quien la conozca puede enviar momentos de partido a tu Home Assistant."
       }
+    },
+    "error": {
+      "invalid_plans": "Estos planes no son válidos. Cada plan necesita un nombre propio y de uno a doce pasos. Cada paso nombra un juego de entrenamiento como `drill` y como máximo uno de `darts`, `rounds` y `until`. El entrenamiento de checkout y la escalera 121 nunca terminan solos y necesitan `darts` o `rounds`."
     }
   },
   "entity": {
@@ -681,6 +686,8 @@
               "game_started": "Partida iniciada",
               "game_ended": "Partida terminada",
               "drill_finished": "Juego de entrenamiento terminado",
+              "plan_step_finished": "Paso del plan de entrenamiento terminado",
+              "plan_finished": "Plan de entrenamiento terminado",
               "checkout_attempt": "Intento de cierre",
               "personal_best": "Récord personal",
               "daily_goal_reached": "Objetivo diario alcanzado",
@@ -721,7 +728,8 @@
               "around_the_clock": "Around the Clock",
               "bobs_27": "Bob's 27",
               "streak": "Racha",
-              "darts_thrown": "Dardos lanzados"
+              "darts_thrown": "Dardos lanzados",
+              "plans_finished": "Planes de entrenamiento"
             }
           },
           "mode": {
@@ -949,6 +957,18 @@
     },
     "no_dart": {
       "message": "La tirada actual no tiene dardo {dart}."
+    },
+    "no_plan": {
+      "message": "No hay ningún plan de entrenamiento en curso en esta diana."
+    },
+    "unknown_plan": {
+      "message": "No existe ningún plan de entrenamiento llamado {plan}. Usa warm_up, doubles_day, checkout_day, jdc_week o el nombre de un plan propio."
+    },
+    "invalid_plan": {
+      "message": "Estos pasos no forman un plan de entrenamiento. Un plan tiene de uno a doce pasos. Cada paso nombra un juego de entrenamiento como drill y como máximo uno de darts, rounds y until. El entrenamiento de checkout y la escalera 121 necesitan darts o rounds."
+    },
+    "plan_in_tournament": {
+      "message": "Hay un torneo en curso en esta diana. Deténlo primero para iniciar un plan de entrenamiento."
     },
     "bot_dart": {
       "message": "Los dardos del bot no se pueden corregir."
@@ -1202,6 +1222,12 @@
     "report_new_bests": {
       "message": "{count} nuevos récords personales."
     },
+    "report_plan": {
+      "message": "1 plan de entrenamiento terminado."
+    },
+    "report_plans": {
+      "message": "{count} planes de entrenamiento terminados."
+    },
     "training_summary": {
       "message": "{darts} dardos, media de 3 dardos {average}, tirada más alta {highest}."
     },
@@ -1393,6 +1419,52 @@
         "bot_level": {
           "name": "Nivel del bot",
           "description": "Juega contra el bot en X01 y los juegos de Cricket: la media de 3 dardos con la que juega, de 20 a 120; con 0 se juega sin el bot. El bot ocupa el puesto después de los jugadores."
+        }
+      }
+    },
+    "start_plan": {
+      "name": "Iniciar plan de entrenamiento",
+      "description": "Inicia un plan de entrenamiento en la diana: varios juegos de entrenamiento seguidos. Nombra un plan, indica sus pasos o nada de eso para el plan del día.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "La diana. Solo hace falta con más de una diana."
+        },
+        "plan": {
+          "name": "Plan",
+          "description": "Un plan incluido en la integración, o el nombre de un plan propio de las opciones de la diana."
+        },
+        "name": {
+          "name": "Nombre",
+          "description": "El nombre de un plan indicado por sus pasos."
+        },
+        "steps": {
+          "name": "Pasos",
+          "description": "Los pasos en orden, en lugar de un plan. Cada uno nombra un juego de entrenamiento como `drill` y, si quieres, los `darts` o `rounds` que puede durar, o `until: finished`, el valor por defecto. Con `options`, como `low: 40` y `high: 100`, el entrenamiento de checkout se queda en estos cierres."
+        },
+        "player": {
+          "name": "Jugador",
+          "description": "Quién entrena. Sin nombre, sigue el jugador 1."
+        }
+      }
+    },
+    "next_plan_step": {
+      "name": "Saltar paso del plan de entrenamiento",
+      "description": "Deja el paso actual del plan de entrenamiento por el siguiente. Tras el último paso, el plan está terminado.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "La diana. Solo hace falta con más de una diana."
+        }
+      }
+    },
+    "stop_plan": {
+      "name": "Detener plan de entrenamiento",
+      "description": "Detiene el plan de entrenamiento y su juego en la diana.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Diana",
+          "description": "La diana. Solo hace falta con más de una diana."
         }
       }
     },
@@ -1865,6 +1937,14 @@
         "knockout": "Eliminación directa",
         "double_knockout": "Doble eliminación",
         "groups_knockout": "Grupos y eliminación directa"
+      }
+    },
+    "plan": {
+      "options": {
+        "warm_up": "Calentamiento 15 minutos",
+        "doubles_day": "Día de dobles",
+        "checkout_day": "Día de checkouts",
+        "jdc_week": "Semana JDC"
       }
     }
   }

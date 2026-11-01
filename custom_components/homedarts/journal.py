@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from .cricket import CRICKET_GAMES
 from .party import PARTY_GAMES
+from .plans import plan_name
 from .practice import PARTY_PLAYERS
 from .profiles import renamed_seats
 
@@ -70,14 +71,20 @@ class Locale(NamedTuple):
     darts: str
     highest: str
     decimal: str
+    plan: str
+    steps: str
 
 
 LOCALES = {
-    "en": Locale("Training", "Darts", "Max", "."),
-    "de": Locale("Training", "Darts", "Max", ","),
-    "nl": Locale("Training", "darts", "Max", ","),
-    "fr": Locale("Entraînement", "fléchettes", "Max", ","),
-    "es": Locale("Entrenamiento", "dardos", "Máx.", ","),
+    "en": Locale("Training", "Darts", "Max", ".", "Training plan", "steps"),
+    "de": Locale("Training", "Darts", "Max", ",", "Trainingsplan", "Schritte"),
+    "nl": Locale("Training", "darts", "Max", ",", "Trainingsplan", "stappen"),
+    "fr": Locale(
+        "Entraînement", "fléchettes", "Max", ",", "Plan d'entraînement", "étapes"
+    ),
+    "es": Locale(
+        "Entrenamiento", "dardos", "Máx.", ",", "Plan de entrenamiento", "pasos"
+    ),
 }
 # Calendar events last at least this long, also a session of one dart.
 MINIMUM_LENGTH = timedelta(minutes=1)
@@ -255,6 +262,35 @@ def session_description(entry: dict[str, Any], language: str = "en") -> str:
     )
 
 
+def plan_entry(saved: object) -> dict[str, Any] | None:
+    """A finished training plan as the journal keeps it, or None if invalid."""
+    if not isinstance(saved, dict):
+        return None
+    key, name = saved.get("plan"), saved.get("name")
+    started, ended = _moment(saved.get("started")), _moment(saved.get("ended"))
+    if not (isinstance(key, str) and isinstance(name, str) and ended is not None):
+        return None
+    return {
+        "plan": key,
+        "name": name,
+        "started": started.isoformat() if started else None,
+        "ended": ended.isoformat(),
+        "steps": _count(saved.get("steps")),
+        "darts": _count(saved.get("darts")),
+    }
+
+
+def plan_title(entry: dict[str, Any], language: str = "en") -> str:
+    """For example "Training plan · Doubles day", in the language of the calendar."""
+    name = plan_name(entry["plan"], entry["name"], language)
+    return f"{locale(language).plan} · {name}"
+
+
+def plan_description(entry: dict[str, Any], language: str = "en") -> str:
+    words = locale(language)
+    return f"{entry['steps']} {words.steps} · {entry['darts']} {words.darts}"
+
+
 def _team_scores(entry: dict[str, Any]) -> list[tuple[str, int]] | None:
     """Both teams of a team match with their score, such as ("Alex & Kim", 1)."""
     players = entry["players"]
@@ -329,6 +365,9 @@ def _event(kind: str, entry: dict[str, Any], language: str) -> JournalEvent:
     if kind == "session":
         summary = session_title(entry, language)
         description = session_description(entry, language)
+    elif kind == "plan":
+        summary = plan_title(entry, language)
+        description = plan_description(entry, language)
     else:
         summary = match_title(entry)
         description = match_description(entry, language)
@@ -347,6 +386,7 @@ class TrainingJournal:
     def __init__(self, language: Callable[[], str] = lambda: "en") -> None:
         self.sessions: list[dict[str, Any]] = []
         self.matches: list[dict[str, Any]] = []
+        self.plans: list[dict[str, Any]] = []
         # The language of the calendar, as Home Assistant's may change.
         self._language = language
         # Whether the first look for matches the journal missed is done.
@@ -372,6 +412,15 @@ class TrainingJournal:
         missed = not self._caught_up and self._catch_up(matches, now)
         self._caught_up = True
         return self._prune(now) or bool(sessions or new or missed)
+
+    def add_plan(self, event: dict[str, Any]) -> bool:
+        """Take over a training plan that was played to its end, from its
+        plan_finished event; whether it was."""
+        entry = plan_entry(event) if event.get("completed") is True else None
+        if entry is None or not self._fresh(self.plans, [entry]):
+            return False
+        self.plans.append(entry)
+        return True
 
     def last_match(self) -> str | None:
         """When the newest match ended, to rewind to it."""
@@ -440,7 +489,7 @@ class TrainingJournal:
         """Forget entries older than a year, and the oldest beyond the limit."""
         oldest = dt_util.as_utc(now) - timedelta(days=JOURNAL_DAYS)
         changed = False
-        for entries in (self.sessions, self.matches):
+        for entries in (self.sessions, self.matches, self.plans):
             while entries and (
                 len(entries) > JOURNAL_SIZE or _utc(entries[0]["ended"]) < oldest
             ):
@@ -459,11 +508,15 @@ class TrainingJournal:
         return sorted(found, key=lambda event: (event.start, event.uid))
 
     def latest(self) -> JournalEvent | None:
-        """The session or match that ended last; both lists are in that order."""
+        """The entry that ended last; every list is in that order."""
         language = self._language()
         last = [
             _event(kind, entries[-1], language)
-            for kind, entries in (("session", self.sessions), ("match", self.matches))
+            for kind, entries in (
+                ("session", self.sessions),
+                ("match", self.matches),
+                ("plan", self.plans),
+            )
             if entries
         ]
         return max(last, key=lambda event: event.end, default=None)
@@ -473,6 +526,7 @@ class TrainingJournal:
         return [
             *(_event("session", entry, language) for entry in self.sessions),
             *(_event("match", entry, language) for entry in self.matches),
+            *(_event("plan", entry, language) for entry in self.plans),
         ]
 
     # -- storage -------------------------------------------------------------------
@@ -483,6 +537,7 @@ class TrainingJournal:
         for entries, theirs in (
             (self.sessions, other.sessions),
             (self.matches, other.matches),
+            (self.plans, other.plans),
         ):
             known = {json.dumps(entry, sort_keys=True) for entry in entries}
             for entry in theirs:
@@ -499,16 +554,18 @@ class TrainingJournal:
                 {**entry, "players": [dict(player) for player in entry["players"]]}
                 for entry in self.matches
             ],
+            "plans": [dict(entry) for entry in self.plans],
         }
 
     def restore(self, saved: object) -> None:
         if not isinstance(saved, dict):
             return
         sessions, matches = saved.get("sessions"), saved.get("matches")
-        self.sessions, self.matches = [], []
+        self.sessions, self.matches, self.plans = [], [], []
         for entries, stored, convert in (
             (self.sessions, sessions, session_entry),
             (self.matches, matches, match_entry),
+            (self.plans, saved.get("plans"), plan_entry),
         ):
             for entry in map(convert, stored if isinstance(stored, list) else []):
                 # Entries stay in the order they ended; anything else is dropped.

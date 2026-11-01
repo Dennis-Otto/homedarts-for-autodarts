@@ -647,6 +647,34 @@ def training_game_animation(page: Page) -> None:
     game(page, "off")
 
 
+def training_plan_animation(page: Page) -> None:
+    """A training plan on the scoreboard: the idle screen offers the plan of the
+    day, one tap starts it, and two taps on Skip move on to its next step. Not a
+    dart lands, so the pictures after it show the same darts of the day."""
+    pull_darts()
+    game(page, "off")
+    board = tablet(page)
+    wait_card(board, "!!r.querySelector('.plan-offer')", SCOREBOARD, 60000)
+    ready(board)
+    recorder = Recorder(board, SCOREBOARD)
+    recorder.shot(1800)
+    card = board.locator(SCOREBOARD)
+    tap(board, recorder, card.locator(".plan-offer"), 300)
+    wait_card(board, "!!r.querySelector('.plan-buttons')", SCOREBOARD)
+    ready(board)
+    recorder.shot(1800)
+    skip = card.locator("[data-plan='skip']")
+    tap(board, recorder, skip)
+    tap(board, recorder, skip, 300)
+    wait_card(board, "r.querySelector('.title')?.textContent.includes('2')", SCOREBOARD)
+    ready(board)
+    recorder.shot(2400)
+    recorder.save("training-plan")
+    board.close()
+    # Another game ends the plan, and without a dart it counts for nothing.
+    game(page, "off")
+
+
 def scoreboard_animation(page: Page) -> None:
     """A 501 match on the scoreboard: turns pass, and Alex checks out 141."""
     pull_darts()
@@ -3641,6 +3669,7 @@ def games(browser: Browser) -> None:
     checkout_animation(page)
     cricket_animation(page)
     training_game_animation(page)
+    training_plan_animation(page)
     scoreboard_animation(page)
     celebration_animation(page)
     cricket_hints_animation(page)

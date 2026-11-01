@@ -55,6 +55,8 @@ Die Entität **Ereignisse** (etwa `event.autodarts_board_ereignisse` in einem de
 | `game_started` | Ein [Spiel beginnt](#spiele-die-beginnen-und-enden): Es ist auf dem Board eingerichtet, wie auch immer, einmal pro Spiel | `game` (etwa `501`, `cricket`, `shanghai` oder `around_the_clock`), `mode` (`practice` allein, `match`, `party`, `training` oder `tournament`), `players`, `names` (nach Platz, keiner für den Bot und einen Platz ohne Namen), `start_scores` (nach Platz bei X01, sonst keine), `legs` und `sets` zum Sieg (keine bei einem Trainingsspiel), `bot_player` und `bot_level` (Platz und 3-Dart-Average des [Bots](#bot) oder keine), `resumed` (`true`, wenn das Spiel nach seinem Ende weitergeht), `underway` (`true`, wenn das Spiel mit seinem ersten Dart nach einem beendeten Match begann) |
 | `game_ended` | Das Spiel endet: gewonnen, gestoppt, ersetzt oder nach der Leerlaufzeit, einmal pro Spiel | `game`, `mode`, `players`, `names` und `bot_player` wie bei `game_started`, `reason` (`won`, `stopped`, `replaced` oder `idle`), `winner` (der Name des Siegers oder seines Teams, keiner für den Bot oder einen Platz ohne Namen) und `player` (der Platz des Siegers), beide keine ohne Sieger, `started` (wann das Spiel begann) |
 | `drill_finished` | Ein [Trainingsspiel](#trainingsspiele) endet: Around the Clock, Doppeltraining, Catch 40, JDC Challenge oder Singles-Training sind durch, oder Bob's 27 ist vorbei | `drill`, `darts`, `hits`, `hit_rate` (Prozent); Bob's 27 ergänzt `score` und `completed`; Catch 40 hat `score`, `checkouts` und `darts`, die JDC Challenge `score`, `parts` (die Punkte ihrer drei Teile) und `darts`, das Singles-Training zusätzlich `score` |
+| `plan_step_finished` | Ein Schritt eines [Trainingsplans](games.de.md#trainingspläne) endet: sein Spiel ist zu Ende, er erreicht sein Limit oder er wird übersprungen | `plan` (sein Schlüssel, bei einem eigenen Plan sein Name), `name`, `player`, `step`, `steps`, `drill`, `darts`, `visits`, `finished` (das Spiel ist zu Ende), `skipped` und was das Spiel über sein Ergebnis sagt, etwa `hits`, `hit_rate` oder `score` |
+| `plan_finished` | Ein Trainingsplan endet | `plan`, `name`, `player`, `reason` (`finished`; `stopped`, auch wenn in keinem Schritt ein Dart landete; oder `replaced` durch ein anderes Spiel), `completed` (`true` bei `finished`), `steps`, `played` (die nicht übersprungenen Schritte), `darts`, `results` (das Ergebnis jedes Schritts wie in `plan_step_finished`), `started`, `ended` |
 | `checkout_attempt` | Ein Versuch im Checkout-Training oder im 121-Checkout endet | `drill`, `target`, `success`, `darts`, `attempts`, `successes`, `rate` (Prozent); der 121-Checkout ergänzt `next`, das nächste Ziel |
 | `bull_off_won` | Das [Ausbullen](#übungsspiel) entscheidet, wer das Match beginnt | `game`, `player`, `name`, `players`, `hit` (das Feld des Siegerdarts: `BULL`, `25` oder etwa `S20`), `distance` (Millimeter von der Mitte, oder keiner ohne Position vom Board); `call` |
 | `tournament_started` | Ein [Turnier](#turniere) beginnt | `format` (`round_robin`, `knockout`, `double_knockout` oder `groups_knockout`), `game`, `matches` (die Zahl der Matches; ein Entscheidungsfinale kommt dazu), `players` (in der Reihenfolge der Auslosung), `start_scores` (in derselben Reihenfolge), `legs_to_win`, `sets_to_win`, `seed` (einer zufälligen Auslosung, sonst keiner); mit Gruppen auch `groups` und `advance`; auf [mehreren Boards](games.de.md#ein-turnier-auf-mehreren-boards) auch `boards` (ihre Namen, das Board, das das Turnier führt, zuerst) |
@@ -62,7 +64,7 @@ Die Entität **Ereignisse** (etwa `event.autodarts_board_ereignisse` in einem de
 | `tournament_finished` | Das letzte Match des Turniers zählt | `format`, `game`, `matches`, `winner`, `runner_up`, `third` (keiner im K.-o.-System ohne Spiel um Platz 3; im Doppel-K.-o.-System der Verlierer des Finales der Verlierer), `players` |
 | `personal_best` | Ein Wert übertrifft deine [Bestleistung](#bestleistungen-serie-und-tagesziel) | `record`, `value`, `previous`, `name` (der Spieler, falls bekannt) |
 | `daily_goal_reached` | Die Darts von heute erreichen das [Tagesziel](#bestleistungen-serie-und-tagesziel), einmal pro Tag | `goal`, `darts`, `streak` |
-| `weekly_report` | Die [Berichtswoche](#wochenbericht) endet, standardmäßig montags um Mitternacht | `week_start`, `week_end`, `darts`, `visits`, `sessions`, `training_minutes`, `average`, `average_change`, `highest_visit`, `scores_180`, `checkout_rate`, `darts_at_double`, `checkouts`, `legs`, `matches`, `streak`, `daily_goals`, `personal_bests`, `title` und `summary` |
+| `weekly_report` | Die [Berichtswoche](#wochenbericht) endet, standardmäßig montags um Mitternacht | `week_start`, `week_end`, `darts`, `visits`, `sessions`, `training_minutes`, `average`, `average_change`, `highest_visit`, `scores_180`, `checkout_rate`, `darts_at_double`, `checkouts`, `legs`, `matches`, `streak`, `daily_goals`, `plans`, `personal_bests`, `title` und `summary` |
 | `achievement_unlocked` | Ein Spieler mit Namen erreicht eine neue Stufe eines [Erfolgs](#erfolge) | `player` (der Platz 1–4 des Spielers am Board oder keiner), `name`, `achievement` (etwa `maximum`), `tier` (1–4), `tiers` (wie viele Stufen der Erfolg hat) und `threshold` (der Wert der Stufe, etwa 10 für zehn 180er) |
 | `online_game_on` | [Online-Match](online-matches.de.md): Eine Aufnahme beginnt, oder ein Moment ohne eigenen Effekt | `trigger`, `name` |
 | `online_visit` | Online-Match: eine Aufnahme | `trigger`, `score`; bei drei Darts auch `darts` und `segments`; bei einem Bereich `score_min` und `score_max` statt `score` |
@@ -169,6 +171,7 @@ Home Assistant fasst deine Trainingswoche zusammen. Jeder erkannte Dart zählt, 
 | `checkout_rate`, `darts_at_double`, `checkouts` | X01-Übungslegs: ausgecheckte Legs pro Dart aufs Double, wie bei *Übungsspiel Checkout-Quote* |
 | `legs`, `matches` | Beendete Übungslegs und entschiedene Übungsmatches mehrerer Spieler, verbucht, wenn die Darts gezogen werden |
 | `streak`, `daily_goals` | Die Trainingsserie am Ende der Woche und die Tage, an denen das Tagesziel erreicht wurde |
+| `plans` | In der Woche bis zum Ende gespielte [Trainingspläne](games.de.md#trainingspläne) |
 | `personal_bests` | Die Bestleistungen der Woche mit `record`, `value` und `name`, die neueste zuerst, höchstens 10 |
 | `week_start`, `week_end` | Beginn und Ende der Woche, in UTC |
 
@@ -186,6 +189,7 @@ Der **Trainingskalender** (`calendar.*_trainingskalender`) zeigt deine beendeten
 
 <img src="images/de/training-calendar.png" alt="Der Kalender von Home Assistant mit einer Woche voller Trainingssessions und Übungsmatches von Alex, Sam und Kim" width="760">
 
+- **Trainingspläne**, die bis zum Ende gespielt wurden, laufen von ihrem Start bis zu ihrem Ende, etwa *Trainingsplan · Doppel-Tag*. Die Beschreibung nennt die Schritte und die Darts.
 - **Sessions** reichen von ihrem Beginn bis zu ihrem Ende. Die Beschreibung nennt die 180er, die 140+- und 100+-Aufnahmen und die höchste Aufnahme (*Max*).
 - **Matches** mehrerer Spieler, in jedem Spiel, reichen vom ersten bis zum entscheidenden Dart. Der Titel zeigt die gewonnenen Sätze, oder die Legs, wenn ein Satz das Match entscheidet; Spieler ohne Namen erscheinen als `#1` bis `#4` und der Bot als *Bot*, und ein Team-Match nennt beide Teams, etwa *501 · Alex & Kim 1:0 Sam & Lea*. Die Beschreibung nennt Average, Marks pro Runde oder Punkte jedes Spielers. Matches von vor Version 1.6 kennen ihren ersten Dart nicht und erscheinen als eine Minute.
 - **Ein Jahr Verlauf.** Der Kalender behält die Sessions und Matches der letzten 365 Tage, höchstens je 3.000. Nach dem Update übernimmt er die letzten 20 bereits gespeicherten Sessions und Matches.
@@ -371,6 +375,7 @@ Spieler mit Namen schalten Erfolge frei, die meisten in Stufen: Bronze, Silber, 
 | Bob's 27 | `bobs_27` | 100, 250, 500 Punkte | Das beste abgeschlossene Bob's 27 |
 | Serie | `streak` | 3, 7, 10, 30 Tage | Die längste Folge von Tagen mit Darts in Übungs- oder Trainingsspielen |
 | Geworfene Darts | `darts_thrown` | 1.000, 10.000, 100.000 | Geworfene Darts in Übungs- und Trainingsspielen |
+| Trainingspläne | `plans_finished` | 1, 10, 100 | Bis zum Ende gespielte [Trainingspläne](games.de.md#trainingspläne) |
 
 - **Leise.** Ein Erfolg löst nur das Ereignis aus. Nichts spricht, spielt oder blinkt, außer eine Automation tut es.
 - **Schon erreicht.** Beim ersten Start nach dem Update werden alle Erfolge, die die Spielerprofile schon belegen, leise freigeschaltet, mit dem Datum dieses Tages: gewonnene Legs und Matches, der höchste Checkout, die wenigsten Darts eines 501-Legs, getroffene Doubles und die Darts der X01- und Cricket-Legs. Was die Profile nie gezählt haben, etwa 180er, beginnt bei null.
@@ -653,6 +658,35 @@ data:
   players: [alex, sam]
 response_variable: result
 ```
+
+### Trainingspläne: `homedarts.start_plan`
+
+Startet einen [Trainingsplan](games.de.md#trainingspläne): mehrere Trainingsspiele nacheinander, für Spieler 1. Er tritt an die Stelle des Spiels auf dem Board; während eines Turniers wird er abgelehnt.
+
+```yaml
+# Der Plan des Tages, oder ein Plan mit seinem Schlüssel oder dem Namen eines eigenen Plans.
+action: homedarts.start_plan
+data:
+  plan: doubles_day
+  player: Alex
+```
+
+```yaml
+# Ein Plan mit seinen Schritten.
+action: homedarts.start_plan
+data:
+  name: Dienstagabend
+  steps:
+    - drill: around_the_clock
+      darts: 30
+    - drill: bobs_27
+    - drill: checkout
+      rounds: 10
+```
+
+Alle Felder sind optional, und `plan` und `steps` schließen sich aus: Ohne beide startet der Plan des Tages. `player` nennt, wer trainiert, und `name` benennt einen Plan, der mit seinen `steps` angegeben wird. Nimmt `config_entry_id`, wenn es mehr als ein Board gibt.
+
+`homedarts.next_plan_step` überspringt den aktuellen Schritt, und `homedarts.stop_plan` stoppt den Plan und sein Spiel; beide nehmen `config_entry_id`. Die Ereignisse [`plan_step_finished` und `plan_finished`](#board-ereignisse) melden die Ergebnisse. Die Attribute `plan` und `plan_of_the_day` des Sensors *Übungsspiel Restpunkte* zeigen den laufenden Plan und den Plan des Tages.
 
 ### Dart korrigieren: `homedarts.correct_dart`
 

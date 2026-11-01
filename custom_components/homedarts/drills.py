@@ -376,6 +376,16 @@ class CheckoutDrill(Drill):
     kind = "checkout"
     scores = CHECKOUT_SCORES
 
+    @staticmethod
+    def finishes(low: int, high: int) -> tuple[int, ...]:
+        """The finishes from low to high that three darts can reach."""
+        return tuple(value for value in CHECKOUT_SCORES if low <= value <= high)
+
+    def narrow(self, low: int, high: int) -> None:
+        """Stay among the finishes from low to high from the next target on, as
+        a step of a training plan asks."""
+        self.scores = self.finishes(low, high)
+
     def __init__(self, rng: random.Random | None = None) -> None:
         self._rng = rng or random.Random()
         self.target = 0

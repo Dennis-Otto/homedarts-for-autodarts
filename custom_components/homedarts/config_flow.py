@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping
 from ipaddress import IPv4Address, ip_address
 from typing import TYPE_CHECKING, Any
 
@@ -22,6 +23,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import ObjectSelector
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from . import granboard, takeover
@@ -31,6 +33,7 @@ from .const import (
     CONF_GRANBOARD,
     CONF_HOST,
     CONF_MANUAL_BOARD,
+    CONF_PLANS,
     CONF_PORT,
     DEFAULT_PORT,
     DOMAIN,
@@ -46,6 +49,7 @@ from .online import (
     bridge_url,
     effects_csv,
 )
+from .plans import own_plans
 from .repairs import address_title, async_offer_address
 
 if TYPE_CHECKING:
@@ -567,7 +571,8 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class AutodartsOptionsFlow(OptionsFlowWithReload):
-    """Switch the bridge for online matches on or off and show its address."""
+    """Switch the bridge for online matches on or off and show its address, and
+    keep the own training plans of the board."""
 
     def __init__(self) -> None:
         self._options: dict[str, Any] = {}
@@ -578,11 +583,19 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
         options = self.config_entry.options
         if user_input is not None:
             enabled = user_input[CONF_ONLINE_BRIDGE]
+            # An editor that was emptied gives an empty object.
+            plans = user_input.get(CONF_PLANS) or []
+            if own_plans(plans) is None:
+                return self._options_form({**options, **user_input}, invalid=True)
             self._options = {
                 **options,
                 CONF_ONLINE_BRIDGE: enabled,
                 CONF_ONLINE_REMOTE: user_input[CONF_ONLINE_REMOTE],
             }
+            if plans:
+                self._options[CONF_PLANS] = plans
+            else:
+                self._options.pop(CONF_PLANS, None)
             # The address stays when the bridge is switched off, so that the
             # effects in the browser work again after switching it on; a new
             # one replaces it at once, so a leaked address never works again.
@@ -593,17 +606,31 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
             if enabled:
                 return await self.async_step_online_bridge()
             return self.async_create_entry(data=self._options)
+        return self._options_form(options)
+
+    def _options_form(
+        self, values: Mapping[str, Any], invalid: bool = False
+    ) -> ConfigFlowResult:
+        """The form of the options; `invalid` when the own plans are not valid,
+        which stay in the form to be corrected."""
         schema: dict[vol.Marker, Any] = {
             vol.Required(
-                CONF_ONLINE_BRIDGE, default=options.get(CONF_ONLINE_BRIDGE, False)
+                CONF_ONLINE_BRIDGE, default=values.get(CONF_ONLINE_BRIDGE, False)
             ): bool,
             vol.Required(
-                CONF_ONLINE_REMOTE, default=options.get(CONF_ONLINE_REMOTE, False)
+                CONF_ONLINE_REMOTE, default=values.get(CONF_ONLINE_REMOTE, False)
             ): bool,
         }
-        if options.get(CONF_WEBHOOK_ID):
+        if self.config_entry.options.get(CONF_WEBHOOK_ID):
             schema[vol.Required(CONF_NEW_ADDRESS, default=False)] = bool
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
+        schema[vol.Optional(CONF_PLANS, default=values.get(CONF_PLANS, []))] = (
+            ObjectSelector()
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema),
+            errors={CONF_PLANS: "invalid_plans"} if invalid else None,
+        )
 
     async def async_step_online_bridge(
         self, user_input: dict[str, Any] | None = None
