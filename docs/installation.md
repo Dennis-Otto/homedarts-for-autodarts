@@ -11,7 +11,7 @@ description: "Install HomeDarts for Autodarts with HACS, add your board by its a
 | Requirement | Details |
 | --- | --- |
 | Home Assistant | **2026.8** or newer ([why 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md)) |
-| Autodarts board | Set up and working in the Autodarts Board Manager: **Board Manager 2**, Autodarts 2 without a screen (headless, recommended, tested up to 2.0.2), or the classic **Board Manager 1**. A player reports that **Autodarts Desktop** 2.0.2 on Linux works too. Autodarts Desktop on Windows and the **Winmau Autodarts devices** such as Autodarts X or Lens have not been tested yet; please [report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) how it works with yours |
+| Autodarts board | Set up and working in the Autodarts Board Manager: **Board Manager 2**, Autodarts 2 without a screen (headless, recommended, tested up to 2.1.0), or the classic **Board Manager 1**. A player reports that **Autodarts Desktop** 2.0.2 on Linux works too. Autodarts Desktop on Windows and the **Winmau Autodarts devices** such as Autodarts X or Lens have not been tested yet; please [report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) how it works with yours |
 | Network | Home Assistant reaches the board PC on the local network, TCP port **3180** by default |
 | Without Autodarts | Any dartboard: you enter the darts on a keypad, see [Play without Autodarts](without-autodarts.md); it needs neither a board PC nor a network to the board |
 

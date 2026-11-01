@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "apiKey": "",
+    "boardId": "board-1"
+  },
+  "cam": {
+    "autoCalibrateOnStart": false,
+    "autoDistortion": true,
+    "cams": [
+      "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0",
+      "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:4:1.0",
+      "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:8:1.0"
+    ],
+    "fps": 30,
+    "fpsMax": 30,
+    "height": 1024,
+    "syncControls": false,
+    "width": 1280
+  },
+  "detection": {
+    "kernel": 5,
+    "threshold": 16
+  },
+  "host": {
+    "port": "3180",
+    "tlsCert": "",
+    "tlsKey": "",
+    "tlsPort": "",
+    "tlsSelfSigned": false
+  },
+  "linkServer": {
+    "enabled": false,
+    "interfaces": [],
+    "name": ""
+  },
+  "motion": {
+    "kernel": 3,
+    "scale": 4.0,
+    "stableNumFrames": 3,
+    "standbyMinutes": 15,
+    "threshold": 16
+  }
+}

@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: Recorded Board Manager answers
-  accDescr: scripts/capture_board.py records what a real board answers and replaces its ID, its keys and the addresses of its network by placeholders. The recordings of Board Manager 1.0.7, 2.0.0 and 2.0.2 in tests/fixtures/board_manager are what the double of the unit tests and that of the Docker end-to-end test answer. tests/test_board_contract.py checks that both answer every route in the shape of its recording, that the integration reads every recording and that none keeps a secret, and fails when a double drifts.
+  accDescr: scripts/capture_board.py records what a real board answers and replaces its ID, its keys and the addresses of its network by placeholders. The recordings of Board Manager 1.0.7, 2.0.0, 2.0.2 and 2.1.0 in tests/fixtures/board_manager are what the double of the unit tests and that of the Docker end-to-end test answer. tests/test_board_contract.py checks that both answer every route in the shape of its recording, that the integration reads every recording and that none keeps a secret, and fails when a double drifts.
 
   BOARD["A real board,<br/>Board Manager 1 or 2"] --> CAPTURE["scripts/capture_board.py:<br/>placeholders for its ID,<br/>its keys and its addresses"]
-  CAPTURE --> RECORDINGS[("tests/fixtures/board_manager:<br/>1.0.7, 2.0.0 and 2.0.2")]
+  CAPTURE --> RECORDINGS[("tests/fixtures/board_manager:<br/>1.0.7, 2.0.0, 2.0.2 and 2.1.0")]
   RECORDINGS --> UNIT["Double of the unit tests,<br/>tests/local_helpers.py"]
   RECORDINGS --> E2E["Double of the Docker<br/>end-to-end test,<br/>tests/e2e/board_mock.py"]
   UNIT --> CONTRACT{{"tests/test_board_contract.py:<br/>every route in the shape<br/>of its recording, every recording<br/>read by the integration,<br/>no secret"}}

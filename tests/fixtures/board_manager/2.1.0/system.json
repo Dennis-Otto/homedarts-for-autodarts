@@ -1,0 +1,416 @@
+{
+  "calibration": {
+    "calibrated": true,
+    "cams": [
+      {
+        "calibrated": true,
+        "calibrating": false,
+        "d": [
+          -0.02051462313958592,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "errorPx": 2.31279595763086,
+        "fitFailed": false,
+        "hasDistortion": true,
+        "hasStoredFit": true,
+        "hasUndistorted": true,
+        "height": 1024,
+        "homography": [
+          [
+            0.016765955924965558,
+            -2.8970904966286497,
+            3152.9801699622285
+          ],
+          [
+            3.2147268771346296,
+            2.469405561856873,
+            -1596.9380146660749
+          ],
+          [
+            0.0002221832238315503,
+            0.004964763443475238,
+            1.0
+          ]
+        ],
+        "homographyUndistorted": [
+          [
+            0.006245670753998546,
+            -0.8147687993485758,
+            887.9003746705687
+          ],
+          [
+            0.9081092067452349,
+            0.7020125666407563,
+            -453.22591353409393
+          ],
+          [
+            6.646443039883691e-05,
+            0.0014117748717640043,
+            0.275501596841941
+          ]
+        ],
+        "k": [
+          [
+            958.4564919889432,
+            0.0,
+            640.0
+          ],
+          [
+            0.0,
+            958.4564919889432,
+            512.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "width": 1280
+      },
+      {
+        "calibrated": true,
+        "calibrating": false,
+        "d": [
+          -0.02051462313958592,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "errorPx": 1.3347766180800764,
+        "fitFailed": false,
+        "hasDistortion": true,
+        "hasStoredFit": true,
+        "hasUndistorted": true,
+        "height": 1024,
+        "homography": [
+          [
+            1.9605744491252028,
+            3.8946123205716985,
+            -1688.7492184641978
+          ],
+          [
+            -1.1811596751071798,
+            5.484959768011836,
+            -181.27267679206992
+          ],
+          [
+            -3.851021459137213e-05,
+            0.0038398004119026,
+            1.0
+          ]
+        ],
+        "homographyUndistorted": [
+          [
+            0.7639915609586839,
+            1.5106582376437574,
+            -656.0199253725981
+          ],
+          [
+            -0.45392693895156366,
+            2.128305062735697,
+            -72.20635181400188
+          ],
+          [
+            -7.946894030578305e-06,
+            0.0014887855172864956,
+            0.38600507383763716
+          ]
+        ],
+        "k": [
+          [
+            958.4564919889432,
+            0.0,
+            640.0
+          ],
+          [
+            0.0,
+            958.4564919889432,
+            512.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "width": 1280
+      },
+      {
+        "calibrated": true,
+        "calibrating": false,
+        "d": [
+          -0.029474152808206984,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "errorPx": 0.4018064907783726,
+        "fitFailed": false,
+        "hasDistortion": true,
+        "hasStoredFit": true,
+        "hasUndistorted": true,
+        "height": 1024,
+        "homography": [
+          [
+            -2.4435928501137045,
+            4.866577434324538,
+            1022.7932814747425
+          ],
+          [
+            -1.442919850728353,
+            -2.014858232754069,
+            3642.2130062877295
+          ],
+          [
+            0.00015097180920022773,
+            0.0046995455432175225,
+            1.0
+          ]
+        ],
+        "homographyUndistorted": [
+          [
+            -0.7221050680752967,
+            1.4482183259335724,
+            300.7346490555013
+          ],
+          [
+            -0.42570225817350377,
+            -0.5951565852430769,
+            1078.8125284270177
+          ],
+          [
+            4.873099491907535e-05,
+            0.0014015094593698982,
+            0.2929815797491304
+          ]
+        ],
+        "k": [
+          [
+            970.3991038802321,
+            0.0,
+            640.0
+          ],
+          [
+            0.0,
+            970.3991038802321,
+            512.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "width": 1280
+      }
+    ],
+    "numCams": 3,
+    "useUndistorted": true
+  },
+  "camSlotInputs": [
+    0,
+    1,
+    2
+  ],
+  "camState": {
+    "isOpened": true,
+    "isRunning": true
+  },
+  "camStats": [
+    {
+      "fps": 30,
+      "height": 1024,
+      "id": 0,
+      "width": 1280
+    },
+    {
+      "fps": 30,
+      "height": 1024,
+      "id": 1,
+      "width": 1280
+    },
+    {
+      "fps": 29,
+      "height": 1024,
+      "id": 2,
+      "width": 1280
+    }
+  ],
+  "config": {
+    "auth": {
+      "apiKey": "",
+      "boardId": "board-1"
+    },
+    "cam": {
+      "autoCalibrateOnStart": false,
+      "autoDistortion": true,
+      "cams": [
+        "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0",
+        "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:4:1.0",
+        "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:8:1.0"
+      ],
+      "fps": 30,
+      "fpsMax": 30,
+      "height": 1024,
+      "syncControls": false,
+      "width": 1280
+    },
+    "detection": {
+      "kernel": 5,
+      "threshold": 16
+    },
+    "host": {
+      "port": "3180",
+      "tlsCert": "",
+      "tlsKey": "",
+      "tlsPort": "",
+      "tlsSelfSigned": false
+    },
+    "linkServer": {
+      "enabled": false,
+      "interfaces": [],
+      "name": ""
+    },
+    "motion": {
+      "kernel": 3,
+      "scale": 4.0,
+      "stableNumFrames": 3,
+      "standbyMinutes": 15,
+      "threshold": 16
+    }
+  },
+  "lens": null,
+  "stats": {
+    "cpuPercent": 62.65882810404477,
+    "fps": 30,
+    "height": 1024,
+    "memoryBytes": 140881920,
+    "width": 1280
+  },
+  "status": {
+    "blocker": "none",
+    "calibrated": true,
+    "calibratingCams": 0,
+    "clockSkewSeconds": 0,
+    "link": "connected",
+    "linkServer": {
+      "camErrors": [],
+      "camFps": [],
+      "camsConfigured": 0,
+      "camsStreaming": 0,
+      "clients": 0,
+      "error": "",
+      "framesDropped": 0,
+      "interfaces": [],
+      "mbitS": 0.0,
+      "present": false,
+      "serving": false,
+      "streamingTo": ""
+    },
+    "setupPending": false,
+    "takenOver": false,
+    "updateAvailable": "",
+    "version": "2.1.0"
+  },
+  "turn": {
+    "connected": true,
+    "event": "started",
+    "running": true,
+    "status": "throw",
+    "throws": []
+  },
+  "vantage": {
+    "motion": {
+      "camStates": [
+        {
+          "backgroundPixels": 0,
+          "boardPixels": 0,
+          "camId": 0,
+          "dartBackgroundPixels": 0,
+          "dartFramesReached": false,
+          "dartPixels": 0,
+          "handFramesReached": false,
+          "isDart": false,
+          "isHand": false,
+          "isStable": true,
+          "isTakeout": false,
+          "numDarts": 0,
+          "takeoutBackgroundPixels": 0,
+          "takeoutFramesReached": false,
+          "takeoutPixels": 0
+        },
+        {
+          "backgroundPixels": 0,
+          "boardPixels": 0,
+          "camId": 1,
+          "dartBackgroundPixels": 0,
+          "dartFramesReached": false,
+          "dartPixels": 0,
+          "handFramesReached": false,
+          "isDart": false,
+          "isHand": false,
+          "isStable": true,
+          "isTakeout": false,
+          "numDarts": 0,
+          "takeoutBackgroundPixels": 0,
+          "takeoutFramesReached": false,
+          "takeoutPixels": 0
+        },
+        {
+          "backgroundPixels": 0,
+          "boardPixels": 0,
+          "camId": 2,
+          "dartBackgroundPixels": 0,
+          "dartFramesReached": false,
+          "dartPixels": 0,
+          "handFramesReached": false,
+          "isDart": false,
+          "isHand": false,
+          "isStable": true,
+          "isTakeout": false,
+          "numDarts": 0,
+          "takeoutBackgroundPixels": 0,
+          "takeoutFramesReached": false,
+          "takeoutPixels": 0
+        }
+      ],
+      "dartFrames": 0,
+      "dartFramesReached": false,
+      "handFrames": 0,
+      "handFramesReached": false,
+      "isDart": false,
+      "isHand": false,
+      "isStable": true,
+      "isTakeoutFull": false,
+      "isTakeoutPartial": false,
+      "isWaiting": false,
+      "motionClass": "stable",
+      "numDarts": 0,
+      "stableFrames": 3,
+      "takeoutFrames": 0,
+      "takeoutFramesReached": false,
+      "waitFrames": 0
+    },
+    "seq": 2492,
+    "timings": {
+      "countMs": 0.149459,
+      "dartMs": 0.0,
+      "decodeMs": 6.019515,
+      "detectMs": 0.0,
+      "diffMs": 1.395295,
+      "electionMs": 0.0,
+      "prepMs": 0.001489,
+      "resizeMs": 0.1961,
+      "retMs": 0.110287,
+      "stateMs": 0.002066,
+      "takeoutMs": 0.000239,
+      "totalMs": 1.857077
+    }
+  }
+}

@@ -497,7 +497,7 @@ Der Recorder speichert weder `fixtures`, `standings`, `bracket`, `current`, `nex
 | Automatische Kalibrierung starten | Taste, *Konfiguration* | Kalibriert alle Kameras. |
 | Kamera *N* kalibrieren | Taste, *Konfiguration* | Kalibriert eine Kamera. |
 | Board Manager neu starten | Taste, *Konfiguration* | Startet den Board-Manager-Dienst neu. |
-| Kamerastreams starten, Kamerastreams stoppen | Tasten, *Konfiguration*, *Deaktiviert* | Steuert die Kamerastreams des Board Managers. |
+| Kamerastreams starten, Kamerastreams stoppen | Tasten, *Konfiguration*, *Deaktiviert* | Steuert die Kamerastreams des Board Managers. Mit Board Manager 2.1 nicht verfügbar, weil er diese Befehle nicht mehr hat. |
 | Cloud-Verbindung | Schalter, **BM 1** | Stellt die eigene Verbindung des Boards zu Autodarts her oder trennt sie. |
 | Cloud-Verbindung herstellen, Cloud-Verbindung trennen | Tasten, **BM 1**, *Deaktiviert* | Dasselbe als Tasten. |
 
@@ -523,7 +523,7 @@ Jedes Zurücksetzen steht auf Stufe Info im Protokoll, und die [Diagnosedaten](t
 | Entität | Typ | Beschreibung |
 | --- | --- | --- |
 | Beim Start kalibrieren | Schalter, *Konfiguration* | Kalibriert beim Start der Erkennung. |
-| Automatisch nachkalibrieren | Schalter, *Konfiguration* | Der Board Manager kalibriert bei Bedarf selbst nach. |
+| Automatisch nachkalibrieren | Schalter, *Konfiguration* | Der Board Manager kalibriert bei Bedarf selbst nach. Mit Board Manager 2.1 nicht verfügbar, weil er diese Option nicht mehr hat. |
 | Verzerrungskorrektur | Schalter, *Konfiguration* | Korrigiert die Linsenverzerrung bei der Kalibrierung. |
 | Kamera-Standby | Auswahl, *Konfiguration* | Versetzt die Kameras nach 5, 10, 15, 30 oder 60 Minuten ohne Nutzung in den Standby. |
 
@@ -563,7 +563,7 @@ Die Entitäten einer einzelnen Kamera tragen das Attribut `camera` mit der Kamer
 | Darts teilweise entfernt | Binärsensor, *Diagnose* | Einige Darts sind entfernt. |
 | Darts vollständig entfernt | Binärsensor, *Diagnose*, *Deaktiviert* | Alle Darts sind entfernt. |
 
-Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese Sensoren *aus*. Sie ändern sich mit fast jedem Dart und jeder Entnahme, und jede Änderung wird aufgezeichnet. Die Live-Karte zeigt eine Hand am Board und eine Entnahme mit dem ersten und dritten Sensor, deshalb sind diese beiden aktiv; die anderen beiden werden deaktiviert angelegt. Bei einem mit einer früheren Version eingerichteten Board bleiben alle vier aktiv; nicht benötigte deaktivierst du in den Entitätseinstellungen.
+Während die Erkennung gestoppt ist, startet, stoppt oder kalibriert, sind diese Sensoren *aus*. Mit Board Manager 2.1 aktualisieren sie sich alle 2 Sekunden, solange die Erkennung läuft, weil das Board diese Werte nicht mehr von sich aus sendet. Sie ändern sich mit fast jedem Dart und jeder Entnahme, und jede Änderung wird aufgezeichnet. Die Live-Karte zeigt eine Hand am Board und eine Entnahme mit dem ersten und dritten Sensor, deshalb sind diese beiden aktiv; die anderen beiden werden deaktiviert angelegt. Bei einem mit einer früheren Version eingerichteten Board bleiben alle vier aktiv; nicht benötigte deaktivierst du in den Entitätseinstellungen.
 
 ## Kameras
 
