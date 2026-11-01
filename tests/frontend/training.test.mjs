@@ -44,11 +44,11 @@ test("heat levels count beds or whole numbers", () => {
   assert.equal(heatLevels(null).size, 0);
 });
 
-test("heat colours run from blue to red", () => {
-  assert.equal(heatColor(0), "hsl(220, 90%, 55%)");
-  assert.equal(heatColor(1), "hsl(0, 90%, 55%)");
-  assert.equal(heatColor(2), "hsl(0, 90%, 55%)");
-  assert.equal(heatColor(Number.NaN), "hsl(220, 90%, 55%)");
+test("thermal heat colours run from blue to red", () => {
+  assert.equal(heatColor(0, "thermal"), "hsl(220, 90%, 55%)");
+  assert.equal(heatColor(1, "thermal"), "hsl(0, 90%, 55%)");
+  assert.equal(heatColor(2, "thermal"), "hsl(0, 90%, 55%)");
+  assert.equal(heatColor(Number.NaN, "thermal"), "hsl(220, 90%, 55%)");
 });
 
 test("most hit beds are sorted and never include misses", () => {

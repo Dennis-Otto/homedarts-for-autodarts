@@ -103,7 +103,7 @@ test("every card has the form of its own options", () => {
   assert.deepEqual(names(training.schema), [
     "device_id",
     "title",
-    ["mode", "board_style"],
+    ["mode", "board_style", "heatmap_palette"],
     "player",
     "history_size",
     [
@@ -118,9 +118,12 @@ test("every card has the form of its own options", () => {
     ],
     "accent_color",
   ]);
-  const [mode, style] = training.schema[2].schema;
+  const [mode, style, palette] = training.schema[2].schema;
   assert.deepEqual(labels(mode), ["Beds", "Numbers", "Positions", "Aim"]);
   assert.deepEqual(labels(style), ["Muted", "Classic", "Flat"]);
+  assert.deepEqual(labels(palette), ["Accessible", "Thermal"]);
+  assert.equal(training.computeLabel(palette), "Color scale");
+  assert.equal(training.computeHelper(palette), "Default: Accessible");
   // The heatmap's player has help of its own.
   assert.match(training.computeHelper(training.schema[3]), /this player's darts instead of the session's/);
   assert.deepEqual(training.schema[4], {
@@ -316,6 +319,8 @@ test("the editor offers the games of the board on the page", () => {
 
 test("the doubles form offers the named players and takes any other name", () => {
   let form = formOf("homedarts-doubles-card");
+  assert.deepEqual(labels(form.schema[3]), ["Accessible", "Thermal"]);
+  assert.equal(form.computeHelper(form.schema[3]), "Default: Accessible");
   assert.deepEqual(form.schema[2], {
     name: "player",
     selector: { select: { mode: "dropdown", custom_value: true, options: [] } },

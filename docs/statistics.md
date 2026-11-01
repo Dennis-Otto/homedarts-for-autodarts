@@ -71,7 +71,7 @@ Home Assistant keeps the best value of every record and fires `personal_best` wh
 
 The heatmap of the training card has four modes, which the switches above the board choose:
 
-- **Beds:** every bed colored by how often you hit it, from blue (rarely) to red (most often). Hover a bed for its count and share.
+- **Beds:** every bed colored by how often you hit it, from a dark blue violet (rarely) to a light yellow (most often), which also reads for color-blind players and in gray. Hover a bed for its count and share.
 - **Numbers:** the singles, doubles and triples of every number summed up, which shows at a glance whether you drift towards the 5 or the 1.
 - **Positions:** where the darts really landed, from the positions the board reports: a smoothed density with the newest 300 darts as dots, and below the board the [grouping](#trends-and-grouping) at up to three beds you aimed at. For the session, the darts of the current visit appear the moment they land, as blue pins; when you pull them, they join the logged darts. A dart that misses the board, number ring included, is not drawn.
 - **Aim:** where you score the most points per dart with your own spread, see [Where to aim](#where-to-aim).
@@ -92,10 +92,10 @@ player: Alex
 
 The treble 20 scores the most only for a player whose darts land close together. The wider your darts spread, the more a miss costs next to the 20, where the 1 and the 5 lie, and the better a spot does where the beds around it are worth more: the treble 19 with the 7 and the 16 next to it, and for a wide spread a spot left of the bull. Tibshirani, Price and Taylor worked this out in *A statistician plays darts* (Journal of the Royal Statistical Society, Series A 174, 2011); the aim map does it with your own darts.
 
-<img src="images/en/training-aim.png" alt="The aim map of Alex: the board colored from blue to red by the points per dart at each aim point, brightest around the treble 19, with a ring at the best aim; below it the best aim, T19 with 18.3 points per dart, against the treble 20 with 17.3 and the bull with 15.7, and the spread it comes from" width="620">
+<img src="images/en/training-aim.png" alt="The aim map of Alex: the board colored from blue violet to yellow by the points per dart at each aim point, lightest around the treble 19, with a ring at the best aim; below it the best aim, T19 with 18.3 points per dart, against the treble 20 with 17.3 and the bull with 15.7, and the spread it comes from" width="620">
 
 - **From your darts:** the map needs 30 darts that you aimed at a treble, among your last 1000 logged darts. In X01, every dart of a scoring visit aims at the treble 20; checkout routes aim at other trebles. Until then, the card says how many darts are missing.
-- **The map:** every spot of the board colored by the points per dart you would score aiming there, from 60 % of the best (blue) to the best (red). A ring marks the best aim.
+- **The map:** every spot of the board colored by the points per dart you would score aiming there, from 60 % of the best (blue violet) to the best (yellow). A ring marks the best aim.
 - **Below the board:** the best aim with its points per dart, the points per dart of the treble 20, the treble 19 and the bull with how many fewer they score, and the spread the map comes from: across, up and down, and where your darts land on average.
 - **For the session or a player,** as the second switch chooses.
 
@@ -148,7 +148,7 @@ The entity IDs depend on the name of your board; you find yours on the device pa
 
 ## Doubles analysis
 
-<img src="images/en/doubles-card.png" alt="Doubles card: the double ring colored by hit rate from red to green, and a list of the doubles with hits, darts and hit rate, the best first" width="760">
+<img src="images/en/doubles-card.png" alt="Doubles card: the double ring colored by hit rate from blue violet to yellow, and a list of the doubles with hits, darts and hit rate, the best first" width="760">
 
 Home Assistant counts every double you hit, in any game or in training without one, whatever the dart was aimed at. For the hit rate it also counts every dart thrown at a double and whether it hit: in X01 with double out whenever one double could finish the score, in the doubles training, in Bob's 27, in the checkout training, the 121 checkout and Catch 40 in the same way as in X01, and in the doubles part of the JDC Challenge. The [doubles card](cards.md#doubles-card) shows every double you hit on the board, how often you hit it and, where darts were aimed at it, its hit rate, for everybody or, with `player`, for one named player. A dart in D20 while aiming at the treble 20 counts as a hit of D20, but not for the rate of D20. *Favorite double* names your best double with at least 10 darts.
 
