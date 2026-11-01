@@ -41,6 +41,8 @@ Die Entität **Ereignisse** (etwa `event.autodarts_board_ereignisse` in einem de
 | `dart_corrected` | Das Board oder [`homedarts.correct_dart`](#dart-korrigieren-homedartscorrect_dart) korrigiert einen Dart | `dart_index`, `segment`, `score`, `previous` (das Feld davor), `game`, `name`; `manual`, wenn der Dart in Home Assistant korrigiert wurde |
 | `takeout_started` | Du beginnst, die Darts zu ziehen | keine |
 | `takeout_finished` | Das Board ist wieder frei | keine |
+| `stuck_hand` | Board Manager 2.1 meldet seit einer Minute eine Hand, die sich nicht bewegt, und erkennt keine Darts, siehe [unten](#eine-hand-die-das-board-ständig-sieht) | keine |
+| `stuck_hand_cleared` | Die laufende Erkennung zeigt, dass diese Hand weg ist | keine |
 | `visit_thrown` | Der dritte Dart einer Aufnahme landet, solange die Darts noch im Board stecken; einmal pro Aufnahme | `score`, `darts` (3), `segments` (etwa `["T20", "T20", "S20"]`), `game`, `name`; `manual`, wenn ein Dart der Aufnahme von Hand eingegeben oder korrigiert wurde, `bot` bei einer Aufnahme des Bots; `call` |
 | `visit_completed` | Eine Aufnahme endet: bei der Entnahme, wenn nach einer verpassten Entnahme neue Darts folgen, wenn die Erkennung stoppt oder mit [`homedarts.next_player`](#weitergeben-homedartsnext_player) | `score`, `darts`, `segments`, `game`, `name`, `thrown` (`true`, wenn `visit_thrown` die Aufnahme schon gemeldet hat); `manual` und `bot` wie bei `visit_thrown`; `call` |
 | `visit_undone` | [`homedarts.undo_visit`](#aufnahme-zurücknehmen-homedartsundo_visit) nimmt die letzte Aufnahme zurück | `score`, `darts`, `segments` (die Darts, die wieder die aktuelle Aufnahme sind), `game`, `name` |
@@ -493,7 +495,7 @@ Der Recorder speichert weder `fixtures`, `standings`, `bracket`, `current`, `nex
 | Erkennung | Schalter | Startet oder stoppt die Dart-Erkennung. |
 | Erkennung starten, Erkennung stoppen | Tasten | Dieselben Aktionen als Tasten, für Skripte und Dashboards. |
 | Erkennung zurücksetzen | Taste | Verwirft die im Board erkannten Darts. |
-| Hängende Entnahme lösen | Schalter, *Konfiguration* | Setzt das Board zurück, wenn es eine Entnahme bei leerem Board nicht beendet, siehe [unten](#eine-entnahme-die-das-board-nie-beendet). Standardmäßig an. |
+| Hängende Entnahme lösen | Schalter, *Konfiguration* | Setzt das Board zurück, wenn es eine Entnahme bei leerem Board nicht beendet, siehe [unten](#eine-entnahme-die-das-board-nie-beendet), und startet die Erkennung eines Boards neu, das [ständig eine Hand sieht](#eine-hand-die-das-board-ständig-sieht). Standardmäßig an. |
 | Automatische Kalibrierung starten | Taste, *Konfiguration* | Kalibriert alle Kameras. |
 | Kamera *N* kalibrieren | Taste, *Konfiguration* | Kalibriert eine Kamera. |
 | Board Manager neu starten | Taste, *Konfiguration* | Startet den Board-Manager-Dienst neu. |
@@ -505,7 +507,7 @@ Jede Aktion wird **genau einmal** gesendet. Lehnt das Board sie ab oder antworte
 
 ### Eine Entnahme, die das Board nie beendet
 
-Board Manager 2.0.2 beginnt manchmal direkt nach einer Entnahme eine neue und bleibt bei leerem Board darin hängen, wie ein Spieler berichtet hat: Der Status bleibt *Darts werden entnommen*, danach geworfene Darts zählen nicht, und `takeout_finished` kommt nie, sodass auch Automationen hängen, die darauf warten. Ein Zurücksetzen löst das Board, und solange *Hängende Entnahme lösen* an ist, schickt die Integration es von selbst, als einzigen Befehl, den sie je ungefragt sendet:
+Board Manager 2.0.2 beginnt manchmal direkt nach einer Entnahme eine neue und bleibt bei leerem Board darin hängen, wie ein Spieler berichtet hat: Der Status bleibt *Darts werden entnommen*, danach geworfene Darts zählen nicht, und `takeout_finished` kommt nie, sodass auch Automationen hängen, die darauf warten. Ein Zurücksetzen löst das Board, und solange *Hängende Entnahme lösen* an ist, schickt die Integration es von selbst, als eine von nur zwei Aktionen, die sie je ungefragt am Board ausführt:
 
 - **Wann:** Die Erkennung läuft, das Board zeigt eine Entnahme ohne Darts und meldet keine Hand davor, zehn Sekunden lang ab dem ersten Zustand, der das zeigt. Eine echte Entnahme dauert höchstens ein paar Sekunden. Jeder andere Zustand, eine Hand am Board, ein fehlgeschlagener Lesevorgang oder das Ausschalten des Schalters beendet das Warten.
 - **Dann:** Das Board wartet wieder auf Darts, und mit seinem leeren Zustand folgt `takeout_finished`.
@@ -517,6 +519,23 @@ Board Manager 2.0.2 beginnt manchmal direkt nach einer Entnahme eine neue und bl
 </picture>
 
 Jedes Zurücksetzen steht auf Stufe Info im Protokoll, und die [Diagnosedaten](troubleshooting.de.md#diagnosedaten-herunterladen) zählen es. Schalte den Schalter aus, um das Board in Ruhe zu lassen, etwa während du dem Fehler mit Autodarts nachgehst.
+
+### Eine Hand, die das Board ständig sieht
+
+Auf Board Manager 2.1 kann ein Board ständig eine Hand sehen, die gar nicht da ist, und erkennt dann keine Darts. Ein echtes Board tat das, als sein Lichtring bei laufender Erkennung eingeschaltet wurde: *Hand erkannt* und *Darts vollständig entfernt* blieben über sieben Minuten an, sechs geworfene Darts änderten nichts, und eine Kalibrierung aller Kameras, die den Status auf *Bereit zum Werfen* brachte, ließ die Hand stehen. Das Stoppen und Starten der Erkennung löste es sofort, bei weiter eingeschaltetem Licht. Dass sich das Licht gegenüber dem Referenzbild des Boards geändert hat, ist bisher die beste Erklärung, aber nicht bewiesen. Board Manager 2.0 und 1.x werden darauf nicht überwacht.
+
+- **Wann:** Die Erkennung läuft, und das Board meldet eine Minute lang eine Hand, während sein Bild stillsteht. Eine echte Entnahme dauert 1 bis 3 Sekunden. Eine Hand, die sich bewegt, hält das Bild jedes Mal über eine Sekunde unruhig, und das lässt die Minute neu beginnen; ein landender Dart tut das nicht. Mehr geben die Daten des Boards nicht her: Wer eine Hand eine Minute lang völlig still vor das Board hält, zählt ebenfalls.
+- **Dann:** der Reparaturhinweis *Autodarts-Board sieht ständig eine Hand* und das Ereignis `stuck_hand`, das eine Automation nutzen kann.
+- **Von selbst:** Solange *Hängende Entnahme lösen* an ist, kein Spiel läuft und kein Dart im Board steckt, stoppt und startet die Integration die Erkennung, einmal. Eine Hand, die innerhalb einer Minute wiederkommt, gehört dazu. Ein Zurücksetzen kommt nicht zum Einsatz: Die Hand hält es zurück, und niemand hat gesehen, dass es hier hilft.
+- **Von dir:** Bestätige den Hinweis, um die Erkennung neu zu starten, oder nutze den Schalter *Erkennung*.
+- **Danach:** Sobald die laufende Erkennung keine Hand mehr zeigt, verschwindet der Hinweis, und `stuck_hand_cleared` folgt. Eine gestoppte Erkennung sagt nichts über die Hand, darum bleibt der Hinweis, bis sie wieder läuft.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/de/stuck-hand-dark.png">
+  <img src="images/de/stuck-hand-light.png" alt="Was geschieht, wenn ein Board ständig eine Hand sieht: Auf Board Manager 2.1 gilt eine Hand als hängend, wenn ihr Bild eine Minute lang stillsteht. Geht oder bewegt sie sich, gibt es nichts zu tun. Sonst folgen der Reparaturhinweis und das Ereignis stuck_hand. Ist Hängende Entnahme lösen an und läuft weder ein Spiel noch steckt ein Dart im Board, stoppt und startet die Integration die Erkennung einmal; sonst liegt das bei dir. Zeigt die laufende Erkennung keine Hand mehr, verschwindet der Hinweis, und stuck_hand_cleared folgt" width="420">
+</picture>
+
+**Licht, das eine Routine schaltet:** Schalte das Licht, bevor die Erkennung startet, oder starte die Erkennung danach neu. Eine Kalibrierung nach dem Licht löst das auf Board Manager 2.1 nicht. [Ein Beispiel](automations.de.md#die-erkennung-nach-dem-licht-neu-starten) steht auf der Seite der Automationen. Die [Diagnosedaten](troubleshooting.de.md#diagnosedaten-herunterladen) zählen die Neustarts.
 
 ## Board-Einstellungen
 

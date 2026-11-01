@@ -773,6 +773,48 @@ actions:
 mode: queued
 ```
 
+### Die Erkennung nach dem Licht neu starten
+
+Auf Board Manager 2.1 kann Licht, das bei laufender Erkennung geschaltet wird, das Board [ständig eine Hand sehen](entities.de.md#eine-hand-die-das-board-ständig-sieht) lassen, und eine Kalibrierung löst das nicht. Darum startet eine Routine die Erkennung nach dem Licht neu, hier mit einer Sekunde, in der der Stopp endet. Die zweite Automation sagt dir, wenn das Board trotzdem hängt.
+
+```yaml
+alias: Darts - Boardlicht an
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.board_anwesenheit
+    to: "on"
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.boardlicht
+  - action: switch.turn_off
+    target:
+      entity_id: switch.autodarts_board_erkennung
+  - delay:
+      seconds: 1
+  - action: switch.turn_on
+    target:
+      entity_id: switch.autodarts_board_erkennung
+mode: single
+```
+
+```yaml
+alias: Darts - Das Board sieht ständig eine Hand
+triggers:
+  - trigger: event.received
+    target:
+      entity_id: event.autodarts_board_ereignisse
+    options:
+      event_type:
+        - stuck_hand
+actions:
+  - action: notify.mobile_app_dein_handy
+    data:
+      title: Darts
+      message: Das Board sieht ständig eine Hand und erkennt keine Darts.
+mode: single
+```
+
 ### Kamerastörung melden
 
 ```yaml

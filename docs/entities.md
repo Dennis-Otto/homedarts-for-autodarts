@@ -41,6 +41,8 @@ The **Events** entity (for example `event.autodarts_board_events` in a Home Assi
 | `dart_corrected` | The board, or [`homedarts.correct_dart`](#correct-a-dart-homedartscorrect_dart), corrects a dart | `dart_index`, `segment`, `score`, `previous` (the segment before), `game`, `name`; `manual` when the dart was corrected in Home Assistant |
 | `takeout_started` | You start pulling the darts | none |
 | `takeout_finished` | The board is clear again | none |
+| `stuck_hand` | Board Manager 2.1 has reported a hand that does not move for a minute, and detects no darts, see [below](#a-hand-the-board-sees-all-the-time) | none |
+| `stuck_hand_cleared` | A running detection shows that this hand is gone | none |
 | `visit_thrown` | The third dart of a visit lands, while the darts are still in the board; once per visit | `score`, `darts` (3), `segments` (for example `["T20", "T20", "S20"]`), `game`, `name`; `manual` when a dart of the visit was entered or corrected by hand, `bot` for a visit of the bot; `call` |
 | `visit_completed` | A visit ends: on takeout, when new darts follow a missed takeout, when detection stops, or with [`homedarts.next_player`](#pass-the-turn-homedartsnext_player) | `score`, `darts`, `segments`, `game`, `name`, `thrown` (`true` when `visit_thrown` already announced the visit); `manual` and `bot` as with `visit_thrown`; `call` |
 | `visit_undone` | [`homedarts.undo_visit`](#undo-a-visit-homedartsundo_visit) takes the last visit back | `score`, `darts`, `segments` (the darts that are the current visit again), `game`, `name` |
@@ -493,7 +495,7 @@ The recorder stores neither `fixtures`, `standings`, `bracket`, `current`, `next
 | Detection | Switch | Starts or stops the dart detection. |
 | Start detection, Stop detection | Buttons | The same actions as buttons, for scripts and dashboards. |
 | Reset detection | Button | Discards the darts detected on the board. |
-| Free a stuck takeout | Switch, *Configuration* | Resets the board when it keeps a takeout on the empty board, see [below](#a-takeout-the-board-never-finishes). On by default. |
+| Free a stuck takeout | Switch, *Configuration* | Resets the board when it keeps a takeout on the empty board, see [below](#a-takeout-the-board-never-finishes), and restarts the detection of a board that [sees a hand all the time](#a-hand-the-board-sees-all-the-time). On by default. |
 | Start automatic calibration | Button, *Configuration* | Calibrates all cameras. |
 | Calibrate camera *N* | Button, *Configuration* | Calibrates one camera. |
 | Restart Board Manager | Button, *Configuration* | Restarts the Board Manager service. |
@@ -505,7 +507,7 @@ Every action is sent **once**. If the board rejects it or does not answer, Home 
 
 ### A takeout the board never finishes
 
-Board Manager 2.0.2 sometimes starts a takeout again right after a takeout and keeps it on the empty board, as a player reported: the status stays *Takeout in progress*, darts thrown then are not counted, and `takeout_finished` never comes, so automations that wait for it wait as well. A reset frees the board, and while *Free a stuck takeout* is on, the integration sends it by itself, the only command it ever sends without being asked:
+Board Manager 2.0.2 sometimes starts a takeout again right after a takeout and keeps it on the empty board, as a player reported: the status stays *Takeout in progress*, darts thrown then are not counted, and `takeout_finished` never comes, so automations that wait for it wait as well. A reset frees the board, and while *Free a stuck takeout* is on, the integration sends it by itself, one of only two things it ever does to the board without being asked:
 
 - **When:** the detection runs, the board shows a takeout without darts, and the board reports no hand in front of it, for ten seconds from the first state that shows it. A real takeout lasts a few seconds at most. Any other state, a hand at the board, a read that fails or turning the switch off ends the wait.
 - **Then:** the board waits for darts again, and `takeout_finished` follows with its empty state.
@@ -517,6 +519,23 @@ Board Manager 2.0.2 sometimes starts a takeout again right after a takeout and k
 </picture>
 
 Each reset is logged at info level, and the [diagnostics](troubleshooting.md#download-diagnostics) count them. Turn the switch off to leave the board alone, for example while you look into the fault with Autodarts.
+
+### A hand the board sees all the time
+
+On Board Manager 2.1, a board can keep seeing a hand that isn't there, and detects no darts as long as it does. A real board did this when its light ring was switched on with the detection running: *Hand detected* and *Darts fully removed* stayed on for over seven minutes, six darts thrown at it changed nothing, and a calibration of all cameras, which moved the status to *Ready to throw*, left the hand. Stopping and starting the detection cleared it at once, with the light still on. That the light changed against the reference image of the board is the best explanation so far, not proven. Board Manager 2.0 and 1.x are not watched for this.
+
+- **When:** the detection runs, and the board reports a hand for a minute while its picture stands still. A real takeout lasts 1 to 3 seconds. A hand that moves keeps the picture unsettled for over a second at a time, which starts the minute anew; a dart that lands doesn't. The frames can't tell more: someone who holds a hand perfectly still in front of the board for a minute counts as well.
+- **Then:** the repair notice *Autodarts board sees a hand all the time* and the event `stuck_hand`, which an automation can use.
+- **By itself:** while *Free a stuck takeout* is on, no game is running and no dart is on the board, the integration stops and starts the detection, once. A hand that comes back within a minute is the same occurrence. A reset isn't used: the hand holds it back, and nobody has seen it clear this.
+- **By you:** confirm the notice to restart the detection, or use the *Detection* switch.
+- **Afterwards:** as soon as a running detection shows no hand, the notice goes and `stuck_hand_cleared` follows. A stopped detection says nothing of the hand, so the notice stays until it runs again.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/stuck-hand-dark.png">
+  <img src="images/en/stuck-hand-light.png" alt="What happens when a board sees a hand all the time: on Board Manager 2.1, a hand whose picture stands still for a minute counts as stuck. A hand that goes or moves leaves nothing to do. Otherwise the repair notice and the event stuck_hand follow. With Free a stuck takeout on, no game and no dart on the board, the integration stops and starts the detection once; otherwise that is up to you. Once a running detection shows no hand, the notice goes and stuck_hand_cleared follows" width="420">
+</picture>
+
+**Light that a routine switches:** switch the light before the detection starts, or restart the detection after it. A calibration after the light doesn't clear this on Board Manager 2.1. [An example](automations.md#restart-the-detection-after-the-light) is on the page of the automations. The [diagnostics](troubleshooting.md#download-diagnostics) count the restarts.
 
 ## Board settings
 

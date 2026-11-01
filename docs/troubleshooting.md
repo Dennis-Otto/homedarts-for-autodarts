@@ -38,6 +38,7 @@ Home Assistant shows these notices under **Settings → Repairs**:
 | **Autodarts board address points to a different board** | The configured address answers with a different board ID, for example because IP addresses were swapped. The entities stay unavailable so that they never show another board's data. Open the integration, choose **Reconfigure** and select the correct board. The notice disappears by itself. |
 | **Calibrate the Autodarts board** | At least 20 % of the last 100 darts, and at least 50 darts in all, needed a correction, by the board, on the scoreboard or with `homedarts.correct_dart`, see *Detection correction rate*. Remove all darts, open the notice and confirm: the integration calibrates all cameras and counts again from zero. The notice also disappears once the rate falls below 10 %. |
 | **Update the board to the new Autodarts Board Manager** | The board still runs the classic Board Manager 1, which Autodarts will switch off. Install Board Manager 2 on the board PC. The integration switches over by itself and the notice disappears. |
+| **Autodarts board sees a hand all the time** | On Board Manager 2.1, the board has reported a hand that does not move for a minute, and detects no darts, see [below](#darts-are-not-counted-while-the-board-sees-a-hand). Open the notice and confirm it to restart the detection. It goes by itself once a running detection shows no hand. |
 | **Autodarts board found at a new address** | The board no longer answers with its board ID at its configured address, but it answers at another one, where Board Manager 2 announced it (mDNS), for example after a DHCP change. Open the notice and confirm only if it is your board: the integration checks the address once more, switches to it and reloads. Entities, training and settings are kept. See [address changes](how-it-works.md#address-changes). |
 | **Autodarts board refuses access** | The board answers with HTTP 401 or 403. The Board Manager needs no login, so a reverse proxy, a firewall or a login in front of port 3180 blocks Home Assistant. Let Home Assistant reach the board; the notice disappears with the next successful read. |
 | **Autodarts board answers in an unknown format** | A required read (state, settings or `/api/system`) answered three times in a row in a format this version does not understand, typically after a Board Manager update. Update the integration. If the notice stays, [report it](#report-a-bug) with the diagnostics; the log names the affected reads. |
@@ -148,6 +149,13 @@ The status stays *Takeout in progress* although the board is empty, and new dart
 
 - To free the board at once, press **Reset detection**.
 - If the board is still stuck after three resets, stop and start the detection, or restart the Board Manager.
+
+### Darts are not counted while the board sees a hand
+
+*Hand detected* stays on, on Board Manager 2.1, although nobody is at the board, and no dart counts, also after a calibration. On a real board this began when its light ring was switched on with the detection running; the light is the likely cause, not a proven one. See [A hand the board sees all the time](entities.md#a-hand-the-board-sees-all-the-time).
+
+- Stop and start the detection, with the *Detection* switch or by confirming the notice *Autodarts board sees a hand all the time*. While *Free a stuck takeout* is on, the integration does this itself after a minute, if no game is running and no dart is on the board.
+- If a routine switches the board's light, switch it before the detection starts, or [restart the detection after it](automations.md#restart-the-detection-after-the-light).
 
 ### A camera is reported as a problem
 

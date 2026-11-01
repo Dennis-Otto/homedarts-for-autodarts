@@ -1,0 +1,16 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: What happens when a board sees a hand all the time
+  accDescr: on Board Manager 2.1, a hand whose picture stands still for a minute counts as stuck. A hand that goes or moves leaves nothing to do. Otherwise the repair notice and the event stuck_hand follow. With Free a stuck takeout on, no game and no dart on the board, the integration stops and starts the detection once; otherwise that is up to you. Once a running detection shows no hand, the notice goes and stuck_hand_cleared follows
+  HAND["A hand, and the picture<br/>stands still"] --> WAIT{"Still the same<br/>after a minute?"}
+  WAIT -- "no: it went,<br/>or it moves" --> FINE["Nothing to do"]
+  WAIT -- "yes" --> NOTICE["Repair notice,<br/>event stuck_hand"]
+  NOTICE --> SAFE{"Switch on, no game,<br/>no dart on the board?"}
+  SAFE -- "yes, once" --> RESTART["The integration stops and<br/>starts the detection"]
+  SAFE -- "no" --> YOU["You confirm the notice,<br/>or use the switch"]
+  RESTART --> GONE["No hand: the notice goes,<br/>event stuck_hand_cleared"]
+  YOU --> GONE
