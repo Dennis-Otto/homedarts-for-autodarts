@@ -46,7 +46,7 @@ Oui, sur play.autodarts.io comme avant. L'intégration voit alors les fléchette
 
 ### Plusieurs joueurs avec leur propre compte Autodarts sur un seul écran ?
 
-Oui, en ligne sur play.autodarts.io : l'extension Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), de l'auteur de cette intégration, garde le compte de chacun prêt, et un appui sur une tuile change de joueur, sans se connecter. Elle n'a pas besoin de Home Assistant, et l'intégration voit les fléchettes de votre cible, quel que soit le compte connecté. [Online matches](online-matches.md#several-accounts-at-one-display)
+Oui, en ligne sur play.autodarts.io : l'extension Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), de l'auteur de cette intégration, garde le compte de chacun prêt, et une pression sur une vignette change de joueur, sans se connecter. Elle n'a pas besoin de Home Assistant, et l'intégration voit les fléchettes de votre cible, quel que soit le compte connecté. [Online matches](online-matches.md#several-accounts-at-one-display)
 
 ### La cible a mal lu une fléchette. Comment la corriger ?
 

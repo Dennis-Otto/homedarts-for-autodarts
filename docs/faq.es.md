@@ -46,7 +46,7 @@ Sí, en play.autodarts.io como antes. La integración ve entonces los dardos de 
 
 ### ¿Varios jugadores con su propia cuenta de Autodarts en una sola pantalla?
 
-Sí, en línea en play.autodarts.io: la extensión de Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), del autor de esta integración, mantiene lista la cuenta de cada uno, y un toque en un mosaico cambia de jugador, sin iniciar sesión. No necesita Home Assistant, y la integración ve los dardos de tu diana, sea quien sea quien tenga la sesión iniciada. [Online matches](online-matches.md#several-accounts-at-one-display)
+Sí, en línea en play.autodarts.io: la extensión de Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), del autor de esta integración, mantiene lista la cuenta de cada uno, y un toque en una tarjeta cambia de jugador, sin iniciar sesión. No necesita Home Assistant, y la integración ve los dardos de tu diana, sea quien sea quien tenga la sesión iniciada. [Online matches](online-matches.md#several-accounts-at-one-display)
 
 ### La diana leyó mal un dardo. ¿Cómo lo corrijo?
 
