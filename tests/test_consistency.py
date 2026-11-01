@@ -371,6 +371,7 @@ CARD_TEXT_FAMILIES = (
     ("mode_", ""),
     ("overlay_", ""),
     ("overlay_layout_", ""),
+    ("palette_", ""),
     ("party_", ""),
     ("period_", ""),
     ("picker_", ""),

@@ -183,10 +183,15 @@ const TRAINING_DEFAULTS = {
   show_sessions: true,
   history_size: 20,
   show_heatmap_controls: true,
+  heatmap_palette: "accessible",
 };
 
 // Hits per bed, per number, where the darts landed, or where to aim.
 const HEAT_MODES = ["beds", "numbers", "positions", "aim"];
+
+// The colours from rarely hit to most hit: a scale that gets lighter, so it reads for every
+// eye and in grey, or the former rainbow of equal lightness.
+const HEAT_PALETTES = ["accessible", "thermal"];
 
 const STATUS_DEFAULTS = {
   show_connection: true,
@@ -195,7 +200,7 @@ const STATUS_DEFAULTS = {
   show_controls: true,
 };
 
-const DOUBLES_DEFAULTS = {};
+const DOUBLES_DEFAULTS = { heatmap_palette: "accessible" };
 
 const PLAYERS_DEFAULTS = {
   show_head_to_head: true,
@@ -863,10 +868,40 @@ function heatRatio(count, max) {
   return max > 1 ? Math.min(1, Math.max(0, (count - 1) / (max - 1))) : 1;
 }
 
-function heatColor(ratio) {
-  // Thermal scale from blue (rarely hit) through green and yellow to red (most hit).
+// The accessible scale, after viridis: from blue violet through teal to yellow in OKLCH, lighter
+// at its dark end than viridis, so that a rarely hit bed stands out on the dark board. The
+// table holds sRGB, because a browser that doesn't know oklch(), as on an old wall tablet,
+// paints an SVG shape black. tests/frontend/heat-scale.test.mjs works it out from its stops.
+const HEAT_SCALE = [
+  "#5844bc", "#524ebe", "#4b58bf", "#4460bf", "#3d68be", "#3870bc", "#3577ba", "#357db7", "#3783b4",
+  "#2f8ab4", "#2690b3", "#1f96b1", "#1c9cae", "#1ea2ab", "#27a7a7", "#32aca3", "#3fb09e", "#3eb69b",
+  "#40bc98", "#44c193", "#4bc68d", "#55ca86", "#61cf7e", "#6ed374", "#7cd668", "#8cd861", "#9bdb59",
+  "#aadd51", "#b9df48", "#c7e03f", "#d5e136", "#e3e32c", "#f1e323",
+];
+
+function heatColor(ratio, palette) {
   const value = Math.min(1, Math.max(0, Number(ratio) || 0));
-  return `hsl(${Math.round(220 * (1 - value))}, 90%, 55%)`;
+  // Thermal: from blue (rarely hit) through green and yellow to red (most hit).
+  if (palette === "thermal") return `hsl(${Math.round(220 * (1 - value))}, 90%, 55%)`;
+  return HEAT_SCALE[Math.round(value * (HEAT_SCALE.length - 1))];
+}
+
+// A scale from left to right, for a legend.
+const scaleGradient = (color) => `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map(color).join(", ")})`;
+
+// How much of the board a colour covers: where the rarely hit start, and how much the most hit
+// add. The lightness of the accessible scale tells the count only where little of the board
+// shines through; the maps of the darts stay more see-through, as their blur fades into the board.
+const HEAT_COVER = {
+  beds: { accessible: [0.9, 0.05], thermal: [0.6, 0.35] },
+  positions: { accessible: [0.5, 0.45], thermal: [0.3, 0.6] },
+  aim: { accessible: [0.5, 0.45], thermal: [0.35, 0.55] },
+};
+
+// The fill of a shape of the heatmap.
+function heatFill(ratio, palette, kind) {
+  const [start, more] = HEAT_COVER[kind][palette === "thermal" ? palette : "accessible"];
+  return `fill="${heatColor(ratio, palette)}" fill-opacity="${fmt(start + more * ratio)}"`;
 }
 
 function topHits(hits, limit = 5) {
@@ -3933,20 +3968,22 @@ function doublesView(doubles, profiles, player = "") {
   return { player: null, known: true, ...doubleCounts({ ...attributes, favourite }, attributes.landed) };
 }
 
-// Red for rarely hit doubles, green from about one hit in two.
-function doubleColor(rate) {
-  const hue = Math.round(Math.min(Math.max(rate, 0), 50) * 2.6);
-  return `hsl(${hue} 70% 46%)`;
+// A hit rate in the colours of the heatmap, whose top is about one hit in two. Thermal is
+// the former scale of equal lightness, from red to green.
+const DOUBLE_TOP = 50;
+function doubleColor(rate, palette) {
+  const value = Math.min(Math.max(rate, 0), DOUBLE_TOP);
+  return palette === "thermal" ? `hsl(${Math.round(value * 2.6)} 70% 46%)` : heatColor(value / DOUBLE_TOP);
 }
 
 // The colour of a double: its hit rate where darts were aimed at it, else the accent,
 // the stronger the more often it was hit.
-const doubleTint = (item, most) =>
+const doubleTint = (item, most, palette) =>
   item.rate === null
     ? `color-mix(in srgb, var(--ad-accent) ${Math.round(35 + (55 * item.landed) / most)}%, transparent)`
-    : doubleColor(item.rate);
+    : doubleColor(item.rate, palette);
 
-function doublesHtml(view, ui) {
+function doublesHtml(view, ui, palette) {
   const { t, format, percent, label } = ui;
   const most = Math.max(1, ...view.doubles.map((item) => item.landed));
   const told = (item) =>
@@ -3960,7 +3997,7 @@ function doublesHtml(view, ui) {
   const ring = view.doubles
     .map(
       (item) =>
-        `<path d="${bedPath(hitBeds(item.double)[0])}" style="fill:${doubleTint(item, most)}"><title>${escapeHtml(
+        `<path d="${bedPath(hitBeds(item.double)[0])}" style="fill:${doubleTint(item, most, palette)}"><title>${escapeHtml(
           `${label(item.double)}: ${told(item)}`
         )}</title></path>`
     )
@@ -3972,8 +4009,8 @@ function doublesHtml(view, ui) {
     .map(
       (item) =>
         `<div class="double${item.double === view.favourite ? " favourite" : ""}" title="${escapeHtml(told(item))}">` +
-        `<span class="bed" style="--c:${doubleTint(item, most)}">${escapeHtml(label(item.double))}</span>` +
-        `<span class="bar"><i style="width:${Math.round((100 * item.landed) / most)}%;background:${doubleTint(item, most)}"></i></span>` +
+        `<span class="bed" style="--c:${doubleTint(item, most, palette)}">${escapeHtml(label(item.double))}</span>` +
+        `<span class="bar"><i style="width:${Math.round((100 * item.landed) / most)}%;background:${doubleTint(item, most, palette)}"></i></span>` +
         `<span class="landed">${escapeHtml(fill(t("doubles_landed_short"), { count: format(item.landed, 0) }))}</span>` +
         `<span class="count">${item.attempts ? escapeHtml(`${format(item.hits, 0)}/${format(item.attempts, 0)}`) : ""}</span>` +
         `<span class="rate">${escapeHtml(item.rate === null ? "–" : percent(item.rate, 0))}</span></div>`
@@ -4364,7 +4401,7 @@ function positionsDensity(positions) {
 
 // The density in the heatmap colours, softened by a blur, and the newest darts as dots;
 // the darts of the current visit count for the density and stand out as pins.
-function positionsHtml(positions, live) {
+function positionsHtml(positions, live, palette) {
   const valid = validPositions(positions);
   const current = validPositions(live);
   const cells = positionsDensity([...valid, ...current]);
@@ -4378,7 +4415,7 @@ function positionsHtml(positions, live) {
       const ratio = value / max;
       return (
         `<rect x="${fmt(column * DENSITY_CELL - half)}" y="${fmt(row * DENSITY_CELL - half)}" ` +
-        `width="${DENSITY_CELL}" height="${DENSITY_CELL}" fill="${heatColor(ratio)}" fill-opacity="${fmt(0.3 + 0.6 * ratio)}"/>`
+        `width="${DENSITY_CELL}" height="${DENSITY_CELL}" ${heatFill(ratio, palette, "positions")}/>`
       );
     })
     .join("");
@@ -4603,7 +4640,7 @@ class AimFields {
 
 // The points per dart in the heatmap colors, from AIM_FLOOR of the most to the most, with
 // the best aim as a ring.
-function aimHtml(field, best) {
+function aimHtml(field, best, palette) {
   const low = field.high * AIM_FLOOR;
   const side = (field.size - 1) / 2;
   const half = (AIM_CELL * field.grid) / 2;
@@ -4617,7 +4654,7 @@ function aimHtml(field, best) {
       const y = -(row - side) * field.grid;
       cells.push(
         `<rect x="${fmt(x - half)}" y="${fmt(y - half)}" width="${2 * half}" height="${2 * half}" ` +
-          `fill="${heatColor(ratio)}" fill-opacity="${fmt(0.35 + 0.55 * ratio)}"/>`
+          `${heatFill(ratio, palette, "aim")}/>`
       );
     }
   }
@@ -5805,7 +5842,11 @@ const FORMS = {
     {
       type: "grid",
       name: "",
-      schema: [dropdown("mode", "mode", HEAT_MODES), dropdown("board_style", "style", ["muted", "classic", "flat"])],
+      schema: [
+        dropdown("mode", "mode", HEAT_MODES),
+        dropdown("board_style", "style", ["muted", "classic", "flat"]),
+        dropdown("heatmap_palette", "palette", HEAT_PALETTES),
+      ],
     },
     playerField("heatmap_player_helper"),
     {
@@ -5945,7 +5986,7 @@ const FORMS = {
     toggles(["show_period"], LEADERBOARD_DEFAULTS),
     accentField,
   ],
-  doubles: () => [deviceField, titleField, playerField(), accentField],
+  doubles: () => [deviceField, titleField, playerField(), dropdown("heatmap_palette", "palette", HEAT_PALETTES), accentField],
 };
 
 // The dashboard's settings: the board, the title and, in a section of its own, what
@@ -6571,7 +6612,8 @@ const TRAINING_CSS = `${BASE_CSS}
   .heat-caption:empty { opacity: 0; }
   .heat-bed { stroke: rgba(0,0,0,.25); stroke-width: .6; }
   .legend { width: min(100%, 320px); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
-  .legend-bar { height: 8px; border-radius: 999px; }
+  /* The outline keeps both ends of the scale visible on a light and a dark theme. */
+  .legend-bar { height: 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text-color) 45%, transparent); }
   .side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; border-radius: 14px; }
   .tile {
@@ -6595,7 +6637,7 @@ const TRAINING_CSS = `${BASE_CSS}
   .top-row .count { text-align: right; }
   .top-row .key { font-weight: 800; color: var(--primary-text-color); }
   .top-row .bar { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); overflow: hidden; }
-  .top-row .fill { height: 100%; border-radius: inherit; }
+  .top-row .fill { height: 100%; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text-color) 45%, transparent); }
   .top-row .count { color: var(--secondary-text-color); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .history-chart {
     position: relative; height: 104px; display: flex; align-items: stretch; gap: 4px; margin-top: 8px;
@@ -7701,7 +7743,7 @@ const DOUBLES_CSS = `${BASE_CSS}
   }
   .double .bed {
     padding: 2px 0; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 800;
-    color: color-mix(in srgb, var(--c) 50%, var(--primary-text-color, #212121)); border: 1px solid var(--c);
+    color: color-mix(in srgb, var(--c) 30%, var(--primary-text-color, #212121)); border: 1px solid var(--c);
   }
   /* The favourite double: tinted in its rate's colour, like the next bed of a route. */
   .double.favourite .bed { background: color-mix(in srgb, var(--c) 20%, transparent); }
@@ -7709,7 +7751,10 @@ const DOUBLES_CSS = `${BASE_CSS}
     height: 6px; border-radius: 999px; overflow: hidden;
     background: color-mix(in srgb, var(--primary-text-color) 10%, transparent);
   }
-  .double .bar i { display: block; height: 100%; border-radius: inherit; }
+  .double .bar i { display: block; height: 100%; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text-color) 45%, transparent); }
+  /* The outline keeps both ends of the scale visible on a light and a dark theme. */
+  .legend { width: min(100%, 320px); margin-top: 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+  .legend-bar { height: 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text-color) 45%, transparent); }
   /* Fixed columns keep the bars of every row equally long. */
   .double .landed { font-size: 13px; font-weight: 700; text-align: right; }
   .double .count { font-size: 12px; color: var(--secondary-text-color); text-align: right; }
@@ -9126,7 +9171,6 @@ function createElements(Base) {
 
     _heatHtml(t) {
       const c = this._config;
-      const legend = [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(", ");
       const modes = HEAT_MODES.map(
         (mode) => `<button type="button" data-mode="${mode}" aria-pressed="false">${t(`mode_${mode}`)}</button>`
       ).join("");
@@ -9152,7 +9196,7 @@ function createElements(Base) {
           </div>
           <div class="legend">
             <span class="muted legend-min">1</span>
-            <div class="legend-bar" style="background: linear-gradient(90deg, ${legend})"></div>
+            <div class="legend-bar" style="background: ${scaleGradient((ratio) => heatColor(ratio, c.heatmap_palette))}"></div>
             <span class="muted legend-max">–</span>
           </div>
           <ul class="visually-hidden heat-list"></ul>
@@ -9221,6 +9265,9 @@ function createElements(Base) {
     _build() {
       const c = this._config;
       const t = (key) => escapeHtml(this._t(key));
+      // The drawings of the darts hold the colours of the configuration.
+      this._drawn = null;
+      this._aimDrawn = null;
       this.shadowRoot.innerHTML = `
         <style>${TRAINING_CSS}</style>
         <ha-card>
@@ -9592,7 +9639,7 @@ function createElements(Base) {
       el.heatCaption.textContent = "";
       // The map is drawn once per field and best aim, not with every update of the card.
       if (ready && (this._aimDrawn?.field !== ready || this._aimDrawn.best !== view.best)) {
-        this._aimDrawn = { source, field: ready, best: view.best, html: aimHtml(ready, view.best) };
+        this._aimDrawn = { source, field: ready, best: view.best, html: aimHtml(ready, view.best, this._config.heatmap_palette) };
       }
       // While the field of a new model is on its way, the last map of the same darts stays.
       const drawn = view && (ready || this._aimDrawn?.source === source) ? this._aimDrawn : null;
@@ -9643,7 +9690,7 @@ function createElements(Base) {
       // The density is drawn once per answer and visit, not with every update of the card.
       const drawn = JSON.stringify(live);
       if (this._drawn?.shown !== shown || this._drawn.live !== drawn) {
-        this._drawn = { shown, live: drawn, html: positionsHtml(positions, live) };
+        this._drawn = { shown, live: drawn, html: positionsHtml(positions, live, this._config.heatmap_palette) };
       }
       this._setHtml(el.heat, this._drawn.html);
       this._setHtml(el.heatList, "");
@@ -9693,7 +9740,7 @@ function createElements(Base) {
         .map(([bed, [text]]) => {
           const ratio = heatRatio(levels.get(bed), max);
           return (
-            `<path class="heat-bed" d="${bedPath(bed)}" fill="${heatColor(ratio)}" fill-opacity="${fmt(0.6 + 0.35 * ratio)}">` +
+            `<path class="heat-bed" d="${bedPath(bed)}" ${heatFill(ratio, this._config.heatmap_palette, "beds")}>` +
             `<title>${escapeHtml(text)}</title></path>`
           );
         })
@@ -9726,7 +9773,7 @@ function createElements(Base) {
                 const share = darts > 0 ? ` · ${this._percent((count / darts) * 100, 0)}` : "";
                 return (
                   `<div class="top-row"><span class="key">${escapeHtml(hitLabel(this._hass, key))}</span>` +
-                  `<div class="bar"><div class="fill" style="width:${fmt(width * 100)}%;background:${heatColor(heatRatio(count, most))}"></div></div>` +
+                  `<div class="bar"><div class="fill" style="width:${fmt(width * 100)}%;background:${heatColor(heatRatio(count, most), this._config.heatmap_palette)}"></div></div>` +
                   `<span class="count">${escapeHtml(`${this._format(count)}×${share}`)}</span></div>`
                 );
               })
@@ -11627,6 +11674,13 @@ function createElements(Base) {
                 </div>
                 <div>
                   <div class="double-list"></div>
+                  <div class="legend">
+                    <span class="muted">${escapeHtml(this._percent(0))}</span>
+                    <div class="legend-bar" style="background: ${scaleGradient((share) =>
+                      doubleColor(share * DOUBLE_TOP, this._config.heatmap_palette)
+                    )}"></div>
+                    <span class="muted">${escapeHtml(`${this._percent(DOUBLE_TOP)}+`)}</span>
+                  </div>
                   <p class="muted">${t("doubles_legend")}</p>
                   <p class="muted">${t("doubles_routes")}</p>
                 </div>
@@ -11668,7 +11722,7 @@ function createElements(Base) {
       el.empty.textContent = view.known ? t("doubles_empty") : fill(t("doubles_unknown_player"), { player: view.player });
       el.body.hidden = view.doubles.length === 0;
       el.svg.setAttribute("aria-label", t("doubles_title"));
-      const html = doublesHtml(view, this._ui());
+      const html = doublesHtml(view, this._ui(), c.heatmap_palette);
       this._setHtml(el.ring, html.ring);
       this._setHtml(el.list, html.list);
     }
@@ -11901,6 +11955,7 @@ export {
   gameState,
   gameView,
   heatColor,
+  heatFill,
   heatLevels,
   heatRatio,
   hitBeds,
@@ -11939,6 +11994,7 @@ export {
   profileNames,
   progressView,
   R,
+  STYLES,
   recentVisits,
   register,
   scoreboardHtml,
