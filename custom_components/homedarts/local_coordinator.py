@@ -634,9 +634,11 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         """The takeout held a whole period: reset the board once. The state it
         reports next ends the takeout; a board still stuck, or with a hand at it by
         now, gets another period."""
-        # The wait runs on during this look: what ends it meanwhile also ends this.
+        # The wait runs on during this look: what ends it meanwhile also ends this,
+        # and a wait that starts anew meanwhile has its own timer.
+        waiting = self._takeout_unsub
         hand = await self._hand_may_have_come()
-        if self._takeout_unsub is None:
+        if self._takeout_unsub is not waiting:
             return
         self._takeout_unsub = None
         if hand:

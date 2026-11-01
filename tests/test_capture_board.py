@@ -582,6 +582,38 @@ def test_nothing_is_written_that_holds_them_as_json_writes_them(text, what):
     assert all(capture_board.leftovers(file, {}) == [] for file in content.values())
 
 
+@pytest.mark.parametrize(
+    ("text", "replaced"),
+    [
+        ("vid=1&serial=SN12345 lost", f"vid=1&serial={PLACEHOLDERS['serial']}"),
+        (
+            "opened vid=1&pid=2&serial=SN12345 at port 3",
+            f"opened vid=1&pid=2&serial={PLACEHOLDERS['serial']}",
+        ),
+        ("vid=1&serial=SN12345 ", f"vid=1&serial={PLACEHOLDERS['serial']}"),
+        (
+            "vid=1&serial=SN12345 &location=1",
+            f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
+        ),
+        (
+            r"cam (USB\VID_1DFC&PID_8513\SN12345) ok",
+            rf"cam (USB\VID_1DFC&PID_8513\{PLACEHOLDERS['serial']}) ok",
+        ),
+        (
+            r"[USB\VID_1DFC&PID_8513\SN12345] ok",
+            rf"[USB\VID_1DFC&PID_8513\{PLACEHOLDERS['serial']}] ok",
+        ),
+    ],
+)
+def test_a_serial_number_goes_from_the_other_texts_as_well(text, replaced):
+    # What follows a serial number in its text doesn't hide it where it stands alone.
+    answers = {"a": text, "b": "lost SN12345"}
+    found = capture_board.secrets(answers)
+    redacted = capture_board.redact(answers, found)
+    assert redacted == {"a": replaced, "b": f"lost {PLACEHOLDERS['serial']}"}
+    assert capture_board.leftovers(json.dumps(redacted), found) == []
+
+
 def test_a_line_break_ends_a_serial_number():
     text = "vid=1&serial=USB CAM 01\nvid=1&serial=USB CAM 02\n"
     found = capture_board.secrets({"note": text})

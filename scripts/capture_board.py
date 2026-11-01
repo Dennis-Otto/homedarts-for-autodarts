@@ -153,7 +153,7 @@ SERIAL = re.compile(
 WINDOWS_INSTANCE = re.compile(
     r"(?i:(?<=vid_[0-9a-f]{4}&pid_[0-9a-f]{4}[#\\])"
     r"|(?<=vid_[0-9a-f]{4}&pid_[0-9a-f]{4}&mi_[0-9a-f]{2}[#\\]))"
-    r"[^#\\\s\"',;]+"
+    r"[^#\\\s\"',;)\]]+"
 )
 # What JSON writes for a line break, a tab or a backslash: its letters are no part of
 # what follows, as the "n" in "signed in\nplayer@example.com" is not.
@@ -223,9 +223,12 @@ def secrets(answers: object, host: str = "") -> dict[str, str]:
             # The serial number of a camera may stand in other texts as well. A short
             # one goes only where it is found as one, as a short "pid" of a camera can
             # be the same text.
-            for serial in (*SERIAL.findall(value), *WINDOWS_INSTANCE.findall(value)):
-                if len(serial) >= SHORTEST_SECRET and not is_placeholder(serial):
-                    found.setdefault(serial, PLACEHOLDERS["serial"])
+            for match in (*SERIAL.findall(value), *WINDOWS_INSTANCE.findall(value)):
+                # A match may run on past the serial number, as in "&serial=SN0001 at
+                # port 3": its first word counts as well, to find that one elsewhere.
+                for serial in {match.strip(), *match.split()[:1]}:
+                    if len(serial) >= SHORTEST_SECRET and not is_placeholder(serial):
+                        found.setdefault(serial, PLACEHOLDERS["serial"])
 
     walk(answers)
     if host and not is_placeholder(host):

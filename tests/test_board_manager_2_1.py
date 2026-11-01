@@ -836,3 +836,24 @@ async def test_a_state_during_the_look_at_the_board_ends_the_wait(
         await pass_time(hass, freezer, 11)
     assert resets(aioclient_mock) == 0
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
+
+
+async def test_a_new_wait_during_the_look_at_the_board_gets_its_whole_period(
+    hass, aioclient_mock, freezer
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    coordinator._async_unsub_refresh()
+    client = coordinator.client
+    read = client.get_system
+
+    async def freed_and_stuck_again():
+        coordinator.async_receive("state", board_state(running_2_1()))
+        coordinator.async_receive("state", board_state(EMPTY_TAKEOUT))
+        return await read()
+
+    with patch.object(client, "get_system", freed_and_stuck_again):
+        await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 0
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+    await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 1
