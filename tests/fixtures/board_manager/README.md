@@ -53,10 +53,10 @@ it writes anything, wherever they appear, and writes nothing if one is left:
 | Name of the board PC, `host.hostname`, and the name it was reached by | `dartboard-pc` |
 | Addresses of the board PC and of the home network: `host.ip` and every private IPv4 address | `198.51.100.7`, an address for documentation |
 | Every IPv6 address other than a loopback, multicast or documentation address | `2001:db8::7`, an address for documentation |
-| Serial number of a camera, `serial=` in `config.cam.cams` | `SN0001` |
+| Serial number of a camera, `serial=` in `config.cam.cams`, and the instance of a camera in a Windows path, such as `7&2a1b3c4d&0&0000` in `USB\VID_1DFC&PID_8513&MI_00\7&2a1b3c4d&0&0000` | `SN0001` |
 | Every UUID | `private-uuid` |
 | Every e-mail address | `player@example.com` |
-| Every MAC address | `00:00:5e:00:53:07`, an address for documentation |
+| Every MAC address, also in the name of a network interface, such as `enx00e04c680001` | `00:00:5e:00:53:07`, an address for documentation, and `enx00005e005307` |
 | Any other value of a key that names a secret, such as one that ends in `key`, `token`, `secret`, `password` or `cert` | `private-<key>` |
 | Any other value of a key that names the ID or the name of a board, an account or a person, such as `accountId`, `userName` or the `name` of `linkServer` | `private-<key>` |
 
