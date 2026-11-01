@@ -669,6 +669,8 @@
               "dart_corrected": "Fléchette corrigée",
               "takeout_started": "Début du retrait",
               "takeout_finished": "Fin du retrait",
+              "stuck_hand": "Main bloquée",
+              "stuck_hand_cleared": "Main bloquée résolue",
               "status_changed": "Changement d'état",
               "visit_thrown": "Volée lancée",
               "visit_completed": "Volée terminée",
@@ -1229,6 +1231,21 @@
         },
         "abort": {
           "calibration_failed": "La cible n'a pas accepté le calibrage. Réessayez, ou lancez le calibrage depuis la carte État de la cible Autodarts.",
+          "board_unavailable": "La cible n'est pas chargée. Vérifiez la connexion et réessayez."
+        }
+      }
+    },
+    "stuck_hand": {
+      "title": "La cible Autodarts voit une main en permanence",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Redémarrer la détection",
+            "description": "Depuis plus d'une minute, la cible signale devant elle une main qui ne bouge pas, et elle ne détecte aucune fléchette pendant ce temps. La cause probable est un changement de lumière pendant la détection, par exemple un anneau lumineux allumé. Un calibrage n'y change rien\u00A0; arrêter et démarrer la détection, si.\n\nRedémarrer la détection maintenant\u00A0? Retirez d'abord votre main de la cible.\n\nPour que cela ne se reproduise pas, changez la lumière avant de démarrer la détection, ou redémarrez la détection après l'avoir changée."
+          }
+        },
+        "abort": {
+          "restart_failed": "La cible n'a pas accepté le redémarrage. Réessayez, ou arrêtez et démarrez la détection avec son interrupteur.",
           "board_unavailable": "La cible n'est pas chargée. Vérifiez la connexion et réessayez."
         }
       }

@@ -1,0 +1,3 @@
+### Fixed
+
+- **A board that sees a hand all the time on Board Manager 2.1:** when a board keeps reporting a hand that doesn't move for a minute, it detects no darts, and a calibration doesn't help. This happened on a real board when its light ring was switched on with the detection running. A repair notice now says so and restarts the detection when you confirm it, and the events `stuck_hand` and `stuck_hand_cleared` let an automation react. While *Free a stuck takeout* is on, the integration restarts the detection by itself, once, if no game it runs itself is running and no dart is on the board; a match on play.autodarts.io doesn't hold it back. If a routine switches the board's light, switch it before the detection starts, or restart the detection after it.

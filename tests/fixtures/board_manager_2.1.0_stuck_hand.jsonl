@@ -1,0 +1,12 @@
+{"socket":"/api/events/system","t":0.099,"type":"vantage","data":{"vantage":{"motion":{"isHand":true,"isDart":false,"isStable":true,"isTakeoutFull":true,"isTakeoutPartial":true,"isWaiting":false,"numDarts":0,"motionClass":"unstable"}}}}
+{"socket":"/api/events/system","t":7.99,"type":"vantage","data":{"vantage":{"motion":{"isHand":true,"isDart":false,"isStable":false,"isTakeoutFull":true,"isTakeoutPartial":true,"isWaiting":false,"numDarts":0,"motionClass":"unstable"}}}}
+{"socket":"/api/events/system","t":8.074,"type":"vantage","data":{"vantage":{"motion":{"isHand":true,"isDart":false,"isStable":true,"isTakeoutFull":true,"isTakeoutPartial":true,"isWaiting":false,"numDarts":0,"motionClass":"unstable"}}}}
+{"socket":"/api/events/system","t":8.111,"type":"vantage","data":{"vantage":{"motion":{"isHand":true,"isDart":false,"isStable":false,"isTakeoutFull":true,"isTakeoutPartial":true,"isWaiting":false,"numDarts":0,"motionClass":"unstable"}}}}
+{"socket":"/api/events/system","t":8.75,"type":"vantage","data":{"vantage":{"motion":{"isHand":true,"isDart":false,"isStable":true,"isTakeoutFull":true,"isTakeoutPartial":true,"isWaiting":false,"numDarts":0,"motionClass":"unstable"}}}}
+{"socket":"/api/events/system","t":98.065,"type":"state","data":{"connected":true,"event":"calibrationStarted","running":true,"status":"calibrating","throws":[]}}
+{"socket":"/api/events","t":98.125,"type":"state","data":{"connected":true,"event":"calibrationStarted","running":true,"status":"calibrating","throws":[]}}
+{"socket":"/api/events/system","t":98.565,"type":"state","data":{"connected":true,"event":"calibrationFinished","running":true,"status":"throw","throws":[]}}
+{"socket":"/api/events/system","t":98.566,"type":"state","data":{"connected":true,"event":"calibrationStarted","running":true,"status":"calibrating","throws":[]}}
+{"socket":"/api/events","t":98.783,"type":"state","data":{"connected":true,"event":"calibrationStarted","running":true,"status":"calibrating","throws":[]}}
+{"socket":"/api/events/system","t":99.282,"type":"state","data":{"connected":true,"event":"calibrationFinished","running":true,"status":"throw","throws":[]}}
+{"socket":"/api/events","t":99.331,"type":"state","data":{"connected":true,"event":"calibrationFinished","running":true,"status":"throw","throws":[]}}

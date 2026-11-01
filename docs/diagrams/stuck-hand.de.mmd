@@ -1,0 +1,16 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Was geschieht, wenn ein Board ständig eine Hand sieht
+  accDescr: Auf Board Manager 2.1 gilt eine Hand als hängend, wenn ihr Bild eine Minute lang stillsteht. Geht oder bewegt sie sich, gibt es nichts zu tun. Sonst folgen der Reparaturhinweis und das Ereignis stuck_hand. Ist Hängende Entnahme lösen an und läuft weder ein Spiel noch steckt ein Dart im Board, stoppt und startet die Integration die Erkennung einmal; sonst liegt das bei dir. Zeigt die laufende Erkennung keine Hand mehr, verschwindet der Hinweis, und stuck_hand_cleared folgt
+  HAND["Eine Hand, und das Bild<br/>steht still"] --> WAIT{"Nach einer Minute<br/>noch genauso?"}
+  WAIT -- "nein: sie ging<br/>oder bewegt sich" --> FINE["Nichts zu tun"]
+  WAIT -- "ja" --> NOTICE["Reparaturhinweis,<br/>Ereignis stuck_hand"]
+  NOTICE --> SAFE{"Schalter an, kein Spiel,<br/>kein Dart im Board?"}
+  SAFE -- "ja, einmal" --> RESTART["Die Integration stoppt und<br/>startet die Erkennung"]
+  SAFE -- "nein" --> YOU["Du bestätigst den Hinweis<br/>oder nutzt den Schalter"]
+  RESTART --> GONE["Keine Hand: Der Hinweis geht,<br/>Ereignis stuck_hand_cleared"]
+  YOU --> GONE
