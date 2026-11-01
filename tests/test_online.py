@@ -244,6 +244,7 @@ async def test_options_switch_the_bridge_on_and_show_the_address(hass, aioclient
     assert [str(key) for key in result["data_schema"].schema] == [
         "online_bridge",
         "online_bridge_remote",
+        "plans",
     ]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"online_bridge": True, "online_bridge_remote": False}
@@ -280,6 +281,7 @@ async def test_options_switch_the_bridge_on_and_show_the_address(hass, aioclient
         "online_bridge",
         "online_bridge_remote",
         "online_bridge_new_address",
+        "plans",
     ]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],

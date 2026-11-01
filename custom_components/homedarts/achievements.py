@@ -53,5 +53,7 @@ CATALOGUE = (
     Achievement("bobs_27", (100, 250, 500)),
     Achievement("streak", (3, 7, 10, 30)),
     Achievement("darts_thrown", (1000, 10000, 100000)),
+    # Training plans played to their end.
+    Achievement("plans_finished", (1, 10, 100)),
 )
 ACHIEVEMENTS = {achievement.key: achievement for achievement in CATALOGUE}

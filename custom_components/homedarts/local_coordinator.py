@@ -122,6 +122,8 @@ EVENT_TYPES = [
     "game_started",
     "game_ended",
     "drill_finished",
+    "plan_step_finished",
+    "plan_finished",
     "checkout_attempt",
     "personal_best",
     "daily_goal_reached",

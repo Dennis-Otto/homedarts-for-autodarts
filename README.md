@@ -94,6 +94,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 
 - Training sessions that start with the first dart and keep your last 20 sessions
 - Eight training games: Around the Clock, doubles training, checkout training, Bob's 27, the 121 checkout, Catch 40, the JDC Challenge and the singles training
+- [Training plans](https://dennis-otto.github.io/homedarts-for-autodarts/games.html#training-plans) that play several training games in a row, with a plan of the day one tap away
 - A daily goal, a training streak and personal bests with an event when you beat one
 
 <img src="https://raw.githubusercontent.com/Dennis-Otto/homedarts-for-autodarts/main/docs/images/en/training-game.webp" alt="Animation: Around the Clock on the live card; every hit moves the target and outlines the beds of the next number" width="100%">

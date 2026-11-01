@@ -27,6 +27,8 @@ CONF_API_GENERATION: Final = "api_generation"
 CONF_NO_SYSTEM_API: Final = "no_system_api"
 # A dartboard without Autodarts: every dart is entered in Home Assistant.
 CONF_MANUAL_BOARD: Final = "manual_board"
+# The own training plans of a board, in its options.
+CONF_PLANS: Final = "plans"
 # The Bluetooth address of the Granboard whose darts a dartboard without Autodarts
 # receives, see granboard.py.
 CONF_GRANBOARD: Final = "granboard"

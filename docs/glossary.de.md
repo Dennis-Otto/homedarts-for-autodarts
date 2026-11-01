@@ -50,6 +50,7 @@ Die Begriffe des Dartsports und dieser Integration, wie sie die Dokumentation, d
 | **Cricket-Spiele** | Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random Cricket und Hidden Cricket | Cricket games |
 | **Partyspiele** | Shanghai, Halve-It, Killer, Golf, Baseball, Count-Up, Bermuda, Round the World und Gotcha | Party games |
 | **Trainingsspiele** | Around the Clock, Doppeltraining, Checkout-Training, Bob's 27, 121-Checkout, Catch 40, JDC Challenge und Singles-Training | Training games |
+| **Trainingsplan** | Mehrere Trainingsspiele nacheinander, mit einem Plan des Tages für jeden Wochentag | Training plan |
 | **Team-Match** | Vier Spieler bei X01 oder einem Cricket-Spiel als zwei Teams: 1 und 3 gegen 2 und 4 | Team match |
 | **Match-Zusammenfassung** | Die Zahlen jedes Spielers nach einem Match: Averages, Checkout-Quote, höchster Checkout, 180er und bestes Leg | Match summary |
 | **Bot** | Ein Computerspieler für X01 und die Cricket-Spiele; seine Stärke ist der 3-Dart-Average, den er spielt | Bot |

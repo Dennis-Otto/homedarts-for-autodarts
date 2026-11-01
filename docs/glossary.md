@@ -50,6 +50,7 @@ The words of darts and of this integration, as the documentation, the entities a
 | **Cricket games** | Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random Cricket and Hidden Cricket | Cricket-Spiele |
 | **Party games** | Shanghai, Halve-It, Killer, Golf, Baseball, Count-Up, Bermuda, Round the World and Gotcha | Partyspiele |
 | **Training games** | Around the Clock, doubles training, checkout training, Bob's 27, 121 checkout, Catch 40, JDC Challenge and singles training | Trainingsspiele |
+| **Training plan** | Several training games in a row, with a plan of the day for every weekday | Trainingsplan |
 | **Team match** | Four players of X01 or a Cricket game as two teams: 1 and 3 against 2 and 4 | Team-Match |
 | **Match summary** | The numbers of every player after a match: averages, checkout rate, highest checkout, 180s and the best leg | Match-Zusammenfassung |
 | **Bot** | A computer player for X01 and the Cricket games; its level is the 3-dart average it plays | Bot |
