@@ -114,11 +114,13 @@ async ([index, value]) => {
 }
 """
 
+# Only cards with a shadow root: a stand-in has none until the card module has loaded, and
+# a page function that throws ends wait_for_function instead of letting it look again.
 FIND_CARDS = """
 () => {
   const cards = [];
   (function collect(root) {
-    root.querySelectorAll('homedarts-card').forEach((card) => cards.push(card));
+    root.querySelectorAll('homedarts-card').forEach((card) => card.shadowRoot && cards.push(card));
     root.querySelectorAll('*').forEach((el) => el.shadowRoot && collect(el.shadowRoot));
   })(document);
   return cards;

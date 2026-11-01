@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: How a browser gets the cards and their texts
-  accDescr: At every start, the integration digests every file of the cards, both modules and the texts of each language. Version and digest name a folder such as /homedarts/1.16.0-0123abcd/, from which every page loads homedarts-strategy.js and homedarts-card.js. The card module imports text/en.js, text/de.js and the other languages beside it, from the same folder, and the browser keeps every file of the folder for a month. A release, or a text changed in one language, gives a new folder for every file, so no browser mixes files of two versions.
+  accDescr: At every start, the integration digests every file of the cards, both modules and the texts of each language. Version and digest name a folder such as /homedarts/1.16.0-0123abcd/, from which every page loads homedarts-strategy.js, and the first card on a page homedarts-card.js. The card module imports text/en.js, text/de.js and the other languages beside it, from the same folder, and the browser keeps every file of the folder for a month. A release, or a text changed in one language, gives a new folder for every file, so no browser mixes files of two versions.
 
   START["Home Assistant starts: the integration<br/>digests every file of the cards"] --> FOLDER{{"A folder of version and digest:<br/>/homedarts/1.16.0-0123abcd/"}}
-  FOLDER --> PAGE["Every page loads homedarts-strategy.js<br/>and homedarts-card.js from it"]
+  FOLDER --> PAGE["Every page loads homedarts-strategy.js from it,<br/>the first card on a page homedarts-card.js"]
   PAGE --> TEXTS["The card module imports text/en.js,<br/>text/de.js … beside it, from the same folder"]
   TEXTS --> KEPT["The browser keeps every file<br/>of the folder for a month"]
   KEPT -.->|"A release or<br/>a changed text:<br/>a new folder"| FOLDER

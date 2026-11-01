@@ -240,12 +240,13 @@ def assert_cached(response):
     assert response.headers["Vary"] == "Accept-Encoding"
 
 
-async def test_card_is_served_and_loaded_on_dashboards(hass, hass_client_no_auth):
+async def test_card_is_served_and_only_the_small_module_is_on_every_page(
+    hass, hass_client_no_auth
+):
     client, add_js = await serve_card(hass, hass_client_no_auth)
-    # The strategy comes first and imports the card from the same folder.
+    # A page gets the card module, from the same folder, once it shows a card.
     assert [call.args for call in add_js.call_args_list] == [
         (hass, address("homedarts-strategy.js")),
-        (hass, address("homedarts-card.js")),
     ]
     response = await client.get(address("homedarts-strategy.js"))
     assert response.status == 200
@@ -423,6 +424,11 @@ async def test_an_address_of_no_or_another_version_never_goes_stale(
     assert response.headers["Cache-Control"] == "no-cache"
 
 
+def test_the_module_of_every_page_stays_small():
+    """Every page of every user parses it, so it must not grow into a second card."""
+    assert FILES["homedarts-strategy.js"].stat().st_size < 20_000
+
+
 CAST = "https://cast.home-assistant.io"
 OTHER = ("module", "/hacsfiles/button-card/button-card.js")
 # A copy of the card module in the www folder, as people installed cards by hand.
@@ -448,11 +454,8 @@ def listed(hass):
 
 
 def ours():
-    """Both modules at their current addresses, the strategy first."""
-    return [
-        ("module", address("homedarts-strategy.js")),
-        ("module", address("homedarts-card.js")),
-    ]
+    """What the integration keeps there: the small module at its current address."""
+    return [("module", address("homedarts-strategy.js"))]
 
 
 async def with_dashboards(hass, **lovelace):
@@ -467,7 +470,9 @@ async def register(hass):
         await async_register_card(hass)
 
 
-async def test_cast_finds_both_modules_in_the_dashboard_resources(hass, hass_storage):
+async def test_cast_finds_the_small_module_in_the_dashboard_resources(
+    hass, hass_storage
+):
     hass_storage["lovelace_resources"] = {
         "version": 1,
         "key": "lovelace_resources",
@@ -501,15 +506,14 @@ async def test_cast_finds_both_modules_in_the_dashboard_resources(hass, hass_sto
     await with_dashboards(hass)
     await register(hass)
     await async_add_card_resources(hass)
-    # Brought to this version in their place, from the query of earlier releases or
-    # the folder of another version; the resources of other cards stay, as does a
-    # copy of the card that is not served by the integration.
-    strategy, card = ours()
-    assert listed(hass) == [strategy, OTHER, card, ("module", COPY)]
+    # Brought to this version in its place, from the query of earlier releases or the
+    # folder of another version. The card module of earlier releases goes, as every
+    # dashboard would load it; the resources of other cards stay, as does a copy of
+    # the card that is not served by the integration.
+    assert listed(hass) == [*ours(), OTHER, ("module", COPY)]
     assert [item["id"] for item in resources(hass).async_items()] == [
         "old",
         "theirs",
-        "by-hand",
         "copy",
     ]
     # Once up to date, a board set up later changes nothing.
@@ -540,7 +544,7 @@ async def test_a_resource_that_does_not_parse_stays_as_it_is(hass, hass_storage)
     assert listed(hass) == [("module", "http://[broken")]
 
 
-async def test_boards_set_up_side_by_side_add_each_module_once(hass):
+async def test_boards_set_up_side_by_side_add_the_module_once(hass):
     await with_dashboards(hass)
     await register(hass)
     collection = resources(hass)

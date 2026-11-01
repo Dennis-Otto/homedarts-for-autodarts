@@ -1,4 +1,4 @@
-"""Serve the bundled Lovelace card and load it on every dashboard, also on Cast."""
+"""Serve the bundled Lovelace cards and have them ready on every dashboard, also on Cast."""
 
 from __future__ import annotations
 
@@ -27,12 +27,14 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-# Every file of the cards: the two modules that Home Assistant loads and the texts
-# that the card module imports, one module per language in text/.
+# Every file of the cards: the two modules and the texts that the card module imports,
+# one module per language in text/.
 FRONTEND = Path(__file__).parent / "frontend"
+# All cards. The module below imports it on the first use of a card on a page.
 CARD = "homedarts-card.js"
-# The dashboard strategy alone, small enough to be registered before Home Assistant
-# stops waiting for it; it loads the strategy of the card module.
+# What Home Assistant loads on every page, whether it shows a card or not: small stand-ins
+# for the cards and the dashboard strategy, which is there before Home Assistant stops
+# waiting for it.
 STRATEGY = "homedarts-strategy.js"
 # A month, as Home Assistant sends its own static files; the tests compare the two.
 CACHE_CONTROL = "public, max-age=2678400"
@@ -46,9 +48,9 @@ _CODING = re.compile(
 
 @dataclass(slots=True)
 class CardResources:
-    """The address of each module, which the dashboard resources keep for Cast."""
+    """The address of the module that the dashboard resources keep for Cast."""
 
-    urls: dict[str, str]
+    url: str
     # Boards are set up side by side; one at a time looks at the resources.
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
@@ -64,24 +66,24 @@ async def async_register_card(hass: HomeAssistant) -> None:
     files, digest = await hass.async_add_executor_job(_load)
     # Version and content change the addresses, so browsers never keep a stale card.
     # The whole folder has the version in its address: the relative imports of a
-    # module, of the card by the strategy and of the texts by the card, keep it.
+    # module, of the card by the stand-ins and of the texts by the card, keep it.
     tag = f"{version}-{digest}"
     for name, (content, compressed) in files.items():
         hass.http.register_view(FileView(name, content, compressed, tag))
-    # The strategy comes first, so that it is there before the cards have loaded.
-    urls = {name: versioned(tag, name) for name in (STRATEGY, CARD)}
-    for url in urls.values():
-        add_extra_js_url(hass, url)
-    hass.data[CARD_RESOURCES] = CardResources(urls)
+    url = versioned(tag, STRATEGY)
+    add_extra_js_url(hass, url)
+    hass.data[CARD_RESOURCES] = CardResources(url)
 
 
 async def async_add_card_resources(hass: HomeAssistant) -> None:
-    """Keep both modules in the dashboard resources, at their current addresses.
+    """Keep the small module in the dashboard resources, at its current address.
 
     Home Assistant Cast shows a dashboard on a TV through Chromecast and loads only
     its resources, never the modules that the frontend adds to every page. A browser
-    loads a resource and a module of the frontend at one address once. Resources in
-    YAML are the user's own: the documentation names the lines for them.
+    loads a resource and a module of the frontend at one address once. Earlier releases
+    kept the card module there too, and it has to go: every dashboard would load it,
+    with or without a card. Resources in YAML are the user's own: the documentation
+    names the line for them.
     """
     if (card := hass.data.get(CARD_RESOURCES)) is None or (
         resources := _resources(hass)
@@ -91,15 +93,16 @@ async def async_add_card_resources(hass: HomeAssistant) -> None:
         try:
             # Home Assistant reads the resources on their first use.
             await resources.async_get_info()
-            for module, url in card.urls.items():
-                await _async_keep(resources, module, url)
+            await _async_keep(resources, STRATEGY, card.url)
+            for item in _ours(resources, CARD):
+                await resources.async_delete_item(item["id"])
         except HomeAssistantError as err:
             # Every browser still loads the cards; only Cast misses them.
             _LOGGER.warning("The cards are missing in the dashboard resources: %s", err)
 
 
 async def async_remove_card_resources(hass: HomeAssistant) -> None:
-    """Remove both modules from the dashboard resources, with the last board."""
+    """Remove the modules from the dashboard resources, with the last board."""
     await async_remove_modules(hass, CARD, STRATEGY)
 
 

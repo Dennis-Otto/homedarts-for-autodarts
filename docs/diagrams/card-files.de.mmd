@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: Wie ein Browser die Karten und ihre Texte bekommt
-  accDescr: Bei jedem Start bildet die Integration eine Prüfsumme über jede Datei der Karten, beide Module und die Texte jeder Sprache. Version und Prüfsumme benennen einen Ordner wie /homedarts/1.16.0-0123abcd/, aus dem jede Seite homedarts-strategy.js und homedarts-card.js lädt. Das Kartenmodul importiert text/en.js, text/de.js und die anderen Sprachen daneben, aus demselben Ordner, und der Browser behält jede Datei des Ordners einen Monat lang. Ein Release oder ein geänderter Text einer Sprache ergibt einen neuen Ordner für jede Datei, sodass kein Browser Dateien zweier Versionen mischt.
+  accDescr: Bei jedem Start bildet die Integration eine Prüfsumme über jede Datei der Karten, beide Module und die Texte jeder Sprache. Version und Prüfsumme benennen einen Ordner wie /homedarts/1.16.0-0123abcd/, aus dem jede Seite homedarts-strategy.js lädt und die erste Karte einer Seite homedarts-card.js. Das Kartenmodul importiert text/en.js, text/de.js und die anderen Sprachen daneben, aus demselben Ordner, und der Browser behält jede Datei des Ordners einen Monat lang. Ein Release oder ein geänderter Text einer Sprache ergibt einen neuen Ordner für jede Datei, sodass kein Browser Dateien zweier Versionen mischt.
 
   START["Home Assistant startet: Die Integration bildet<br/>eine Prüfsumme über jede Datei der Karten"] --> FOLDER{{"Ein Ordner aus Version und Prüfsumme:<br/>/homedarts/1.16.0-0123abcd/"}}
-  FOLDER --> PAGE["Jede Seite lädt homedarts-strategy.js<br/>und homedarts-card.js daraus"]
+  FOLDER --> PAGE["Jede Seite lädt homedarts-strategy.js daraus,<br/>die erste Karte einer Seite homedarts-card.js"]
   PAGE --> TEXTS["Das Kartenmodul importiert text/en.js,<br/>text/de.js … daneben, aus demselben Ordner"]
   TEXTS --> KEPT["Der Browser behält jede Datei<br/>des Ordners einen Monat lang"]
   KEPT -.->|"Ein Release oder<br/>ein geänderter Text:<br/>ein neuer Ordner"| FOLDER

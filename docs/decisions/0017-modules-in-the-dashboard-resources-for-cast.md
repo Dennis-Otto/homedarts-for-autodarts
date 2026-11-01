@@ -4,7 +4,7 @@ description: "Why the integration keeps both modules of its cards in the dashboa
 
 # Keep the modules of the cards in the dashboard resources, for Home Assistant Cast
 
-- Status: accepted
+- Status: accepted; since [0028](0028-the-cards-load-on-first-use.md), only the small module is a resource
 - Date: 2026-10-18
 
 ## Context
