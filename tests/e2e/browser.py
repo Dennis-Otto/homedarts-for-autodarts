@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import threading
 import time
 import tomllib
@@ -620,6 +621,66 @@ def progress(browser: Browser) -> None:
     page.close()
 
 
+# What the browser paints for the legend of a card, and for a bed of its board.
+HEAT_PAINT = """
+(card) => {
+  const root = card.shadowRoot;
+  const bar = getComputedStyle(root.querySelector('.legend-bar'));
+  const bed = root.querySelector('.heat-layer path');
+  return {
+    gradient: bar.backgroundImage,
+    outline: bar.boxShadow,
+    bed: bed && getComputedStyle(bed).fill,
+    ends: [...root.querySelectorAll('.legend .muted')].map((el) => el.textContent),
+  };
+}
+"""
+
+
+def luminance(red: int, green: int, blue: int) -> float:
+    """The relative luminance of an sRGB color, as WCAG defines it."""
+
+    def linear(channel: int) -> float:
+        value = channel / 255
+        return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+
+
+def heat_paint(
+    page: Page, view: str, cards: str, ends: list[str] | None = None
+) -> None:
+    """The card paints the scale that gets lighter with the hits, not only names it."""
+    paint = page.evaluate(f"() => ({HEAT_PAINT})(({cards})()[0])")
+    stops = [
+        luminance(*map(int, stop))
+        for stop in re.findall(r"rgb\((\d+), (\d+), (\d+)\)", paint["gradient"])
+    ]
+    check(
+        len(stops) == 5 and stops == sorted(set(stops)),
+        f"{view} legend does not get lighter: {paint['gradient']}",
+    )
+    check(paint["outline"] != "none", f"{view} legend has no outline")
+    if ends:
+        check(paint["ends"] == ends, f"{view} legend ends at {paint['ends']}")
+    else:
+        check(
+            str(paint["bed"]).startswith("rgb(") and paint["bed"] != "rgb(0, 0, 0)",
+            f"{view} is painted {paint['bed']}, not in the scale",
+        )
+
+
+def doubles_scale(browser: Browser) -> None:
+    """The doubles card on a light theme: its legend in the scale of the heatmap."""
+    page, problems = open_view(
+        browser, "doubles", DOUBLES_CARDS, ".legend-bar", "light"
+    )
+    heat_paint(page, "doubles", DOUBLES_CARDS, ["0%", "50%+"])
+    errors = page_errors(page, problems)
+    check(not errors, f"Console problems: {errors}")
+    page.close()
+
+
 def training(browser: Browser) -> None:
     page, problems = open_view(browser, "training", TRAINING_CARDS, ".heat-layer path")
     # The history of completed visits is loaded from the recorder.
@@ -645,6 +706,7 @@ def training(browser: Browser) -> None:
         "state": "Session running",
     }
     check(state == expected, f"Training card state {state} != {expected}")
+    heat_paint(page, "training", TRAINING_CARDS)
 
     # Ending a session needs a second tap; starting one does not.
     toggle = page.locator("homedarts-training-card button[data-action='session']")
@@ -3610,6 +3672,7 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
         Step("training card", 1, lambda: training(browser), as_started=True),
         Step("live card", 1, lambda: visit(browser), as_started=True),
         Step("fresh loads", 1, lambda: fresh_loads(browser)),
+        Step("doubles scale", 1, lambda: doubles_scale(browser)),
         Step("practice game", 1, lambda: practice(browser)),
         Step("progress and leaderboard", 1, lambda: progress(browser)),
         Step("status card", 1, lambda: status(browser)),
@@ -3646,7 +3709,7 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
         Step(
             "doubles editor",
             1,
-            lambda: editor(browser, "doubles", DOUBLES_CARDS, ".doubles-card", 4),
+            lambda: editor(browser, "doubles", DOUBLES_CARDS, ".doubles-card", 5),
         ),
         Step(
             "players editor",

@@ -71,7 +71,7 @@ Home Assistant keeps the best value of every record and fires `personal_best` wh
 
 The heatmap of the training card has four modes, which the switches above the board choose:
 
-- **Beds:** every bed colored by how often you hit it, from a dark blue violet (rarely) to a light yellow (most often), which also reads for color-blind players and in grey. Hover a bed for its count and share.
+- **Beds:** every bed colored by how often you hit it, from a dark blue violet (rarely) to a light yellow (most often), which also reads for color-blind players and in gray. Hover a bed for its count and share.
 - **Numbers:** the singles, doubles and triples of every number summed up, which shows at a glance whether you drift towards the 5 or the 1.
 - **Positions:** where the darts really landed, from the positions the board reports: a smoothed density with the newest 300 darts as dots, and below the board the [grouping](#trends-and-grouping) at up to three beds you aimed at. For the session, the darts of the current visit appear the moment they land, as blue pins; when you pull them, they join the logged darts. A dart that misses the board, number ring included, is not drawn.
 - **Aim:** where you score the most points per dart with your own spread, see [Where to aim](#where-to-aim).
