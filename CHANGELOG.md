@@ -4,6 +4,18 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.0...v2.2.1) (2026-11-01)
+
+
+### Bug fixes
+
+* jobs with Harden-Runner wait for their hosts instead of failing on a stale DNS cache ([#566](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/566)) ([347704c](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/347704c04312a718cbe71919274eb0161f9e5d37))
+
+
+### Performance
+
+* **cards:** load the card module only when a page shows a card ([#576](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/576)) ([5844592](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/5844592d6c2fb88d4c8c5092dee53e36d7803628))
+
 ## [2.2.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.1...v2.2.0) (2026-11-01)
 
 ### Features
