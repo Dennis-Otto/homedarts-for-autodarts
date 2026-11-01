@@ -45,6 +45,15 @@ WEBSITE_PAGE = re.compile(rf"^(?:({'|'.join(FURTHER)})/)?([^#?]*)")
 # The pages that decide whether someone tries the integration, which every further
 # language has (docs/decisions/0027-the-start-pages-in-dutch-french-and-spanish.md).
 START_PAGES = ("index", "getting-started", "installation", "faq")
+# A button of My Home Assistant: its official picture and a description, on a link to
+# the redirect of the same name.
+MY_BUTTON = re.compile(
+    r"\[!\[([^\]]*)\]\(https://my\.home-assistant\.io/badges/(\w+)\.svg\)\]"
+    r"\(https://my\.home-assistant\.io/redirect/(\w+)/[^)]*\)"
+)
+# The website of the extension of the same author for a shared display, which has
+# English and German pages.
+PLAYER_SWITCH = "https://dennis-otto.github.io/player-switch-for-autodarts/"
 # A line of a page of the website that includes a file of the repository, or a
 # section of one, with pymdownx.snippets, such as --8<-- "CHANGELOG.md".
 INCLUDE = re.compile(r'^--8<-- "([^":]+)(?::([\w-]+))?"$', re.MULTILINE)
@@ -312,6 +321,74 @@ def test_every_image_is_shown_in_both_languages():
         if (IMAGES / language / name).resolve() not in used
     )
     assert not unused, unused
+
+
+def test_every_button_of_my_home_assistant_is_official_and_described():
+    """Its picture comes from My Home Assistant and shows the redirect it leads to."""
+    wrong = []
+    for document in DOCUMENTS:
+        text = prose(document.read_text(encoding="utf-8"))
+        buttons = MY_BUTTON.findall(text)
+        if len(buttons) != text.count("my.home-assistant.io/badges/"):
+            wrong.append(f"{document.name}: a picture outside a button")
+        wrong += [
+            f"{document.name}: {badge} leads to {redirect}, described as {alt!r}"
+            for alt, badge, redirect in buttons
+            if badge != redirect or len(alt.split()) < 2
+        ]
+    assert not wrong, "\n".join(wrong)
+
+
+@pytest.mark.parametrize(
+    ("redirect", "page"),
+    [
+        *(
+            ("lovelace_dashboards", page)
+            for page in (
+                "README.md",
+                "docs/README.de.md",
+                "docs/getting-started.md",
+                "docs/getting-started.de.md",
+                "docs/getting-started.nl.md",
+                "docs/getting-started.fr.md",
+                "docs/getting-started.es.md",
+            )
+        ),
+        *(
+            ("blueprints", page)
+            for page in (
+                "README.md",
+                "docs/README.de.md",
+                "docs/automations.md",
+                "docs/automations.de.md",
+            )
+        ),
+    ],
+)
+def test_the_steps_in_home_assistant_have_their_button(redirect, page):
+    """The steps that a reader takes in Home Assistant start with one select."""
+    buttons = MY_BUTTON.findall((ROOT / page).read_text(encoding="utf-8"))
+    assert redirect in {badge for _, badge, _ in buttons}, page
+
+
+@pytest.mark.parametrize(
+    ("page", "language"),
+    [
+        ("README.md", ""),
+        ("docs/README.de.md", "de/"),
+        ("docs/online-matches.md", ""),
+        ("docs/online-matches.de.md", "de/"),
+        ("docs/faq.md", ""),
+        ("docs/faq.de.md", "de/"),
+        ("docs/faq.nl.md", ""),
+        ("docs/faq.fr.md", ""),
+        ("docs/faq.es.md", ""),
+    ],
+)
+def test_the_pages_about_a_shared_display_link_to_player_switch(page, language):
+    """In the reader's language where the website of the extension has it."""
+    text = (ROOT / page).read_text(encoding="utf-8")
+    assert f"]({PLAYER_SWITCH}{language})" in text, page
 
 
 def test_the_card_picker_links_to_the_card_guide():

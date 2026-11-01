@@ -41,7 +41,11 @@ You need Home Assistant 2026.8 or newer with [HACS](https://hacs.xyz), and an Au
 
    Choose **Search for boards on this network** or **Enter board address** and confirm. Without Autodarts, choose **Dartboard without Autodarts: enter every dart yourself**.
 
-3. **Add the cards.** Create a complete dashboard in one step: **Settings → Dashboards → Add dashboard → HomeDarts**, give it a title and select **Create**. Or edit a dashboard, choose **Add card** and search for *HomeDarts*.
+3. **Add the cards.** Create a complete dashboard in one step:
+
+   [![Open your Home Assistant instance and show your dashboards.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+   The button opens **Settings → Dashboards**. There, select **Add dashboard → HomeDarts**, give it a title and select **Create**. Or edit a dashboard, choose **Add card** and search for *HomeDarts*.
 
 New to Home Assistant? [From zero to the scoreboard](https://dennis-otto.github.io/homedarts-for-autodarts/getting-started.html) takes you from nothing to the scoreboard next to your board. The [installation guide](https://dennis-otto.github.io/homedarts-for-autodarts/installation.html) covers manual installation, reconfiguration, updates and removal.
 
@@ -188,7 +192,11 @@ How HomeDarts compares with the Autodarts app and its browser extension, with da
 
 ## Blueprints
 
-The integration brings every blueprint along and keeps those you haven't changed up to date with each of its updates. Choose one on the blueprints page of Home Assistant, select your board and you're done; the buttons import one from GitHub, for example one you deleted.
+The integration brings every blueprint along and keeps those you haven't changed up to date with each of its updates. Choose one on the blueprints page of Home Assistant, select your board and you're done.
+
+[![Open your Home Assistant instance and show your blueprints.](https://my.home-assistant.io/badges/blueprints.svg)](https://my.home-assistant.io/redirect/blueprints/)
+
+The buttons below import a blueprint from GitHub, for example one you deleted.
 
 - **Light show.** Your WLED presets or room lights for a 180, a high finish, a bust, a won leg or match, a personal best, an achievement, the winner of a tournament and more, and back to your normal light afterwards.
 
@@ -308,6 +316,10 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/home
 - **Training sessions count darts, not games.** A session counts every dart the board detects; players, legs and checkouts belong to the practice game, which keeps its own statistics.
 - **Board Manager updates are installed on the board PC.** The update entity reports new Board Manager 2 versions.
 - **Live camera view with Board Manager 2 only.** With Board Manager 1, the camera entities show snapshots.
+
+## Also for Autodarts
+
+[**Player Switch for Autodarts**](https://dennis-otto.github.io/player-switch-for-autodarts/) is a Chrome extension for one shared display at the board, by the same author: everyone plays online on their own Autodarts account, and one tap on a tile switches players, with no signing in. It needs no Home Assistant.
 
 ## Support and contributing
 

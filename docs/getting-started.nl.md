@@ -53,7 +53,9 @@ De [installatiehandleiding](installation.nl.md#je-bord-toevoegen) legt de manier
 
 ## 5. Het dashboard maken
 
-Ga naar **Instellingen → Dashboards → Voeg dashboard toe → HomeDarts**. Geef het een titel en selecteer **Maak aan**: dat maakt een compleet dashboard voor je bord, met weergaven voor het livespel, het scorebord, de training, de spelers en het bord. Het werkt zichzelf bij wanneer je een bord toevoegt of wanneer een latere versie nieuwe weergaven brengt.
+[![Open je Home Assistant en toon je dashboards.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+De knop opent **Instellingen → Dashboards**. Selecteer daar **Voeg dashboard toe → HomeDarts**, geef het een titel en selecteer **Maak aan**: dat maakt een compleet dashboard voor je bord, met weergaven voor het livespel, het scorebord, de training, de spelers en het bord. Het werkt zichzelf bij wanneer je een bord toevoegt of wanneer een latere versie nieuwe weergaven brengt.
 
 <img src="images/en/dashboard-strategy.png" alt="De trainingsweergave van het automatische dashboard" width="760">
 

@@ -14,6 +14,8 @@ Your board is fast enough for automations that happen *while* you play. The ligh
 
 Blueprints are ready-made automations, and the integration brings all sixteen along: once your first board is added, they are on the blueprints page, **Settings → Automations & scenes → Blueprints**. Choose one, select your board and the devices to use, and you're done. They require Home Assistant 2026.8 or newer, and every update of the integration brings their new versions, see [updates of the blueprints](#updates-of-the-blueprints).
 
+[![Open your Home Assistant instance and show your blueprints.](https://my.home-assistant.io/badges/blueprints.svg)](https://my.home-assistant.io/redirect/blueprints/)
+
 Not sure which one you need? Start from what your home should do:
 
 <picture>
