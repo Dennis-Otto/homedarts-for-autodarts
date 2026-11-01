@@ -4,13 +4,8 @@ Contributions are welcome through issues and pull requests.
 Participation follows [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and project decision-making is described in [GOVERNANCE.md](GOVERNANCE.md).
 Use [SUPPORT.md](SUPPORT.md) to choose the correct public support channel and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 
-<<<<<<< before updating
-All changes, including the releases, reach the protected `main` branch through pull requests. Pull requests must pass every required check before they are merged.
-Coding agents find these rules in short in [AGENTS.md](AGENTS.md), with the files that belong to the blueprint and are changed there.
-=======
 All changes reach the protected `main` branch through pull requests that pass every required check.
 Coding agents find these rules in short in [AGENTS.md](AGENTS.md), with the files that belong to the blueprint and are changed there. A pull request that changes one of those, as `.github/blueprint/owned.txt` lists them, gets a notice that says where the change belongs instead.
->>>>>>> after updating
 
 ## Requirements for changes
 
