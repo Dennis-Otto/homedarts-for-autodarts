@@ -77,6 +77,7 @@ PROJECT_PATTERNS = re.compile(
 OPTIONAL = (
     "docs/automation.md",
     "scripts/check-site.sh",
+    "scripts/release-assets.sh",
     ".github/screenshots-paths.txt",
 )
 # The number words of each language, which its text uses for counts. Each text
