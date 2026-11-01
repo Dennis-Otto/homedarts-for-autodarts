@@ -2908,7 +2908,7 @@ def accessibility_views(browser: Browser) -> list[tuple[str, str, list[dict]]]:
         CALL_ACTION, ["start_game", {"game": "501", "players": ["Alex", "Sam"]}]
     )
     thrown(pages, [T20, SINGLE_20])
-    wait_for(pages, f"() => ({CARDS})()[0]?.shadowRoot.querySelector('.practice')")
+    wait_for(pages, f"() => ({CARDS})()[0]?.shadowRoot?.querySelector('.practice')")
     scan("homedarts-demo/board · practice match")
     show(pages, f"{HA}/homedarts-auto/scoreboard")
     scan("homedarts-auto/scoreboard · practice match")
@@ -3654,7 +3654,7 @@ def manual_board(browser: Browser) -> None:
             timeout=15000,
         )
         page.goto(f"{HA}/{MANUAL_DASHBOARD}/status")
-        note = f"({STATUS_CARDS})()[0]?.shadowRoot.querySelector('.manual-note')"
+        note = f"({STATUS_CARDS})()[0]?.shadowRoot?.querySelector('.manual-note')"
         page.wait_for_function(f"() => {note} && !{note}.hidden", timeout=30000)
         errors = page_errors(page, [])
         check(not errors, f"Console problems: {errors}")
