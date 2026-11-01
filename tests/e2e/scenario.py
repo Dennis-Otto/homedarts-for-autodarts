@@ -104,6 +104,11 @@ EXPECTED_TRACEBACKS = (
     "import_module with args ('probatio.codecs',)",
 )
 MANIFEST = Path("/config/custom_components/homedarts/manifest.json")
+# Where the integration and its blueprints name their icons (compose.yaml).
+ICON_FILES = (
+    "/config/custom_components/homedarts",
+    "/config/blueprints/automation/Dennis-Otto",
+)
 # A record of the log at the level of a warning or above, such as "2026-10-25
 # 01:02:03.456 WARNING (MainThread) [homeassistant.helpers.frame] Detected that ...",
 # with its message.
@@ -2079,6 +2084,26 @@ class Scenario:
             f"Onboarding set up Radio Browser, which reaches the internet: {entries}",
         )
 
+    async def icons(self) -> None:
+        """Every icon that the integration and its blueprints name exists. The frontend
+        shows nothing for an icon that Material Design Icons doesn't have, and no log
+        says so. Home Assistant brings its frontend only here, not to the unit tests."""
+        import hass_frontend
+
+        names = Path(hass_frontend.__file__).with_name("static") / "mdi/iconList.json"
+        known = {icon["name"] for icon in json.loads(names.read_text(encoding="utf-8"))}
+        missing = {
+            f"{path.name}: mdi:{name}"
+            for folder in ICON_FILES
+            for path in Path(folder).rglob("*")
+            if path.suffix in (".js", ".json", ".py", ".yaml")
+            for name in re.findall(
+                r"mdi:([a-z0-9-]+)", path.read_text(encoding="utf-8")
+            )
+            if name not in known
+        }
+        check(not missing, f"Icons that the frontend doesn't have: {sorted(missing)}")
+
     async def second_socket(self) -> None:
         """Board Manager 2.1 sends its motion on a socket of its own, and everything of
         the first there too: each dart counts once, and the read of /api/system takes
@@ -2258,6 +2283,7 @@ async def main() -> None:
         await phase("connection", scenario.connect())
         entry_id = await phase("setup", scenario.setup())
         await phase("registries", scenario.registries(entry_id))
+        await phase("icons", scenario.icons())
         await phase("initial state", scenario.initial_state())
         await phase("controls", scenario.controls())
         await phase("realtime", scenario.realtime(entry_id))

@@ -3052,11 +3052,8 @@ def settings_texts(page: Page) -> None:
     )
 
 
-def blueprints_page(page: Page) -> None:
-    """The blueprints of the integration in Home Assistant, and the light show's form."""
-    context = own_context(
-        page, viewport={"width": 1280, "height": 900}, device_scale_factor=2
-    )
+def blueprint_list(context: BrowserContext) -> Page:
+    """A new page with the blueprints of Home Assistant, in the texts of the settings."""
     view = context.new_page()
     view.goto(f"{HA}/config/blueprint/dashboard")
     view.get_by_text("HomeDarts: light show").first.wait_for(timeout=60000)
@@ -3066,12 +3063,62 @@ def blueprints_page(page: Page) -> None:
         "Automations" if LANGUAGE == "en" else "Automationen", exact=True
     ).first.wait_for(timeout=30000)
     view.wait_for_timeout(1500)
-    page_shot(view, "blueprints")
+    return view
+
+
+def blueprint_form(view: Page, blueprint: str, name: str, height: int) -> None:
+    """The form of a blueprint of the list, as the picture `name`; closes the page."""
     # A blueprint opens a new automation with its form.
-    view.get_by_text("HomeDarts: light show").first.click()
+    view.get_by_text(blueprint).first.click()
     view.wait_for_url("**/config/automation/edit/new", timeout=30000)
+    view.set_viewport_size({"width": 1280, "height": height})
     view.wait_for_timeout(3000)
-    page_shot(view, "blueprint-light-show")
+    page_shot(view, name)
+    view.close()
+
+
+# The names of the automation blueprints that Home Assistant knows, which its list shows.
+BLUEPRINT_NAMES = """
+async () => {
+  const hass = document.querySelector('home-assistant').hass;
+  const blueprints = await hass.callWS({ type: 'blueprint/list', domain: 'automation' });
+  return Object.values(blueprints).flatMap((blueprint) => blueprint.metadata?.name ?? []);
+}
+"""
+
+
+def require_every_blueprint(view: Page) -> None:
+    """Fail if the window cuts off a row of the list: it draws only the rows in view,
+    so a new blueprint would otherwise drop out of the picture without a word."""
+    bottom = view.viewport_size["height"]
+    cut_off = []
+    names = view.evaluate(BLUEPRINT_NAMES)
+    for name in names:
+        row = view.get_by_text(name, exact=True)
+        box = row.first.bounding_box() if row.count() else None
+        if box is None or box["y"] + box["height"] > bottom:
+            cut_off.append(name)
+    if cut_off or not names:
+        raise AssertionError(
+            f"The list of {len(names)} blueprints doesn't fit into the {bottom} px of"
+            f" the window, raise the height in blueprints_page(): {cut_off}"
+        )
+
+
+def blueprints_page(page: Page) -> None:
+    """The blueprints of the integration in Home Assistant, and two of their forms."""
+    # So high that the list shows every blueprint: it only draws the rows in view.
+    context = own_context(
+        page, viewport={"width": 1280, "height": 1180}, device_scale_factor=2
+    )
+    view = blueprint_list(context)
+    require_every_blueprint(view)
+    page_shot(view, "blueprints")
+    blueprint_form(view, "HomeDarts: light show", "blueprint-light-show", 900)
+    # So high that its short form shows whole, with the sections that open closed.
+    blueprint_form(
+        blueprint_list(context), "HomeDarts: walk-on music", "blueprint-walk-on", 1150
+    )
     context.close()
 
 
