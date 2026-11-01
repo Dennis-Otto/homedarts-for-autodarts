@@ -5,6 +5,7 @@ Runs in the Playwright container on the demo's Compose network (see browser.sh).
 
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 import os
@@ -18,6 +19,7 @@ import zipfile
 from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
+from typing import Any, cast
 
 from pages import (
     CARDS_DRAWN,
@@ -707,8 +709,16 @@ def training(browser: Browser) -> None:
     }
     check(state == expected, f"Training card state {state} != {expected}")
     heat_paint(page, "training", TRAINING_CARDS)
+    ended = next_session(page)
+    check(len(ended["sessions"]) == 3, f"Ended session missing: {ended['sessions']}")
+    errors = page_errors(page, problems)
+    check(not errors, f"Console problems: {errors}")
+    page.close()
 
-    # Ending a session needs a second tap; starting one does not.
+
+def next_session(page: Page) -> dict:
+    """Ends the running session on the training card and starts the next: ending needs
+    a second tap, starting does not. Returns what the card showed for the ended one."""
     toggle = page.locator("homedarts-training-card button[data-action='session']")
     toggle.click()
     check(toggle.text_content() == "Confirm?", "Ending did not ask for confirmation")
@@ -718,9 +728,24 @@ def training(browser: Browser) -> None:
     )
     ended = page.evaluate(TRAINING_STATE)
     check(ended["state"].startswith("Session ended"), f"Session state {ended}")
-    check(len(ended["sessions"]) == 3, f"Ended session missing: {ended['sessions']}")
     toggle.click()
     page.wait_for_function(f"() => ({TRAINING_STATE})().darts === '0'", timeout=30000)
+    return ended
+
+
+def training_after_others(browser: Browser) -> None:
+    """The training card when other steps ran before, which leave a session of any
+    length: the next session starts empty, and a dart is counted and painted on it."""
+    page, problems = open_view(browser, "training", TRAINING_CARDS, ".heat-layer")
+    next_session(page)
+    control({"event": "Throw detected", "throws": [T20]})
+    page.wait_for_function(f"() => ({TRAINING_STATE})().darts === '1'", timeout=15000)
+    state = page.evaluate(TRAINING_STATE)
+    check(
+        state["heat"] == 1 and state["top"] == ["T20"],
+        f"Training card after a dart {state}",
+    )
+    heat_paint(page, "training", TRAINING_CARDS)
     errors = page_errors(page, problems)
     check(not errors, f"Console problems: {errors}")
     page.close()
@@ -1860,10 +1885,56 @@ def safari(playwright: Playwright) -> None:
         page.locator(f"{card} [data-lobby='close']").tap()
         errors = page_errors(page, [])
         check(not errors, f"Console problems: {errors}")
-    except Exception:
-        # The pages of this browser, which the screenshots of main() don't see.
+    except (Exception, asyncio.CancelledError):
+        # The pages of this browser, which the screenshots of main() don't see. A wait
+        # in a page that outlasts the budget ends with a CancelledError (watchdog.py).
         keep_screenshots(browser, step)
         keep_trace(browser, step, timeline)
+        raise
+    finally:
+        browser.close()
+
+
+class SignedIn:
+    """A browser whose new pages start with the stored tokens of signed_in_before(), as
+    those of a user who opened Home Assistant before do, in place of the browser in the
+    steps that only open pages. A page that signs in first leaves for the login page,
+    and Firefox reports the imports that this cancels as a console error of the card:
+    "Failed to load extra module". The card did load, on the way back."""
+
+    def __init__(self, browser: Browser, stored: dict) -> None:
+        self.browser = browser
+        self.stored = stored
+
+    def new_page(self, **options: Any) -> Page:
+        return self.browser.new_page(storage_state=self.stored, **options)
+
+
+def firefox(playwright: Playwright) -> None:
+    """The cards at a desktop size in Firefox, which Home Assistant supports: its Gecko
+    differs from Chromium and WebKit in the focus in a shadow root, in layout, in
+    pointer events and in the order of its timers, and a card that breaks only there
+    would reach its users unnoticed. The checks are those of the steps in Chromium: a
+    visit on the scoreboard, the new game screen, the training card and a card's form."""
+    stored = signed_in_before()
+    browser = playwright.firefox.launch()
+    pages = cast(Browser, SignedIn(browser, stored))
+    # A page of its own in Firefox, between the parts as between the steps.
+    board = Board(pages)
+    parts: tuple[Callable[[], None], ...] = (
+        lambda: scoreboard(pages),
+        lambda: lobby(pages),
+        lambda: training_after_others(pages),
+        lambda: editor(pages, rows=7),
+    )
+    try:
+        for part in parts:
+            board.between_games()
+            part()
+    except (Exception, asyncio.CancelledError):
+        # The pages of this browser, which the screenshots of main() don't see. A wait
+        # in a page that outlasts the budget ends with a CancelledError (watchdog.py).
+        keep_screenshots(browser, "Firefox on a desktop", besides=board.page)
         raise
     finally:
         browser.close()
@@ -3668,8 +3739,9 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
     short steps of group 1. The groups 3 and 4 have a runner each, so that Safari's
     WebKit in group 4 shares the CPU with no other browser: it failed to load the
     scripts of Home Assistant while every screen size opened nine screens beside it.
-    A step that runs longer than its budget fails (shards.BUDGET): one of about three
-    times its longest run in CI, at least two minutes."""
+    Firefox runs in group 3, with no browser beside it either. A step that runs longer
+    than its budget fails (shards.BUDGET): one of about three times its longest run in
+    CI, at least two minutes."""
     return [
         # Both read the demo as demo.py left it: the training card its session before
         # any control changes it, the live card the visit on the board.
@@ -3689,6 +3761,8 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
         ),
         Step("tournament", 1, lambda: tournament(browser)),
         Step("the watchdog", 3, lambda: watchdog(browser)),
+        # Before the steps with the long names, which its new game screen would list.
+        Step("Firefox on a desktop", 3, lambda: firefox(playwright)),
         Step("tablet screen", 3, lambda: tablet_screen(browser)),
         Step("touch screens", 4, lambda: touch_screens(browser)),
         Step("Safari on an iPhone", 4, lambda: safari(playwright)),

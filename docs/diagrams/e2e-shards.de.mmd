@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
   accTitle: Die End-to-End-Tests nebeneinander
-  accDescr: Findet der Job changes etwas zu testen, starten neun Test-Jobs zugleich. Drei führen das Szenario aus, für Board Manager 1, Board Manager 2 und Home Assistant 2026.8.0. Sechs führen den Browsertest aus, drei für das aktuelle und drei für das älteste unterstützte Home Assistant, sodass alle vier Teile einer Version zugleich laufen, jeder auf einer eigenen Demo-Instanz. Der erste Runner einer Version führt zwei Worker aus, die Karten, Spiele und Formulare neben den gleichbleibenden Höhen; der zweite das Tablet, jede Bildschirmgröße und die Dartscheibe ohne Autodarts; der dritte die Touchscreens, Safari und die Barrierefreiheit allein, damit sich WebKit von Safari die CPU mit keinem anderen Browser teilt. Die Pflichtprüfung e2e wartet auf alle.
+  accDescr: Findet der Job changes etwas zu testen, starten neun Test-Jobs zugleich. Drei führen das Szenario aus, für Board Manager 1, Board Manager 2 und Home Assistant 2026.8.0. Sechs führen den Browsertest aus, drei für das aktuelle und drei für das älteste unterstützte Home Assistant, sodass alle vier Teile einer Version zugleich laufen, jeder auf einer eigenen Demo-Instanz. Der erste Runner einer Version führt zwei Worker aus, die Karten, Spiele und Formulare neben den gleichbleibenden Höhen; der zweite das Tablet, jede Bildschirmgröße, Firefox und die Dartscheibe ohne Autodarts; der dritte die Touchscreens, Safari und die Barrierefreiheit allein, damit sich WebKit von Safari die CPU mit keinem anderen Browser teilt. Die Pflichtprüfung e2e wartet auf alle.
 
   CHANGES{{"changes: ändert der Pull Request,<br/>was die Tests nutzen?"}}
   CHANGES --> SCENARIO
@@ -20,7 +20,7 @@ flowchart TB
   subgraph CURRENT["browser, aktuell"]
     direction LR
     C1["Runner 1, zwei Worker<br/>Teil 1/4: Karten, Spiele, Formulare<br/>Teil 2/4: gleichbleibende Höhen"]
-    C2["Runner 2<br/>Teil 3/4: Tablet,<br/>jede Bildschirmgröße,<br/>Dartscheibe ohne Autodarts"]
+    C2["Runner 2<br/>Teil 3/4: Tablet,<br/>jede Bildschirmgröße,<br/>Firefox, Dartscheibe<br/>ohne Autodarts"]
     C3["Runner 3<br/>Teil 4/4: Touchscreens,<br/>Safari, Barrierefreiheit"]
   end
 
