@@ -125,6 +125,20 @@ When an X01 or Cricket match of several players ends, the scoreboard and the liv
 - `0` plays the game's start score. All other rules stay the same; the average counts from the player's own start, and `leg_won` names it in `start`.
 - The scoreboard and the live card show every start score of its own beside the name.
 - A leg counts for the fewest-darts personal best of the score it really started from: a leg from 301 for `fewest_darts_301`, a leg from 401 for none, because 401 is no X01 game.
+- A match with different start scores moves no [rating](statistics.md#rating), because the handicap evens out what a win says about strength.
+
+### Fair start
+
+<img src="images/en/lobby-fair.png" alt="The new game screen with 501 chosen and Fair start on: Alex keeps 501, and Sam starts from the share of it that his average is worth, with − and + to change it" width="760">
+
+Nobody has to guess what is fair: **Fair start** on the [new game screen](scoreboard.md#choose-the-next-game), or `fair_start: true` in [`homedarts.start_game`](entities.md#start-a-practice-game-homedartsstart_game), works the start scores out from the 3-dart averages.
+
+- **The strongest player keeps the game's score.** Everybody else starts from their share of it, by their average of the last 30 X01 legs: half the average, half the score. The score is rounded to 10 and is never below 101.
+- **For example,** in 501 Alex averages 60 and Sam 30: Alex starts from 501 and Sam from 250.
+- **A player without X01 legs** keeps the game's score, as there is nothing to go by, and the screen says so. A player from before this version, who has played no leg since, counts by their lifetime average.
+- **The bot** counts by its level, which is its average, and can be the strongest player, too. On the new game screen, its row shows its start score, which changes with its level.
+- **A team** plays from one score, by the average of both partners. The bot counts as a partner.
+- **Change them as you like:** the screen shows the scores, and − and + still change them. A new player, another game or another order works them out again. Turned off, everybody plays the game's score again.
 
 ## Bull-off
 
@@ -144,6 +158,7 @@ When an X01 or Cricket match of several players ends, the scoreboard and the liv
 
 Nobody to play with? X01 and the Cricket games can be played against the bot, a computer player of the strength you choose.
 
+- **A bot at your level:** once a player has X01 legs, the bot's row on the new game screen offers *At my level*, which sets the bot to the player's average of the last 30 legs, in its steps of 10. With several players, it goes by what they average.
 - **Seat the bot:** tap **+ Bot** on the [new game screen](scoreboard.md#choose-the-next-game), set *Practice bot level*, or start a game with `bot_level`. The level is the 3-dart average the bot plays, from 20 for a beginner to 120, above any professional's season average. `0` plays without the bot. There is no level from 1 to 19: in *Practice bot level*, a step up from 0 seats the bot at 20, and a step down from 20 sends it home.
 - **In the Cricket games,** the level plays the marks per round of a player with that average, about a 24th of it: 2.5 at level 60, 3.3 at 80, 4.2 at 100 and 5 at 120.
 - **Its seat:** after the players. With the bot, up to three players play, also as the fourth player of two teams; such a team has no team name. Choosing X01 or a Cricket game for four players while a bot level is set asks you to make room first.

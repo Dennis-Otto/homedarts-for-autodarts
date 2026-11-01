@@ -10,7 +10,7 @@ Jeder Dart, den das Board erkennt, wird in Home Assistant zu einer Zahl: dein 3-
 
 <img src="images/de/dashboard-strategy.png" alt="Die Trainingsansicht des automatischen Dashboards: die Trainingskarte mit 3-Dart-Average, Trefferbild, Statistik, Bestleistungen und letzten Aufnahmen, die Doubles-Karte und die Grafiken der Darts pro Tag und des 3-Dart-Averages" width="760">
 
-**Auf dieser Seite:** [Wo du was findest](#wo-du-was-findest) · [Trainingssessions](#trainingssessions) · [Bestleistungen, Serie und Tagesziel](#bestleistungen-serie-und-tagesziel) · [Trefferbild und Dart-Positionen](#trefferbild-und-dart-positionen) · [Wohin zielen](#wohin-zielen) · [Fortschritt über die Zeit](#fortschritt-über-die-zeit) · [Doppelanalyse](#doppelanalyse) · [Spielerprofile](#spielerprofile) · [Erfolge](#erfolge) · [Trends und Streuung](#trends-und-streuung) · [Bestenliste](#bestenliste) · [Spieler und Personen](#spieler-und-personen) · [Wochenbericht](#wochenbericht) · [Trainingskalender](#trainingskalender) · [Export](#export) · [Deine Daten](#deine-daten)
+**Auf dieser Seite:** [Wo du was findest](#wo-du-was-findest) · [Trainingssessions](#trainingssessions) · [Bestleistungen, Serie und Tagesziel](#bestleistungen-serie-und-tagesziel) · [Trefferbild und Dart-Positionen](#trefferbild-und-dart-positionen) · [Wohin zielen](#wohin-zielen) · [Fortschritt über die Zeit](#fortschritt-über-die-zeit) · [Doppelanalyse](#doppelanalyse) · [Spielerprofile](#spielerprofile) · [Wertung](#wertung) · [Erfolge](#erfolge) · [Trends und Streuung](#trends-und-streuung) · [Bestenliste](#bestenliste) · [Spieler und Personen](#spieler-und-personen) · [Wochenbericht](#wochenbericht) · [Trainingskalender](#trainingskalender) · [Export](#export) · [Deine Daten](#deine-daten)
 
 ## Wo du was findest
 
@@ -166,6 +166,22 @@ Jeder Spieler mit Namen bekommt im Übungsspiel ein Profil mit Werten über sein
 - **Turniere** zählen wie jedes Match: Ihre Legs, Matches und direkten Vergleiche fließen in die Profile. [Turniere](games.de.md#turniere).
 - **Ein Tippfehler im Namen?** Benenne das Profil in seinem Menü auf der [Spielerkarte](cards.de.md#spielerkarte) um, oder mit [`homedarts.rename_player`](entities.de.md#spieler-umbenennen-oder-zusammenführen-homedartsrename_player): Statistik, Abzeichen, Bestleistungen, der Match-Verlauf und die Verknüpfung mit einer Person bleiben unter dem neuen Namen erhalten. **Ein Spieler unter zwei Namen,** etwa *Sam* und *Sammy*? Benenne den einen in den anderen um oder wähle *Zusammenführen mit …*, und beide werden ein Profil, als hätte ein Name alle Darts geworfen. [`homedarts.delete_player`](entities.de.md#spielerprofil-löschen-homedartsdelete_player) entfernt ein Profil mit seinem Fortschritt und seinen Abzeichen; der Match-Verlauf behält den Namen.
 
+## Wertung
+
+Die Rekorde sagen, wer am höchsten geworfen hat; die Wertung sagt, wer wen schlägt. Jeder Spieler mit Namen hat eine, eine [Elo-Zahl](https://de.wikipedia.org/wiki/Elo-Zahl): Sie beginnt bei 1000, und ein Sieg gegen einen Stärkeren bringt mehr als ein Sieg gegen einen Schwächeren. Die [Spielerkarte](cards.de.md#spielerkarte) zeigt sie, und die [Bestenliste](cards.de.md#bestenliste) ordnet nach ihr.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/de/rating-dark.png">
+  <img src="images/de/rating-light.png" alt="Welche Matches die Wertung bewegen: Ein beendetes Match von X01 oder einem Cricket-Spiel bewegt sie, wenn jeder Platz einen Spieler mit Namen hat, also ohne Bot und ohne Gast, und alle mit denselben Punkten starten, also ohne Handicap. Andere Matches lassen die Wertung in Ruhe. Ein Match, das zählt, nimmt den Verlierern, was es den Gewinnern gibt, und das Rückgängigmachen der entscheidenden Aufnahme nimmt es zurück." width="560">
+</picture>
+
+- **Was zählt:** ein beendetes Match von X01 oder einem Cricket-Spiel zwischen Spielern mit Namen, alle mit denselben Startpunkten, auch im Turnier. Der Bot und ein Gast haben keine Wertung, und ein [Handicap](games.de.md#startpunkte-handicap) gleicht aus, was ein Sieg über die Stärke sagt; solche Matches lassen die Wertungen, wie sie sind. Die Wertung eines Spielers zeigt sich ab seinem ersten Match, das zählt.
+- **Wie weit sie sich bewegt:** um 40 Punkte mal die Überraschung des Ergebnisses für die ersten 10 Matches eines Spielers, die zählen, um 24 bis 30 und danach um 16. Zwei neue Spieler gleicher Wertung tauschen 20 Punkte. Alles kommt aus den Wertungen vor dem Match, die Plätze ändern also nichts.
+- **Teams und mehr Spieler:** Jeder Gewinner schlägt jeden Verlierer, und zusammen wiegen diese Ergebnisse wie eines, wie in den [direkten Vergleichen](#spielerprofile). Partner teilen sich, was ihr Team gewinnt oder verliert, und in einem Match zu dritt teilen sich die zwei Verlierer, was der Gewinner bekommt.
+- **Wird die entscheidende Aufnahme rückgängig gemacht,** geht die Änderung zurück; das Match zählt einmal, wenn seine Aufnahme wieder endet.
+- **In Automationen:** `match_won` bringt `rating_changes` mit `name`, der neuen `rating` und der Änderung `change` jedes Spielers, eine leere Liste bei einem Match, das nicht zählt. Die Wertungen haben eine Nachkommastelle, die die Karten runden. *Spielerprofile* hat `rating` und `rated_matches` für jeden Spieler.
+- **Umbenannt, zusammengeführt, wiederhergestellt:** Eine Wertung bleibt bei einem neuen Namen beim Spieler. Zwei Profile eines Spielers, zusammengeführt oder aus einer [Sicherung](#backups), wiegen ihre Wertungen nach den Matches, die sie bewegt haben.
+
 ## Erfolge
 
 <img src="images/de/players-badges.png" alt="Abzeichen eines Spielers auf der Spielerkarte: erreichte Stufen in Bronze, Silber und Gold, jede mit dem nächsten Ziel, dem Fortschritt dorthin und einem Fortschrittsbalken" width="620">
@@ -189,9 +205,9 @@ Die Wochensummen stehen im Attribut `trend` von *Spielerprofile*, für eigene Gr
 
 ## Bestenliste
 
-<img src="images/de/leaderboard-card.png" alt="Bestenliste mit dem Umschalter des Zeitraums und den Rekorden bester Average, höchster Checkout, meiste 180er, wenigste Darts bei 501, beste Cricket-MPR, längste Serie, meiste Abzeichen und meiste Darts, jeweils mit dem Führenden und zwei weiteren Plätzen" width="760">
+<img src="images/de/leaderboard-card.png" alt="Bestenliste mit dem Umschalter des Zeitraums und den Rekorden höchste Wertung, bester Average, höchster Checkout, meiste 180er, wenigste Darts bei 501, beste Cricket-MPR, längste Serie, meiste Abzeichen und meiste Darts, jeweils mit dem Führenden und zwei weiteren Plätzen" width="760">
 
-Die [Bestenliste](cards.de.md#bestenliste) ordnet die Rekorde aller Spieler mit Namen: bester Average, höchster Checkout, meiste 180er, wenigste Darts bei 501, beste Cricket-MPR, längste Serie, meiste Abzeichen und meiste Darts. Der Umschalter oben wählt insgesamt, die letzten vier Wochen oder diese Woche, so kann auch ein neuer Spieler die Woche anführen. Auch der [Ruhemodus](scoreboard.de.md#zwischen-den-spielen-ruhemodus) der Anzeigetafel zeigt zwischen den Spielen eine Bestenliste.
+Die [Bestenliste](cards.de.md#bestenliste) ordnet die Rekorde aller Spieler mit Namen: höchste [Wertung](#wertung), bester Average, höchster Checkout, meiste 180er, wenigste Darts bei 501, beste Cricket-MPR, längste Serie, meiste Abzeichen und meiste Darts. Der Umschalter oben wählt insgesamt, die letzten vier Wochen oder diese Woche, so kann auch ein neuer Spieler die Woche anführen; die Wertung und die längste Serie zählen nur insgesamt. Auch der [Ruhemodus](scoreboard.de.md#zwischen-den-spielen-ruhemodus) der Anzeigetafel zeigt zwischen den Spielen eine Bestenliste.
 
 ## Spieler und Personen
 

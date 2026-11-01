@@ -1413,6 +1413,10 @@
           "name": "Puntuaciones iniciales",
           "description": "Puntuaciones iniciales de X01 de los jugadores en orden de lanzamiento, para jugar con hándicap, por ejemplo 501 y 301; el puesto del bot tras los jugadores también tiene una. Con 0 o sin puntuación se juega con la puntuación inicial del juego. Los equipos juegan con las puntuaciones iniciales de los jugadores 1 y 2."
         },
+        "fair_start": {
+          "name": "Salida justa",
+          "description": "X01: cada jugador empieza con la puntuación que vale su media de los últimos 30 legs frente al jugador más fuerte, que conserva la puntuación inicial del juego, igual que un jugador sin legs. El bot cuenta por su nivel y un equipo por la media de sus dos jugadores. No se combina con puntuaciones iniciales."
+        },
         "holes": {
           "name": "Hoyos de Golf",
           "description": "Hoyos de una partida de Golf: 9 o 18."

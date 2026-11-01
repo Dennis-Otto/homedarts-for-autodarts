@@ -119,6 +119,13 @@ test("the players card shows every profile with its statistics and bests", () =>
   assert.equal(card.getCardSize(), 6);
 });
 
+test("a player's rating shows first, whole, once a match has moved it", () => {
+  const { card } = setup({ ...profiles({ ...ALEX, rating: 1036.6, rated_matches: 5 }, LEA), ...lastMatch({}) });
+  const [alex, lea] = $$(card, ".profile");
+  assert.deepEqual(rows(alex)[0], ["Rating", "1,037"]);
+  assert.equal(rows(lea).some(([name]) => name === "Rating"), false);
+});
+
 test("head-to-head records show the wins and the balance between two players", () => {
   const { hass, card } = setup({
     ...profiles(ALEX, LEA),
@@ -665,7 +672,8 @@ test("the open menu and its dialog pass axe-core's WCAG 2.1 A and AA rules", asy
     // Arrays of the page's window, made arrays of the tests.
     return { violations: Array.from(result.violations, (rule) => rule.id), passes: Array.from(result.passes, (rule) => rule.id) };
   };
-  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
+  const rated = { ...ALEX, rating: 1036.6, rated_matches: 5 };
+  const { card } = setup({ ...profiles(rated, LEA), ...lastMatch({}) }, {}, { user: ADMIN });
   menuButton(card, "Alex").click();
   const menu = await audit($(card, "ha-card"));
   assert.deepEqual(menu.violations, []);

@@ -125,6 +125,20 @@ Endet ein X01- oder Cricket-Match mehrerer Spieler, fassen Anzeigetafel und Live
 - `0` spielt die Startpunkte des Spiels. Alle anderen Regeln bleiben gleich; der Average zählt ab den eigenen Startpunkten, und `leg_won` nennt sie in `start`.
 - Anzeigetafel und Live-Karte zeigen eigene Startpunkte neben dem Namen.
 - Ein Leg zählt für die Bestleistung der wenigsten Darts der Punkte, mit denen es wirklich begann: ein Leg ab 301 für `fewest_darts_301`, ein Leg ab 401 für keine, weil 401 kein X01-Spiel ist.
+- Ein Match mit unterschiedlichen Startpunkten bewegt keine [Wertung](statistics.de.md#wertung), denn das Handicap gleicht aus, was ein Sieg über die Stärke sagt.
+
+### Fairer Start
+
+<img src="images/de/lobby-fair.png" alt="Die Spielauswahl mit 501 und eingeschaltetem fairem Start: Alex behält 501, und Sam startet mit dem Anteil, den sein Average wert ist, mit − und + zum Ändern" width="760">
+
+Niemand muss raten, was fair ist: **Fairer Start** in der [Spielauswahl](scoreboard.de.md#das-nächste-spiel-wählen) oder `fair_start: true` in [`homedarts.start_game`](entities.de.md#übungsspiel-starten-homedartsstart_game) rechnet die Startpunkte aus den 3-Dart-Averages aus.
+
+- **Der stärkste Spieler behält die Startpunkte des Spiels.** Alle anderen starten mit ihrem Anteil daran, nach ihrem Average der letzten 30 X01-Legs: halber Average, halbe Punkte. Die Punkte werden auf 10 gerundet und liegen nie unter 101.
+- **Zum Beispiel** werfen Alex bei 501 einen Average von 60 und Sam von 30: Alex startet mit 501, Sam mit 250.
+- **Ein Spieler ohne X01-Legs** behält die Startpunkte des Spiels, denn es gibt nichts, wonach es gehen könnte, und die Spielauswahl sagt das. Ein Spieler aus der Zeit vor dieser Version, der seither kein Leg gespielt hat, zählt mit seinem Average über die ganze Zeit.
+- **Der Bot** zählt mit seiner Stärke, die sein Average ist, und kann auch der stärkste Spieler sein. In der Spielauswahl zeigt seine Zeile seine Startpunkte, die sich mit der Stärke ändern.
+- **Ein Team** spielt von einem Wert, nach dem Average beider Partner. Der Bot zählt als Partner.
+- **Ändern, wie du willst:** Die Spielauswahl zeigt die Punkte, und − und + ändern sie weiterhin. Ein neuer Spieler, ein anderes Spiel oder eine andere Reihenfolge rechnen sie neu aus. Ausgeschaltet spielen wieder alle die Startpunkte des Spiels.
 
 ## Ausbullen
 
@@ -144,6 +158,7 @@ Endet ein X01- oder Cricket-Match mehrerer Spieler, fassen Anzeigetafel und Live
 
 Niemand zum Mitspielen? X01 und die Cricket-Spiele lassen sich gegen den Bot spielen, einen Computerspieler in der Stärke deiner Wahl.
 
+- **Ein Bot auf deinem Niveau:** Sobald ein Spieler X01-Legs hat, bietet die Zeile des Bots in der Spielauswahl *Auf meinem Niveau* an: Das stellt den Bot auf den Average des Spielers der letzten 30 Legs, in seinen Schritten von 10. Bei mehreren Spielern gilt ihr gemeinsamer Average.
 - **Den Bot dazusetzen:** Tippe in der [Spielauswahl](scoreboard.de.md#das-nächste-spiel-wählen) auf **+ Bot**, stell *Übungsspiel Bot-Stärke* ein oder starte ein Spiel mit `bot_level`. Die Stärke ist der 3-Dart-Average, den der Bot spielt, von 20 für Anfänger bis 120, mehr als der Saison-Average jedes Profis. `0` spielt ohne Bot. Stärken von 1 bis 19 gibt es nicht: In *Übungsspiel Bot-Stärke* setzt ein Schritt nach oben von 0 den Bot auf 20, ein Schritt nach unten von 20 schickt ihn nach Hause.
 - **In den Cricket-Spielen** spielt die Stärke die Marks pro Runde eines Spielers mit diesem Average, etwa ein Vierundzwanzigstel davon: 2,5 bei Stärke 60, 3,3 bei 80, 4,2 bei 100 und 5 bei 120.
 - **Sein Platz:** nach den Spielern. Mit dem Bot spielen bis zu drei Spieler, auch als vierter Spieler von zwei Teams; ein solches Team hat keinen Teamnamen. Wählst du X01 oder ein Cricket-Spiel für vier Spieler, während eine Bot-Stärke eingestellt ist, bittet dich die Meldung, erst Platz zu machen.

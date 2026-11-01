@@ -1413,6 +1413,10 @@
           "name": "Scores de départ",
           "description": "Scores de départ X01 des joueurs dans l'ordre de lancer, pour un handicap, par exemple 501 et 301\u00a0; la place du bot après les joueurs en a un aussi. Avec 0 ou sans score, le joueur part du score de départ du jeu. Les équipes partent des scores de départ des joueurs 1 et 2."
         },
+        "fair_start": {
+          "name": "Départ équitable",
+          "description": "X01 : chaque joueur part du score que vaut sa moyenne des 30 dernières manches face au joueur le plus fort, qui garde le score de départ du jeu, tout comme un joueur sans manche. Le bot compte pour son niveau, une équipe pour la moyenne de ses deux joueurs. Pas en même temps que les scores de départ."
+        },
         "holes": {
           "name": "Trous de Golf",
           "description": "Nombre de trous d'une partie de Golf\u00a0: 9 ou 18."

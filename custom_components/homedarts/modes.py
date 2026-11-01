@@ -110,6 +110,8 @@ class GameMode(ABC):
     # The bot plays the game, and four players can play it as two teams.
     bot = False
     team_play = False
+    # Whether a match of it can move the ratings of its players.
+    rated = False
 
     def __init__(self, match: PracticeGame) -> None:
         self.match = match
@@ -299,6 +301,7 @@ class X01Mode(MatchMode):
     party_seats = False
     bot = True
     team_play = True
+    rated = True
 
     def __init__(self, match: PracticeGame, game: int) -> None:
         super().__init__(match)
@@ -796,6 +799,7 @@ class CricketMode(MatchMode):
     party_seats = False
     bot = True
     team_play = True
+    rated = True
 
     def __init__(self, match: PracticeGame, kind: str) -> None:
         super().__init__(match)

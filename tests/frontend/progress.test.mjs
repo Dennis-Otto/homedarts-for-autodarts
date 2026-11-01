@@ -389,6 +389,25 @@ test("dart positions become a smooth density and dots", () => {
   assert.equal(NORM, 170);
 });
 
+test("the leaderboard ranks the ratings of all time, and only of all time", () => {
+  const rated = {
+    attributes: {
+      players: [
+        { name: "Alex", rating: 985.5, trend: [] },
+        { name: "Sam", rating: 1042.3, trend: [] },
+        { name: "Kim", rating: null, trend: [] },
+      ],
+    },
+  };
+  const { records } = leaderboardRecords(rated, undefined);
+  assert.equal(records[0].key, "rating");
+  assert.deepEqual(records[0].places, [
+    { name: "Sam", value: 1042.3, place: 1 },
+    { name: "Alex", value: 985.5, place: 2 },
+  ]);
+  assert.equal(leaderboardRecords(rated, undefined, "month").records.some((record) => record.key === "rating"), false);
+});
+
 test("the leaderboard ranks every record of all time", () => {
   const view = leaderboardRecords(profiles, achievements);
   assert.equal(view.period, "all");

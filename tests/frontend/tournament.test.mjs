@@ -869,6 +869,7 @@ test("the new game screen starts a round robin of up to eight players, a knockou
     ["straight", "false"],
     ["double", "true"],
     ["bull_off", "false"],
+    ["fair_start", "false"],
     ["random_draw", "false"],
   ]);
   assert.equal($(card, '[data-lobby="max_rounds"]'), null);

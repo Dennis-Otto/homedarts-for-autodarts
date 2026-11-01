@@ -1522,6 +1522,28 @@ def tournament_double(page: Page) -> None:
     )
 
 
+def lobby_fair(page: Page) -> None:
+    """The new game screen with a fair start: Alex and Sam by their averages."""
+    pull_darts()
+    game(page, "off")
+    for index, name in enumerate(("Alex", "Sam")):
+        page.evaluate(SET_NAME, [index, name])
+    players(page, 2)
+    board = tablet(page)
+    # So high that the players with their start scores and the option fit together.
+    board.set_viewport_size({"width": 1280, "height": 1100})
+    wait_card(board, "!!r.querySelector('.lobby-cta')", SCOREBOARD, 60000)
+    card = board.locator(SCOREBOARD)
+    card.locator(".lobby-cta").click()
+    wait_card(board, "!!r.querySelector('.lobby')", SCOREBOARD)
+    card.locator("[data-lobby='toggle'][data-value='fair_start']").click()
+    wait_card(board, "!!r.querySelector('.lobby-start.own')", SCOREBOARD)
+    board.wait_for_timeout(1000)
+    page_shot(board, "lobby-fair")
+    board.close()
+    players(page, 1)
+
+
 def tournament_lobby(page: Page) -> None:
     """The new game screen in tournament mode: six players, a knockout with third place."""
     pull_darts()
@@ -3763,6 +3785,7 @@ def people(browser: Browser) -> None:
     doubles_card(context.new_page())
     lobby_screen(on_board())
     lobby_bot(on_board())
+    lobby_fair(on_board())
     tournament_lobby(on_board())
     tournament_table(on_board())
     idle_screen(on_board())

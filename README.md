@@ -112,6 +112,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 <summary>Trends, reports, the calendar and exports</summary>
 
 - Weekly trends, head-to-head records and the match history of every player
+- A [rating](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html#rating) of who beats whom, and [fair start scores](https://dennis-otto.github.io/homedarts-for-autodarts/games.html#fair-start) from the averages, so nobody has to guess a handicap
 - The hit rate of every double, a weekly report, a training calendar and exports to CSV or JSON
 - A backup of every board before it is deleted, which a board added again restores, and the players of two boards merged into one
 - Long-term statistics for graphs over weeks and months
@@ -277,7 +278,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/home
 
 - [Games and rules](https://dennis-otto.github.io/homedarts-for-autodarts/games.html): how to start a game, matches, teams, handicaps, the bull-off, the match summary, tournaments and the rules of every game
 - [Scoreboard at the board](https://dennis-otto.github.io/homedarts-for-autodarts/scoreboard.html): a tablet or TV at the board, the new game screen, tournaments, the caller and idle mode
-- [Statistics and players](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html): sessions, personal bests, heatmaps and dart positions, where to aim, doubles, player profiles, achievements, trends, the leaderboard, reports, calendar, export and backups
+- [Statistics and players](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html): sessions, personal bests, heatmaps and dart positions, where to aim, doubles, player profiles, the rating, achievements, trends, the leaderboard, reports, calendar, export and backups
 - [Automations](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html): sixteen blueprints, board events and ready-to-use examples
 - [Online matches](https://dennis-otto.github.io/homedarts-for-autodarts/online-matches.html): moments of online matches on play.autodarts.io in Home Assistant *(experimental)*
 

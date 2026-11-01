@@ -5,18 +5,21 @@ upper and lower case. Legs count in every game; X01 legs add the averages and
 the checkout rate, Cricket legs the marks per round. The highest checkout and
 the fewest darts come from X01 legs with double out only; the fewest darts
 also only from legs a player played alone, from one of the X01 start scores.
+A rated match moves the ratings of its players, see rating.py.
 """
 
 from __future__ import annotations
 
+import math
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
 
 from .doubles import DoubleStats
 from .moments import stamp
+from .rating import DIGITS, RECENT_LEGS, START_RATING, rating_changes
 
 # The X01 start scores; a leg from another start sets no fewest darts.
 GAMES = (101, 301, 501, 701, 901, 1001)
@@ -81,6 +84,27 @@ def _count(value: object) -> int:
     return value if type(value) is int and value >= 0 else 0
 
 
+def _plain_leg(leg: object) -> bool:
+    """Whether a stored recent leg is its points and at least one dart."""
+    return (
+        isinstance(leg, list)
+        and len(leg) == 2
+        and type(leg[0]) is int
+        and type(leg[1]) is int
+        and leg[0] >= 0
+        and leg[1] > 0
+    )
+
+
+def _results(names: Iterable[str | None], side: Sequence[int]) -> dict[str, bool]:
+    """Every named player of a match by key, and whether one of their seats won."""
+    won: dict[str, bool] = {}
+    for index, name in enumerate(names):
+        if key := _key(name or ""):
+            won[key] = won.get(key, False) or index in side
+    return won
+
+
 @dataclass
 class Profile:
     """Lifetime numbers of one player."""
@@ -108,15 +132,44 @@ class Profile:
     last_played: str | None = None
     # The Home Assistant person this player is, for the picture and presence.
     person: str | None = None
+    # The strength of the player, and the matches that moved it.
+    rating: float = START_RATING
+    rated_matches: int = 0
+    # Points and darts of the last X01 legs, the newest first.
+    recent_legs: list[list[int]] = field(default_factory=list)
 
     def double_stats(self) -> DoubleStats:
         stats = DoubleStats()
         stats.counts = self.doubles
         return stats
 
+    def recent_average(self) -> float | None:
+        """The 3-dart average of the last X01 legs, which a fair start goes by;
+        of a player who played none since these are kept, the lifetime average."""
+        if not self.recent_legs:
+            return _ratio(self.x01_points, self.x01_darts, 3, 2)
+        points = sum(leg[0] for leg in self.recent_legs)
+        darts = sum(leg[1] for leg in self.recent_legs)
+        return _ratio(points, darts, 3, 2)
+
+    def _join(self, other: Profile) -> None:
+        """The rating and the recent legs of one player from two profiles, before
+        the counts add up: each rating weighs by the matches that moved it, and
+        the legs of the profile that played last come first."""
+        matches = self.rated_matches + other.rated_matches
+        if matches:
+            total = self.rating * self.rated_matches
+            total += other.rating * other.rated_matches
+            self.rating = round(total / matches, DIGITS)
+        newer, older = self, other
+        if (other.last_played or "") > (self.last_played or ""):
+            newer, older = other, self
+        self.recent_legs = [*newer.recent_legs, *older.recent_legs][:RECENT_LEGS]
+
     def merge(self, other: Profile) -> None:
         """Add the numbers the same player threw on another board: the counts
         add up, the bests are the better of both."""
+        self._join(other)
         for key, value in asdict(other).items():
             if key in BESTS:
                 setattr(self, key, max(getattr(self, key), value))
@@ -148,12 +201,17 @@ class Profile:
             "doubles": self.double_stats().snapshot(),
             "last_played": self.last_played,
             "person": self.person,
+            # No rating before the first match that moves it.
+            "rating": self.rating if self.rated_matches else None,
+            "rated_matches": self.rated_matches,
+            "recent_average": self.recent_average(),
         }
 
     def absorb(self, other: Profile) -> None:
         """Take over the numbers of another profile of the same player, as if
         one name had thrown every dart: the counts add up, the better bests
         stay, and the person is this profile's, or the other one's."""
+        self._join(other)
         for key, value in asdict(other).items():
             if key in HIGHEST:
                 setattr(self, key, max(getattr(self, key), value))
@@ -197,6 +255,18 @@ class Profile:
         if isinstance(saved.get("last_played"), str):
             profile.last_played = saved["last_played"]
         profile.person = _person(saved.get("person"))
+        rating = saved.get("rating")
+        if (
+            isinstance(rating, int | float)
+            and not isinstance(rating, bool)
+            and math.isfinite(rating)
+        ):
+            profile.rating = float(rating)
+        recent = saved.get("recent_legs")
+        if isinstance(recent, list):
+            profile.recent_legs = [list(leg) for leg in recent if _plain_leg(leg)][
+                :RECENT_LEGS
+            ]
         return profile
 
 
@@ -224,6 +294,11 @@ class Profiles:
         if cricket:
             return _ratio(profile.cricket_marks, profile.cricket_darts, 3, 2)
         return _ratio(profile.x01_points, profile.x01_darts, 3, 2)
+
+    def recent_average(self, name: str) -> float | None:
+        """A player's 3-dart average of the last X01 legs, see Profile."""
+        profile = self.players.get(_key(name))
+        return profile.recent_average() if profile else None
 
     def _profile(self, name: str | None, now: datetime) -> Profile | None:
         name = clean_name(name) if name else ""
@@ -271,6 +346,9 @@ class Profiles:
             if isinstance(game, int):
                 profile.x01_darts += darts
                 profile.x01_points += _count(entry.get("points"))
+                if darts:
+                    profile.recent_legs.insert(0, [_count(entry.get("points")), darts])
+                    del profile.recent_legs[RECENT_LEGS:]
                 profile.first9_points += _count(entry.get("first9_points"))
                 profile.first9_darts += _count(entry.get("first9_darts"))
                 profile.at_double += _count(entry.get("at_double"))
@@ -309,8 +387,10 @@ class Profiles:
         started: str | None = None,
         *,
         now: datetime,
+        rated: bool = False,
     ) -> None:
-        """A finished match of several players: history and head-to-head.
+        """A finished match of several players: history, head-to-head and, for a
+        rated match, the ratings.
 
         In a team match, both players of the winning team win it, and each of
         them beats both opponents; partners play no head-to-head. A player in
@@ -319,12 +399,15 @@ class Profiles:
         started with its first dart, for the training calendar.
         """
         side = winners or [winner]
-        # Every named player, and whether one of their seats won.
-        won: dict[str, bool] = {}
-        for index, entry in enumerate(players):
-            if profile := self._profile(entry.get("name"), now):
-                key = _key(profile.name)
-                won[key] = won.get(key, False) or index in side
+        names = [entry.get("name") for entry in players]
+        for name in names:
+            self._profile(name, now)
+        won = _results(names, side)
+        if rated:
+            for key, change in self._changes(won).items():
+                profile = self.players[key]
+                profile.rating = round(profile.rating + change, DIGITS)
+                profile.rated_matches += 1
         for key, victory in won.items():
             self.players[key].matches_played += 1
             self.players[key].matches_won += int(victory)
@@ -345,6 +428,38 @@ class Profiles:
         for champion in [key for key, victory in won.items() if victory]:
             for other in losers:
                 self._beat(champion, other)
+
+    def _changes(self, won: dict[str, bool]) -> dict[str, float]:
+        """What a match adds to each player's rating, by key; a player without a
+        profile yet stands where a new one starts."""
+        new = Profile(name="")
+        standing = {
+            key: (profile.rating, profile.rated_matches)
+            for key, profile in ((key, self.players.get(key, new)) for key in won)
+        }
+        return rating_changes(
+            standing,
+            [key for key, victory in won.items() if victory],
+            [key for key, victory in won.items() if not victory],
+        )
+
+    def changes(
+        self, names: Sequence[str | None], side: Sequence[int]
+    ) -> list[dict[str, Any]]:
+        """What a rated match that these seats win does to the ratings of its
+        players, before it is booked: each player's name, new rating and change."""
+        changes = self._changes(_results(names, side))
+        result: dict[str, dict[str, Any]] = {}
+        for name in names:
+            key = _key(name or "")
+            if key in changes and key not in result:
+                profile = self.players.get(key, Profile(name=clean_name(name or "")))
+                result[key] = {
+                    "name": profile.name,
+                    "rating": round(profile.rating + changes[key], DIGITS),
+                    "change": changes[key],
+                }
+        return list(result.values())
 
     def _beat(self, champion: str, other: str) -> None:
         """A win of the champion over another player, both by their keys."""
