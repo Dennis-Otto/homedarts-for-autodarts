@@ -502,7 +502,7 @@ export default {
   "doubles": "Dobles",
   "misses": "Fallos",
   "triple_rate": "% de triples",
-  "heatmap": "Mapa de aciertos",
+  "heatmap": "Mapa de calor",
   "heatmap_label": "Diana coloreada según la frecuencia con la que se ha acertado cada segmento",
   "top": "Más acertados",
   "history": "Tiradas recientes",

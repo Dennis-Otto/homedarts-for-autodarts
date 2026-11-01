@@ -14,7 +14,7 @@ social: { cards_layout_options: { title: "Je Autodarts-bord live in Home Assista
 
 **Je Autodarts-bord live in Home Assistant: lokaal, in realtime en klaar voor automatiseringen.**
 
-HomeDarts for Autodarts brengt je Autodarts-bord naar Home Assistant: een dart verschijnt een fractie van een seconde nadat hij landt, rechtstreeks van de Board Manager in je eigen netwerk. Elk ander dartbord speelt ook mee, met de darts met de hand ingevoerd of verstuurd door een Granboard. Speel en train ermee, zet een scorebord naast het bord, volg je statistieken en laat je huis meedoen. Geen account, geen cloud, geen client-ID.
+HomeDarts for Autodarts brengt je Autodarts-bord naar Home Assistant: een dart verschijnt een fractie van een seconde nadat hij in het bord zit, rechtstreeks van de Board Manager in je eigen netwerk. Elk ander dartbord doet ook mee, met darts die je met de hand invoert of die een Granboard verstuurt. Speel en train ermee, zet een scorebord naast het bord, volg je statistieken en laat je huis meedoen. Geen account, geen cloud, geen client-ID.
 
 HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden aan Autodarts. Tot versie 1.18 heette het Autodarts: [From Autodarts to HomeDarts](new-name.md) legt de nieuwe naam uit en hoe HomeDarts je borden overneemt.
 
@@ -69,23 +69,23 @@ HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden aan 
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animatie: de trefferkaart wisselt van vakken naar getallen en de echte posities van de darts, en dan naar de darts van één speler](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animatie: de heatmap wisselt van vakken naar getallen en de echte posities van de darts, en dan naar de darts van één speler](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Statistieken met trefferkaarten**
+    :material-chart-line:{ .lg .middle } **Statistieken met heatmaps**
 
     ---
 
-    Gemiddelde per 3 darts, first 9-gemiddelde, uitgooi- en dubbelpercentage, een trefferkaart van elk vak of van de echte dartposities, en waar elke speler per dart het meest scoort. Spelersprofielen met badges, weektrends, een ranglijst, een weekrapport en een trainingskalender.
+    3-dart-gemiddelde, first 9-gemiddelde, uitgooi- en dubbelpercentage, een heatmap van elk vak of van de echte dartposities, en waar elke speler per dart het meest scoort. Spelersprofielen met badges, weektrends, een ranglijst, een weekrapport en een trainingsagenda.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
-- ![De galerij met hoogtepunten in de mediabrowser van Home Assistant, met foto's van een uitgooi en twee hoge beurten](images/en/media-gallery.png){ loading=lazy }
+- ![De galerij met highlights in de mediabrowser van Home Assistant, met foto's van een uitgooi en twee hoge beurten](images/en/media-gallery.png){ loading=lazy }
 
     :material-home-automation:{ .lg .middle } **Automatiseringen en blueprints**
 
     ---
 
-    Bordgebeurtenissen voor elke dart, beurt, takeout, bust, gewonnen leg en wedstrijd, en het begin en einde van elk spel. Zestien blueprints: lichtshow, opkomstmuziek, scoreweergave, dart- en oefencallers, foto's van hoogtepunten, rapporten, meldingen, routines, spellen starten en darts invoeren met je stem, en antwoorden van Assist over je darts.
+    Bordgebeurtenissen voor elke dart, beurt, verwijdering van de darts, bust, gewonnen leg en wedstrijd, en het begin en einde van elk spel. Zestien blueprints: lichtshow, opkomstmuziek, scoreweergave, dart- en oefencallers, highlightfoto's, rapporten, meldingen, routines, spellen starten en darts invoeren met je stem, en antwoorden van Assist over je darts.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -95,7 +95,7 @@ HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden aan 
 
     ---
 
-    Toernooien van drie tot 32 spelers, als poule met een stand, als knock-out, als double elimination of als groepen met een knock-out, aan één bord of op meerdere borden tegelijk, en een bot van niveau 20 tot 120 om X01 en Cricket tegen te spelen.
+    Toernooien van drie tot 32 spelers, als iedereen tegen iedereen met een stand, als knock-out, als dubbele knock-out of als groepen en knock-out, aan één bord of op meerdere borden tegelijk, en een bot van niveau 20 tot 120 om X01 en Cricket tegen te spelen.
 
     [:octicons-arrow-right-24: Tournaments](games.md#tournaments) · [The bot](games.md#playing-against-the-bot)
 
@@ -131,8 +131,8 @@ Alles gebeurt in je eigen netwerk, in minder dan een seconde: de Board Manager b
 Anders dan de Autodarts-app met de browserextensie Tools for Autodarts, darts-caller en darts-wled, en de andere integraties van Home Assistant voor Autodarts:
 
 - **Zonder cloud:** HomeDarts praat met de lokale interface van de Board Manager en heeft geen Autodarts-account nodig.
-- **Entiteiten en gebeurtenissen in Home Assistant:** een gebeurtenis voor elke dart, beurt, takeout, bust, leg en wedstrijd, en zestien blueprints die er meteen iets mee doen.
-- **Statistieken thuis:** gemiddelden, trefferkaarten, profielen en een jaar geschiedenis, opgeslagen in Home Assistant.
+- **Entiteiten en gebeurtenissen in Home Assistant:** een gebeurtenis voor elke dart, beurt, verwijdering van de darts, bust, leg en wedstrijd, en zestien blueprints die er meteen iets mee doen.
+- **Statistieken thuis:** gemiddelden, heatmaps, profielen en een jaar geschiedenis, opgeslagen in Home Assistant.
 - **Ook zonder Autodarts-bord:** op een toetsenblok of met een Granboard via Bluetooth *(experimenteel)*.
 - **Gratis:** open source onder de MIT-licentie, zonder betaalde versie.
 
@@ -141,7 +141,7 @@ Anders dan de Autodarts-app met de browserextensie Tools for Autodarts, darts-ca
 ## Handleidingen
 
 - :material-rocket-launch: [**Van nul tot het scorebord**](getting-started.nl.md): Home Assistant, HACS, de integratie en het eerste spel, voor Autodarts-spelers die Home Assistant nog niet kennen
-- :material-download: [**Installatie en instellen**](installation.nl.md): vereisten, HACS of met de hand, en de manieren om een bord toe te voegen
+- :material-download: [**Installatie en instellen**](installation.nl.md): vereisten, HACS of handmatig, en de manieren om een bord toe te voegen
 - :material-frequently-asked-questions: [**Veelgestelde vragen**](faq.nl.md): het account, apparaten, online spelen, privacy, meerdere borden, schermen, talen en updates
 
 In het Engels:
@@ -152,7 +152,7 @@ In het Engels:
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md): de nieuwe naam sinds versie 2.0, en hoe HomeDarts je borden overneemt
 - :material-bullseye-arrow: [**Games and rules**](games.md): elk spel in één oogopslag, vier manieren om er een te starten, wedstrijden, teams, handicaps, de bull-off en toernooien
 - :material-television: [**Scoreboard at the board**](scoreboard.md): een tablet of tv naast het bord, liggend en staand, het scherm voor een nieuw spel, de caller en de rustmodus
-- :material-chart-line: [**Statistics and players**](statistics.md): sessies, persoonlijke records, trefferkaarten, waar je moet mikken, vooruitgang, profielen, prestaties en de ranglijst
+- :material-chart-line: [**Statistics and players**](statistics.md): sessies, persoonlijke records, heatmaps, waar je moet mikken, vooruitgang, profielen, prestaties en de ranglijst
 - :material-home-automation: [**Automations**](automations.md): zestien blueprints, hun instellingen, bordgebeurtenissen en kant-en-klare voorbeelden
 - :material-play-network: [**Online matches**](online-matches.md): busts, gewonnen legs en wedstrijden van onlinewedstrijden als bordgebeurtenissen, met Tools for Autodarts *(experimenteel)*
 
@@ -212,6 +212,6 @@ Alle hardware waarop de Board Manager van Autodarts draait, werkt, want de integ
 
 ## Talen
 
-De integratie spreekt Nederlands, Engels, Duits, Frans en Spaans: het instellen, de opties, de entiteiten en hun toestanden, de acties, meldingen en reparaties, de kaarten met hun editors en de caller van het scorebord. Ze volgt de taal van Home Assistant; een regionale variant zoals `nl-BE` telt als haar taal.
+De integratie spreekt Nederlands, Engels, Duits, Frans en Spaans: het instellen, de opties, de entiteiten en hun toestanden, de acties, meldingen en reparaties, de kaarten met hun editors en de caller van het scorebord. Ze volgt de taal van Home Assistant; een regionale variant zoals `nl-BE` telt als die taal.
 
-Deze website is er in het Engels en Duits, en de start, de snelle start, de installatie en de veelgestelde vragen ook in het Nederlands, Frans en Spaans. De andere pagina's toont hij in het Engels. Spreek je Nederlands? [Help mee met de vertaling](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/480): verbeter een zin of vertaal een pagina die je mist, direct op GitHub, zonder te programmeren.
+Deze website is er in het Engels en Duits, en de start, de snelle start, de installatie en de veelgestelde vragen ook in het Nederlands, Frans en Spaans. De andere pagina's toont hij in het Engels. Spreek je Nederlands? [Help mee met de vertaling](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations): verbeter een zin of vertaal een pagina die je mist, direct op GitHub, zonder te programmeren.
