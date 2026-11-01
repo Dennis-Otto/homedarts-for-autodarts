@@ -41,9 +41,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .calls import Caller
-from .const import DOMAIN, event_signal
+from .const import CONF_PLANS, DOMAIN, event_signal
 from .errors import ActionRefused
 from .games import Announcement, BoardGames, Event
+from .plans import own_plans
 from .positions import Aim
 from .quality import RECALIBRATE_RATE, RECOVERED_RATE
 from .report import BoardReports
@@ -159,6 +160,8 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.reports = BoardReports(hass, entry.entry_id, self)
         self.games = BoardGames(self.reports, dt_util.now())
         self.games.key = entry.entry_id
+        # The options flow checked them; a hand-edited store may hold anything.
+        self.games.plans.custom = own_plans(entry.options.get(CONF_PLANS, [])) or ()
         # Set up and not shut down, for the other boards of a tournament.
         self.loaded = False
         # The words of the callers in the language of Home Assistant.
@@ -244,6 +247,9 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     @callback
     def _async_new_day(self, _now: datetime) -> None:
+        # The plan of the day changes with the date, too.
+        self.games.plans.day = dt_util.now().date()
+        self.data = {**(self.data or {}), **self.games.snapshots()}
         self.async_update_listeners()
 
     async def _async_config_changed(self, _event: CoreEvent) -> None:
@@ -575,6 +581,32 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if delay is not None:
             practice.bot_delay = delay
         await self._async_changed()
+
+    # -- training plans ----------------------------------------------------------
+
+    async def async_start_plan(
+        self,
+        plan: str | None = None,
+        name: str | None = None,
+        steps: list[Any] | None = None,
+        player: str | None = None,
+    ) -> None:
+        """Start a training plan, see BoardGames.start_plan."""
+        with refusals():
+            events = self.games.start_plan(dt_util.now(), plan, name, steps, player)
+        await self._async_changed(events)
+
+    async def async_next_plan_step(self) -> None:
+        """Skip the step of the training plan being played."""
+        with refusals():
+            events = self.games.next_plan_step(dt_util.now())
+        await self._async_changed(events)
+
+    async def async_stop_plan(self) -> None:
+        """Stop the training plan being played and the game of its step."""
+        with refusals():
+            events = self.games.stop_plan(dt_util.now())
+        await self._async_changed(events)
 
     # -- tournaments -------------------------------------------------------------
 

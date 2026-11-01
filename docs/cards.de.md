@@ -211,6 +211,7 @@ show_system: false
 
 <img src="images/de/scoreboard.webp" alt="Animation: die Anzeigetafel in einem 501-Match. Nach jeder Aufnahme wechselt der Wurf zwischen Alex und Sam, und Alex checkt 141 mit T20 T19 D12 zum Matchgewinn" width="760">
 
+- **Trainingspläne:** Ohne Spiel auf dem Board wartet der [Plan des Tages](games.de.md#trainingspläne) hinter einem Tippen. Während eines Plans nennt die Kopfzeile den Schritt, etwa *Schritt 2 von 4: Bob's 27*, mit *Überspringen* und *Stoppen*. Die Live-Karte zeigt denselben Schritt und dieselben Tasten.
 - **X01:** eine Kachel pro Spieler mit Restpunkten, Legs, Sätzen und Average. Der Spieler am Board ist hervorgehoben und bekommt den Checkout-Weg, das Überwerfen oder das Game shot; wo kein Checkout möglich ist, den [Stellwurf](entities.de.md#stellwürfe) mit dem Rest, den er stellt, etwa *T20 T20 S17 Rest 32*. Spieler mit eigenen [Startpunkten](entities.de.md#teams-und-startpunkte) zeigen sie neben dem Namen, der [Bot](entities.de.md#bot) seine Stärke.
 - **Teams:** im Team-Match zwei Team-Kacheln wie *Alex & Kim* gegen *Sam & Lea*, mit dem gemeinsamen Rest, dem Average jedes Partners und dem Partner am Board in Fettschrift. Das Banner nennt das Siegerteam.
 - **Cricket:** eine große Kreidetafel mit den Marks aller Spieler, den Punkten und den Marks pro Runde; die nächste offene Zahl steht in der Ecke oben links, über den Zahlen, und in einem Match rahmt die Spalte des Spielers am Board grün, wo ein Dart punktet, und gelb, was er schließen sollte. Tactics füllt sie von 20 bis 10 in kleinerer Schrift, Wild Mouse ergänzt Zeilen für Doubles, Triples und 3 in a Bed, Cut-Throat Cricket erinnert daran, dass die wenigsten Punkte gewinnen, Random Cricket zeigt die Zahlen, die das Leg gezogen hat, Hidden Cricket ein Fragezeichen für jede Zahl, die noch kein Dart gefunden hat, und ein Team-Match hat eine Spalte pro Team.
@@ -348,8 +349,8 @@ Seiten ohne Inhalt werden übersprungen. Ein Dart, ein neues Spiel oder ein Tipp
 | `call_route` | Wahrheitswert | `false` | Den Weg eines Checkouts ansagen, auch nach jedem Dart, der einen anderen lässt |
 | `call_target` | Wahrheitswert | `false` | Das nächste Ziel eines Trainings- oder Partyspiels ansagen, etwa Doppel 16 |
 | `caller_voice` | Text | leer | Ein [Voice-Pack](scoreboard.de.md#voice-packs): der Name eines Ordners in `/media/homedarts/voices` mit aufgenommenen Ansagen, etwa eines Packs von darts-caller; leer ist die Stimme des Browsers |
-| `lobby` | Wahrheitswert | `true` | Die [Spielauswahl](#spielauswahl) anbieten |
-| `lobby_games` | Liste von Spielen | jedes Spiel | Die Spiele, die die Spielauswahl anbietet, etwa `["501", cricket, killer]` |
+| `lobby` | Wahrheitswert | `true` | Die [Spielauswahl](#spielauswahl) und den [Plan des Tages](games.de.md#trainingspläne) anbieten |
+| `lobby_games` | Liste von Spielen | jedes Spiel | Die Spiele, die die Spielauswahl anbietet, etwa `["501", cricket, killer]`; den Plan des Tages gibt es nur, wenn alle seine Spiele dazugehören |
 | `idle` | Wahrheitswert | `true` | Den [Ruhemodus](#ruhemodus) einschalten |
 | `idle_after` | Sekunden, 10–3600 | `180` | Zeit ohne Darts und Tippen, bis der Ruhemodus beginnt |
 | `idle_interval` | Sekunden, 3–120 | `10` | Zeit, die jede Seite zu sehen ist |

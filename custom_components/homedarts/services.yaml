@@ -1,3 +1,59 @@
+start_plan:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
+    plan:
+      required: false
+      example: doubles_day
+      selector:
+        select:
+          custom_value: true
+          translation_key: plan
+          options:
+            - warm_up
+            - doubles_day
+            - checkout_day
+            - jdc_week
+    name:
+      required: false
+      example: Tuesday doubles
+      selector:
+        text:
+    steps:
+      required: false
+      example: |
+        - drill: around_the_clock
+          darts: 30
+        - drill: bobs_27
+        - drill: checkout
+          rounds: 10
+          options:
+            low: 40
+            high: 100
+      selector:
+        object:
+    player:
+      required: false
+      example: Alex
+      selector:
+        text:
+next_plan_step:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
+stop_plan:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homedarts
 delete_player:
   fields:
     config_entry_id:

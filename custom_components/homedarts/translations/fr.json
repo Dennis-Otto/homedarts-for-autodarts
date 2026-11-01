@@ -123,18 +123,23 @@
         "data": {
           "online_bridge": "Recevoir les matchs en ligne depuis Tools for Autodarts",
           "online_bridge_remote": "Accepter les appels depuis l'extérieur de votre réseau domestique",
-          "online_bridge_new_address": "Créer une nouvelle adresse secrète"
+          "online_bridge_new_address": "Créer une nouvelle adresse secrète",
+          "plans": "Plans d'entraînement personnels"
         },
         "data_description": {
           "online_bridge": "Ouvre une adresse de webhook secrète pour l'extension de navigateur. L'étape suivante l'affiche.",
           "online_bridge_remote": "Uniquement pour une adresse https via Home Assistant Cloud ou votre propre domaine. Désactivé\u00a0: seuls les appareils de votre réseau domestique peuvent appeler l'adresse.",
-          "online_bridge_new_address": "L'adresse actuelle cessera de fonctionner. Saisissez la nouvelle dans Tools for Autodarts."
+          "online_bridge_new_address": "L'adresse actuelle cessera de fonctionner. Saisissez la nouvelle dans Tools for Autodarts.",
+          "plans": "Une liste en YAML\u00a0: chaque plan avec un `name`, ses `steps` et, si vous le souhaitez, les `weekdays` où il est le plan du jour. La page Plans d'entraînement de la documentation donne un exemple. Une liste vide signifie aucun plan."
         }
       },
       "online_bridge": {
         "title": "Adresse pour Tools for Autodarts",
         "description": "Après validation, Home Assistant accepte les moments forts des matchs en ligne à cette adresse secrète\u00a0:\n\n`{url}`\n\nDans Tools for Autodarts, activez **WLED**, choisissez **Import CSV** et collez les lignes ci-dessous. Chaque ligne crée un effet de type URL qui appelle l'adresse avec `?event=` et son déclencheur. N'importez que les lignes dont vous avez besoin\u00a0: Tools for Autodarts n'exécute qu'un effet par déclencheur et en choisit un au hasard lorsque plusieurs partagent le même déclencheur.\n\n```\n{effects}\n```\n\nLe capteur *Dernier événement de la passerelle en ligne* affiche le dernier moment reçu. Gardez cette adresse pour vous\u00a0: quiconque la connaît peut envoyer des moments d'une partie à votre Home Assistant."
       }
+    },
+    "error": {
+      "invalid_plans": "Ces plans ne sont pas valides. Chaque plan a besoin d'un nom bien à lui et d'une à douze étapes. Chaque étape nomme un jeu d'entraînement avec `drill` et au plus un de `darts`, `rounds` et `until`. L'entraînement au checkout et l'échelle 121 ne s'arrêtent jamais d'eux-mêmes et ont besoin de `darts` ou `rounds`."
     }
   },
   "entity": {
@@ -683,6 +688,8 @@
               "game_started": "Partie démarrée",
               "game_ended": "Partie terminée",
               "drill_finished": "Jeu d'entraînement terminé",
+              "plan_step_finished": "Étape du plan d'entraînement terminée",
+              "plan_finished": "Plan d'entraînement terminé",
               "checkout_attempt": "Tentative de finish",
               "personal_best": "Record personnel",
               "daily_goal_reached": "Objectif quotidien atteint",
@@ -723,7 +730,8 @@
               "around_the_clock": "Around the Clock",
               "bobs_27": "Bob's 27",
               "streak": "Série",
-              "darts_thrown": "Fléchettes lancées"
+              "darts_thrown": "Fléchettes lancées",
+              "plans_finished": "Plans d'entraînement"
             }
           },
           "mode": {
@@ -951,6 +959,18 @@
     },
     "no_dart": {
       "message": "La volée en cours n'a pas de fléchette {dart}."
+    },
+    "no_plan": {
+      "message": "Aucun plan d'entraînement n'est en cours sur cette cible."
+    },
+    "unknown_plan": {
+      "message": "Il n'existe aucun plan d'entraînement nommé {plan}. Utilisez warm_up, doubles_day, checkout_day, jdc_week ou le nom d'un plan personnel."
+    },
+    "invalid_plan": {
+      "message": "Ces étapes ne forment pas un plan d'entraînement. Un plan a une à douze étapes. Chaque étape nomme un jeu d'entraînement avec drill et au plus un de darts, rounds et until. L'entraînement au checkout et l'échelle 121 ont besoin de darts ou rounds."
+    },
+    "plan_in_tournament": {
+      "message": "Un tournoi est en cours sur cette cible. Arrêtez-le d'abord pour lancer un plan d'entraînement."
     },
     "bot_dart": {
       "message": "Les fléchettes du bot ne peuvent pas être corrigées."
@@ -1204,6 +1224,12 @@
     "report_new_bests": {
       "message": "{count} nouveaux records personnels."
     },
+    "report_plan": {
+      "message": "1 plan d'entraînement terminé."
+    },
+    "report_plans": {
+      "message": "{count} plans d'entraînement terminés."
+    },
     "training_summary": {
       "message": "{darts} fléchettes, moyenne 3 fléchettes {average}, meilleure volée {highest}."
     },
@@ -1414,6 +1440,52 @@
         "bot_level": {
           "name": "Niveau du bot",
           "description": "Jouez contre le bot en X01 et dans les jeux de Cricket\u00a0: la moyenne 3 fléchettes qu'il joue, de 20 à 120\u00a0; 0 joue sans le bot. Le bot prend la place après les joueurs."
+        }
+      }
+    },
+    "start_plan": {
+      "name": "Lancer un plan d'entraînement",
+      "description": "Lance un plan d'entraînement sur la cible\u00a0: plusieurs jeux d'entraînement à la suite. Nommez un plan, donnez ses étapes, ou rien de tout cela pour le plan du jour.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "La cible. Nécessaire uniquement avec plusieurs cibles."
+        },
+        "plan": {
+          "name": "Plan",
+          "description": "Un plan fourni avec l'intégration, ou le nom d'un plan personnel issu des options de la cible."
+        },
+        "name": {
+          "name": "Nom",
+          "description": "Le nom d'un plan donné par ses étapes, ou du plan à lancer."
+        },
+        "steps": {
+          "name": "Étapes",
+          "description": "Les étapes dans l'ordre, à la place d'un plan. Chacune nomme un jeu d'entraînement avec `drill` et, si vous le souhaitez, les `darts` ou `rounds` qu'elle peut durer, ou `until: finished`, la valeur par défaut. Avec `options`, comme `low: 40` et `high: 100`, l'entraînement au checkout reste parmi ces finitions."
+        },
+        "player": {
+          "name": "Joueur",
+          "description": "Qui s'entraîne. Sans nom, le joueur 1 reste."
+        }
+      }
+    },
+    "next_plan_step": {
+      "name": "Passer l'étape du plan d'entraînement",
+      "description": "Quitte l'étape actuelle du plan d'entraînement pour la suivante. Après la dernière étape, le plan est terminé.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "La cible. Nécessaire uniquement avec plusieurs cibles."
+        }
+      }
+    },
+    "stop_plan": {
+      "name": "Arrêter le plan d'entraînement",
+      "description": "Arrête le plan d'entraînement et son jeu sur la cible.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Cible",
+          "description": "La cible. Nécessaire uniquement avec plusieurs cibles."
         }
       }
     },
@@ -1886,6 +1958,14 @@
         "knockout": "Élimination directe",
         "double_knockout": "Double élimination",
         "groups_knockout": "Poules et élimination directe"
+      }
+    },
+    "plan": {
+      "options": {
+        "warm_up": "Échauffement 15 minutes",
+        "doubles_day": "Journée des doubles",
+        "checkout_day": "Journée des checkouts",
+        "jdc_week": "Semaine JDC"
       }
     }
   }

@@ -10,7 +10,7 @@ Dein Autodarts-Board spielt Spiele direkt in Home Assistant: X01 von 101 bis 100
 
 <img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet am Board öffnet Neues Spiel die Spielauswahl, Cricket wird gewählt, Sam kommt zu Alex dazu, die Legs pro Satz steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
 
-**Auf dieser Seite:** [Alle Spiele im Überblick](#alle-spiele-im-überblick) · [Ein Spiel starten](#ein-spiel-starten) · [Am Board](#am-board) · [Korrekturen und von Hand eingegebene Darts](#korrekturen-und-von-hand-eingegebene-darts) · [Matches, Legs und Sätze](#matches-legs-und-sätze) · [Match-Zusammenfassung](#match-zusammenfassung) · [Teams](#teams) · [Startpunkte (Handicap)](#startpunkte-handicap) · [Ausbullen](#ausbullen) · [Gegen den Bot spielen](#gegen-den-bot-spielen) · [Turniere](#turniere) · [X01](#x01) · [Cricket-Spiele](#cricket-spiele) · [Partyspiele](#partyspiele) · [Trainingsspiele](#trainingsspiele) · [Statistik](#statistik)
+**Auf dieser Seite:** [Alle Spiele im Überblick](#alle-spiele-im-überblick) · [Ein Spiel starten](#ein-spiel-starten) · [Am Board](#am-board) · [Korrekturen und von Hand eingegebene Darts](#korrekturen-und-von-hand-eingegebene-darts) · [Matches, Legs und Sätze](#matches-legs-und-sätze) · [Match-Zusammenfassung](#match-zusammenfassung) · [Teams](#teams) · [Startpunkte (Handicap)](#startpunkte-handicap) · [Ausbullen](#ausbullen) · [Gegen den Bot spielen](#gegen-den-bot-spielen) · [Turniere](#turniere) · [X01](#x01) · [Cricket-Spiele](#cricket-spiele) · [Partyspiele](#partyspiele) · [Trainingsspiele](#trainingsspiele) · [Trainingspläne](#trainingspläne) · [Statistik](#statistik)
 
 ## Alle Spiele im Überblick
 
@@ -527,6 +527,49 @@ Acht klassische Übungen für einen Spieler. Jede folgt den Darts der aktuellen 
 
 - Eine Aufnahme auf jede Zahl von 1 bis 20 und dann aufs Bull (`25`).
 - Jeder Dart in einem Feld der Zahl bringt einen Punkt pro Treffer: ein Single 1, ein Double 2, ein Triple 3; das Single-Bull 1 und das Bullseye 2. Höchstens 186 Punkte.
+
+## Trainingspläne
+
+Ein Trainingsplan spielt mehrere [Trainingsspiele](#trainingsspiele) nacheinander. Auf der [Anzeigetafel](cards.de.md#anzeigetafel) und der [Live-Karte](cards.de.md#live-karte) sagt die Kopfzeile, wo du stehst, etwa *Schritt 2 von 4: Bob's 27*, und das nächste Spiel startet, sobald eines endet. *Überspringen* geht zum nächsten Schritt und *Stoppen* beendet den Plan und sein Spiel, beides mit einem zweiten Tippen.
+
+<img src="images/de/training-plan.webp" alt="Animation: die Anzeigetafel bietet ohne Spiel den Plan des Tages an, den Doppel-Tag. Ein Tippen startet ihn, und die Kopfzeile zeigt Schritt 1 von 3: Doppeltraining. Überspringen, zweimal getippt, geht weiter zu Schritt 2 von 3: Bob's 27" width="760">
+
+Vier Pläne gehören zur Integration:
+
+| Plan | Schlüssel | Schritte |
+| --- | --- | --- |
+| Aufwärmen 15 Minuten | `warm_up` | Around the Clock für 45 Darts, das Singles-Training für 10 Aufnahmen, das Doppeltraining für 30 Darts |
+| Doppel-Tag | `doubles_day` | Das Doppeltraining für 60 Darts, Bob's 27, das Checkout-Training für 10 Aufnahmen auf die Finishes bis 40 |
+| Checkout-Tag | `checkout_day` | Das Checkout-Training für 12 Aufnahmen auf die Finishes von 41 bis 100, Catch 40 für 20 Aufnahmen, das 121-Checkout für 12 Aufnahmen |
+| JDC-Woche | `jdc_week` | Around the Clock für 30 Darts, die JDC Challenge, Catch 40 für 10 Aufnahmen |
+
+**Der Plan des Tages:** Liegt kein Spiel auf dem Board, bietet die Anzeigetafel den heutigen Plan mit einem Tippen an: montags und donnerstags *Aufwärmen 15 Minuten*, dienstags und freitags den *Doppel-Tag*, mittwochs und sonntags den *Checkout-Tag* und samstags die *JDC-Woche*. Hast du ihn geschafft, sagt das Angebot das, und du kannst ihn noch einmal starten. Ein eigener Plan mit `weekdays` tritt an diesen Tagen an seine Stelle.
+
+**Deine eigenen Pläne** sind eine Liste in YAML, entweder in den Optionen des Boards (*Einstellungen → Geräte & Dienste → HomeDarts → Konfigurieren*) oder in der Aktion [`homedarts.start_plan`](entities.de.md#trainingspläne-homedartsstart_plan):
+
+```yaml
+- name: Dienstagabend
+  weekdays: [tuesday]
+  steps:
+    - drill: around_the_clock
+      darts: 30
+    - drill: bobs_27
+    - drill: checkout
+      rounds: 10
+      options:
+        low: 40
+        high: 100
+```
+
+Ein Plan hat einen Namen und bis zu 12 Schritte, ein Board bis zu 20 eigene Pläne. Ein Schritt nennt sein Spiel als `drill`: `around_the_clock`, `doubles`, `checkout`, `bobs_27`, `checkout_121`, `catch_40`, `jdc_challenge` oder `singles`. Höchstens eines davon sagt, was den Schritt beendet, und er endet auch, sobald sein Spiel endet:
+
+- `darts`: mit der Aufnahme, die so viele Darts erreicht;
+- `rounds`: nach so vielen Aufnahmen;
+- `until: finished`: mit dem Ende des Spiels, die Vorgabe. Das Checkout-Training und das 121-Checkout enden nie von selbst und brauchen deshalb `darts` oder `rounds`.
+
+Mit `options` bleibt das Checkout-Training bei den Finishes von `low` bis `high`.
+
+Ein Plan ist wie jedes Trainingsspiel für einen Spieler und geht nach einem Neustart von Home Assistant mitten in einem Schritt weiter. Eine Aufnahme, die einen Schritt beendet hat, lässt sich nicht [zurücknehmen](#korrekturen-und-von-hand-eingegebene-darts), weil dann schon das nächste Spiel läuft. Ein anderes Spiel, das du auf dem Board startest, beendet den Plan, und während eines Turniers startet kein Plan. [`plan_step_finished` und `plan_finished`](entities.de.md#board-ereignisse) melden die Ergebnisse, der [Wochenbericht](entities.de.md#wochenbericht) und der [Trainingskalender](entities.de.md#trainingskalender) zählen die beendeten Pläne, und der [Erfolg](entities.de.md#erfolge) *Trainingspläne* hat seine Stufen bei 1, 10 und 100.
 
 ## Statistik
 

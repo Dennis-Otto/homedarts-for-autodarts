@@ -682,7 +682,7 @@ class AutodartsPracticeSensor(AutodartsStoredEntity, SensorEntity):
     # Darts, scores, results and the match summary are for cards; the
     # recorder keeps the state.
     _unrecorded_attributes = frozenset(
-        {"visit", "legs", "scores", "results", "summary"}
+        {"visit", "legs", "scores", "results", "summary", "plan", "plan_of_the_day"}
     )
 
     def __init__(self, coordinator: AutodartsGamesCoordinator, key: str) -> None:

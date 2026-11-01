@@ -31,6 +31,8 @@ TO_REDACT = {
     "name",
     "team_name",
     "granboard",
+    # Says nothing of the board, and changes with the day.
+    "plan_of_the_day",
 }
 
 

@@ -418,6 +418,15 @@
     "start_game": {
       "service": "mdi:play-circle-outline"
     },
+    "start_plan": {
+      "service": "mdi:clipboard-play-outline"
+    },
+    "next_plan_step": {
+      "service": "mdi:skip-next"
+    },
+    "stop_plan": {
+      "service": "mdi:stop-circle-outline"
+    },
     "delete_player": {
       "service": "mdi:account-remove"
     },

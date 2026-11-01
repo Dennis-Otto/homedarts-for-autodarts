@@ -1439,10 +1439,97 @@ function targetText(ui, target) {
 
 const hearts = (lives) => (lives > 0 ? "♥".repeat(lives) : "✕");
 
+// Training plans ------------------------------------------------------------------
+
+// The plans that come with the integration, whose names every language has.
+const PLAN_PRESETS = {
+  warm_up: "plan_warm_up",
+  doubles_day: "plan_doubles_day",
+  checkout_day: "plan_checkout_day",
+  jdc_week: "plan_jdc_week",
+};
+
+// The training plan being played, as the practice sensor keeps it.
+function planView(state) {
+  const plan = state?.attributes?.plan;
+  if (!plan || !DRILLS.includes(plan.drill)) return null;
+  return {
+    key: String(plan.plan),
+    name: String(plan.name),
+    step: finite(plan.step) ?? 1,
+    steps: finite(plan.steps) ?? 1,
+    drill: plan.drill,
+    darts: finite(plan.darts) ?? 0,
+    visits: finite(plan.visits) ?? 0,
+    dartsLimit: finite(plan.darts_limit),
+    roundsLimit: finite(plan.rounds_limit),
+  };
+}
+
+// The plan of the day the idle screen offers.
+function planOffer(state) {
+  const offer = state?.attributes?.plan_of_the_day;
+  if (!offer || !named(offer.plan)) return null;
+  return {
+    key: offer.plan,
+    name: String(offer.name),
+    drills: (Array.isArray(offer.drills) ? offer.drills : []).filter((drill) => DRILLS.includes(drill)),
+    done: offer.done === true,
+  };
+}
+
+// The offer starts a game, so it follows the options of the new game screen:
+// none with the screen off, and only games the screen offers.
+function offeredPlan(offer, config) {
+  if (config.lobby === false || !offer) return null;
+  const wanted = Array.isArray(config.lobby_games) && config.lobby_games.length ? config.lobby_games.map(String) : null;
+  return !wanted || offer.drills.every((drill) => wanted.includes(drill)) ? offer : null;
+}
+
+const planName = (plan, ui) => (Object.hasOwn(PLAN_PRESETS, plan.key) ? ui.t(PLAN_PRESETS[plan.key]) : plan.name);
+
+// "Step 2 of 4: Bob's 27".
+const planTitle = (plan, ui) =>
+  fill(ui.t("plan_step"), { step: plan.step, steps: plan.steps, game: ui.t(`drill_${plan.drill}`) });
+
+// The name of the plan and how far the step is, if it has a limit.
+function planMeta(plan, ui) {
+  const limit =
+    plan.dartsLimit !== null
+      ? fill(ui.t("plan_limit_darts"), { value: plan.darts, limit: plan.dartsLimit })
+      : plan.roundsLimit !== null
+        ? fill(ui.t("plan_limit_visits"), { value: plan.visits, limit: plan.roundsLimit })
+        : "";
+  return [planName(plan, ui), limit].filter(Boolean).join(" · ");
+}
+
+// Skip and Stop, each with a second tap: neither can be undone.
+function planButtons(ui, confirm) {
+  const button = (action, key) =>
+    `<button type="button" data-plan="${action}" data-focus="plan:${action}">` +
+    `${escapeHtml(ui.t(confirm === key ? "confirm" : key))}</button>`;
+  return `<div class="plan-buttons">${button("skip", "plan_skip")}${button("stop", "plan_stop")}</div>`;
+}
+
+// One tap starts the plan of the day; the games of the plan say what it is.
+function planOfferHtml(offer, ui) {
+  if (!offer) return "";
+  const label = fill(ui.t(offer.done ? "plan_done" : "plan_of_the_day"), { name: planName(offer, ui) });
+  const games = offer.drills.map((drill) => ui.t(`drill_${drill}`)).join(" · ");
+  return (
+    `<button type="button" class="plan-offer" data-plan="start" data-value="${escapeHtml(offer.key)}" data-focus="plan:start">` +
+    `<span class="plan-offer-name">${escapeHtml(label)}</span>` +
+    `<span class="plan-offer-games">${escapeHtml(games)}</span></button>`
+  );
+}
+
 // What the board shows: a training game, a bull-off, Cricket, a party game, X01, or none.
 function gameView(stateOf) {
   const drill = drillView(stateOf("drill"));
-  if (drill) return { mode: "drill", drill };
+  if (drill) {
+    const plan = planView(stateOf("practice"));
+    return plan ? { mode: "drill", drill, plan } : { mode: "drill", drill };
+  }
   const bullOff = bullOffView(stateOf("practice"));
   if (bullOff) return { mode: "bulloff", bullOff };
   const cricket = cricketView(stateOf("practice"));
@@ -2131,7 +2218,14 @@ const matchFormat = (game, t) =>
 function scoreboardHtml(view, ui) {
   const { t } = ui;
   if (view.mode === "drill") {
-    return { title: t(`drill_${view.drill.kind}`), meta: "", banner: "", bannerKind: "", main: drillBoard(view.drill, ui) };
+    const { plan } = view;
+    return {
+      title: plan ? planTitle(plan, ui) : t(`drill_${view.drill.kind}`),
+      meta: plan ? planMeta(plan, ui) : "",
+      banner: "",
+      bannerKind: "",
+      main: drillBoard(view.drill, ui),
+    };
   }
   if (view.mode === "idle") {
     return { title: ui.name, meta: t("training"), banner: "", bannerKind: "", main: idleBoard(ui.stats, ui) };
@@ -4162,6 +4256,7 @@ const ACHIEVEMENT_ICONS = {
   bobs_27: "mdi:target",
   streak: "mdi:fire",
   darts_thrown: "mdi:arrow-projectile-multiple",
+  plans_finished: "mdi:clipboard-check-outline",
 };
 // Bronze, silver, gold and platinum; an achievement of a single tier is gold.
 const TIER_COLORS = ["#c07a3c", "#a9b6c4", GOLD, "#5fd0e8"];
@@ -6588,6 +6683,13 @@ const CSS = `${BASE_CSS}${PAD_CSS}
   .practice-route { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
   .practice-route .bed { padding: 3px 9px; }
   .practice-route .note { font-weight: 700; }
+  .practice-plan:not([hidden]) { margin-top: 8px; }
+  .plan-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .plan-buttons button {
+    min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-weight: 700;
+    cursor: pointer; touch-action: manipulation;
+    color: var(--ad-accent-text); border: 1px solid var(--ad-accent); background: none;
+  }
   .practice-route .note:not(.won, .bust) { font-size: 11px; font-weight: 400; }
   .scoreboard { display: grid; gap: 4px; }
   .player-score {
@@ -7194,6 +7296,24 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
     align-self: center; min-height: 56px; padding: 0 clamp(24px, 4cqi, 56px); border: none; border-radius: 999px;
     font-size: clamp(16px, 2.4cqi, 28px); font-weight: 800; color: #fff; background: var(--ad-accent-fill);
   }
+  .idle-actions {
+    flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: 8px clamp(8px, 2cqi, 24px);
+  }
+  .plan-offer {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    min-height: 56px; max-width: 100%; padding: 4px clamp(16px, 3cqi, 40px); border-radius: 28px;
+    font: inherit; line-height: 1.15; cursor: pointer; touch-action: manipulation;
+    color: var(--ad-accent-text); border: 1px solid var(--ad-accent); background: none;
+  }
+  .plan-offer-name { font-size: clamp(14px, 1.8cqi, 22px); font-weight: 700; }
+  .plan-offer-games { font-size: clamp(12px, 1.2cqi, 15px); }
+  .scoreboard .plan-buttons { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .scoreboard .plan-buttons button {
+    min-height: 44px; min-width: 44px; padding: 0 clamp(16px, 2.4cqi, 32px); border-radius: 999px;
+    font: inherit; font-size: clamp(14px, 1.6cqi, 20px); font-weight: 700; cursor: pointer; touch-action: manipulation;
+    color: var(--ad-accent-text); border: 1px solid var(--ad-accent); background: none;
+  }
   .choosing .main { justify-content: flex-start; }
   .lobby {
     display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: clamp(14px, 2.4cqi, 32px); align-items: start;
@@ -7464,7 +7584,7 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
   .scoreboard.full .n1 .big { font-size: clamp(40px, min(24cqi, 100cqh - 19cqi), 320px); }
   .scoreboard.full .single .big { font-size: clamp(40px, min(24cqi, 100cqh - 13cqi), 320px); }
   .scoreboard.full .single .big.long { font-size: clamp(36px, min(11cqi, 100cqh - 13cqi), 150px); }
-  .scoreboard.full .main:has(.lobby-cta) .single .big { font-size: clamp(40px, min(24cqi, 100cqh - 13cqi - 80px), 320px); }
+  .scoreboard.full .main:is(:has(.lobby-cta), :has(.plan-offer), :has(.plan-buttons)) .single .big { font-size: clamp(40px, min(24cqi, 100cqh - 13cqi - 80px), 320px); }
   .scoreboard.full .n2 .big { font-size: clamp(40px, min(15cqi, 100cqh - 19cqi), 240px); }
   .scoreboard.full .n3 .big { font-size: clamp(36px, min(10cqi, 100cqh - 19cqi), 170px); }
   .scoreboard.full .n4 .big { font-size: clamp(36px, min(8cqi, 100cqh - 19cqi), 140px); }
@@ -7620,12 +7740,12 @@ ${compactPlayers(".scoreboard.full .players:is(.n3, .n4)", 280)}
     .scoreboard.full .single .label { display: none; }
     .scoreboard.full .single .facts { font-size: 13px; }
     .scoreboard.full .single .big { font-size: clamp(28px, 100cqh - 64px, 320px); }
-    .scoreboard.full .main:has(.lobby-cta) .single .big { font-size: clamp(28px, 100cqh - 112px, 320px); }
+    .scoreboard.full .main:is(:has(.lobby-cta), :has(.plan-offer), :has(.plan-buttons)) .single .big { font-size: clamp(28px, 100cqh - 112px, 320px); }
     .scoreboard.full .lobby-cta { min-height: 44px; font-size: 16px; }
   }
   @container (max-height: 150px) {
     .scoreboard.full .single .facts { display: none; }
-    .scoreboard.full .main:has(.lobby-cta) .single .big { font-size: clamp(28px, 100cqh - 56px, 320px); }
+    .scoreboard.full .main:is(:has(.lobby-cta), :has(.plan-offer), :has(.plan-buttons)) .single .big { font-size: clamp(28px, 100cqh - 56px, 320px); }
   }
   /* A Cricket chalkboard with little room: rows as high as the room allows. */
   @container (max-height: 260px) {
@@ -7998,9 +8118,10 @@ function livePanel(view, ui) {
   const winner = (game) => note(winnerText(game, ui), "won");
   if (view.mode === "drill") {
     const parts = drillParts(view.drill, ui);
+    const { plan } = view;
     return {
-      title: t(`drill_${view.drill.kind}`),
-      meta: factsText(parts.facts),
+      title: plan ? planTitle(plan, ui) : t(`drill_${view.drill.kind}`),
+      meta: [plan ? planMeta(plan, ui) : "", factsText(parts.facts)].filter(Boolean).join(" · "),
       big: parts.big,
       route: parts.note,
       rows: "",
@@ -8472,6 +8593,16 @@ function createElements(Base) {
   // Correcting a dart of the visit, on the live card and the scoreboard: a tap on a
   // dart picks it, the pad puts it where it is with the keys or a spot on the board.
   class PadCard extends CardBase {
+    // A tap on the offer of the plan of the day, or on Skip or Stop of the plan being played.
+    _planAction(action, value) {
+      if (this.preview) return;
+      const data = this._entry() ? { config_entry_id: this._entry() } : {};
+      if (action === "start") this._call("homedarts", "start_plan", { ...data, plan: value });
+      else if (this._confirmed(`plan_${action}`)) {
+        this._call("homedarts", action === "skip" ? "next_plan_step" : "stop_plan", data);
+      }
+      this._update();
+    }
     // The config entry of the board, for actions of the integration.
     _entry() {
       const device = this._hass.devices?.[this._deviceId];
@@ -8830,6 +8961,7 @@ function createElements(Base) {
             <div class="practice-route"></div>
           </div>
           <div class="scoreboard" hidden></div>
+          <div class="practice-plan" hidden></div>
         </div>`;
       const recent = `<div class="recent" hidden><span class="muted">${t("recent")}</span><div class="recent-list"></div></div>`;
       return `
@@ -8927,6 +9059,7 @@ function createElements(Base) {
         recentList: root.querySelector(".recent-list"),
         practice: root.querySelector(".practice"),
         practiceTitle: root.querySelector(".practice-title"),
+        practicePlan: root.querySelector(".practice-plan"),
         practiceMeta: root.querySelector(".practice-meta"),
         practiceRemaining: root.querySelector(".practice-remaining"),
         practiceRoute: root.querySelector(".practice-route"),
@@ -8949,6 +9082,10 @@ function createElements(Base) {
       };
       this._initPad(this._el.slots, this._el.layout);
       this._el.controls?.addEventListener("click", (event) => this._onControl(event));
+      this._el.practicePlan?.addEventListener("click", (event) => {
+        const plan = event.target.closest("[data-plan]");
+        if (plan) this._planAction(plan.dataset.plan);
+      });
       this._el.chips?.addEventListener("click", (event) => {
         const id = event.target.closest(".chip")?.dataset.entity;
         if (id) this._moreInfo(id);
@@ -9091,6 +9228,8 @@ function createElements(Base) {
       this._setHtml(el.practiceRoute, panel.route);
       el.scoreboard.hidden = !panel.rows;
       this._setHtml(el.scoreboard, panel.rows);
+      el.practicePlan.hidden = !view.plan;
+      this._setHtml(el.practicePlan, view.plan ? planButtons(this._ui(), this._confirm) : "");
     }
 
     _updateBoard(darts, view) {
@@ -9213,6 +9352,8 @@ function createElements(Base) {
       this._updateControls(this._status()[0]);
       // The keypad's second taps, for the next player and the undo.
       this._updatePad(this._darts());
+      // Skip and Stop of a training plan.
+      this._updatePractice(gameView((name) => this._state(name)));
     }
 
     _onControl(event) {
@@ -10644,6 +10785,8 @@ function createElements(Base) {
         const target = event.target.closest("[data-lobby]");
         if (target && !target.disabled) this._lobbyAction(target.dataset.lobby, target.dataset.value);
         if (event.target.closest("[data-tournament]") && !this.preview) this._press(this._ids.tournamentNext);
+        const plan = event.target.closest("[data-plan]");
+        if (plan) this._planAction(plan.dataset.plan, plan.dataset.value);
       });
       this._el.main.addEventListener("input", (event) => {
         if (this._lobby && event.target.classList.contains("lobby-name")) this._lobby.draft = event.target.value;
@@ -11207,8 +11350,13 @@ function createElements(Base) {
         }));
       } else if (tournament.label) {
         meta = [tournament.label, meta].filter(Boolean).join(" · ");
-      } else if (view.mode === "idle" && games.length) {
-        main += `<button type="button" class="lobby-cta" data-lobby="open">${escapeHtml(t("lobby_open"))}</button>`;
+      } else if (view.mode === "idle") {
+        // Side by side, the two take the room of one. A stream has lobby: false, as nobody taps it.
+        const offer = planOfferHtml(offeredPlan(planOffer(this._state("practice")), this._config), ui);
+        const open = games.length ? `<button type="button" class="lobby-cta" data-lobby="open">${escapeHtml(t("lobby_open"))}</button>` : "";
+        if (offer || open) main += `<div class="idle-actions">${offer}${open}</div>`;
+      } else if (view.plan && !overlay) {
+        main += planButtons(ui, this._confirm);
       }
       // Between games the big button opens the new game screen; the header needs none.
       el.lobby.hidden = !games.length || Boolean(this._lobby) || main.includes('class="lobby-cta"');
@@ -12135,6 +12283,11 @@ export {
   recentVisits,
   register,
   scoreboardHtml,
+  planView,
+  planOffer,
+  planMeta,
+  planButtons,
+  planOfferHtml,
   sectorAt,
   setupView,
   shortProcessor,

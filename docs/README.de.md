@@ -85,6 +85,7 @@ Du kommst von Autodarts Local, einer anderen Integration für Autodarts oder dar
 
 - Trainingssessions, die mit dem ersten Dart beginnen und die letzten 20 Sessions behalten
 - Acht Trainingsspiele: Around the Clock, Doppeltraining, Checkout-Training, Bob's 27, der 121-Checkout, Catch 40, die JDC Challenge und das Singles-Training
+- [Trainingspläne](https://dennis-otto.github.io/homedarts-for-autodarts/de/games.html#trainingspläne), die mehrere Trainingsspiele nacheinander spielen, mit einem Plan des Tages nur ein Tippen entfernt
 - Ein Tagesziel, eine Trainingsserie und Bestleistungen mit einem Ereignis, sobald du eine übertriffst
 
 <img src="images/de/training-game.webp" alt="Animation: Around the Clock auf der Live-Karte; jeder Treffer bringt das Ziel weiter und umrandet die Felder der nächsten Zahl" width="100%">
