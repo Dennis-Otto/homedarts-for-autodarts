@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import {
   dashboardStrategy,
-  doubleColor,
+  doubleColor, heatColor,
   doublesHtml,
   doublesView,
 } from "../../custom_components/homedarts/frontend/homedarts-card.js";
@@ -58,10 +58,15 @@ test("everybody's doubles or one player's", () => {
   assert.equal(doublesView({ state: "unknown", attributes: {} }).favourite, null);
 });
 
-test("colours run from red to green and the list starts with the best double", () => {
-  assert.equal(doubleColor(0), "hsl(0 70% 46%)");
-  assert.equal(doubleColor(50), "hsl(130 70% 46%)");
-  assert.equal(doubleColor(90), "hsl(130 70% 46%)");
+test("colours follow the heatmap up to one hit in two and the list starts with the best double", () => {
+  assert.equal(doubleColor(-5), heatColor(0));
+  assert.equal(doubleColor(25), heatColor(0.5));
+  assert.equal(doubleColor(50), heatColor(1));
+  assert.equal(doubleColor(90), heatColor(1));
+  // The former scale, for those who prefer it.
+  assert.equal(doubleColor(0, "thermal"), "hsl(0 70% 46%)");
+  assert.equal(doubleColor(50, "thermal"), "hsl(130 70% 46%)");
+  assert.equal(doubleColor(90, "thermal"), "hsl(130 70% 46%)");
   const texts = { doubles_landed: "hit {count}×", doubles_landed_short: "{count}×", doubles_aimed: "aimed" };
   const html = doublesHtml(doublesView(doubles, profiles), {
     t: (key) => texts[key],

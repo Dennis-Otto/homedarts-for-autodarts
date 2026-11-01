@@ -66,11 +66,20 @@ test("the doubles card shows every double hit, the aimed ones coloured by their 
   // A double hit only while aiming elsewhere takes the accent, the stronger the more hits.
   assert.deepEqual(fills(card), [
     "fill:color-mix(in srgb, var(--ad-accent) 43%, transparent)",
-    "fill:hsl(130 70% 46%)",
-    "fill:hsl(62 70% 46%)",
-    "fill:hsl(87 70% 46%)",
+    "fill:#f1e323",
+    "fill:#32aca3",
+    "fill:#55ca86",
   ]);
+  // The legend tells the colours of the rates, from none to about every second dart.
+  assert.deepEqual($$(card, ".legend span").map((end) => end.textContent), ["0%", "50%+"]);
+  assert.match($(card, ".legend-bar").getAttribute("style"), /linear-gradient\(90deg, #5844bc, .*, #f1e323\)/);
   assert.equal(card.getCardSize(), 6);
+});
+
+test("the thermal palette keeps the former red to green of the doubles card", () => {
+  const { card } = setup(EVERYBODY, { heatmap_palette: "thermal" });
+  assert.deepEqual(fills(card).slice(1), ["fill:hsl(130 70% 46%)", "fill:hsl(62 70% 46%)", "fill:hsl(87 70% 46%)"]);
+  assert.match($(card, ".legend-bar").getAttribute("style"), /linear-gradient\(90deg, hsl\(0 70% 46%\), .*, hsl\(130 70% 46%\)\)/);
 });
 
 test("the list ranks the aimed doubles by hit rate, then the others by their hits", () => {
@@ -153,7 +162,7 @@ test("the doubles card has a configurable title and speaks German", () => {
   assert.match(style, /\.doubles-card > header \.title \{ flex-shrink: 0; \}/);
   assert.match(style, /\.doubles-card > header \.meta \{ flex: 1 1 16em;/);
   assert.deepEqual(
-    $$(card, ".muted:not(.meta)").map((note) => note.textContent),
+    $$(card, "p.muted").map((note) => note.textContent),
     [
       "× zählt jeden Dart im Double; 3/5 und die Quote zählen die Darts, die aufs Double zielten: X01 mit Double-Out, Doppeltraining, Bob's 27 und die Checkout-Spiele.",
       "Persönliche Checkout-Wege nutzen Doubles mit mindestens 10 Darts.",
