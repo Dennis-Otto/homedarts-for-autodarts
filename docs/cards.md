@@ -6,7 +6,7 @@ description: "The seven dashboard cards: live board, training, board status, sco
 
 [← Documentation](README.md) · [Deutsch](cards.de.md)
 
-The integration includes seven cards. Home Assistant loads them automatically, so no dashboard resource and no separate HACS download are needed, and a page without a darts card loads less than 20 KB of them: the cards themselves come with the first card on a page; for [Home Assistant Cast](#home-assistant-cast), the integration keeps them in the dashboard resources itself. Each card:
+The integration includes seven cards. Home Assistant loads them automatically, so no dashboard resource and no separate HACS download are needed, and a page without a darts card loads less than 20 KB of them: the cards themselves come with the first card on a page; for [Home Assistant Cast](#home-assistant-cast), the integration keeps its small module in the dashboard resources itself. Each card:
 
 - has a visual editor and follows your theme (light or dark) and [language](README.md#languages) (English, German, Dutch, French or Spanish);
 - adapts to its width, from a phone to a wall tablet;

@@ -6,7 +6,7 @@ description: "Die sieben Dashboard-Karten: Live-Karte, Training, Board-Status, A
 
 [← Dokumentation](README.de.md) · [English](cards.md)
 
-Die Integration bringt sieben Karten mit. Home Assistant lädt sie automatisch; eine Dashboard-Ressource oder ein eigener HACS-Download ist nicht nötig. Für [Home Assistant Cast](#home-assistant-cast) hält die Integration sie selbst in den Dashboard-Ressourcen. Jede Karte:
+Die Integration bringt sieben Karten mit. Home Assistant lädt sie automatisch; eine Dashboard-Ressource oder ein eigener HACS-Download ist nicht nötig, und eine Seite ohne Darts-Karte lädt davon weniger als 20 KB: Die Karten selbst kommen mit der ersten Karte auf einer Seite; für [Home Assistant Cast](#home-assistant-cast) hält die Integration ihr kleines Modul selbst in den Dashboard-Ressourcen. Jede Karte:
 
 - hat einen visuellen Editor und folgt deinem Design (hell oder dunkel) und deiner [Sprache](README.de.md#sprachen) (Deutsch, Englisch, Niederländisch, Französisch oder Spanisch);
 - passt sich ihrer Breite an, vom Handy bis zum Wandtablet;

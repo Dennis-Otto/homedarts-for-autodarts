@@ -87,7 +87,8 @@ test("before the card module loads, Home Assistant still gets its answers, and m
   assert.equal(customElements.get(LOADED), undefined);
 });
 
-test("a failed load leaves the stand-ins waiting, and the next update of Home Assistant loads the cards", async () => {
+test("a failed load leaves the stand-ins waiting, and the next update of Home Assistant loads the cards", async (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
   let fail;
   const failing = loadCards(() => new Promise((_, reject) => (fail = reject)));
   const first = makeHass({ states: READY });
@@ -130,6 +131,11 @@ test("a failed load leaves the stand-ins waiting, and the next update of Home As
   assert.equal(shown.shadowRoot, null);
   assert.equal(shown.getCardSize(), 7);
   assert.equal(rebuilt.length, 0);
+  // A blank card has its reason in the console, once for all the stand-ins of the page.
+  assert.deepEqual(
+    warn.mock.calls.map(({ arguments: [text, error] }) => [text, error.message]),
+    [["HomeDarts: the card module did not load", "offline"]]
+  );
 
   for (const card of [shown, edited, away, bare, stateOnly, gone, invalid]) card.hass = second;
   await loadCards();

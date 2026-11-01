@@ -155,6 +155,8 @@ function become(element, Card) {
 // homedarts-card.js, once it has loaded.
 let cards = null;
 let loading = null;
+// A failed load tells the console once: every stand-in of the page shares it.
+let warned = false;
 
 // homedarts-card.js; a failed load is tried again by the next call.
 function loadCards(load = () => import(CARD_MODULE)) {
@@ -210,8 +212,10 @@ function cardStandIn(Base, { type, size, columns }) {
     kept.woken = true;
     loadCards().then(
       (module) => upgrade(element, cardOf(module), kept),
-      () => {
+      (error) => {
         kept.woken = false;
+        if (!warned) console.warn("HomeDarts: the card module did not load", error);
+        warned = true;
       }
     );
   }
