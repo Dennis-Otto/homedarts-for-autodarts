@@ -14,8 +14,10 @@
         'failed_attempts': 0,
         'ignored_frames': 0,
         'last_close': None,
+        'motion_frames': False,
         'receiving': False,
         'reconnect_delay_seconds': 1,
+        'socket': None,
       }),
       'stuck_takeout': dict({
         'failed_resets': 0,
@@ -266,8 +268,10 @@
         'failed_attempts': 0,
         'ignored_frames': 0,
         'last_close': None,
+        'motion_frames': False,
         'receiving': False,
         'reconnect_delay_seconds': 1,
+        'socket': None,
       }),
       'stuck_takeout': dict({
         'failed_resets': 0,
