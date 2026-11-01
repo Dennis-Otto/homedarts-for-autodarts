@@ -68,7 +68,7 @@ jobs:
       # reaches only the icons of its other integrations, which the images show
       # (brands.home-assistant.io).
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -83,6 +83,22 @@ jobs:
             pypi.org:443
             files.pythonhosted.org:443
             brands.home-assistant.io:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -188,7 +204,7 @@ jobs:
       # The code and Pillow for the comparison; Harden-Runner itself allows the
       # storage of the artifacts. No step needs sudo or Docker.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >

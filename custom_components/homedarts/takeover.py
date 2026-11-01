@@ -15,6 +15,7 @@ automations, scripts and dashboards in YAML stays as it is: a repair lists it.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -32,6 +33,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.util.hass_dict import HassKey
 
 from .card import async_remove_modules
 from .const import CLOUD_KEYS, CLOUD_SENSORS, CONF_BOARD_ID, DOMAIN
@@ -56,6 +58,8 @@ OLD_ACTION = re.compile(rf"\b{OLD_DOMAIN}\.(?!io\b|com\b)[a-z_]+\b")
 OLD_CARD = re.compile(rf"custom:{OLD_DOMAIN}(-[a-z-]+)?")
 # The modules of the old cards in the dashboard resources, at any version.
 OLD_MODULES = (f"{OLD_DOMAIN}-card.js", f"{OLD_DOMAIN}-strategy.js")
+# Boards taken over at once can each find no old board left: they finish one by one.
+FINISHING: HassKey[asyncio.Lock] = HassKey(f"{DOMAIN}_takeover_finishing")
 
 
 @callback
@@ -163,36 +167,38 @@ async def _async_copy_stores(hass: HomeAssistant, old_id: str, new_id: str) -> N
 async def async_finish(hass: HomeAssistant) -> None:
     """With the last board taken over: the media, the dashboards and the folder of
     the old integration; then the repairs for what still names the old actions
-    and for the restart that unloads the old integration."""
-    await hass.async_add_executor_job(
-        _move_media, list(hass.config.media_dirs.values())
-    )
-    references = await _async_update_dashboards(hass)
-    await async_remove_modules(hass, *OLD_MODULES, folder=OLD_DOMAIN)
-    references[:0] = _automations_and_scripts(hass)
-    if references:
-        ir.async_create_issue(
-            hass,
-            DOMAIN,
-            ISSUE_REFERENCES,
-            is_fixable=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key=ISSUE_REFERENCES,
-            translation_placeholders={
-                "items": "\n".join(f"- {item}" for item in references)
-            },
+    and for the restart that unloads the old integration. What is done stays done,
+    so the second of two boards that finish at once finds nothing left to do."""
+    async with hass.data.setdefault(FINISHING, asyncio.Lock()):
+        await hass.async_add_executor_job(
+            _move_media, list(hass.config.media_dirs.values())
         )
-    if await hass.async_add_executor_job(
-        _remove_old_folder, Path(hass.config.path("custom_components", OLD_DOMAIN))
-    ):
-        ir.async_create_issue(
-            hass,
-            DOMAIN,
-            ISSUE_RESTART,
-            is_fixable=True,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key=ISSUE_RESTART,
-        )
+        references = await _async_update_dashboards(hass)
+        await async_remove_modules(hass, *OLD_MODULES, folder=OLD_DOMAIN)
+        references[:0] = _automations_and_scripts(hass)
+        if references:
+            ir.async_create_issue(
+                hass,
+                DOMAIN,
+                ISSUE_REFERENCES,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_REFERENCES,
+                translation_placeholders={
+                    "items": "\n".join(f"- {item}" for item in references)
+                },
+            )
+        if await hass.async_add_executor_job(
+            _remove_old_folder, Path(hass.config.path("custom_components", OLD_DOMAIN))
+        ):
+            ir.async_create_issue(
+                hass,
+                DOMAIN,
+                ISSUE_RESTART,
+                is_fixable=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_RESTART,
+            )
 
 
 def _move_media(roots: list[str]) -> None:

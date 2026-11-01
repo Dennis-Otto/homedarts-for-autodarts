@@ -5,7 +5,8 @@ which may write, and in the tests and the images, which run the code of pull
 requests. A job that starts no container also runs without sudo and Docker, so that
 no step can lift the block, and a job that may write reaches GitHub alone. Such a
 job ends only after Harden-Runner has removed Docker, or the runner hangs until the
-timeout of the job (#463). A new job, a new host or a job back in audit mode fails
+timeout of the job (#463), and a job with sudo first takes GitHub's DNS experiment out
+of the way of Harden-Runner. A new job, a new host or a job back in audit mode fails
 here until this list and the comment of the job say why
 (docs/development.md#network-of-the-jobs). The workflows that the blueprint keeps
 follow its own rules."""
@@ -254,3 +255,164 @@ def test_the_job_waits_until_apt_get_has_removed_docker(
     waited = sleeps.read_text(encoding="utf-8").splitlines()
     assert waited == ["1"] * min(running, 120)
     assert ("::warning::" in result.stdout) is warned
+
+
+# GitHub's DNS experiment on runners in westus2 sends the lookups past Harden-Runner,
+# which then drops the addresses that it never saw: those of the hosts of the job, so
+# that its steps fail, and those of the runner, so that the job hangs until its timeout.
+# That was the cause of at least 33 of the 46 flaky jobs of #463. Harden-Runner undoes it
+# since v2.22.3, when a single request for its feature flags answers within 3 s, and a
+# job with sudo undoes it itself when that request didn't. A job without sudo can't: it
+# has only the release of Harden-Runner, and the timeout of the job as the last resort.
+SEE_LOOKUPS = "Let Harden-Runner see the DNS lookups"
+WITH_SUDO = sorted(set(JOBS) - set(WITHOUT_DOCKER))
+PINNED = re.compile(r"step-security/harden-runner@[0-9a-f]{40} # v(\d+)\.(\d+)\.(\d+)")
+
+
+def see_lookups_step(key: tuple[str, str]) -> dict:
+    """The step that takes the DNS experiment out of the way of Harden-Runner."""
+    (step,) = [s for s in JOBS[key]["steps"] if s.get("name") == SEE_LOOKUPS]
+    return step
+
+
+@pytest.mark.parametrize("name", PROJECT_WORKFLOWS)
+def test_harden_runner_is_a_release_that_undoes_the_dns_experiment(name):
+    pinned = PINNED.findall((WORKFLOWS / name).read_text(encoding="utf-8"))
+    assert pinned
+    assert all(tuple(map(int, version)) >= (2, 22, 3) for version in pinned), pinned
+
+
+def test_the_jobs_that_keep_sudo_are_those_with_containers():
+    assert {("e2e.yml", "browser"), ("visual.yml", "render")} <= set(WITH_SUDO)
+    assert all(
+        any(CONTAINERS.search(step.get("run", "")) for step in JOBS[key]["steps"])
+        for key in WITH_SUDO
+    )
+
+
+@pytest.mark.parametrize("key", WITH_SUDO, ids="/".join)
+def test_a_job_with_sudo_lets_harden_runner_see_the_lookups_before_any_other_step(key):
+    assert JOBS[key]["steps"][1] == see_lookups_step(key)
+
+
+def test_every_job_with_sudo_does_it_the_same_way():
+    assert len({see_lookups_step(key)["run"] for key in WITH_SUDO}) == 1
+
+
+# sudo runs the command; systemctl and resolvectl note what they are asked to do, and
+# systemctl fails for what $FAILS names.
+SUDO = """#!/usr/bin/env bash
+exec "$@"
+"""
+NOTE = """#!/usr/bin/env bash
+printf '%s %s\\n' "$(basename "$0")" "$*" >> "$CALLS"
+if [[ -n "${FAILS:-}" && "$*" == *"$FAILS"* ]]; then
+  exit 1
+fi
+"""
+RESTART = "systemctl restart systemd-resolved"
+STOP = "systemctl stop egress-dns-resolver.service egress-outbound-proxy.service"
+FLUSH = "resolvectl flush-caches"
+
+
+def run_see_lookups(
+    tmp_path: Path, *dropins: str, nameserver: str = "127.0.0.53", fails: str = ""
+) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
+    """Run the step on a copy of the files of a runner, with these drop-ins of the
+    experiment under /etc or /run; the result, the calls and the root of the copy."""
+    root = tmp_path / "root"
+    for folder in ("etc", "run"):
+        (root / folder / "systemd" / "resolved.conf.d").mkdir(parents=True)
+    for dropin in dropins:
+        (root / dropin).write_text("[Resolve]\nDNS=\n", encoding="utf-8")
+    (root / "etc" / "resolv.conf").write_text(
+        f"nameserver {nameserver}\n", encoding="utf-8"
+    )
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for name, script in {"sudo": SUDO, "systemctl": NOTE, "resolvectl": NOTE}.items():
+        (bin_dir / name).write_text(script, encoding="utf-8", newline="\n")
+        (bin_dir / name).chmod(0o755)
+    calls = tmp_path / "calls"
+    calls.touch()
+    script = see_lookups_step(("e2e.yml", "scenario"))["run"]
+    for folder in ("/etc/", "/run/"):
+        script = script.replace(folder, f"{root}{folder}")
+    (tmp_path / "step.sh").write_text(script, encoding="utf-8", newline="\n")
+
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "step.sh"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+            "CALLS": str(calls),
+            "FAILS": fails,
+        },
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+        timeout=60,
+    )
+    return result, calls.read_text(encoding="utf-8").splitlines(), root
+
+
+DROPIN = "systemd/resolved.conf.d/90-egress-proxy.conf"
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+def test_a_runner_without_the_experiment_stays_as_it_is(tmp_path):
+    result, calls, root = run_see_lookups(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert calls == []
+    assert "::notice::" not in result.stdout
+    assert (root / "etc" / "resolv.conf").is_file()
+    assert not (root / "etc" / "resolv.conf").is_symlink()
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+@pytest.mark.parametrize(
+    ("dropins", "nameserver"),
+    [
+        ([f"etc/{DROPIN}"], "127.0.0.100"),
+        ([f"etc/{DROPIN}", f"run/{DROPIN}"], "127.0.0.100"),
+        ([f"run/{DROPIN}"], "127.0.0.53"),
+        # Its resolver alone is enough to tell.
+        ([], "127.0.0.100"),
+    ],
+)
+def test_the_experiment_goes_as_harden_runner_itself_takes_it_away(
+    tmp_path, dropins, nameserver
+):
+    result, calls, root = run_see_lookups(tmp_path, *dropins, nameserver=nameserver)
+
+    assert result.returncode == 0, result.stderr
+    assert "::notice::" in result.stdout
+    assert not (root / "etc" / DROPIN).exists()
+    assert not (root / "run" / DROPIN).exists()
+    # First systemd-resolved reads its settings again, with the address of Harden-Runner
+    # alone, then the lookups go to it and only then its stand-in stops, so that a
+    # failure on the way leaves the lookups working.
+    assert calls == [RESTART, STOP, FLUSH]
+    link = root / "etc" / "resolv.conf"
+    assert link.is_symlink()
+    assert os.readlink(link) == f"{root}/run/systemd/resolve/stub-resolv.conf"
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+def test_services_that_do_not_stop_do_not_matter_any_more(tmp_path):
+    # They are out of the way of the lookups by then, and a runner may have only one.
+    result, calls, _ = run_see_lookups(tmp_path, f"etc/{DROPIN}", fails="stop")
+
+    assert result.returncode == 0, result.stderr
+    assert calls == [RESTART, STOP, FLUSH]
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+def test_lookups_that_did_not_come_back_fail_the_step_at_once(tmp_path):
+    # Every later step would only fail on a blocked host, with less to say about why.
+    result, calls, _ = run_see_lookups(tmp_path, f"etc/{DROPIN}", fails="restart")
+
+    assert result.returncode != 0
+    assert calls == [RESTART]
