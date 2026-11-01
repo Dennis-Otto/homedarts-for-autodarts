@@ -1,5 +1,3 @@
-{"type":"state","data":{"connected":true,"event":"stopping","running":false,"status":"stopping","throws":[]}}
-{"type":"state","data":{"connected":true,"event":"stopped","running":false,"status":"stopped","throws":[]}}
 {"type":"state","data":{"connected":true,"event":"starting","running":true,"status":"starting","throws":[]}}
 {"type":"state","data":{"connected":true,"event":"started","running":true,"status":"throw","throws":[]}}
 {"type":"state","data":{"connected":true,"event":"stopping","running":false,"status":"stopping","throws":[]}}

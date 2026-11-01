@@ -9,12 +9,14 @@ tests/test_board_contract.py holds it to them, as it does the double of the unit
 tests. BOARD_MANAGER=2 switches to the headless Board Manager 2: /api/system, no
 upstream routes, and an mDNS announcement like the real board. BOARD_MANAGER=2.1
 answers like Board Manager 2.1: the new shape of its state and of /api/system, the
-camelCase of its settings, no /api/state/motion. The scenario speaks in the words
+camelCase of its settings, no /api/state/motion, and its second socket with the motion
+30 times a second, which POST /control/motion changes. The scenario speaks in the words
 of Board Manager 2.0 with either, and this double says them as 2.1 says them.
 
 POST /control/fault injects the faults of a real network and board: dropped or
 refused sockets, failing or slow reads, malformed frames, restarts and the takeout
-that Board Manager 2.0.2 sometimes never finishes.
+that Board Manager 2.0.2 sometimes never finishes; on 2.1 a board without its second
+socket, and a second socket without frames of the motion.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ import json
 import os
 import socket
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +63,20 @@ INTERFACE_2_1 = BOARD_MANAGER == "2.1"
 # module in the container of Home Assistant, which doesn't mount them.
 RECORDINGS = Path(__file__).resolve().parents[1] / "fixtures" / "board_manager"
 V1_ONLY = {("PUT", "/api/upstream/connect"), ("PUT", "/api/upstream/disconnect")}
+EVENTS = "/api/events"
+SYSTEM_EVENTS = "/api/events/system"
+# As often as the second socket of the real board sends its motion, per second.
+MOTION_FRAMES = 30
+# The kinds of frame this double sends on it, and those of them only a change sends:
+# a recording made while the detection runs has none of those.
+SECOND_SOCKET_CHANGES = frozenset({"calibration", "cams"})
+SECOND_SOCKET_KINDS = SECOND_SOCKET_CHANGES | {
+    "state",
+    "board",
+    "vantage",
+    "stats",
+    "vantageConfig",
+}
 
 COMMANDS = {
     ("PUT", "/api/start"): {"running": True, "status": "Throw", "event": "Started"},
@@ -124,6 +141,11 @@ class Board:
         # Reads by path, so a test can tell when an injected fault was read.
         self.reads: dict[str, int] = {}
         self.sockets: set[web.WebSocketResponse] = set()
+        # Those of them on the second socket of Board Manager 2.1, the frames it
+        # repeats and the motion flags the scenario set.
+        self.second_sockets: set[web.WebSocketResponse] = set()
+        self.frames = self.recorded_frames() if self.interface_2_1 else {}
+        self.motion: dict[str, bool] = {}
         self.clear_faults()
 
     def recorded(self, name: str) -> Any:
@@ -131,9 +153,52 @@ class Board:
         text = (RECORDINGS / self.version / name).read_text(encoding="utf-8")
         return text if name.endswith(".txt") else json.loads(text)
 
+    def recorded_frames(self) -> dict[str, dict]:
+        """The last frame of each kind on the second socket of the recording; of the
+        motion the last with one, as the recording ends with the detection."""
+        path = RECORDINGS / self.version / "ws-system-frames.jsonl"
+        frames = map(json.loads, path.read_text(encoding="utf-8").splitlines())
+        return {
+            frame["type"]: frame
+            for frame in frames
+            if frame["type"] != "vantage" or frame["data"]["vantage"]
+        }
+
+    def motion_frame(self) -> dict:
+        frame = copy.deepcopy(self.frames["vantage"])
+        frame["data"]["vantage"]["motion"].update(self.motion)
+        return frame
+
+    def status_frame(self) -> dict:
+        """The board frame of the second socket, which comes with every state."""
+        frame = copy.deepcopy(self.frames["board"])
+        frame["data"]["status"].update(
+            link="connected" if self.state["connected"] else "disconnected",
+            updateAvailable=self.update,
+        )
+        return frame
+
+    async def repeat(self, client: web.WebSocketResponse) -> None:
+        """What the second socket repeats for as long as it is open: its motion while
+        the detection runs, the load and the settings of the detection every second."""
+        beat = 0
+        with suppress(ConnectionResetError):
+            while not client.closed:
+                if self.state["running"] and self.motion_frames:
+                    # Without spaces, as the board writes it.
+                    text = json.dumps(self.motion_frame(), separators=(",", ":"))
+                    await client.send_str(text)
+                if beat % MOTION_FRAMES == 0:
+                    await client.send_json(self.frames["stats"])
+                    await client.send_json(self.frames["vantageConfig"])
+                beat += 1
+                await asyncio.sleep(1 / MOTION_FRAMES)
+
     def clear_faults(self) -> None:
         # Refused sockets, failing or slow reads and a restart in progress.
         self.refuse_sockets = False
+        self.second_socket = True
+        self.motion_frames = True
         self.http_status: int | None = None
         self.delay = 0.0
         self.fault_paths: list[str] | None = None
@@ -182,11 +247,17 @@ class Board:
         }
 
     async def publish(self, changes: dict) -> None:
+        running = self.state["running"]
         self.state.update(changes)
         if not self.interface_2_1:
             self.state["numThrows"] = len(self.state["throws"])
         for client in list(self.sockets):
             await client.send_json({"type": "state", "data": self.answered_state()})
+        for client in list(self.second_sockets):
+            await client.send_json(self.status_frame())
+            if self.state["running"] != running:
+                for kind in SECOND_SOCKET_CHANGES & self.frames.keys():
+                    await client.send_json(self.frames[kind])
 
 
 def routes(board: Board) -> web.RouteTableDef:
@@ -275,6 +346,7 @@ def routes(board: Board) -> web.RouteTableDef:
         system["config"] = {**copy.deepcopy(board.config), "host": host}
         if board.interface_2_1:
             system["turn"] = board.answered_state()
+            system["vantage"]["motion"].update(board.motion)
         else:
             system["state"] = {key: board.state[key] for key in system["state"]}
         system["stats"]["fps"] = 12.5 if running else 0.0
@@ -298,12 +370,7 @@ def routes(board: Board) -> web.RouteTableDef:
         api.get("/api/system")(system)
         api.get("/api/host")(host)
 
-    @api.get("/api/events")
-    async def events(request):
-        if board.refuse_sockets or time.monotonic() < board.down_until:
-            raise web.HTTPServiceUnavailable
-        websocket = web.WebSocketResponse()
-        await websocket.prepare(request)
+    async def follow(websocket: web.WebSocketResponse) -> None:
         board.sockets.add(websocket)
         try:
             async for message in websocket:
@@ -311,7 +378,40 @@ def routes(board: Board) -> web.RouteTableDef:
                     break
         finally:
             board.sockets.discard(websocket)
+
+    async def opened(request: web.Request) -> web.WebSocketResponse:
+        if board.refuse_sockets or time.monotonic() < board.down_until:
+            raise web.HTTPServiceUnavailable
+        websocket = web.WebSocketResponse()
+        await websocket.prepare(request)
         return websocket
+
+    @api.get(EVENTS)
+    async def events(request):
+        websocket = await opened(request)
+        await follow(websocket)
+        return websocket
+
+    async def system_events(request):
+        if not board.second_socket:
+            raise web.HTTPNotFound
+        websocket = await opened(request)
+        board.second_sockets.add(websocket)
+        repeating = asyncio.create_task(board.repeat(websocket))
+        try:
+            await follow(websocket)
+        finally:
+            board.second_sockets.discard(websocket)
+            repeating.cancel()
+        return websocket
+
+    if board.interface_2_1:
+        api.get(SYSTEM_EVENTS)(system_events)
+
+    @api.post("/control/motion")
+    async def control_motion(request):
+        board.motion.update(await request.json())
+        return web.json_response(board.motion)
 
     @api.post("/control/state")
     async def control_state(request):
@@ -325,6 +425,10 @@ def routes(board: Board) -> web.RouteTableDef:
             board.clear_faults()
         if "refuse_sockets" in fault:
             board.refuse_sockets = fault["refuse_sockets"]
+        if "second_socket" in fault:
+            board.second_socket = fault["second_socket"]
+        if "motion_frames" in fault:
+            board.motion_frames = fault["motion_frames"]
         if "http_status" in fault or "delay" in fault:
             board.http_status = fault.get("http_status")
             board.delay = fault.get("delay", 0.0)
@@ -358,6 +462,7 @@ def routes(board: Board) -> web.RouteTableDef:
                 "commands": board.commands,
                 "unexpected": board.unexpected,
                 "sockets": len(board.sockets),
+                "second_sockets": len(board.second_sockets),
                 "reads": board.reads,
                 # Counted faults not yet used up; None without a counted fault.
                 "faults_left": board.fault_count,
@@ -376,7 +481,7 @@ def fault_injection(board: Board):
         if (
             request.method == "GET"
             and request.path.startswith("/api/")
-            and request.path != "/api/events"
+            and request.path not in (EVENTS, SYSTEM_EVENTS)
         ):
             board.reads[request.path] = board.reads.get(request.path, 0) + 1
             status, delay = board.read_fault(request.path)

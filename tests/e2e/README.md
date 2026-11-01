@@ -52,6 +52,9 @@ apart from reading the icon list of its frontend, and verifies:
   must come through them
 - a takeout the board keeps on the empty board, as Board Manager 2.0.2 sometimes
   does, which the integration frees with one reset after ten seconds
+- on Board Manager 2.1, its second socket: a hand shows by a frame while the read
+  fails, each dart counts once, and the read takes over when the frames stop or the
+  socket isn't there
 - the online bridge: switched on in the options, calls of Tools for Autodarts
   become board events and the diagnostic sensor, and switched off it is gone
 - the weekly report and its settings, the training calendar through

@@ -14,6 +14,12 @@ take them out meanwhile. It writes them to tests/fixtures/board_manager/<version
 one file per route, the frames in ws-frames.jsonl and what it recorded in
 capture.json. A route the board doesn't have is listed there as absent.
 
+Board Manager 2.1 has a second socket, /api/events/system, whose frames go to
+ws-system-frames.jsonl. It sends its motion 30 times a second and some other frames
+once a second, so of those the recording keeps the first, each one that says
+something new and one every ten seconds: a minute of a board nobody stands at stays
+below 30 kB, and a visit adds each change of its flags.
+
 The answers carry the board's ID and API key, its TLS key, the serial numbers of
 its cameras and the name and addresses of the board PC. They are replaced by the
 placeholders of PLACEHOLDERS before anything is written, in whatever spelling the
@@ -38,7 +44,9 @@ import ipaddress
 import json
 import re
 import sys
+import time
 from collections.abc import Callable, Iterable, Sequence
+from contextlib import suppress
 from datetime import date
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -62,9 +70,13 @@ ROUTES = {
     "host.json": "/api/host",
 }
 EVENTS = "/api/events"
+SYSTEM_EVENTS = "/api/events/system"
 REQUEST = aiohttp.ClientTimeout(total=10)
 FRAMES = "ws-frames.jsonl"
+SYSTEM_FRAMES = "ws-system-frames.jsonl"
 CAPTURE = "capture.json"
+# A frame of a kind that repeats is kept when it says something new, or after so long.
+REPEATS_KEPT_SECONDS = 10
 # What a recording says in place of the identity and the secrets of a board.
 PLACEHOLDERS = {
     "board_id": "board-1",
@@ -396,10 +408,13 @@ def files(
     absent: Sequence[str],
     host: str,
     captured: str | None,
+    system_frames: Sequence[Any] = (),
 ) -> tuple[str, dict[str, str]]:
     """The folder and the redacted files of a recording, by their names."""
     version = folder_name(answers.get("version.txt"))
-    found = secrets(answers, host) | secrets(list(frames))
+    found = (
+        secrets(answers, host) | secrets(list(frames)) | secrets(list(system_frames))
+    )
     content = {}
     for name, answer in redact(answers, found).items():
         content[name] = (
@@ -407,10 +422,13 @@ def files(
             if name.endswith(".txt")
             else json.dumps(answer, indent=2, ensure_ascii=False) + "\n"
         )
-    content[FRAMES] = "".join(
-        json.dumps(frame, ensure_ascii=False, separators=(",", ":")) + "\n"
-        for frame in redact(list(frames), found)
-    )
+    for name, recorded in ((FRAMES, frames), (SYSTEM_FRAMES, system_frames)):
+        # A board before Board Manager 2.1 has no second socket, and so no such file.
+        if recorded or name == FRAMES:
+            content[name] = "".join(
+                json.dumps(frame, ensure_ascii=False, separators=(",", ":")) + "\n"
+                for frame in redact(list(recorded), found)
+            )
     summary = {
         "board_manager": version,
         "captured": captured,
@@ -432,12 +450,56 @@ def write(out: Path, version: str, content: dict[str, str]) -> Path:
     """Write a recording; files of an earlier recording that this one lacks go."""
     folder = out / version
     folder.mkdir(parents=True, exist_ok=True)
-    for name in (*ROUTES, FRAMES, CAPTURE):
+    for name in (*ROUTES, FRAMES, SYSTEM_FRAMES, CAPTURE):
         if name not in content:
             (folder / name).unlink(missing_ok=True)
     for name, text in content.items():
         (folder / name).write_text(text, encoding="utf-8", newline="\n")
     return folder
+
+
+def motion_flags(frame: dict[str, Any]) -> dict[str, bool]:
+    """What a motion frame says: its flags, as the frame counters change every time."""
+    motion: Any = frame
+    for key in ("data", "vantage", "motion"):
+        motion = motion.get(key) if isinstance(motion, dict) else None
+    if not isinstance(motion, dict):
+        return {}
+    return {key: value for key, value in motion.items() if isinstance(value, bool)}
+
+
+def nothing_new(_: dict[str, Any]) -> None:
+    """The load of the board PC differs in each frame, and says nothing new."""
+
+
+def everything(frame: dict[str, Any]) -> Any:
+    return frame.get("data")
+
+
+# The kinds of frames that repeat, each with what tells whether it says something new.
+REPEATING: dict[str, Callable[[dict[str, Any]], Any]] = {
+    "vantage": motion_flags,
+    "stats": nothing_new,
+    "vantageConfig": everything,
+}
+
+
+class Repeats:
+    """Which frames of a socket a recording keeps; a board sends 30 per second."""
+
+    def __init__(self) -> None:
+        self._kept: dict[str, tuple[float, Any]] = {}
+
+    def keep(self, frame: Any) -> bool:
+        says = REPEATING.get(frame.get("type")) if isinstance(frame, dict) else None
+        if says is None:
+            return True
+        now, new = time.monotonic(), says(frame)
+        kept = self._kept.get(frame["type"])
+        if kept and kept[1] == new and now - kept[0] < REPEATS_KEPT_SECONDS:
+            return False
+        self._kept[frame["type"]] = (now, new)
+        return True
 
 
 def base_url(host: str, port: int) -> str:
@@ -468,14 +530,17 @@ async def read_frames(
     seconds: float,
     limit: int | None = None,
     connected: Callable[[], None] = lambda: None,
+    path: str = EVENTS,
+    keep: Callable[[Any], bool] = lambda _: True,
+    frames: list[Any] | None = None,
 ) -> tuple[list[Any], int]:
     """The frames of the socket for some seconds or up to a number of them, and
     how many were no JSON."""
-    frames: list[Any] = []
+    frames = [] if frames is None else frames
     skipped = 0
     async with asyncio.timeout(10):
         socket = await session.ws_connect(
-            f"{base}{EVENTS}", timeout=aiohttp.ClientWSTimeout(ws_close=5)
+            f"{base}{path}", timeout=aiohttp.ClientWSTimeout(ws_close=5)
         )
     async with socket:
         connected()
@@ -485,14 +550,42 @@ async def read_frames(
                     if message.type != aiohttp.WSMsgType.TEXT:
                         continue
                     try:
-                        frames.append(json.loads(message.data))
+                        frame = json.loads(message.data)
                     except ValueError:
                         skipped += 1
+                    else:
+                        if keep(frame):
+                            frames.append(frame)
                     if limit is not None and len(frames) >= limit:
                         break
         except TimeoutError:
             pass
     return frames, skipped
+
+
+async def read_system_frames(
+    session: aiohttp.ClientSession,
+    base: str,
+    seconds: float,
+    frames: list[Any],
+    opened: asyncio.Event,
+) -> None:
+    """The frames of the second socket of Board Manager 2.1 into a list, which stays
+    when the first socket ends this; a board before 2.1 has none to give."""
+    try:
+        await read_frames(
+            session,
+            base,
+            seconds,
+            connected=opened.set,
+            path=SYSTEM_EVENTS,
+            keep=Repeats().keep,
+            frames=frames,
+        )
+    except aiohttp.WSServerHandshakeError:
+        pass
+    finally:
+        opened.set()
 
 
 async def capture(
@@ -508,10 +601,25 @@ async def capture(
     # No limit for the session, whose socket stays open while it records.
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout()) as session:
         answers, absent = await read_routes(session, base)
-        frames, skipped = await read_frames(session, base, seconds, limit, connected)
+        system_frames: list[Any] = []
+        opened = asyncio.Event()
+        second_socket = asyncio.create_task(
+            read_system_frames(session, base, seconds, system_frames, opened)
+        )
+        try:
+            await opened.wait()
+            frames, skipped = await read_frames(
+                session, base, seconds, limit, connected
+            )
+        finally:
+            second_socket.cancel()
+        with suppress(asyncio.CancelledError):
+            await second_socket
     if skipped:
         print(f"Skipped {skipped} frames that were no JSON.", file=sys.stderr)
-    version, content = files(answers, frames, absent, host, date.today().isoformat())
+    version, content = files(
+        answers, frames, absent, host, date.today().isoformat(), system_frames
+    )
     return write(out, version, content)
 
 
