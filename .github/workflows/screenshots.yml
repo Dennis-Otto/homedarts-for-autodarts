@@ -1,12 +1,13 @@
 name: Screenshot bot
 
 # Keeps the images of the documentation in step with the cards. After a change of
-# the cards or of the screenshot tool reaches main, after a release, every week, and
-# on demand, it renders every image of docs/images anew from the demo, with its
-# frozen clock. The images come in three fixed groups (GROUPS in
-# tests/e2e/screenshots.py): each group of each language renders on a runner of its
-# own from a fresh demo, all side by side, and the collect job of a language puts its
-# groups together (tests/e2e/collect.sh), as tests/e2e/visual.sh does on one machine.
+# the integration with its cards, of the blueprints that the demo shows or of the
+# screenshot tool reaches main, after a release, every week, and on demand, it renders
+# every image of docs/images anew from the demo, with its frozen clock. The images come
+# in three fixed groups (GROUPS in tests/e2e/screenshots.py): each group of each
+# language renders on a runner of its own from a fresh demo, all side by side, and the
+# collect job of a language puts its groups together (tests/e2e/collect.sh), as
+# tests/e2e/visual.sh does on one machine.
 # After a push, a group whose files an earlier run already rendered takes the images
 # of that run instead (tests/e2e/render_key.py): the visual check of a pull request
 # that main took rendered the files of its merge; the weekly run and a run on demand
@@ -34,8 +35,11 @@ on:
   push:
     branches: [main]
     paths:
-      - custom_components/homedarts/frontend/**
-      - custom_components/homedarts/manifest.json
+      - blueprints/automation/homedarts/**
+      - custom_components/homedarts/**
+      - "!custom_components/homedarts/LICENSE"
+      - "!custom_components/homedarts/quality_scale.yaml"
+      - "!custom_components/homedarts/strings.json"
       - tests/e2e/**
       - "!tests/e2e/browser.py"
       - "!tests/e2e/shards.py"

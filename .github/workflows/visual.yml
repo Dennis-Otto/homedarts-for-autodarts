@@ -1,8 +1,9 @@
 name: Visual check
 
 # Renders every image of the documentation from the demo, with its frozen clock, for
-# each pull request that changes the cards or the screenshot tool, and compares them
-# with the committed ones pixel by pixel. The images come in three fixed groups
+# each pull request that changes the integration with its cards, the blueprints that
+# the demo shows or the screenshot tool, and compares them with the committed ones
+# pixel by pixel. The images come in three fixed groups
 # (GROUPS in tests/e2e/screenshots.py): each group of each language renders on a
 # runner of its own from a fresh demo, all side by side, and then the compare job of
 # a language puts its groups together and compares them (tests/e2e/collect.sh), as
@@ -20,7 +21,16 @@ name: Visual check
 on:
   pull_request:
     paths:
-      - custom_components/homedarts/frontend/**
+      - blueprints/automation/homedarts/**
+      - custom_components/homedarts/**
+      - "!custom_components/homedarts/LICENSE"
+      - "!custom_components/homedarts/quality_scale.yaml"
+      - "!custom_components/homedarts/strings.json"
+      # Release-please writes the version into the manifest in its pull request, which
+      # comes anew after every merge to main. The demo shows only the major version,
+      # and the screenshot bot renders that after the release, so the pull request
+      # would render every image to report no difference.
+      - "!custom_components/homedarts/manifest.json"
       - tests/e2e/**
       - "!tests/e2e/browser.py"
       - "!tests/e2e/shards.py"

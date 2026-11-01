@@ -7,7 +7,7 @@ flowchart TB
   accTitle: Wie Bildvergleich und Screenshot-Bot die Bilder in Gruppen erzeugen
   accDescr: Jede Sprache wird in drei Gruppen gleichzeitig erzeugt, jede Gruppe auf einem eigenen Runner. Zuerst sucht jeder Job einer Gruppe einen früheren Lauf des Bildvergleichs oder des Screenshot-Bots auf einem Branch dieses Repositorys, der dieselben Dateien erzeugt hat; dessen Bilder übernimmt er in unter einer Minute. Sonst erzeugt er sie aus einer frischen Demo. Die Karten, die ersten Spiele und die Dartscheibe ohne Autodarts bilden Gruppe 1, weitere Spiele mit den Spielern Gruppe 2, die Korrekturen eines Darts, die Formate, die großen Turniere und der Kalender Gruppe 3. Danach setzt ein Job je Sprache die Bilder seiner drei Gruppen zusammen und vergleicht sie mit den eingecheckten Bildern. Der Bildvergleich schreibt den Vergleich in einen Kommentar am Pull Request; der Screenshot-Bot aktualisiert seinen Pull Request mit jeder Sprache, die erzeugt wurde.
 
-  START["Ein Pull Request oder ein Push auf main<br/>ändert die Karten oder das Screenshot-Werkzeug"] --> KEY
+  START["Ein Pull Request oder ein Push auf main<br/>ändert die Integration, einen Blueprint oder das Screenshot-Werkzeug"] --> KEY
   KEY["Jeder Job einer Gruppe: Hat ein früherer Lauf<br/>dieses Repositorys dieselben Dateien erzeugt?"]
   KEY -->|"ja"| TAKE["Er übernimmt die Bilder dieses Laufs,<br/>in unter einer Minute"]
   KEY -->|"nein, oder wöchentlich oder auf Abruf"| G1 & G2 & G3
