@@ -70,9 +70,12 @@ ABSENT = {
     "1.0.7": {"/api/system", "/api/host"},
     "2.1.0": {"/api/state/motion"},
 }
-# The frames of a real board of 2.1.0 with real darts: the recording of 2.1.0 comes
-# from a board on which none was thrown.
-THROWN_2_1 = RECORDINGS.parent / "board_manager_2.1.0_frames.jsonl"
+# The frames of a real board of 2.1.0 with real darts, misses and a bouncer: the
+# recording of 2.1.0 comes from a board on which none was thrown.
+THROWN_2_1 = (
+    RECORDINGS.parent / "board_manager_2.1.0_frames.jsonl",
+    RECORDINGS.parent / "board_manager_2.1.0_misses.jsonl",
+)
 
 
 def shape(value):
@@ -132,8 +135,9 @@ def states(version: str) -> list[dict]:
     """The state frames of a recording, and of 2.1.0 those with real darts."""
     recorded_frames = frames(version)
     if version == "2.1.0":
-        lines = THROWN_2_1.read_text(encoding="utf-8").splitlines()
-        recorded_frames += [json.loads(line) for line in lines]
+        for thrown in THROWN_2_1:
+            lines = thrown.read_text(encoding="utf-8").splitlines()
+            recorded_frames += [json.loads(line) for line in lines]
     return [frame for frame in recorded_frames if frame["type"] == "state"]
 
 

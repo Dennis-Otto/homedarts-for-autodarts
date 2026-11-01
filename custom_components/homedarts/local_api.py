@@ -244,15 +244,18 @@ def _dart(raw: object) -> object:
     """A flat dart of Board Manager 2.1 with its segment and coordinates nested."""
     if not isinstance(raw, dict) or "segment" in raw or "segmentNumber" not in raw:
         return raw
-    return {
+    dart: dict[str, Any] = {
         "segment": {
             "name": raw.get("segmentName"),
             "number": raw.get("segmentNumber"),
             "bed": raw.get("bed"),
             "multiplier": raw.get("multiplier"),
-        },
-        "coords": {"x": raw.get("coordsX"), "y": raw.get("coordsY")},
+        }
     }
+    # A dart the board could not place, such as a bouncer, comes at (0, 0).
+    if raw.get("failed") is not True:
+        dart["coords"] = {"x": raw.get("coordsX"), "y": raw.get("coordsY")}
+    return dart
 
 
 def _dict(value: Any) -> dict[str, Any]:
