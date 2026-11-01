@@ -10,7 +10,7 @@ Every dart the board detects becomes a number in Home Assistant: your 3-dart ave
 
 <img src="images/en/dashboard-strategy.png" alt="The training view of the automatic dashboard: the training card with 3-dart average, heatmap, statistics, personal bests and recent visits, the doubles card, and the graphs of darts per day and the 3-dart average" width="760">
 
-**On this page:** [Where to find what](#where-to-find-what) · [Training sessions](#training-sessions) · [Personal bests, streak and daily goal](#personal-bests-streak-and-daily-goal) · [Heatmap and dart positions](#heatmap-and-dart-positions) · [Where to aim](#where-to-aim) · [Progress over time](#progress-over-time) · [Doubles analysis](#doubles-analysis) · [Player profiles](#player-profiles) · [Achievements](#achievements) · [Trends and grouping](#trends-and-grouping) · [Leaderboard](#leaderboard) · [Players and persons](#players-and-persons) · [Weekly report](#weekly-report) · [Training calendar](#training-calendar) · [Export](#export) · [Your data](#your-data)
+**On this page:** [Where to find what](#where-to-find-what) · [Training sessions](#training-sessions) · [Personal bests, streak and daily goal](#personal-bests-streak-and-daily-goal) · [Heatmap and dart positions](#heatmap-and-dart-positions) · [Where to aim](#where-to-aim) · [Progress over time](#progress-over-time) · [Doubles analysis](#doubles-analysis) · [Player profiles](#player-profiles) · [Rating](#rating) · [Achievements](#achievements) · [Trends and grouping](#trends-and-grouping) · [Leaderboard](#leaderboard) · [Players and persons](#players-and-persons) · [Weekly report](#weekly-report) · [Training calendar](#training-calendar) · [Export](#export) · [Your data](#your-data)
 
 ## Where to find what
 
@@ -166,6 +166,22 @@ Every named player of a practice game gets a profile with lifetime numbers: legs
 - **Tournaments** count like every match: their legs, matches and head-to-head records go into the profiles. [Tournaments](games.md#tournaments).
 - **A typo in a name?** Rename the profile in its menu on the [players card](cards.md#players-card), or with [`homedarts.rename_player`](entities.md#rename-or-merge-players-homedartsrename_player): the statistics, badges, records, the match history and the link to a person keep the new name. **One player under two names,** such as *Sam* and *Sammy*? Rename one to the other, or choose *Merge into …*, and the two become one profile, as if one name had thrown every dart. [`homedarts.delete_player`](entities.md#delete-a-player-profile-homedartsdelete_player) removes a profile with its progress and badges; the match history keeps the name.
 
+## Rating
+
+The records say who threw the highest; the rating says who beats whom. Every named player has one, an [Elo rating](https://en.wikipedia.org/wiki/Elo_rating_system): it starts at 1000, and a win against a stronger player brings more than a win against a weaker one. The [players card](cards.md#players-card) shows it, and the [leaderboard card](cards.md#leaderboard-card) ranks it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/rating-dark.png">
+  <img src="images/en/rating-light.png" alt="Which matches move the rating: a finished match of X01 or a Cricket game moves it when every seat has a named player, so without the bot or a guest, and all of them start from the same score, so without a handicap. Other matches leave the rating alone. A match that counts takes from the losers what it gives the winners, and undoing the deciding visit takes it back." width="560">
+</picture>
+
+- **What counts:** a finished match of X01 or a Cricket game between named players, all from the same start score, also in a tournament. The bot and a guest have no rating, and a [handicap](games.md#start-scores-handicap) evens out what a win says about strength, so such a match leaves the ratings as they are. A player's rating shows from their first match that counts.
+- **How far it moves:** by 40 points times the surprise of the result for a player's first 10 matches that count, by 24 up to 30, and by 16 after that. Two new players of the same rating exchange 20 points. All of it comes from the ratings before the match, so the seats change nothing.
+- **Teams and more players:** every winner beats every loser, and together these results weigh as one, as in the [head-to-head records](#player-profiles). Partners split what their team wins or loses, and in a match of three, the two losers share what the winner gains.
+- **Undoing the deciding visit** takes the change back; the match counts once when its visit ends again.
+- **In automations:** `match_won` carries `rating_changes` with the `name`, the new `rating` and the `change` of every player, an empty list for a match that doesn't count. The ratings have one decimal, which the cards round. *Player profiles* has `rating` and `rated_matches` for every player.
+- **Renamed, merged, restored:** a rating stays with its player through a new name. Two profiles of one player, merged or from a [backup](#backups), weigh their ratings by the matches that moved them.
+
 ## Achievements
 
 <img src="images/en/players-badges.png" alt="Badges of a player on the players card: earned tiers in bronze, silver and gold, each with the next goal, the progress towards it and a progress bar" width="620">
@@ -189,9 +205,9 @@ The weekly sums are in the `trend` attribute of *Player profiles*, so you can bu
 
 ## Leaderboard
 
-<img src="images/en/leaderboard-card.png" alt="Leaderboard card with the period switch and the records best average, highest checkout, most 180s, fewest darts in 501, best Cricket MPR, longest streak, most badges and most darts, each with the leader and two more places" width="760">
+<img src="images/en/leaderboard-card.png" alt="Leaderboard card with the period switch and the records highest rating, best average, highest checkout, most 180s, fewest darts in 501, best Cricket MPR, longest streak, most badges and most darts, each with the leader and two more places" width="760">
 
-The [leaderboard card](cards.md#leaderboard-card) ranks the records of all named players: best average, highest checkout, most 180s, fewest darts in 501, best Cricket MPR, longest streak, most badges and most darts. The switch at the top chooses all time, the last four weeks or this week, so a new player can top this week's board. The scoreboard's [idle mode](scoreboard.md#between-games-idle-mode) shows a leaderboard between games, too.
+The [leaderboard card](cards.md#leaderboard-card) ranks the records of all named players: highest [rating](#rating), best average, highest checkout, most 180s, fewest darts in 501, best Cricket MPR, longest streak, most badges and most darts. The switch at the top chooses all time, the last four weeks or this week, so a new player can top this week's board; the rating and the longest streak count for all time only. The scoreboard's [idle mode](scoreboard.md#between-games-idle-mode) shows a leaderboard between games, too.
 
 ## Players and persons
 

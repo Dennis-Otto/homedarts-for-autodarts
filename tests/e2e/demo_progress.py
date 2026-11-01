@@ -209,6 +209,9 @@ def player(
         best_mpr=settings["mpr"],
         fewest_darts={"501": settings["fewest"], "301": settings["fewest"] - 5},
         doubles=doubles,
+        # The better the average, the higher the rating, around the 1000 of a new player.
+        rating=round(800 + 4 * total["x01_points"] / total["x01_darts"] * 3, 1),
+        rated_matches=round(total["legs"] * older / 4),
         # Always in the past, so that the games of the demo come first.
         last_played=f"{(today - timedelta(days=1 if current else 20)).isoformat()}T20:00:00+00:00",
     )

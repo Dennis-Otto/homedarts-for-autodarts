@@ -138,6 +138,10 @@ start_game:
         text:
           type: number
           multiple: true
+    fair_start:
+      required: false
+      selector:
+        boolean: {}
     holes:
       required: false
       selector:

@@ -1387,6 +1387,10 @@
           "name": "Start scores",
           "description": "X01 start scores of the players in throwing order, for a handicap, for example 501 and 301; the bot's seat after the players has one, too. 0 or a missing score plays the game's start score. Teams play from the start scores of players 1 and 2."
         },
+        "fair_start": {
+          "name": "Fair start",
+          "description": "X01: every player starts from the score that their average of the last 30 legs is worth against the strongest player, who keeps the game's score, as does a player without legs yet. The bot counts by its level, a team by the average of its partners. Not together with start scores."
+        },
         "holes": {
           "name": "Golf holes",
           "description": "Holes of a round of Golf: 9 or 18."
