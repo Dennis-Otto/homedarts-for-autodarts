@@ -1,0 +1,20 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: The steps of a job behind Harden-Runner
+  accDescr: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure.
+  BLOCK["Harden-Runner blocks every host<br/>that the job doesn't list"] --> SUDO{"Does the job start containers,<br/>so that it keeps sudo?"}
+  SUDO -- "yes" --> LOOKUPS["Let Harden-Runner see the DNS lookups:<br/>GitHub's DNS experiment goes"]
+  LOOKUPS --> WAIT
+  SUDO -- "no" --> WAIT["Wait until Harden-Runner lets the hosts through:<br/>each host every 3 s, two minutes at most"]
+  WAIT --> STEPS["The steps of the job"]
+  STEPS -- "with sudo" --> END(["The job ends"])
+  STEPS -- "without sudo and Docker,<br/>also after a failure" --> DOCKER["Wait until Harden-Runner<br/>has removed Docker"]
+  DOCKER --> END
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class BLOCK,LOOKUPS,WAIT,DOCKER bot
+  class END done
