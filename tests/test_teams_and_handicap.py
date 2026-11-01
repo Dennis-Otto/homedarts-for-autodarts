@@ -1,7 +1,7 @@
 """Two teams of two, and a start score of their own for every player."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 from custom_components.homedarts.practice import PracticeGame, valid_start
 from custom_components.homedarts.profiles import Profiles
@@ -189,7 +189,7 @@ def test_every_player_starts_from_their_own_score():
 def test_handicap_legs_count_for_the_score_they_started_from():
     records = PersonalRecords()
     profiles = Profiles()
-    now = datetime(2026, 9, 27, 12)
+    now = datetime(2026, 9, 27, 12, tzinfo=UTC)
     leg = {
         "game": 501,
         "name": "Kim",

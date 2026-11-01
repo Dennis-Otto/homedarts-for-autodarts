@@ -301,7 +301,7 @@ def test_the_log_keeps_the_newest_darts_compactly():
     copy = DartLog(3)
     copy.restore(stored)
     assert copy.positions() == log.positions()
-    assert list(copy.darts)[0][2] == "T20"
+    assert next(iter(copy.darts))[2] == "T20"
     log.clear()
     assert log.positions() == [] and log.spread() == []
 
@@ -476,7 +476,7 @@ def test_darts_aimed_elsewhere_do_not_widen_the_model():
     assert model["sd_y"] == pytest.approx(20, rel=0.12)
     assert abs(model["offset_x"]) < 4 and abs(model["offset_y"]) < 4
     # All of them would make it twice as wide up and down.
-    xs, ys = zip(*((x * 170, y * 170) for x, y, _ in darts), strict=True)
+    _xs, ys = zip(*((x * 170, y * 170) for x, y, _ in darts), strict=True)
     mean = sum(ys) / len(ys)
     assert math.sqrt(sum((y - mean) ** 2 for y in ys) / len(ys)) > 50
 

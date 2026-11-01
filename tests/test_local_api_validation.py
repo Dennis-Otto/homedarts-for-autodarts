@@ -16,7 +16,7 @@ from .local_helpers import BASE, CONFIG, STATE, SYSTEM
 
 
 @pytest.mark.parametrize(
-    "path,read",
+    ("path", "read"),
     [
         ("/api/config", "get_config"),
         ("/api/system", "get_system"),
@@ -80,7 +80,7 @@ async def test_missing_route_is_only_retried_for_start_and_stop(client, aioclien
 
 async def test_invalid_camera_index_sends_nothing(client, aioclient_mock):
     for index in (-1, 1.5, "1", True):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid camera index"):
             await client.calibrate_camera(index)
     assert not aioclient_mock.mock_calls
 
@@ -102,7 +102,7 @@ async def test_answers_that_are_no_json_are_protocol_errors(
 
 
 @pytest.mark.parametrize(
-    "text,expected",
+    ("text", "expected"),
     [
         ("2.0.0\n", "2.0.0"),
         ("v1.0.7", "v1.0.7"),

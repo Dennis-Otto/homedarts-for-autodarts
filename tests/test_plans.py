@@ -971,9 +971,10 @@ async def test_the_actions_play_a_plan_and_announce_it(hass, aioclient_mock):
     await hass.services.async_call(DOMAIN, "next_plan_step", {}, blocking=True)
     await hass.async_block_till_done()
     assert coordinator.games.practice.drill == "bobs_27"
-    assert [one for one in events if one[0] == "plan_step_finished"][0][1][
-        "skipped"
-    ] is True
+    assert (
+        next(one for one in events if one[0] == "plan_step_finished")[1]["skipped"]
+        is True
+    )
 
     await hass.services.async_call(DOMAIN, "stop_plan", {}, blocking=True)
     await hass.async_block_till_done()

@@ -226,8 +226,18 @@ def test_the_scatter_of_a_level():
 
 @pytest.mark.parametrize(
     ("level", "valid"),
-    [(0, True), (20, True), (60, True), (120, True), (19, False), (121, False)]
-    + [(-1, False), (True, False), ("60", False), (60.0, False)],
+    [
+        (0, True),
+        (20, True),
+        (60, True),
+        (120, True),
+        (19, False),
+        (121, False),
+        (-1, False),
+        (True, False),
+        ("60", False),
+        (60.0, False),
+    ],
 )
 def test_valid_levels(level, valid):
     assert valid_level(level) is valid
@@ -283,7 +293,7 @@ def test_the_cricket_scatter_of_a_level():
     # scatters more in Cricket than in X01.
     assert all(scatter(level, cricket=True) > sigma for level, sigma in SCATTER)
     # A dart of the Cricket games lands with that scatter.
-    aim_x, aim_y = aim_point("T20")
+    _aim_x, aim_y = aim_point("T20")
     x01 = Bot(random.Random(1)).throw("T20", 60)[1]
     cricket = Bot(random.Random(1)).throw("T20", 60, cricket=True)[1]
     ratio = (cricket[1] * 170 - aim_y) / (x01[1] * 170 - aim_y)

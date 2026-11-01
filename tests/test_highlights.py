@@ -3,7 +3,7 @@
 import asyncio
 import io
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import quote
@@ -66,7 +66,7 @@ async def test_a_saved_photo_is_on_disk_and_opens_in_the_media_browser(
         "photo": str((gallery / file).resolve()),
         "photo_url": f"/media/local/homedarts/highlights/{quote(file)}",
     }
-    assert Path(saved["photo"]).read_bytes() == JPEG
+    assert await hass.async_add_executor_job(Path(saved["photo"]).read_bytes) == JPEG
     # The gallery reads the player and the score from the name.
     photo = highlight(Path(saved["photo"]))
     assert (photo.player, photo.score, photo.checkout) == ("Alex Bee", 180, False)
@@ -189,7 +189,7 @@ async def test_a_camera_without_a_picture_saves_nothing(
 
 
 @pytest.mark.parametrize(
-    "folder,shown",
+    ("folder", "shown"),
     [
         (".storage", ".storage"),
         ("/etc", "/etc"),
@@ -349,7 +349,7 @@ async def test_a_clip_records_beside_the_photo_without_holding_up_the_answer(
 
 
 def test_names_and_labels_become_safe_parts_of_a_file_name():
-    taken = datetime(2026, 9, 26, 21, 5, 33)
+    taken = datetime(2026, 9, 26, 21, 5, 33, tzinfo=UTC)
     assert photo_stem(taken, "", "") == STAMP
     assert photo_stem(taken, "Alex", "") == f"{STAMP}_Alex"
     assert photo_stem(taken, "", "checkout-121") == f"{STAMP}_checkout-121"

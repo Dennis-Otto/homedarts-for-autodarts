@@ -325,7 +325,7 @@ def test_a_slip_in_a_file_of_card_texts_names_its_line():
     good = '// The texts.\nexport default {\n  // Status\n  "a": "A",\n  "b": "B"\n};\n'
     assert module_texts(good) == {"a": "A", "b": "B"}
     with pytest.raises(
-        json.JSONDecodeError, match="trailing comma.*: line 5 column 11 "
+        json.JSONDecodeError, match=r"trailing comma.*: line 5 column 11 "
     ):
         module_texts(good.replace('"B"', '"B",'))
     with pytest.raises(ValueError, match="texts given twice: a"):

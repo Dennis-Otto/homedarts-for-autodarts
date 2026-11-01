@@ -737,7 +737,7 @@ def scoreboard_animation(page: Page) -> None:
     game(page, "off")
 
 
-def scoreboard_match(page: Page, option: str) -> tuple[Page, "Recorder"]:
+def scoreboard_match(page: Page, option: str) -> tuple[Page, Recorder]:
     """Alex against Sam in one leg of a game on the scoreboard, with its recorder."""
     pull_darts()
     page.evaluate(SET_NAME, [0, "Alex"])
@@ -756,7 +756,7 @@ def scoreboard_match(page: Page, option: str) -> tuple[Page, "Recorder"]:
     return board, Recorder(board, SCOREBOARD)
 
 
-def visit_shots(board: Page, recorder: "Recorder", visits: list[list[str]]) -> None:
+def visit_shots(board: Page, recorder: Recorder, visits: list[list[str]]) -> None:
     """Every dart of the visits shown on its own, then the next player after the takeout."""
     for names in visits:
         darts: list[dict] = []

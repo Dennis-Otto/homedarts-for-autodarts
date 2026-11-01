@@ -1,6 +1,6 @@
 """Personal bests, the training streak and the daily goal."""
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from hypothesis import given
 from hypothesis import strategies as st
@@ -12,7 +12,7 @@ from custom_components.homedarts.records import (
     PersonalRecords,
 )
 
-MONDAY = datetime(2026, 9, 21, 20, 0)
+MONDAY = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
 
 
 def darts(records: PersonalRecords, count: int, when: datetime = MONDAY) -> list:

@@ -291,7 +291,7 @@ class PracticeGame:
         self.mode = GameMode(self)
         # The randomness of the games that draw, such as Random Cricket; no
         # cryptographic randomness, which games need not.
-        self.rng = random.Random()  # noqa: S311
+        self.rng = random.Random()
         # The X01 rules: how a leg opens and ends, what the outer bull scores,
         # and the rounds after which the lowest score wins the leg, 0 for none.
         self.in_mode = STRAIGHT

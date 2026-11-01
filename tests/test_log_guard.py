@@ -223,16 +223,19 @@ def test_a_known_report_passes_until_its_release():
 
 
 @pytest.mark.parametrize(
-    "fields",
+    ("fields", "problem"),
     [
-        {"text": "", "reason": "No replacement yet.", "until": "2026.11"},
-        {"text": "hass.data", "reason": "", "until": "2026.11"},
-        {"text": "hass.data", "reason": "No replacement yet.", "until": "soon"},
+        ({"text": "", "reason": "No replacement yet.", "until": "2026.11"}, "needs"),
+        ({"text": "hass.data", "reason": "", "until": "2026.11"}, "needs"),
+        (
+            {"text": "hass.data", "reason": "No replacement yet.", "until": "soon"},
+            "not enough values",
+        ),
     ],
     ids=["no text", "no reason", "no release"],
 )
-def test_a_known_report_names_its_text_reason_and_release(fields):
-    with pytest.raises(ValueError):
+def test_a_known_report_names_its_text_reason_and_release(fields, problem):
+    with pytest.raises(ValueError, match=problem):
         ha_reports.Known(**fields)
 
 

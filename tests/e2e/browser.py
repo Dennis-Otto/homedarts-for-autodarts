@@ -16,6 +16,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
 
 from pages import (
@@ -684,12 +685,11 @@ def doubles_scale(browser: Browser) -> None:
 def training(browser: Browser) -> None:
     page, problems = open_view(browser, "training", TRAINING_CARDS, ".heat-layer path")
     # The history of completed visits is loaded from the recorder.
-    try:
+    # The comparison below reports what the card shows instead.
+    with suppress(PlaywrightTimeout):
         page.wait_for_function(
             f"() => ({TRAINING_STATE})().history === 5", timeout=15000
         )
-    except PlaywrightTimeout:
-        pass  # The comparison below reports what the card shows instead.
     state = page.evaluate(TRAINING_STATE)
     # Demo visits: 81, 125, 102, 112 and 90 points, plus 115 in progress.
     expected = {
@@ -1398,7 +1398,7 @@ def tablet_screen(browser: Browser) -> None:
     check(
         fit["sticky"] == "sticky"
         and actions is not None
-        and 0 <= actions["top"]
+        and actions["top"] >= 0
         and actions["bottom"] <= fit["screen"] + 1,
         f"The start of the new game screen is out of reach: {fit}",
     )
@@ -2096,10 +2096,9 @@ def touch_screen(
     settle(page, scope="page")
     spot = page.evaluate(RECENT_VISIT_SPOT)
     page.touchscreen.tap(*spot)
-    try:
+    # The check below names the screen and what the hint shows instead.
+    with suppress(PlaywrightTimeout):
         page.wait_for_function(f"() => ({HINT_SHOWN})().shown", timeout=15000)
-    except PlaywrightTimeout:
-        pass  # The check below names the screen and what the hint shows instead.
     hint = page.evaluate(HINT_SHOWN)
     check(
         hint["shown"] and hint["inside"] and hint["text"] == hint["title"],
@@ -2921,6 +2920,16 @@ def steady_heights(browser: Browser) -> None:
         expect_state(pages, {"local_status": "takeout_in_progress"})
         pulled(pages)
 
+    def compare(game: str, start: dict[tuple[str, str, str], int], moment: str) -> None:
+        settle(*pages)
+        for key, value in heights().items():
+            before = start.get(key)
+            if before is None or abs(before - value) > 1:
+                screen, view, part = key
+                found.append(
+                    f"{screen} · {game} · {moment} · {view} {part}: {before} → {value}"
+                )
+
     for game, players, options, visits in STEADY_GAMES:
         pull()
         if players:
@@ -2936,26 +2945,15 @@ def steady_heights(browser: Browser) -> None:
         expect_state(pages, {"practice_game": game})
         settle(*pages)
         start = heights()
-
-        def compare(moment: str) -> None:
-            settle(*pages)
-            for key, value in heights().items():
-                before = start.get(key)
-                if before is None or abs(before - value) > 1:
-                    screen, view, part = key
-                    found.append(
-                        f"{screen} · {game} · {moment} · {view} {part}: {before} → {value}"
-                    )
-
         for number, visit in enumerate(visits, 1):
             darts = visit.split()
             for count in range(1, len(darts) + 1):
                 thrown(pages, [aimed(name) for name in darts[:count]])
-                compare(f"visit {number}: {' '.join(darts[:count])}")
+                compare(game, start, f"visit {number}: {' '.join(darts[:count])}")
             # The takeout after the game shot shows the match summary.
             if number < len(visits):
                 pull()
-                compare(f"visit {number} pulled")
+                compare(game, start, f"visit {number} pulled")
         print(f"  {game}: {len(found)} changes so far", flush=True)
     pull()
     control_page.evaluate(

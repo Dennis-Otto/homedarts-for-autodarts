@@ -58,7 +58,7 @@ async def test_start_game_rejects_values_beyond_its_limits(hass, aioclient_mock,
 
 
 @pytest.mark.parametrize(
-    "data,check",
+    ("data", "check"),
     [
         (
             {"game": "501", "players": ["A", "B", "C", LONGEST]},
@@ -178,7 +178,7 @@ async def test_actions_on_the_players_data_are_for_administrators(
 
 
 @pytest.mark.parametrize(
-    "data,key,placeholders",
+    ("data", "key", "placeholders"),
     [
         ({"bot_level": 10}, "invalid_bot_level", None),
         ({"bot_level": 121}, "invalid_bot_level", None),
@@ -243,7 +243,7 @@ async def test_start_game_explains_a_wrong_value(
 
 
 @pytest.mark.parametrize(
-    "data,starts",
+    ("data", "starts"),
     [
         ({"players": ["A", "B"], "start_scores": ["501", 301]}, [501, 301, 0, 0]),
         (

@@ -222,7 +222,7 @@ async def test_the_backup_action_writes_what_the_board_has_not_saved_yet(
     path = Path(response["path"])
     assert path.parent == media / "homedarts" / "backups" / "board-1"
     assert response["download"] == f"/api/homedarts/export/{path.name}"
-    saved = json.loads(path.read_text(encoding="utf-8"))
+    saved = json.loads(await hass.async_add_executor_job(path.read_text, "utf-8"))
     assert (saved["id"], saved["created"]) == (response["id"], response["created"])
     # The leg is not saved yet, but it is in the backup.
     training = saved["stores"]["training"]
@@ -273,7 +273,9 @@ async def test_a_board_that_does_not_start_can_be_backed_up(
     }
     assert not await hass.config_entries.async_setup(entry.entry_id)
     response = await call(hass, "backup", config_entry_id=entry.entry_id)
-    saved = json.loads(Path(response["path"]).read_text(encoding="utf-8"))
+    saved = json.loads(
+        await hass.async_add_executor_job(Path(response["path"]).read_text, "utf-8")
+    )
     assert saved["stores"]["journal"]["data"] == {"sessions": [], "matches": []}
     assert saved["stores"]["training"]["data"] is None
 
@@ -308,7 +310,7 @@ async def test_the_board_of_a_backup_or_a_restore(
     with pytest.raises(ServiceValidationError) as error:
         await call(hass, "restore", config_entry_id=other.entry_id, file="x.json")
     assert error.value.translation_key == "unknown_board"
-    first, second = two_boards
+    _first, second = two_boards
     response = await call(hass, "backup", config_entry_id=second.entry_id)
     assert Path(response["path"]).parent.name == "board-2"
     for entry in two_boards:
@@ -436,9 +438,11 @@ def test_a_file_that_is_not_utf8_or_too_large_is_refused(tmp_path):
         read_backup(config, str(path), VERSIONS)
     assert error.value.key == "backup_invalid"
     file = write(tmp_path / "media", a_backup())
-    with patch.object(backup, "MAX_BACKUP_BYTES", 10):
-        with pytest.raises(BackupFileError) as error:
-            read_backup(config, file, VERSIONS)
+    with (
+        patch.object(backup, "MAX_BACKUP_BYTES", 10),
+        pytest.raises(BackupFileError) as error,
+    ):
+        read_backup(config, file, VERSIONS)
     assert error.value.key == "backup_invalid"
 
 
@@ -596,7 +600,9 @@ async def test_a_player_of_two_boards_gets_the_darts_of_both(
     assert await hass.config_entries.async_unload(first.entry_id)
     merged = stored(hass_storage, first.entry_id)
     assert merged["training"]["data"][MERGED] == [
-        json.loads(Path(file).read_text(encoding="utf-8"))["id"]
+        json.loads(await hass.async_add_executor_job(Path(file).read_text, "utf-8"))[
+            "id"
+        ]
     ]
 
     # The same backup again changes nothing.
@@ -1004,7 +1010,7 @@ async def test_a_restore_backs_up_what_the_board_held(
     response = await call(hass, "restore", file=file)
     previous = Path(response["previous"])
     assert previous.parent == media / "homedarts" / "backups" / "board-1"
-    saved = json.loads(previous.read_text(encoding="utf-8"))
+    saved = json.loads(await hass.async_add_executor_job(previous.read_text, "utf-8"))
     names = saved["stores"]["training"]["data"]["practice"]["profiles"]["players"]
     assert [player["name"] for player in names] == ["Alex"]
     # The restore is undone with that backup.

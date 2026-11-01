@@ -373,11 +373,11 @@ class Clocked:
     the given milliseconds, or never."""
 
     url = f"{HA}/homedarts-demo/idle"
-    viewport_size = {"width": 800, "height": 480}
 
     def __init__(self, shows_after: int | None) -> None:
         self.ran: list[int] = []
         self.shows_after = shows_after
+        self.viewport_size = {"width": 800, "height": 480}
         self.clock = types.SimpleNamespace(run_for=self.ran.append)
         self.target = types.SimpleNamespace(is_visible=self.shown)
 

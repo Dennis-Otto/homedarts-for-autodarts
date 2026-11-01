@@ -99,8 +99,27 @@ extend-exclude = [".github/blueprint.py"]
 target-version = "py313"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = ["E501"]
+select = [
+  "ASYNC", # flake8-async: blocking calls and busy waits in async code
+  "B", # flake8-bugbear: likely bugs, such as a closure over a loop variable
+  "C4", # flake8-comprehensions: the shorter form of a comprehension
+  "DTZ", # flake8-datetimez: a date or time without a time zone
+  "E", # pycodestyle errors
+  "F", # Pyflakes
+  "I", # isort
+  "LOG", # flake8-logging: how the logging module is called
+  "PIE", # flake8-pie: statements that do nothing
+  "PT", # flake8-pytest-style
+  "RUF", # the rules of Ruff itself
+  "SIM", # flake8-simplify
+  "UP", # pyupgrade
+  "W", # pycodestyle warnings
+]
+ignore = [
+  "E501", # The formatter breaks the lines; what stays long is a string or a URL.
+  "PT018", # A compound assert reads as one fact about one state in these tests.
+  "RUF001", # The strings hold German text and typographic marks on purpose.
+]
 
 [tool.mypy]
 python_version = "3.14"

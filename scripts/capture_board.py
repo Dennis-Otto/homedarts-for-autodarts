@@ -47,7 +47,7 @@ import sys
 import time
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -618,7 +618,12 @@ async def capture(
     if skipped:
         print(f"Skipped {skipped} frames that were no JSON.", file=sys.stderr)
     version, content = files(
-        answers, frames, absent, host, date.today().isoformat(), system_frames
+        answers,
+        frames,
+        absent,
+        host,
+        datetime.now().astimezone().date().isoformat(),
+        system_frames,
     )
     return write(out, version, content)
 

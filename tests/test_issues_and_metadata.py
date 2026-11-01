@@ -33,6 +33,7 @@ from .local_helpers import (
     setup_local,
     setup_v2,
     state,
+    until,
 )
 
 
@@ -79,8 +80,7 @@ async def unload_while_reading(hass, aioclient_mock, entry, method, answer):
 
     async def slow_board(*_args):
         reading.set()
-        while not coordinator._shutting_down:
-            await asyncio.sleep(0)
+        await until(lambda: coordinator._shutting_down)
         for _ in range(100):
             await asyncio.sleep(0)
         reads_at_the_answer.append(aioclient_mock.call_count)
@@ -180,7 +180,7 @@ async def test_a_failed_unload_keeps_the_board_and_its_repair_issues(
 
 
 @pytest.mark.parametrize(
-    "method,answer",
+    ("method", "answer"),
     [
         # The state arrives; the settings read next name another board.
         ("get_state", STATE),
@@ -255,7 +255,7 @@ async def test_a_poll_during_the_unload_brings_back_no_unknown_format_notice(
 
 
 @pytest.mark.parametrize(
-    "status,expected",
+    ("status", "expected"),
     [
         ("Takeout in progress", "takeout_in_progress"),
         ("Calibrating", "calibrating"),

@@ -64,7 +64,7 @@ async def test_local_setup_entities_and_private_diagnostics(
 
 
 @pytest.mark.parametrize(
-    "key,method,path",
+    ("key", "method", "path"),
     [
         ("calibrate", "post", "/api/config/calibration/auto"),
         ("reset", "post", "/api/reset"),
