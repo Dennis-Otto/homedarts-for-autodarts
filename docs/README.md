@@ -124,6 +124,7 @@ On **Board Manager 2.1**, the integration works as before, with these difference
 - The switch *Automatic recalibration* is unavailable, because Board Manager 2.1 no longer has this option, and the generated dashboard leaves it out. *Calibrate on start* and *Distortion correction* remain.
 - The buttons *Start camera streams* and *Stop camera streams* are unavailable, because Board Manager 2.1 no longer has these commands. The live view of the cameras works without them.
 - *Hand detected*, *Image stable*, *Darts partially removed* and *Darts fully removed* come from the second socket of the board, `/api/events/system`, the moment they change. Only if that socket stays away do they update every 2 seconds while the detection runs, and a hand that is at the board for a moment only may not show then.
+- A board that [sees a hand all the time](entities.md#a-hand-the-board-sees-all-the-time) detects no darts, and a calibration doesn't clear it: a real board did this when its light ring was switched on with the detection running. A repair notice says so and restarts the detection, and if a routine switches the light, switch it before the detection starts, or restart the detection after it.
 
 ## Languages
 

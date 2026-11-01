@@ -2,9 +2,9 @@
 
 tests/fixtures/board_manager/2.1.0/ws-system-frames.jsonl holds what it sent on a real
 board while its detection started and stopped. Nobody stood at that board, so its
-frames show no hand: the tests set the flags of a recorded frame, as a takeout of
-another real board set them (issue 521): isHand with takeoutStarted, then
-isTakeoutPartial and isTakeoutFull, and isHand off with takeoutFinished.
+frames show no hand: the tests set the flags of a recorded frame to those of a real
+hand, from tests/fixtures/board_manager_2.1.0_hand.jsonl. tests/test_stuck_hand.py plays
+that recording as it came.
 """
 
 import asyncio
@@ -39,12 +39,15 @@ from .local_helpers import (
     BASE,
     RECORDINGS,
     entity_id,
+    hand_flags,
+    hand_recording,
     recorded,
     setup_local,
     setup_v2,
     state,
 )
 from .test_board_manager_2_1 import (
+    A_HAND,
     LEFT_OVER,
     THROWN,
     answer,
@@ -272,7 +275,7 @@ async def test_the_socket_moves_when_the_board_shows_itself_as_2_1_later(hass):
     # A board that came up after Home Assistant, or got its update meanwhile.
     client = client_of(hass)
     first = OpenSocket(text_frames({"type": "state", "data": running_2_1()}))
-    second = Socket(text_frames(vantage(isHand=True)), close_code=1000)
+    second = Socket(text_frames(vantage(**A_HAND)), close_code=1000)
     session = async_get_clientsession(hass)
     connect = AsyncMock(side_effect=[first, second])
     with patch.object(session, "ws_connect", new=connect):
@@ -373,11 +376,11 @@ def test_a_frame_in_another_form_is_left_to_the_parser(text):
 async def test_the_parser_finds_the_same_readings_in_another_form(hass, form):
     client = client_of(hass)
     client.interface_2_1 = True
-    socket = Socket([form(vantage(isHand=True))])
+    socket = Socket([form(vantage(**A_HAND))])
     session = async_get_clientsession(hass)
     with patch.object(session, "ws_connect", new=AsyncMock(return_value=socket)):
         received = [event async for event in REAL_EVENTS(client)]
-    assert received[1] == ("vantage", motion(isHand=True))
+    assert received[1] == ("vantage", motion(**A_HAND))
 
 
 # -- the motion follows the frames -------------------------------------------------
@@ -387,10 +390,10 @@ async def test_hand_detected_follows_the_frames_without_a_read(hass, aioclient_m
     coordinator = await following(hass, aioclient_mock)
     assert state(hass, "binary_sensor", "hand_detected") == "off"
     aioclient_mock.mock_calls.clear()
-    receive(coordinator, motion(isHand=True, isStable=False))
+    receive(coordinator, motion(**A_HAND))
     await hass.async_block_till_done()
     assert state(hass, "binary_sensor", "hand_detected") == "on"
-    receive(coordinator, motion(isTakeoutPartial=True, isHand=True))
+    receive(coordinator, motion(**hand_flags(isTakeoutPartial=True, isHand=True)))
     await hass.async_block_till_done()
     assert state(hass, "binary_sensor", "takeout_partial") == "on"
     receive(coordinator, motion())
@@ -442,7 +445,7 @@ async def test_a_changed_value_updates_only_the_entities_of_the_motion(
         patch.object(coordinator, "async_update_listeners") as listeners,
         patch.object(coordinator.topics, "async_publish") as published,
     ):
-        receive(coordinator, motion(isHand=True), motion(isHand=True))
+        receive(coordinator, motion(**A_HAND), motion(**A_HAND))
     listeners.assert_not_called()
     assert published.call_count == 1
 
@@ -452,7 +455,7 @@ async def test_the_frames_are_ignored_while_the_board_is_the_wrong_one(
 ):
     coordinator = await following(hass, aioclient_mock)
     coordinator._identity_valid = False
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     assert "isHand" not in coordinator.readings["motion"] or (
         coordinator.readings["motion"]["isHand"] is not True
     )
@@ -469,13 +472,13 @@ async def test_the_reads_rest_while_frames_arrive_and_take_over_when_they_stop(
     # A socket without frames of the motion: as in v2.1.1.
     await reread(hass, coordinator)
     assert coordinator.update_interval == timedelta(seconds=2)
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     await reread(hass, coordinator)
     assert coordinator.update_interval == timedelta(seconds=10)
     assert coordinator.diagnostics()["realtime"]["motion_frames"] is True
     # Frames keep the watch going.
     freezer.tick(MOTION_SILENCE_SECONDS - 0.5)
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     freezer.tick(1)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -490,7 +493,7 @@ async def test_the_reads_rest_while_frames_arrive_and_take_over_when_they_stop(
     assert state(hass, "binary_sensor", "hand_detected") == "off"
     assert coordinator.diagnostics()["realtime"]["motion_frames"] is False
     # And they come back: the next frame is right whatever the read said.
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     await hass.async_block_till_done()
     assert state(hass, "binary_sensor", "hand_detected") == "on"
     await reread(hass, coordinator)
@@ -500,7 +503,7 @@ async def test_the_reads_rest_while_frames_arrive_and_take_over_when_they_stop(
 
 async def test_a_read_never_overrules_the_frames(hass, aioclient_mock):
     coordinator = await following(hass, aioclient_mock)
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     await hass.async_block_till_done()
     # An answer of a moment ago, which would only flip the entity back and forth.
     answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
@@ -512,7 +515,7 @@ async def test_a_stopped_detection_clears_what_the_last_frame_said(
     hass, aioclient_mock
 ):
     coordinator = await following(hass, aioclient_mock)
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     await hass.async_block_till_done()
     assert state(hass, "binary_sensor", "hand_detected") == "on"
     # As the real board answers then: no motion in the read, and a state that ends it.
@@ -556,7 +559,7 @@ async def test_a_dropped_socket_leaves_the_motion_to_the_read_at_once(
 
     async def stream(self):
         yield "connected", {}
-        yield "vantage", motion(isHand=True)
+        yield "vantage", motion(**A_HAND)
         await hass.async_block_till_done()
         seen.append(state(hass, "binary_sensor", "hand_detected"))
         yield "closed", {"code": 1006}
@@ -596,28 +599,54 @@ async def test_the_diagnostics_say_which_socket_without_a_count_of_frames(
 # -- darts and takeouts: every one counts once --------------------------------------
 
 
+def recorded_takeout() -> tuple[dict, list[dict], dict]:
+    """The flags of the takeout of three darts of a real board: when takeoutStarted
+    came, those that followed, and those right after takeoutFinished."""
+    rows = [row for row in hand_recording("hand") if row["socket"] == SYSTEM_EVENTS]
+    started = [
+        row["t"]
+        for row in rows
+        if row["type"] == "state" and row["data"]["event"] == "takeoutStarted"
+    ][-1]
+    finished = min(
+        row["t"]
+        for row in rows
+        if row["type"] == "state"
+        and row["data"]["event"] == "takeoutFinished"
+        and row["t"] > started
+    )
+    flags = [
+        (row["t"], row["data"]["vantage"]["motion"])
+        for row in rows
+        if row["type"] == "vantage"
+    ]
+    return (
+        [motion for t, motion in flags if t <= started][-1],
+        [motion for t, motion in flags if started < t <= finished],
+        next(motion for t, motion in flags if t > finished),
+    )
+
+
 def with_motion(states: list[dict]) -> list[dict]:
     """The states of a real board as its second socket sends them: with a frame of its
-    board status, frames of its motion in between, and the hand of each takeout."""
+    board status, frames of its motion in between, and the recorded hand of each takeout."""
+    hand, pulling, after = recorded_takeout()
     sent: list[dict] = []
     flags: dict = {}
     for data in states:
         if data["event"] == "takeoutStarted":
-            flags = {"isHand": True, "isStable": False}
+            flags = hand
         sent.append(vantage(**flags))
         sent.append({"type": "state", "data": data})
         sent.append(frame_of("board"))
         sent.append(vantage(**flags))
         if data["event"] == "takeoutStarted":
-            # The hand pulled the darts, and is still at the board.
-            flags = {**flags, "isTakeoutPartial": True}
-            sent.append(vantage(**flags))
-            flags = {**flags, "isTakeoutFull": True}
-            sent.append(vantage(**flags))
+            sent.extend(vantage(**motion) for motion in pulling)
+            flags = pulling[-1]
             sent.append(frame_of("stats"))
         if data["event"] == "takeoutFinished":
             flags = {}
-            sent.append(vantage())
+            sent.append(vantage(**after))
     return sent
 
 
@@ -626,6 +655,8 @@ async def test_the_darts_and_takeouts_of_a_real_board_count_once_on_the_second_s
 ):
     entry = await setup_local(hass, aioclient_mock, state=LEFT_OVER)
     coordinator = entry.runtime_data.local
+    # This read would bring back the first state, whenever a slow runner gets to it.
+    coordinator._async_unsub_refresh()
     client = coordinator.client
     client.interface_2_1 = True
     coordinator.stream_connected = True
@@ -682,7 +713,7 @@ async def test_a_hand_in_a_frame_holds_back_a_stuck_takeout_at_once(
     coordinator = entry.runtime_data.local
     coordinator.stream_connected = True
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
-    receive(coordinator, motion(isHand=True))
+    receive(coordinator, motion(**A_HAND))
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
     receive(coordinator, motion())
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True

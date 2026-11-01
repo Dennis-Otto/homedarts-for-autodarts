@@ -38,6 +38,7 @@ Unter **Einstellungen → Reparaturen** kann Home Assistant diese Hinweise anzei
 | **Autodarts-Board-Adresse zeigt auf ein anderes Board** | Unter der eingerichteten Adresse antwortet ein Board mit anderer Board-ID, etwa nach vertauschten IP-Adressen. Die Entitäten bleiben nicht verfügbar, damit sie nie Daten eines fremden Boards zeigen. Öffne die Integration, wähle **Neu konfigurieren** und das richtige Board. Der Hinweis verschwindet dann von selbst. |
 | **Autodarts-Board kalibrieren** | Mindestens 20 % der letzten 100 Darts, bei mindestens 50 Darts insgesamt, mussten korrigiert werden, vom Board, auf der Anzeigetafel oder mit `homedarts.correct_dart`, siehe *Korrekturquote der Erkennung*. Zieh alle Darts, öffne den Hinweis und bestätige: Die Integration kalibriert alle Kameras und zählt wieder bei null. Der Hinweis verschwindet auch, sobald die Quote unter 10 % fällt. |
 | **Board auf den neuen Autodarts Board Manager umstellen** | Das Board nutzt noch den klassischen Board Manager 1, den Autodarts abschalten wird. Installiere Board Manager 2 auf dem Board-PC; die Integration stellt sich selbst um, und der Hinweis verschwindet. |
+| **Autodarts-Board sieht ständig eine Hand** | Das Board meldet eine Hand, die sich nicht bewegt, und erkennt keine Darts, siehe [unten](#keine-darts-weil-das-board-eine-hand-sieht). Bestätige den Hinweis, um die Erkennung neu zu starten. |
 | **Autodarts-Board unter neuer Adresse gefunden** | Das Board antwortet unter seiner eingestellten Adresse nicht mehr mit seiner Board-ID, aber unter einer anderen, unter der Board Manager 2 es angekündigt hat (mDNS), etwa nach einer DHCP-Änderung. Öffne den Hinweis und bestätige nur, wenn es dein Board ist: Die Integration prüft die Adresse noch einmal, wechselt zu ihr und lädt neu. Entitäten, Training und Einstellungen bleiben erhalten. Siehe [Adresswechsel](how-it-works.de.md#adresswechsel). |
 | **Autodarts-Board verweigert den Zugriff** | Das Board antwortet mit HTTP 401 oder 403. Der Board Manager braucht keine Anmeldung, also blockiert ein Reverse Proxy, eine Firewall oder eine Anmeldung vor Port 3180 Home Assistant. Lass Home Assistant auf das Board zugreifen; der Hinweis verschwindet beim nächsten erfolgreichen Lesen. |
 | **Autodarts-Board antwortet in einem unbekannten Format** | Eine nötige Abfrage (Zustand, Einstellungen oder `/api/system`) hat dreimal hintereinander in einem Format geantwortet, das diese Version nicht versteht, meist nach einem Board-Manager-Update. Aktualisiere die Integration. Bleibt der Hinweis, [melde ihn](#fehler-melden) mit den Diagnosedaten; das Protokoll nennt die betroffenen Abfragen. |
@@ -149,6 +150,13 @@ Der Status bleibt *Darts werden entnommen*, obwohl das Board leer ist, und neue 
 - Um das Board sofort zu lösen, drücke **Erkennung zurücksetzen**.
 - Hängt das Board nach drei Versuchen noch, stoppe und starte die Erkennung oder starte den Board Manager neu.
 
+### Keine Darts, weil das Board eine Hand sieht
+
+*Hand erkannt* bleibt auf Board Manager 2.1 an, obwohl niemand am Board ist, und kein Dart zählt, auch nach einer Kalibrierung. Bei einem echten Board begann das, als sein Lichtring bei laufender Erkennung eingeschaltet wurde; das Licht ist die wahrscheinliche Ursache, aber nicht bewiesen. Siehe [Eine Hand, die das Board ständig sieht](entities.de.md#eine-hand-die-das-board-ständig-sieht).
+
+- Stoppe und starte die Erkennung, mit dem Schalter *Erkennung* oder indem du den Hinweis *Autodarts-Board sieht ständig eine Hand* bestätigst. Solange *Hängende Entnahme lösen* an ist, tut die Integration das nach einer Minute selbst, wenn kein von ihr geführtes Spiel läuft und kein Dart im Board steckt. Ein Match auf play.autodarts.io hält sie nicht auf.
+- Schaltet eine Routine das Licht des Boards, schalte es, bevor die Erkennung startet, oder [starte die Erkennung danach neu](automations.de.md#die-erkennung-nach-dem-licht-neu-starten).
+
 ### Eine Kamera wird als gestört gemeldet
 
 *Kamerastörung* geht an, wenn eine Kamera bei laufender Erkennung 15 Sekunden lang keine Bilder liefert. Prüfe Kabel und USB-Anschluss der Kamera und ob sie im Board Manager erscheint. Oft hilft auch eine neue Kalibrierung.
@@ -194,7 +202,7 @@ Ein Spieler hat einen Board-PC mit Ubuntu 24.04 und drei Kameras von Autodarts 1
 - die Board-Manager-Generation, die Verbindungen und das Leseintervall;
 - das Übungsspiel mit seinen Regeln und ob gerade ausgebullt wird;
 - die Zahl der gespeicherten Sessions, Bestleistungen, Spielerprofile, Matches und Darts aufs Double;
-- unter `connection` den Verlauf der Verbindung: verpasste Lesevorgänge in Folge, die Art des letzten Fehlers, das letzte erfolgreiche Lesen, wie lange das Board schon fehlt, die Dauer des letzten Lesens, Abfragen mit unbekanntem Format und für die Echtzeitverbindung Verbindungsaufbauten, fehlgeschlagene Versuche, den aktuellen Abstand bis zum nächsten Versuch, den Grund des letzten Abbruchs und die Zahl übersprungener Nachrichten, außerdem unter `stuck_takeout`, ob hängende Entnahmen gelöst werden, ob gerade eine abgewartet wird und wie viele Zurücksetzungen das Board angenommen oder abgelehnt hat.
+- unter `connection` den Verlauf der Verbindung: verpasste Lesevorgänge in Folge, die Art des letzten Fehlers, das letzte erfolgreiche Lesen, wie lange das Board schon fehlt, die Dauer des letzten Lesens, Abfragen mit unbekanntem Format und für die Echtzeitverbindung Verbindungsaufbauten, fehlgeschlagene Versuche, den aktuellen Abstand bis zum nächsten Versuch, den Grund des letzten Abbruchs und die Zahl übersprungener Nachrichten, außerdem unter `stuck_takeout`, ob hängende Entnahmen gelöst werden, ob gerade eine abgewartet wird und wie viele Zurücksetzungen das Board angenommen oder abgelehnt hat, und unter `stuck_hand`, ob eine Hand als hängend gilt, ob gerade eine abgewartet wird und wie viele Neustarts das Board angenommen oder abgelehnt hat, mit dem letzten.
 
 Board-ID, Board-Name, Adressen und Spielernamen sind geschwärzt; Fehlermeldungen sind nicht enthalten.
 

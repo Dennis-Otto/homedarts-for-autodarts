@@ -669,6 +669,8 @@
               "dart_corrected": "Dart korrigiert",
               "takeout_started": "Entnahme begonnen",
               "takeout_finished": "Entnahme abgeschlossen",
+              "stuck_hand": "Hängende Hand",
+              "stuck_hand_cleared": "Hängende Hand gelöst",
               "status_changed": "Status geändert",
               "visit_thrown": "Aufnahme geworfen",
               "visit_completed": "Aufnahme abgeschlossen",
@@ -1230,6 +1232,21 @@
         "abort": {
           "calibration_failed": "Das Board hat die Kalibrierung nicht angenommen. Versuche es erneut oder kalibriere über die Board-Status-Karte.",
           "board_unavailable": "Das Board ist nicht geladen. Prüfe die Verbindung und versuche es erneut."
+        }
+      }
+    },
+    "stuck_hand": {
+      "title": "Autodarts-Board sieht ständig eine Hand",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Erkennung neu starten",
+            "description": "Das Board meldet seit über einer Minute eine Hand vor sich, die sich nicht bewegt, und erkennt dabei keine Darts. Wahrscheinlich hat sich das Licht geändert, während die Erkennung lief, etwa durch einen eingeschalteten Lichtring. Eine Kalibrierung löst das nicht, das Stoppen und Starten der Erkennung schon.\n\nErkennung jetzt neu starten? Nimm vorher die Hand vom Board.\n\nDamit es nicht wiederkommt, schalte das Licht, bevor die Erkennung startet, oder starte die Erkennung danach neu."
+          }
+        },
+        "abort": {
+          "restart_failed": "Das Board hat den Neustart nicht angenommen. Versuche es noch einmal, oder stoppe und starte die Erkennung mit ihrem Schalter.",
+          "board_unavailable": "Das Board ist nicht geladen. Prüfe die Verbindung und versuche es noch einmal."
         }
       }
     },
