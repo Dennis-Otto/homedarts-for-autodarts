@@ -1,0 +1,19 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Wie eine Seite die Karten bekommt
+  accDescr: Jede Seite lädt homedarts-strategy.js, mit einem Platzhalter für jede Karte und für die Strategie und den Einträgen der Auswahllisten. Eine Seite, auf der nichts nach einer Karte fragt, endet dort, mit weniger als 20 KB. Die Einstellungen, der Zustand oder der Platz auf der Seite einer Karte, ihr Formular, ihre Vorlage in der Kartenauswahl oder das automatische Dashboard importieren homedarts-card.js mit seinen Texten; ein fehlgeschlagenes Laden versucht das nächste Update von Home Assistant noch einmal. Dann wird jeder Platzhalter zu seiner Karte, als dasselbe Element, und bekommt, was er aufbewahrt hat. Jedes weitere Element seines Typs ist sofort eine Karte.
+
+  PAGE["Jede Seite lädt homedarts-strategy.js:<br/>Platzhalter für die Karten und die Strategie,<br/>die Einträge der Auswahllisten"] --> ASK{{"Fragt etwas nach einer Karte?"}}
+  ASK -->|"Nein"| SMALL["Die Seite endet dort:<br/>weniger als 20 KB"]
+  ASK -->|"Ja"| IMPORT["Ihre Einstellungen, ihr Zustand, Platz oder Formular,<br/>die Kartenauswahl oder das automatische Dashboard<br/>importieren homedarts-card.js mit seinen Texten;<br/>nach einem Fehlschlag tut es das nächste Update"]
+  IMPORT --> BECOME["Jeder Platzhalter wird zu seiner Karte,<br/>als dasselbe Element, und bekommt,<br/>was er aufbewahrt hat"]
+  BECOME --> NEXT["Jedes weitere Element<br/>seines Typs ist sofort eine Karte"]
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class ASK bot
+  class SMALL,NEXT done

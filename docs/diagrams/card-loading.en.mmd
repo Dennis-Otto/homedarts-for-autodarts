@@ -1,0 +1,19 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: How a page gets the cards
+  accDescr: Every page loads homedarts-strategy.js, with a stand-in for each card and for the strategy and the entries of the pickers. A page where nothing asks for a card ends there, with less than 20 KB. The settings, the state or the place on the page of a card, its form, its stub in the card picker or the automatic dashboard import homedarts-card.js with its texts; a failed load is tried again with the next update of Home Assistant. Then each stand-in becomes its card, as the same element, and gets what it kept. Every further element of its type is a card at once.
+
+  PAGE["Every page loads homedarts-strategy.js:<br/>stand-ins for the cards and the strategy,<br/>the entries of the pickers"] --> ASK{{"Does anything ask for a card?"}}
+  ASK -->|"No"| SMALL["The page ends there:<br/>less than 20 KB"]
+  ASK -->|"Yes"| IMPORT["Its settings, state, place or form, the card picker<br/>or the automatic dashboard import homedarts-card.js<br/>with its texts; after a failed load, the next update does"]
+  IMPORT --> BECOME["Each stand-in becomes its card,<br/>as the same element, and gets what it kept"]
+  BECOME --> NEXT["Every further element<br/>of its type is a card at once"]
+
+  classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class ASK bot
+  class SMALL,NEXT done

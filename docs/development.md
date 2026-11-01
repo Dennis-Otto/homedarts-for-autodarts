@@ -11,8 +11,8 @@ description: "Develop the integration: the building blocks of the cards, the tes
 | Path | Contents |
 | --- | --- |
 | `custom_components/homedarts/` | The integration |
-| `custom_components/homedarts/frontend/homedarts-card.js` | The seven dashboard cards, served by the integration |
-| `custom_components/homedarts/frontend/homedarts-strategy.js` | The automatic dashboard's strategy element alone, registered before Home Assistant's five seconds run out; it loads the rest from `homedarts-card.js` |
+| `custom_components/homedarts/frontend/homedarts-card.js` | The seven dashboard cards, served by the integration and imported with the first card on a page |
+| `custom_components/homedarts/frontend/homedarts-strategy.js` | What [every page gets](#how-a-page-gets-the-cards): stand-ins for the seven cards and the automatic dashboard's strategy element, registered before Home Assistant's five seconds run out, with the texts of the pickers; they load the rest from `homedarts-card.js` |
 | `custom_components/homedarts/frontend/text/` | The [texts of the cards](#texts-of-the-cards), one module per language, which `homedarts-card.js` imports |
 | `blueprints/automation/homedarts/` | Automation blueprints |
 | `custom_components/homedarts/blueprints/` | The [blueprints of the release package](#blueprints-in-the-release-package), a copy of `blueprints/` with the fingerprint of every version in `blueprint_versions.json` |
@@ -208,6 +208,7 @@ A real board makes a recording with `python scripts/capture_board.py <address of
 `tests/e2e/browser.sh` checks the cards in Chromium, in WebKit for Safari and in Firefox, against the demo:
 
 - the cards are registered on every load;
+- a dashboard without a darts card: it loads only the small module, less than 20 KB, and never `homedarts-card.js`, while the pickers offer every card; the first card on the page then loads the module once;
 - the live visit, highlights and controls with confirmation;
 - the practice game, match and training games;
 - the training heatmap with dart positions, history and sessions, and the status card;
@@ -593,7 +594,7 @@ A check that fails explains itself, also to a contributor from a fork: the [PR c
 | *render (…)* and *compare (…)* of the visual check | `tests/e2e/visual.sh` for the group and the language | by a person; an image that only looks different is no failure, the screenshot bot renders it after the merge |
 | the step *Checks of this project* of `scripts/check.sh` | the license, ESLint and the tests of the cards and of the translation bot with Node | by the fix bot, as far as a command can |
 
-What a command can fix, the fix bot fixes. When the check *check (home-assistant)* fails, it runs the commands of `autofix` of every step of `scripts/check.sh`; the step *Checks of this project* names ESLint's fixes of the cards, `python scripts/sync_translations.py` and `python scripts/ship_blueprints.py`. The sync of the translations copies `strings.json` to `translations/en.json` and puts the texts of every other language in the order of `strings.json`, without those that it no longer has; a text that a language misses stays for a person: write it in the language, or ask in the pull request for a maintainer or a native speaker to add it before the merge ([translations](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations)). After the checks, the bot commits the files that changed onto the branch of the pull request, or suggests them at their lines on a pull request from a fork, and `python3 .github/blueprint.py fix run` makes the same fixes on your machine. Both reach the step *Checks of this project* once the blueprint finds a step inside an `if` of `scripts/check.sh` ([Dennis-Otto/repo-blueprint#351](https://github.com/Dennis-Otto/repo-blueprint/issues/351)); until then, run its three commands yourself.
+What a command can fix, the fix bot fixes. When the check *check (home-assistant)* fails, it runs the commands of `autofix` of every step of `scripts/check.sh`; the step *Checks of this project* names ESLint's fixes of the cards, `python scripts/sync_translations.py` and `python scripts/ship_blueprints.py`. The sync of the translations copies `strings.json` to `translations/en.json`, puts the texts of every other language in the order of `strings.json`, without those that it no longer has, and copies the texts `picker_*` of the cards to the table of `homedarts-strategy.js`; a text that a language misses stays for a person: write it in the language, or ask in the pull request for a maintainer or a native speaker to add it before the merge ([translations](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations)). After the checks, the bot commits the files that changed onto the branch of the pull request, or suggests them at their lines on a pull request from a fork, and `python3 .github/blueprint.py fix run` makes the same fixes on your machine. Both reach the step *Checks of this project* once the blueprint finds a step inside an `if` of `scripts/check.sh` ([Dennis-Otto/repo-blueprint#351](https://github.com/Dennis-Otto/repo-blueprint/issues/351)); until then, run its three commands yourself.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/check-coach-dark.png">
@@ -826,14 +827,27 @@ The job *issue-assistant* of the **Lint** workflow runs the action's `check`: it
 
 ## Texts of the cards
 
-The texts of the cards are one module per language in `custom_components/homedarts/frontend/text/`, `export default` followed by JSON, so that a translator edits one small file and every tool reads it alike: the consistency tests, the browser test and the [translation bot](#translation-bot) drop the lines of comments and read the rest as JSON. `homedarts-card.js` imports each file and puts them together in `TEXT`; `tests/test_consistency.py` checks the files, their imports and their keys ([decision 0019](decisions/0019-card-texts-per-language.md)).
+The texts of the cards are one module per language in `custom_components/homedarts/frontend/text/`, `export default` followed by JSON, so that a translator edits one small file and every tool reads it alike: the consistency tests, the browser test and the [translation bot](#translation-bot) drop the lines of comments and read the rest as JSON. `homedarts-card.js` imports each file and puts them together in `TEXT`; `tests/test_consistency.py` checks the files, their imports and their keys ([decision 0019](decisions/0019-card-texts-per-language.md)). The small module of every page imports none of them, so it has a copy of the texts `picker_*` for the pickers: `python scripts/sync_translations.py` writes it, and `tests/test_sync_translations.py` fails when the two differ.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/card-files-dark.png">
-  <img src="images/en/card-files-light.png" alt="How a browser gets the cards and their texts: at every start, the integration digests every file of the cards, both modules and the texts of each language. Version and digest name a folder such as /homedarts/1.16.0-0123abcd/, from which every page loads homedarts-strategy.js and homedarts-card.js. The card module imports text/en.js, text/de.js and the other languages beside it, from the same folder, and the browser keeps every file of the folder for a month. A release, or a text changed in one language, gives a new folder for every file, so no browser mixes files of two versions." width="560">
+  <img src="images/en/card-files-light.png" alt="How a browser gets the cards and their texts: at every start, the integration digests every file of the cards, both modules and the texts of each language. Version and digest name a folder such as /homedarts/1.16.0-0123abcd/, from which every page loads homedarts-strategy.js, and the first card on a page homedarts-card.js. The card module imports text/en.js, text/de.js and the other languages beside it, from the same folder, and the browser keeps every file of the folder for a month. A release, or a text changed in one language, gives a new folder for every file, so no browser mixes files of two versions." width="560">
 </picture>
 
-The integration serves every file of the folder at `/homedarts/<version>-<digest>/<path>`, compressed, and hands both modules to every page at those addresses (`card.py`). Relative imports keep the folder, so a change of any file, also of one text, moves all of them to new addresses, and no browser keeps an old text beside a new card. The folder of a version that has gone and the addresses without a version serve today's files, which browsers ask for again on every load.
+The integration serves every file of the folder at `/homedarts/<version>-<digest>/<path>`, compressed, and hands the small module to every page at its address (`card.py`), which imports the card module beside it. Relative imports keep the folder, so a change of any file, also of one text, moves all of them to new addresses, and no browser keeps an old text beside a new card. The folder of a version that has gone and the addresses without a version serve today's files, which browsers ask for again on every load.
+
+## How a page gets the cards
+
+Home Assistant loads the module of an integration on every page and on every start of its app, for every user. So the only one it gets is `homedarts-strategy.js`, less than 20 KB ([decision 0028](decisions/0028-the-cards-load-on-first-use.md)): a stand-in for each card and for the strategy, and the entries of the card picker and of the "Add dashboard" dialog.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/card-loading-dark.png">
+  <img src="images/en/card-loading-light.png" alt="How a page gets the cards: every page loads homedarts-strategy.js, with a stand-in for each card and for the strategy and the entries of the pickers. A page where nothing asks for a card ends there, with less than 20 KB. The settings, the state or the place on the page of a card, its form, its stub in the card picker or the automatic dashboard import homedarts-card.js with its texts; a failed load is tried again with the next update of Home Assistant. Then each stand-in becomes its card, as the same element, and gets what it kept. Every further element of its type is a card at once." width="560">
+</picture>
+
+A stand-in keeps the settings, the state and whatever else Home Assistant sets on it, and answers `getCardSize` and `getGridOptions` with what its card answers for the default settings; `tests/frontend/strategy-loader.test.mjs` compares them. When the module is there, the element takes the prototype of its card and the constructors of the card run on it, through a base class that returns the element instead of making one. So Home Assistant keeps its reference to the element, and nothing about the card is different from then on. Only the browser goes on calling `connectedCallback` and `disconnectedCallback` of the stand-in, which it read when the element was defined; they hand on to the card. Settings that `setConfig` of the card refuses make the stand-in ask Home Assistant to build it anew with `ll-rebuild`, which shows the error on the dashboard as for any card.
+
+`homedarts-card.js` still registers everything when it is alone on a page, as in the demo of the website. Next to the stand-ins, it leaves what is there and only adds the editor of the strategy.
 
 ## Translation bot
 

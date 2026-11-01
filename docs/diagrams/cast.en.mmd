@@ -5,12 +5,12 @@ config:
 ---
 flowchart TB
   accTitle: How the cards reach a TV through Home Assistant Cast
-  accDescr: A phone at cast.home-assistant.io or the action cast.show_lovelace_view casts a dashboard. The Chromecast opens the receiver of Home Assistant Cast, which signs in to Home Assistant over HTTPS and reads the dashboard and its resources. The integration keeps both of its modules there, at the address of its version, from every start of Home Assistant until its last board is deleted. The receiver loads the strategy and the cards from Home Assistant, and the TV shows the dashboard with the scoreboard.
+  accDescr: A phone at cast.home-assistant.io or the action cast.show_lovelace_view casts a dashboard. The Chromecast opens the receiver of Home Assistant Cast, which signs in to Home Assistant over HTTPS and reads the dashboard and its resources. The integration keeps its small module there, at the address of its version, from every start of Home Assistant until its last board is deleted. The receiver loads the module from Home Assistant, which brings the cards along for the first card of the dashboard, and the TV shows the dashboard with the scoreboard.
 
   CAST["A phone at cast.home-assistant.io,<br/>or the action cast.show_lovelace_view"] --> RECEIVER["The Chromecast opens the receiver<br/>of Home Assistant Cast"]
   RECEIVER --> HA{{"Home Assistant over HTTPS:<br/>the dashboard and its resources"}}
-  KEEP["The integration keeps both modules<br/>in the resources, at the address of its<br/>version, until its last board is deleted"] --> HA
-  HA --> LOAD["The receiver loads homedarts-strategy.js<br/>and homedarts-card.js from Home Assistant"]
+  KEEP["The integration keeps its small module<br/>in the resources, at the address of its<br/>version, until its last board is deleted"] --> HA
+  HA --> LOAD["The receiver loads homedarts-strategy.js,<br/>which brings the cards along for the first card"]
   LOAD --> TV["The TV shows the dashboard<br/>with the scoreboard"]
 
   classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px

@@ -5,12 +5,12 @@ config:
 ---
 flowchart TB
   accTitle: Wie die Karten über Home Assistant Cast auf einen Fernseher kommen
-  accDescr: Ein Handy auf cast.home-assistant.io oder die Aktion cast.show_lovelace_view streamt ein Dashboard. Der Chromecast öffnet den Empfänger von Home Assistant Cast, der sich über HTTPS bei Home Assistant anmeldet und das Dashboard und seine Ressourcen liest. Die Integration hält ihre beiden Module dort, unter der Adresse ihrer Version, von jedem Start von Home Assistant, bis ihr letztes Board gelöscht ist. Der Empfänger lädt die Strategie und die Karten von Home Assistant, und der Fernseher zeigt das Dashboard mit der Anzeigetafel.
+  accDescr: Ein Handy auf cast.home-assistant.io oder die Aktion cast.show_lovelace_view streamt ein Dashboard. Der Chromecast öffnet den Empfänger von Home Assistant Cast, der sich über HTTPS bei Home Assistant anmeldet und das Dashboard und seine Ressourcen liest. Die Integration hält ihr kleines Modul dort, unter der Adresse ihrer Version, von jedem Start von Home Assistant, bis ihr letztes Board gelöscht ist. Der Empfänger lädt das Modul von Home Assistant, das für die erste Karte des Dashboards die Karten nachholt, und der Fernseher zeigt das Dashboard mit der Anzeigetafel.
 
   CAST["Ein Handy auf cast.home-assistant.io<br/>oder die Aktion cast.show_lovelace_view"] --> RECEIVER["Der Chromecast öffnet den Empfänger<br/>von Home Assistant Cast"]
   RECEIVER --> HA{{"Home Assistant über HTTPS:<br/>das Dashboard und seine Ressourcen"}}
-  KEEP["Die Integration hält beide Module<br/>in den Ressourcen, unter der Adresse<br/>ihrer Version, bis ihr letztes Board<br/>gelöscht ist"] --> HA
-  HA --> LOAD["Der Empfänger lädt homedarts-strategy.js<br/>und homedarts-card.js von Home Assistant"]
+  KEEP["Die Integration hält ihr kleines Modul<br/>in den Ressourcen, unter der Adresse<br/>ihrer Version, bis ihr letztes Board<br/>gelöscht ist"] --> HA
+  HA --> LOAD["Der Empfänger lädt homedarts-strategy.js,<br/>das für die erste Karte die Karten nachholt"]
   LOAD --> TV["Der Fernseher zeigt das Dashboard<br/>mit der Anzeigetafel"]
 
   classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
