@@ -446,7 +446,8 @@ def test_a_job_waits_for_its_hosts_before_any_step_that_could_need_them(key):
 # Harden-Runner lets it through and logs no drop: in two runs of the visual check, it
 # kept 11 of the 16 jobs waiting, up to 125 s, and no other host kept any. Only
 # tests/e2e/pngquant.sh needs it, in the container of the images, with lookups that
-# Harden-Runner answers, long after the minute of the cache of systemd-resolved.
+# Harden-Runner answers, about two minutes into the job, after the minute of the
+# cache of systemd-resolved.
 NOT_ASKED = {"launchpad.net:443"}
 
 
