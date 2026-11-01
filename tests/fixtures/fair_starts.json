@@ -1,0 +1,15 @@
+[
+  { "why": "half the average, half the score", "game": 501, "averages": [60, 30], "starts": [0, 250] },
+  { "why": "the strongest player may sit anywhere", "game": 501, "averages": [45, 60], "starts": [380, 0] },
+  { "why": "three players, one without history", "game": 301, "averages": [80, 40, null], "starts": [0, 150, 0] },
+  { "why": "four players", "game": 701, "averages": [90, 60, 45, 30], "starts": [0, 470, 350, 230] },
+  { "why": "the lowest start score is 101", "game": 301, "averages": [100, 20], "starts": [0, 101] },
+  { "why": "in 101 nobody can start lower", "game": 101, "averages": [60, 30], "starts": [0, 0] },
+  { "why": "a close average rounds down to 10", "game": 501, "averages": [60, 59.9], "starts": [0, 500] },
+  { "why": "half up, not half to even", "game": 1001, "averages": [1001, 245], "starts": [0, 250] },
+  { "why": "equal players keep the game's score", "game": 501, "averages": [50, 50], "starts": [0, 0] },
+  { "why": "one known average has nobody to compare with", "game": 501, "averages": [50, null], "starts": [0, 0] },
+  { "why": "no average of 0, as no darts counted", "game": 501, "averages": [0, 50], "starts": [0, 0] },
+  { "why": "nobody has history", "game": 501, "averages": [null, null], "starts": [0, 0] },
+  { "why": "nobody at all", "game": 501, "averages": [], "starts": [] }
+]

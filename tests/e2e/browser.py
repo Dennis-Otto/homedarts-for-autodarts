@@ -1040,6 +1040,12 @@ def lobby(browser: Browser) -> None:
         suggested[:3] == ["Alex⌂", "Sam⌂", "Kim"],
         f"Suggestions {suggested}",
     )
+    # In X01, a fair start is an option that goes on and off.
+    page.locator(f"{card} .game[data-value='501']").click()
+    fair = page.locator(f"{card} [data-lobby='toggle'][data-value='fair_start']")
+    fair.click()
+    check(fair.get_attribute("aria-pressed") == "true", "A fair start stays off")
+    fair.click()
     page.locator(f"{card} .game[data-value='cricket']").click()
     page.locator(f"{card} .suggestion", has_text="Sam").click()
     name = page.locator(f"{card} .lobby-name")
