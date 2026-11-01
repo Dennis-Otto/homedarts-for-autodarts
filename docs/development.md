@@ -338,7 +338,7 @@ Each job of a group lists the seconds of its sections in its summary, and the lo
 | Group | Sections | Seconds of the sections | The job |
 | --- | --- | ---: | ---: |
 | 1 | cards, live, practice, games | 335 | 8 min |
-| 2 | more games, setup | 329 | 8 min |
+| 2 | more games, setup | 313 | 8 min |
 | 3 | people, manual | 260 | 7 min |
 | 4 | corrections, formats, tournaments, calendar | 293 | 7 min |
 

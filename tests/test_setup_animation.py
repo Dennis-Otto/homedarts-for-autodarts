@@ -1,6 +1,7 @@
 """The animation of the quick start shows how little setup it takes: it comes from the
 screenshot tool alone, stays small, reads on a phone and describes every step."""
 
+import ast
 import re
 from pathlib import Path
 
@@ -58,6 +59,43 @@ def test_the_screenshot_tool_makes_the_animation():
     assert 'recorder.save("setup", width=SETUP_WIDTH)' in TOOL.read_text(
         encoding="utf-8"
     )
+
+
+class Letters:
+    """A font whose letters are all one unit wide."""
+
+    @staticmethod
+    def getlength(text: str) -> int:
+        return len(text)
+
+
+def caption_lines(text: str, width: int) -> list[str]:
+    """The function of the screenshot tool, without the browser that the tool needs."""
+    tree = ast.parse(TOOL.read_text(encoding="utf-8"))
+    found = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "caption_lines"
+    )
+    found.args.args[1].annotation = found.args.args[2].annotation = None
+    found.returns = None
+    scope: dict = {}
+    exec(compile(ast.Module([found], []), str(TOOL), "exec"), scope)
+    return scope["caption_lines"](text, Letters, width)
+
+
+def test_a_caption_takes_two_lines_at_most():
+    assert caption_lines("one two", 10) == ["one two"]
+    assert caption_lines("one two three", 10) == ["one two", "three"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["toolongforaline word", "word toolongforaline", "one two three four five six"],
+)
+def test_a_caption_that_does_not_fit_fails_clearly(text):
+    with pytest.raises(ValueError, match="does not fit"):
+        caption_lines(text, 10)
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

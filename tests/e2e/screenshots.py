@@ -3691,7 +3691,7 @@ def caption_lines(text: str, font: ImageFont.FreeTypeFont, width: float) -> list
             lines[-1] = joined
         else:
             lines.append(word)
-    if len(lines) > 2 or font.getlength(lines[0]) > width:
+    if len(lines) > 2 or any(font.getlength(line) > width for line in lines):
         raise ValueError(f"The caption does not fit in two lines: {text}")
     return lines
 
@@ -3756,7 +3756,6 @@ def tap_to(
     target,
     arrives,
     hold: int,
-    press: Callable[[], object] | None = None,
     step: int | None = None,
 ) -> None:
     """Show the finger on the target, tap it, and show what it opens once it has, under
@@ -3765,7 +3764,7 @@ def tap_to(
     page.evaluate(TAP, [box["x"] + box["width"] / 2, box["y"] + box["height"] / 2])
     recorder.shot(600)
     page.evaluate(UNTAP)
-    (press or target.click)()
+    target.click()
     arrives.wait_for(timeout=30000)
     rest_pointer(page)
     quiet(page)
@@ -3774,8 +3773,8 @@ def tap_to(
 
 
 def setup_animation(page: Page) -> None:
-    """The way from the discovered board to the scoreboard, as a new user goes it, in
-    one go through the app and at the pace of a hand on a phone."""
+    """The way from the discovered board to the scoreboard, as a new user goes it,
+    through the app and at the pace of a hand on a phone, with one cut to the settings."""
     words = SETUP_BUTTONS[LANGUAGE]
 
     def button(name: str):
@@ -3803,16 +3802,14 @@ def setup_animation(page: Page) -> None:
     # Settings, Dashboards, Add dashboard.
     recorder.step = 3
     settings = page.locator("a[href='/config/lovelace/dashboards']").first
-    # The arrow of the page goes back through the integrations and the steps that the
-    # dialogs of the setup left in the history of the browser: straight to the settings.
-    tap_to(
-        page,
-        recorder,
-        page.locator("ha-icon-button-arrow-prev").first,
-        settings,
-        1800,
-        press=lambda: page.evaluate(NAVIGATE, "/config/dashboard"),
-    )
+    # No single tap leads there: the arrow of the page goes back through the integrations
+    # and the steps that the dialogs of the setup left in the history of the browser. So
+    # the picture cuts to the settings without showing a tap, and the caption names the way.
+    page.evaluate(NAVIGATE, "/config/dashboard")
+    settings.wait_for(timeout=30000)
+    rest_pointer(page)
+    quiet(page)
+    recorder.shot(1800)
     settings.scroll_into_view_if_needed()
     add_dashboard = button("add dashboard")
     tap_to(page, recorder, settings, add_dashboard, 1600)
@@ -4181,8 +4178,8 @@ SECONDS = {
     "practice": 25.0,
     "games": 240.0,
     "more games": 284.0,
-    # Came later, not of that run: 26 s on a desktop computer, more on a runner.
-    "setup": 45.0,
+    # Came later: the mean of both languages in run 41328996823.
+    "setup": 29.0,
     "people": 214.0,
     "corrections": 53.0,
     "formats": 122.0,
