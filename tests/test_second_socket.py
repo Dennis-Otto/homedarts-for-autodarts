@@ -48,14 +48,17 @@ from .test_board_manager_2_1 import (
     LEFT_OVER,
     THROWN,
     answer,
+    empty_takeout,
     fired_kinds,
     frames,
     motion_2_1,
     reads_of,
     reread,
+    resets,
     running_2_1,
 )
 from .test_realtime import REAL_EVENTS, Socket, entity_events
+from .test_stuck_takeout import pass_time
 
 SECOND_SOCKET = RECORDINGS / "2.1.0" / "ws-system-frames.jsonl"
 STOPPED = {"connected": True, "event": "stopped", "running": False, "status": "stopped"}
@@ -683,3 +686,17 @@ async def test_a_hand_in_a_frame_holds_back_a_stuck_takeout_at_once(
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
     receive(coordinator, motion())
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+
+
+async def test_with_frames_a_stuck_takeout_needs_no_look_at_the_board_before_its_reset(
+    hass, aioclient_mock, freezer
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    coordinator.stream_connected = True
+    coordinator._async_unsub_refresh()
+    # The frames say what the board shows: this read would hold the reset back.
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
+    for _ in range(11):
+        receive(coordinator, motion())
+        await pass_time(hass, freezer, 1)
+    assert resets(aioclient_mock) == 1

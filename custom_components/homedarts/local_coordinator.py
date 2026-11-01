@@ -666,9 +666,10 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             self._takeout_unsub = None
 
     async def _hand_may_have_come(self) -> bool:
-        """Whether Board Manager 2.1 shows a hand by now: its socket announces none,
-        and the last read may be seconds old. No answer can't rule one out."""
-        if not self.client.interface_2_1:
+        """Whether Board Manager 2.1 shows a hand by now: its first socket announces
+        none, and the last read may be seconds old. No answer can't rule one out. With
+        frames of the motion, a hand would have ended this wait already."""
+        if not self.client.interface_2_1 or self._motion_frames_arrive():
             return False
         try:
             system = await self.client.get_system()
