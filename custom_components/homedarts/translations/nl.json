@@ -112,7 +112,7 @@
     },
     "flow_title": "{name}",
     "create_entry": {
-      "default": "Het bord is ingesteld. Voor een kant-en-klaar dashboard met scorebord, training en statistieken open je **Instellingen → Dashboards → Dashboard toevoegen** en kies je **HomeDarts**."
+      "default": "Het bord is ingesteld. Voor een kant-en-klaar dashboard met scorebord, training en statistieken open je **Instellingen → Dashboards → Voeg dashboard toe** en kies je **HomeDarts**."
     }
   },
   "options": {

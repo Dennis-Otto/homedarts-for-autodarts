@@ -14,7 +14,7 @@ social: { cards_layout_options: { title: "Tu diana Autodarts en directo en Home 
 
 **Tu diana Autodarts en directo en Home Assistant: local, en tiempo real y lista para automatizaciones.**
 
-HomeDarts for Autodarts lleva tu diana Autodarts a Home Assistant: un dardo aparece una fracción de segundo después de clavarse, directamente desde el Board Manager de tu red. Cualquier otra diana también juega, con sus dardos introducidos a mano o enviados por una Granboard. Juega y entrena con ella, pon un marcador junto a la diana, sigue tus estadísticas y deja que tu casa participe. Sin cuenta, sin nube, sin ID de cliente.
+HomeDarts for Autodarts lleva tu diana Autodarts a Home Assistant: un dardo aparece una fracción de segundo después de clavarse, directamente desde el Board Manager de tu red. Cualquier otra diana también sirve, con sus dardos introducidos a mano o enviados por una Granboard. Juega y entrena con ella, pon un marcador junto a la diana, sigue tus estadísticas y deja que tu casa participe. Sin cuenta, sin nube, sin ID de cliente.
 
 HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación con Autodarts. Hasta la versión 1.18 se llamaba Autodarts: [From Autodarts to HomeDarts](new-name.md) explica el nuevo nombre y cómo HomeDarts transfiere tus dianas.
 
@@ -35,7 +35,7 @@ HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación
 
     ---
 
-    Se encuentra sola con Board Manager 2; Board Manager 1 también funciona. Nada sale de tu red, salvo que uses la búsqueda de dianas o el puente en línea, y los secretos de la diana nunca se guardan.
+    Se detecta automáticamente con Board Manager 2; Board Manager 1 también funciona. Nada sale de tu red, salvo que uses la búsqueda de dianas o el puente en línea, y los secretos de la diana nunca se guardan.
 
     [:octicons-arrow-right-24: How it works](how-it-works.md)
 
@@ -69,33 +69,33 @@ HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animación: el mapa de aciertos pasa de los sectores a los números y a las posiciones reales de los dardos, y luego a los dardos de un jugador](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animación: el mapa de calor pasa de los sectores a los números y a las posiciones reales de los dardos, y luego a los dardos de un jugador](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Estadísticas con mapas de aciertos**
+    :material-chart-line:{ .lg .middle } **Estadísticas con mapas de calor**
 
     ---
 
-    Media de 3 dardos, media de los 9 primeros, porcentaje de cierre y de dobles, un mapa de aciertos de cada sector o de las posiciones reales de los dardos, y dónde puntúa más cada jugador por dardo. Perfiles de jugador con insignias, tendencias semanales, una clasificación, un informe semanal y un calendario de entrenamiento.
+    Media de 3 dardos, media First 9, porcentaje de cierre y de dobles, un mapa de calor de cada sector o de las posiciones reales de los dardos, y dónde puntúa más cada jugador por dardo. Perfiles de jugador con insignias, tendencias semanales, una clasificación, un informe semanal y un calendario de entrenamiento.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
-- ![La galería de momentos destacados en el explorador multimedia de Home Assistant, con fotos de un cierre y dos tiradas altas](images/en/media-gallery.png){ loading=lazy }
+- ![La galería de fotos destacadas en el explorador multimedia de Home Assistant, con fotos de un cierre y dos tiradas altas](images/en/media-gallery.png){ loading=lazy }
 
     :material-home-automation:{ .lg .middle } **Automatizaciones y blueprints**
 
     ---
 
-    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Dieciséis blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, locutores de dardos y de entrenamiento, fotos de momentos destacados, informes, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
+    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Dieciséis blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, locutores de dardos y de entrenamiento, fotos destacadas, informes, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
-- ![Animación: el cuadro de eliminatorias de cinco jugadores en el marcador, hasta que Alex gana la final](images/en/tournament-bracket.webp){ loading=lazy }
+- ![Animación: el cuadro de eliminación directa de cinco jugadores en el marcador, hasta que Alex gana la final](images/en/tournament-bracket.webp){ loading=lazy }
 
     :material-tournament:{ .lg .middle } **Torneos y un bot**
 
     ---
 
-    Torneos de tres a 32 jugadores, como liguilla con clasificación, eliminatoria, doble eliminación o grupos con eliminatoria, en una diana o en varias a la vez, y un bot del nivel 20 al 120 contra el que jugar X01 y Cricket.
+    Torneos de tres a 32 jugadores, como todos contra todos con clasificación, eliminación directa, doble eliminación o grupos y eliminación directa, en una diana o en varias a la vez, y un bot del nivel 20 al 120 contra el que jugar X01 y Cricket.
 
     [:octicons-arrow-right-24: Tournaments](games.md#tournaments) · [The bot](games.md#playing-against-the-bot)
 
@@ -132,27 +132,27 @@ Frente a la aplicación de Autodarts con la extensión Tools for Autodarts, dart
 
 - **Sin nube:** HomeDarts habla con la interfaz local del Board Manager y no necesita una cuenta de Autodarts.
 - **Entidades y eventos en Home Assistant:** un evento para cada dardo, tirada, retirada de dardos, bust, leg y partido, y dieciséis blueprints que hacen algo con ellos desde el principio.
-- **Estadísticas en casa:** medias, mapas de aciertos, perfiles y un año de historial, guardados en Home Assistant.
+- **Estadísticas en casa:** medias, mapas de calor, perfiles y un año de historial, guardados en Home Assistant.
 - **También sin diana Autodarts:** en un teclado numérico o con una Granboard por Bluetooth *(experimental)*.
 - **Gratis:** código abierto con licencia MIT, sin versión de pago.
 
-[Coming from another tool](coming-from.md) lo compara todo, con las fuentes, y muestra cómo cambiar *(en inglés)*.
+[Coming from another tool](coming-from.md) lo compara todo, con las fuentes, y muestra cómo pasar a HomeDarts *(en inglés)*.
 
 ## Guías
 
 - :material-rocket-launch: [**De cero al marcador**](getting-started.es.md): Home Assistant, HACS, la integración y la primera partida, para jugadores de Autodarts que no conocen Home Assistant
-- :material-download: [**Instalación y configuración**](installation.es.md): los requisitos, HACS o a mano, y las formas de añadir una diana
+- :material-download: [**Instalación y configuración**](installation.es.md): los requisitos, HACS o manualmente, y las formas de añadir una diana
 - :material-frequently-asked-questions: [**Preguntas frecuentes**](faq.es.md): la cuenta, los dispositivos, el juego en línea, la privacidad, varias dianas, las pantallas, los idiomas y las actualizaciones
 
 En inglés:
 
 - :material-pencil: [**Play without Autodarts**](without-autodarts.md): cualquier diana, con todos los juegos, el entrenamiento y las estadísticas, los dardos introducidos en un teclado numérico
 - :material-bluetooth: [**Granboard over Bluetooth**](granboard.md): los dardos de una Granboard por el Bluetooth de Home Assistant y los proxies de ESPHome *(experimental)*
-- :material-swap-horizontal: [**Coming from another tool**](coming-from.md): las otras integraciones, los puentes MQTT, darts-caller, darts-wled y Tools for Autodarts comparados, y cómo cambiar
+- :material-swap-horizontal: [**Coming from another tool**](coming-from.md): las otras integraciones, los puentes MQTT, darts-caller, darts-wled y Tools for Autodarts comparados, y cómo pasar a HomeDarts
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md): el nuevo nombre desde la versión 2.0, y cómo HomeDarts transfiere tus dianas
 - :material-bullseye-arrow: [**Games and rules**](games.md): cada juego de un vistazo, cuatro formas de empezar uno, partidos, equipos, hándicaps, el bull-off y los torneos
 - :material-television: [**Scoreboard at the board**](scoreboard.md): una tableta o un televisor junto a la diana, en horizontal y en vertical, la pantalla de nueva partida, el locutor y el modo de espera
-- :material-chart-line: [**Statistics and players**](statistics.md): sesiones, récords personales, mapas de aciertos, dónde apuntar, progreso, perfiles, logros y la clasificación
+- :material-chart-line: [**Statistics and players**](statistics.md): sesiones, récords personales, mapas de calor, dónde apuntar, progreso, perfiles, logros y la clasificación
 - :material-home-automation: [**Automations**](automations.md): dieciséis blueprints, sus ajustes, los eventos de la diana y ejemplos listos para usar
 - :material-play-network: [**Online matches**](online-matches.md): busts, legs y partidos ganados de los partidos en línea como eventos de la diana, con Tools for Autodarts *(experimental)*
 
@@ -208,10 +208,10 @@ Lo que trajo cada versión está en el [registro de cambios](changelog.md), lo q
 - **Home Assistant** 2026.8 o posterior.
 - **Sin Autodarts:** cualquier diana, con los dardos introducidos en un teclado numérico.
 
-Funciona todo hardware en el que corra el Board Manager de Autodarts, porque la integración habla con el Board Manager y no con las cámaras. [Supported devices](README.md#supported-devices) tiene la tabla completa. ¿Tu equipo no aparece? Un [informe de compatibilidad](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) nos ayuda, aunque todo funcione.
+Funciona cualquier hardware en el que se ejecute el Board Manager de Autodarts, porque la integración habla con el Board Manager y no con las cámaras. [Supported devices](README.md#supported-devices) tiene la tabla completa. ¿Tu equipo no aparece? Un [informe de compatibilidad](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) nos ayuda, aunque todo funcione.
 
 ## Idiomas
 
-La integración habla español, inglés, alemán, neerlandés y francés: la configuración, las opciones, las entidades y sus estados, las acciones, los mensajes y las reparaciones, las tarjetas con sus editores y el locutor del marcador. Sigue el idioma de Home Assistant; una variante regional como `es-419` cuenta como su idioma.
+La integración habla español, inglés, alemán, neerlandés y francés: la configuración, las opciones, las entidades y sus estados, las acciones, los mensajes y las reparaciones, las tarjetas con sus editores y el locutor del marcador. Sigue el idioma de Home Assistant; una variante regional como `es-419` cuenta como ese idioma.
 
-Este sitio está en inglés y alemán, y el inicio, el inicio rápido, la instalación y las preguntas frecuentes también en neerlandés, francés y español. Las demás páginas las muestra en inglés. ¿Hablas español? [Ayúdanos a traducir](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/482): corrige una frase o traduce una página que eches de menos, directamente en GitHub, sin programar.
+Este sitio está en inglés y alemán, y el inicio, el inicio rápido, la instalación y las preguntas frecuentes también en neerlandés, francés y español. Las demás páginas las muestra en inglés. ¿Hablas español? [Ayúdanos a traducir](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations): corrige una frase o traduce una página que eches de menos, directamente en GitHub, sin programar.

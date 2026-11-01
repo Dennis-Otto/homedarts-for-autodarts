@@ -37,7 +37,8 @@ IN_ENGLISH = page("games.md", "nl/games.html")
 NOTE = {
     "text": "Deze pagina is er nog alleen in het Engels.",
     "link": "Help mee met de vertaling",
-    "href": "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/480",
+    "href": "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/"
+    "CONTRIBUTING.md#translations",
 }
 WITH_NOTE = SimpleNamespace(docs_dir=CONFIG.docs_dir, extra={"untranslated": NOTE})
 MKDOCS = yaml.safe_load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
@@ -160,8 +161,9 @@ def test_the_hooks_know_the_languages_of_the_website():
 @pytest.mark.parametrize("language", ["nl", "fr", "es"])
 def test_a_further_language_names_its_menu_and_notes_its_english_pages(language):
     """Its own words for the tabs, the footer, the description and the switch of
-    the theme, and the note on a page it shows in English, with the issue where
-    native speakers help to translate it."""
+    the theme, and the note on a page it shows in English, with the section of
+    the contributor guide that shows how to help to translate it, which stays when an
+    issue of the language closes."""
     i18n = MKDOCS["plugins"]["i18n"]
     settings = next(item for item in i18n["languages"] if item["locale"] == language)
     english = [next(iter(item)) for item in MKDOCS["nav"] if isinstance(item, dict)]
@@ -172,10 +174,7 @@ def test_a_further_language_names_its_menu_and_notes_its_english_pages(language)
     assert len(toggles) == len(MKDOCS["theme"]["palette"]) == len(set(toggles))
     note = settings["extra"]["untranslated"]
     assert set(note) == {"text", "link", "href"}
-    assert re.fullmatch(
-        r"https://github\.com/Dennis-Otto/homedarts-for-autodarts/issues/\d+",
-        note["href"],
-    )
+    assert note["href"] == NOTE["href"]
 
 
 def test_the_website_of_a_page_is_the_language_of_its_folder():

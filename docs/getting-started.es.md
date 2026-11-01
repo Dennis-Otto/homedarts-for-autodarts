@@ -1,5 +1,5 @@
 ---
-description: "De no tener Home Assistant al marcador en una tableta junto a tu diana Autodarts en una hora: Home Assistant, HACS, la integración y el panel."
+description: "De cero al marcador en una tableta junto a tu diana Autodarts en una hora: Home Assistant, HACS, la integración y el panel."
 ---
 
 # De cero al marcador
@@ -33,17 +33,17 @@ HACS es la tienda de integraciones y tarjetas de la comunidad, como esta. Sigue 
 
 [![Abre tu Home Assistant y muestra este repositorio en HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Dennis-Otto&repository=homedarts-for-autodarts&category=integration)
 
-1. Elige el botón de arriba y confirma la dirección de tu Home Assistant. HACS abre esta integración. Sin el botón: abre **HACS**, busca **HomeDarts** y ábrela.
-2. Elige **Descargar**.
-3. Reinicia Home Assistant: **Ajustes → Sistema**, el botón de encendido arriba a la derecha, **Reiniciar Home Assistant**.
+1. Selecciona el botón de arriba y confirma la dirección de tu Home Assistant. HACS abre esta integración. Sin el botón: abre **HACS**, busca **HomeDarts** y ábrela.
+2. Selecciona **Download**.
+3. Reinicia Home Assistant: **Configuración → Sistema**, el botón de encendido arriba a la derecha, **Reiniciar Home Assistant**.
 
 ## 4. Añadir tu diana
 
 [![Abre tu Home Assistant y empieza a configurar HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Con Board Manager 2, Home Assistant suele encontrar la diana solo: **Ajustes → Dispositivos y servicios** muestra **Diana Autodarts encontrada** en *Descubierto*. Elige **Añadir** y confirma.
+Con Board Manager 2, Home Assistant suele encontrar la diana por sí solo: **Configuración → Dispositivos y servicios** muestra **Diana Autodarts encontrada** en *Descubierto*. Selecciona **Añadir** y confirma.
 
-Si no, elige el botón de arriba y luego **Buscar dianas en esta red**, o **Introducir la dirección de la diana** con la dirección IP del PC de la diana. No necesitas una cuenta de Autodarts.
+Si no, selecciona el botón de arriba y elige **Buscar dianas en esta red**, o **Introducir la dirección de la diana** con la dirección IP del PC de la diana. No necesitas una cuenta de Autodarts.
 
 <img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="520">
 
@@ -51,15 +51,15 @@ La [guía de instalación](installation.es.md#añadir-tu-diana) explica cada for
 
 ## 5. Crear el panel
 
-Ve a **Ajustes → Paneles de control → Añadir panel de control → HomeDarts**. Un clic crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
+Ve a **Configuración → Paneles de control → Añadir panel de control → HomeDarts**. Un clic crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
 
 <img src="images/en/dashboard-strategy.png" alt="La vista de entrenamiento del panel automático" width="760">
 
 ## 6. Poner el marcador junto a la diana
 
-1. En la tableta, abre Home Assistant en el navegador o en la [aplicación de Home Assistant](https://companion.home-assistant.io/) e inicia sesión. Un usuario propio sin derechos de administrador evita que la pantalla cambie tus ajustes.
+1. En la tableta, abre Home Assistant en el navegador o en la [aplicación de Home Assistant](https://companion.home-assistant.io/) e inicia sesión. Un usuario aparte sin derechos de administrador evita que la pantalla cambie tu configuración.
 2. Abre el panel de HomeDarts y su vista *Marcador*.
-3. Pon el marcador a pantalla completa y mantén la pantalla encendida mientras la tableta se carga.
+3. Toca el botón de pantalla completa arriba a la derecha del marcador: llena la pantalla y la mantiene encendida. Donde el navegador no pueda mantenerla encendida, como en una dirección con `http://`, desactiva el apagado automático de la pantalla de la tableta; consulta [pantalla completa](scoreboard.md#full-screen).
 
 La [guía del marcador](scoreboard.md#set-up-the-screen) tiene los detalles y las opciones, como el locutor.
 
@@ -71,8 +71,8 @@ Si la diana lee mal un dardo, tócalo en la tirada y corrígelo. La [guía de lo
 
 ## Y después
 
-- **Luz y sonido:** los [blueprints](automations.md#blueprints) hacen parpadear tus luces con un 180, cantan las puntuaciones o hacen una foto de un momento destacado. Vienen con la integración y te esperan en la página de planos de Home Assistant.
-- **Tu progreso:** los récords personales, un mapa de aciertos de tus dardos, las tendencias y los logros están en la [guía de las estadísticas](statistics.md).
+- **Luz y sonido:** los [blueprints](automations.md#blueprints) hacen parpadear tus luces con un 180, cantan las puntuaciones o hacen una foto destacada. Vienen con la integración y te esperan en la página de planos de Home Assistant.
+- **Tu progreso:** los récords personales, un mapa de calor de tus dardos, las tendencias y los logros están en la [guía de las estadísticas](statistics.md).
 - **Amigos en casa:** los equipos, los hándicaps y los torneos de hasta 32 jugadores están en la [guía de los juegos](games.md).
 
 ## Si algo no funciona
