@@ -32,7 +32,11 @@ needs_jq = pytest.mark.skipif(
 )
 
 # The steps of the jobs that decide nothing.
-OTHER_STEPS = {"Explain the failure", "Wait until Harden-Runner has removed Docker"}
+OTHER_STEPS = {
+    "Explain the failure",
+    "Wait until Harden-Runner has removed Docker",
+    "Wait until Harden-Runner lets the hosts through",
+}
 
 # gh answers with the pages of the API, filtered by the --jq of the call.
 GH = """#!/usr/bin/env bash
@@ -53,7 +57,7 @@ def run_step(
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, str], str, str]:
     """Run the step of a job; the result, its outputs, its summary and the calls of gh.
     The step of the PR coach after a failure only explains it (tests/test_pr_coach.py),
-    and another waits for Harden-Runner (tests/test_workflow_network.py)."""
+    and two others wait for Harden-Runner (tests/test_workflow_network.py)."""
     (run,) = [
         step["run"]
         for step in JOBS[job]["steps"]
