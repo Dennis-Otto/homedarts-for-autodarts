@@ -368,6 +368,7 @@ Mit **Board Manager 2.1** funktioniert die Integration wie bisher, mit diesen Un
 - Der Schalter *Automatisch nachkalibrieren* ist nicht verfügbar, weil Board Manager 2.1 diese Option nicht mehr hat, und das erzeugte Dashboard lässt ihn weg. *Beim Start kalibrieren* und *Verzerrungskorrektur* bleiben.
 - Die Tasten *Kamerastreams starten* und *Kamerastreams stoppen* sind nicht verfügbar, weil Board Manager 2.1 diese Befehle nicht mehr hat. Die Liveansicht der Kameras funktioniert ohne sie.
 - *Hand erkannt*, *Bild stabil*, *Darts teilweise entfernt* und *Darts vollständig entfernt* kommen im Moment ihrer Änderung über den zweiten Socket des Boards, `/api/events/system`. Nur wenn dieser Socket ausbleibt, aktualisieren sie sich alle 2 Sekunden, solange die Erkennung läuft, und eine Hand, die nur einen Moment am Board ist, kann dann fehlen.
+- Ein Board, das [ständig eine Hand sieht](https://dennis-otto.github.io/homedarts-for-autodarts/de/entities.html#eine-hand-die-das-board-ständig-sieht), erkennt keine Darts, und eine Kalibrierung löst das nicht: Ein echtes Board tat das, als sein Lichtring bei laufender Erkennung eingeschaltet wurde. Ein Reparaturhinweis sagt das und startet die Erkennung neu. Schaltet eine Routine das Licht, schalte es, bevor die Erkennung startet, oder starte die Erkennung danach neu.
 
 ## Sprachen
 

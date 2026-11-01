@@ -101,6 +101,36 @@ class CalibrationFlow(RepairsFlow):
         return self.async_create_entry(data={})
 
 
+class StuckHandFlow(RepairsFlow):
+    """The board sees a hand all the time: stop and start its detection once
+    confirmed, which cleared it on a real board."""
+
+    def __init__(self, entry_id: str) -> None:
+        self._entry_id = entry_id
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        return await self.async_step_confirm()
+
+    async def async_step_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        if user_input is None:
+            return self.async_show_form(step_id="confirm")
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        loaded = entry is not None and entry.state is ConfigEntryState.LOADED
+        coordinator = entry.runtime_data.local if entry and loaded else None
+        # Only Board Manager 2.1 raises this notice, so a client is there when it's loaded.
+        if not isinstance(coordinator, AutodartsLocalCoordinator):
+            return self.async_abort(reason="board_unavailable")
+        try:
+            await coordinator.async_restart_detection()
+        except HomeAssistantError:
+            return self.async_abort(reason="restart_failed")
+        return self.async_create_entry(data={})
+
+
 class BoardMovedFlow(RepairsFlow):
     """The board answers at another address: switch to it once confirmed."""
 
@@ -238,6 +268,8 @@ async def async_create_fix_flow(
         return BoardMovedFlow(data)
     if issue_id.startswith("calibration_"):
         return CalibrationFlow(str(data.get("entry_id", "")))
+    if issue_id.startswith("stuck_hand_"):
+        return StuckHandFlow(str(data.get("entry_id", "")))
     if issue_id.startswith(BLUEPRINT_EDITED):
         return BlueprintEditedFlow(data)
     if issue_id.startswith(BACKUP_AVAILABLE):
