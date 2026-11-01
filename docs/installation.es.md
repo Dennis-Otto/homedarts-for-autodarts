@@ -14,8 +14,8 @@ Esta página describe la instalación y cómo añadir una diana. La reconfigurac
 | --- | --- |
 | Home Assistant | **2026.8** o posterior ([por qué 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md), en inglés) |
 | Diana Autodarts | Instalada y funcionando en el Board Manager de Autodarts: **Board Manager 2**, Autodarts 2 sin pantalla (headless, recomendado, probado hasta la versión 2.1.0), o el **Board Manager 1** clásico. Según un jugador, **Autodarts Desktop** 2.0.2 en Linux también funciona. Autodarts Desktop en Windows y los **dispositivos de Winmau** como Autodarts X o Lens aún no se han probado; [cuéntanos](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) cómo funciona con el tuyo |
-| Red | Home Assistant llega al PC de la diana en la red local, por defecto en el puerto TCP **3180** |
-| Sin Autodarts | Cualquier diana: introduces los dardos en un teclado numérico, consulta [Play without Autodarts](without-autodarts.md); no necesita ni un PC en la diana ni una red hasta la diana |
+| Red | Home Assistant accede al PC de la diana en la red local, por defecto en el puerto TCP **3180** |
+| Sin Autodarts | Cualquier diana: introduces los dardos en un teclado numérico, consulta [Play without Autodarts](without-autodarts.md); no necesita ni un PC junto a la diana ni una red hasta ella |
 
 La integración **no necesita usuario de Autodarts, contraseña ni clave de API**. Nunca cambia el registro de tu diana en Autodarts. Tampoco tiene enlace con la nube de Autodarts: Autodarts no da ID de cliente a integraciones de terceros ([decisión 0025](decisions/0025-no-cloud-link.md), en inglés).
 
@@ -25,17 +25,17 @@ La integración **no necesita usuario de Autodarts, contraseña ni clave de API*
 
 [![Abre tu Home Assistant y muestra este repositorio en HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Dennis-Otto&repository=homedarts-for-autodarts&category=integration)
 
-1. Elige el botón de arriba, o abre **HACS** en Home Assistant, busca **HomeDarts** y ábrela.
-2. Elige **Descargar**.
+1. Selecciona el botón de arriba, o abre **HACS** en Home Assistant, busca **HomeDarts** y ábrela.
+2. Selecciona **Download**.
 3. Reinicia Home Assistant.
 
-HACS muestra las versiones nuevas como una actualización en **Ajustes → Actualizaciones**. La ventana de la actualización muestra las notas de la versión. HACS instala el paquete firmado `homedarts.zip`, el mismo archivo que en una [instalación a mano](#a-mano).
+HACS muestra las versiones nuevas como una actualización en **Configuración → Actualizaciones**. La ventana de la actualización muestra las notas de la versión. HACS instala el paquete firmado `homedarts.zip`, el mismo archivo que en una [instalación manual](#manualmente).
 
 La integración está entre los repositorios por defecto de HACS desde el 20 de octubre de 2026 ([hacs/default#11306](https://github.com/hacs/default/pull/11306)). Si antes la añadiste como repositorio personalizado, no tienes que hacer nada: HACS ya no la muestra entre los repositorios personalizados y conserva tu instalación y sus actualizaciones.
 
 ¿Quieres probar las betas? [Betas for testers](installation.md#betas-for-testers) explica cómo las ofrece HACS.
 
-### A mano
+### Manualmente
 
 1. Descarga `homedarts.zip` de la última versión en [GitHub](https://github.com/Dennis-Otto/homedarts-for-autodarts/releases). Contiene los archivos de la integración, sin una carpeta alrededor.
 2. Crea la carpeta `custom_components/homedarts` en tu configuración de Home Assistant y descomprime allí el archivo. El resultado es `config/custom_components/homedarts/manifest.json`.
@@ -60,9 +60,9 @@ Qué forma encaja con tu diana:
 
 ### 1. Descubrimiento automático (Board Manager 2)
 
-Board Manager 2 se anuncia en la red (mDNS, `_autodarts-board._tcp`). Home Assistant muestra entonces **Diana Autodarts encontrada** en **Ajustes → Dispositivos y servicios → Descubierto**. Elige **Añadir** y confirma. La ventana indica la dirección, la versión del Board Manager y el número de cámaras.
+Board Manager 2 se anuncia en la red (mDNS, `_autodarts-board._tcp`). Home Assistant muestra entonces **Diana Autodarts encontrada** en **Configuración → Dispositivos y servicios → Descubierto**. Selecciona **Añadir** y confirma. La ventana indica la dirección, la versión del Board Manager y el número de cámaras.
 
-Si la diana recibe más tarde una nueva dirección IP, el anuncio actualiza solo la dirección configurada.
+Si la diana recibe más tarde una nueva dirección IP, el anuncio actualiza automáticamente la dirección configurada.
 
 ### 2. Buscar dianas en esta red
 
@@ -82,12 +82,12 @@ La integración lee el ID de la diana del Board Manager. Rechaza las direcciones
 
 ### 4. Una diana sin Autodarts
 
-Elige **Diana sin Autodarts: introduce tú cada dardo** y dale un nombre a la diana, como *Garaje*. Introduces sus dardos en el teclado numérico de la tarjeta en directo y del marcador, y los juegos, el entrenamiento y las estadísticas funcionan como con Autodarts; [Play without Autodarts](without-autodarts.md) lo explica todo. Una casa puede tener varias, junto a dianas Autodarts, y cada una puede [recibir más tarde su diana Autodarts](without-autodarts.md#autodarts-later).
+Elige **Diana sin Autodarts: introduce tú cada dardo** y dale un nombre a la diana, como *Garaje*. Introduces sus dardos en el teclado numérico de la tarjeta en directo y del marcador, y los juegos, el entrenamiento y las estadísticas funcionan como con Autodarts; [Play without Autodarts](without-autodarts.md) lo explica todo. Puedes tener varias, junto a dianas Autodarts, y cada una puede [recibir más tarde su diana Autodarts](without-autodarts.md#autodarts-later).
 
 <img src="images/en/setup-manual.png" alt="El formulario de una diana sin Autodarts, con el nombre Dartboard rellenado" width="520">
 
 ### Después de la configuración
 
-Home Assistant crea un dispositivo, con el nombre de tu diana, con todas las [entidades](entities.md). Para un panel con todo, ve a **Ajustes → Paneles de control → Añadir panel de control → HomeDarts**, como dice la ventana al final de la configuración: el [panel automático](cards.md#automatic-dashboard) construye sus vistas a partir de tus dianas. En un panel propio, **Añadir tarjeta** encuentra las tarjetas cuando buscas *HomeDarts*; consulta la [guía de las tarjetas](cards.md).
+Home Assistant crea un dispositivo, con el nombre de tu diana, con todas las [entidades](entities.md). Para un panel con todo, ve a **Configuración → Paneles de control → Añadir panel de control → HomeDarts**, como dice la ventana al final de la configuración: el [panel automático](cards.md#automatic-dashboard) construye sus vistas a partir de tus dianas. En un panel propio, **Añadir tarjeta** encuentra las tarjetas cuando buscas *HomeDarts*; consulta la [guía de las tarjetas](cards.md).
 
 [De cero al marcador](getting-started.es.md) sigue con el marcador en una tableta y tu primera partida.

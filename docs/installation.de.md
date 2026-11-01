@@ -24,7 +24,7 @@ Die Integration braucht **keine Autodarts-Anmeldung, kein Passwort und keinen AP
 [![Home Assistant öffnen und dieses Repository in HACS anzeigen.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Dennis-Otto&repository=homedarts-for-autodarts&category=integration)
 
 1. Wähle die Schaltfläche oben, oder öffne **HACS** in Home Assistant, suche nach **HomeDarts** und öffne es.
-2. Wähle **Herunterladen**.
+2. Wähle **Download**.
 3. Starte Home Assistant neu.
 
 Neue Versionen zeigt HACS als Update unter **Einstellungen → Updates** an, samt Versionshinweisen. HACS installiert das signierte Release-Paket `homedarts.zip`, dieselbe Datei wie bei der [manuellen Installation](#manuell).

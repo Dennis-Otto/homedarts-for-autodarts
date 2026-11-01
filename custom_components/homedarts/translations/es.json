@@ -112,7 +112,7 @@
     },
     "flow_title": "{name}",
     "create_entry": {
-      "default": "La diana está configurada. Para un panel listo con el marcador, el entrenamiento y las estadísticas, abre **Ajustes → Paneles de control → Añadir panel de control** y elige **HomeDarts**."
+      "default": "La diana está configurada. Para un panel listo con el marcador, el entrenamiento y las estadísticas, abre **Configuración → Paneles de control → Añadir panel de control** y elige **HomeDarts**."
     }
   },
   "options": {

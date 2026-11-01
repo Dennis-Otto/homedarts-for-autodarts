@@ -14,7 +14,7 @@ social: { cards_layout_options: { title: "Votre cible Autodarts en direct dans H
 
 **Votre cible Autodarts en direct dans Home Assistant : locale, en temps réel et prête pour les automatisations.**
 
-HomeDarts for Autodarts amène votre cible Autodarts dans Home Assistant : une fléchette apparaît une fraction de seconde après avoir touché la cible, directement depuis le Board Manager de votre réseau. Toute autre cible joue aussi, avec ses fléchettes saisies à la main ou envoyées par une Granboard. Jouez et entraînez-vous, placez un tableau des scores à côté de la cible, suivez vos statistiques et faites participer votre maison. Pas de compte, pas de cloud, pas d'identifiant client.
+HomeDarts for Autodarts amène votre cible Autodarts dans Home Assistant : une fléchette apparaît une fraction de seconde après avoir touché la cible, directement depuis le Board Manager de votre réseau. Toute autre cible fonctionne aussi, avec ses fléchettes saisies à la main ou envoyées par une Granboard. Jouez et entraînez-vous, placez un tableau des scores à côté de la cible, suivez vos statistiques et faites participer votre maison. Pas de compte, pas de cloud, pas d'identifiant client.
 
 HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec Autodarts. Jusqu'à la version 1.18, il s'appelait Autodarts : [From Autodarts to HomeDarts](new-name.md) explique le nouveau nom et comment HomeDarts reprend vos cibles.
 
@@ -29,13 +29,13 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
 <div class="grid cards pictures" markdown>
 
-- ![La carte en direct sur le tableau de bord de Home Assistant : la volée en cours, ses trois fléchettes, les dernières volées, la séance d'entraînement et la cible](images/en/dashboard-live.png){ loading=lazy }
+- ![La carte en direct sur le tableau de bord de Home Assistant : la volée en cours, ses trois fléchettes, les dernières volées, la session d'entraînement et la cible](images/en/dashboard-live.png){ loading=lazy }
 
     :material-lan-connect:{ .lg .middle } **Locale et en temps réel**
 
     ---
 
-    Détectée automatiquement avec Board Manager 2 ; Board Manager 1 fonctionne aussi. Rien ne quitte votre réseau, sauf si vous utilisez la recherche de cibles ou le pont en ligne, et les secrets de la cible ne sont jamais enregistrés.
+    Détectée automatiquement avec Board Manager 2 ; Board Manager 1 fonctionne aussi. Rien ne quitte votre réseau, sauf si vous utilisez la recherche de cibles ou la passerelle en ligne, et les secrets de la cible ne sont jamais enregistrés.
 
     [:octicons-arrow-right-24: How it works](how-it-works.md)
 
@@ -45,17 +45,17 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     ---
 
-    X01 de 101 à 1001 avec la combinaison de finish après chaque fléchette, Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random et Hidden Cricket, et neuf jeux de fête jusqu'à huit joueurs, seul ou en match jusqu'à quatre avec manches, sets, équipes et handicaps.
+    X01 de 101 à 1001 avec la combinaison de finish après chaque fléchette, Cricket, Cut-Throat Cricket, Tactics, Wild Mouse, Random et Hidden Cricket, et neuf jeux de soirée jusqu'à huit joueurs, seul ou en match jusqu'à quatre avec manches, sets, équipes et handicaps.
 
     [:octicons-arrow-right-24: Games and rules](games.md)
 
-- ![Animation : Around the Clock sur la carte en direct ; chaque touche fait avancer la cible et entoure les segments du numéro suivant](images/en/training-game.webp){ loading=lazy }
+- ![Animation : Around the Clock sur la carte en direct ; chaque touche fait avancer l'objectif et entoure les segments du numéro suivant](images/en/training-game.webp){ loading=lazy }
 
     :material-target:{ .lg .middle } **Entraînement**
 
     ---
 
-    Des séances d'entraînement qui commencent avec la première fléchette, huit jeux d'entraînement d'Around the Clock au JDC Challenge, un objectif quotidien, une série d'entraînement et des records personnels.
+    Des sessions d'entraînement qui commencent avec la première fléchette, huit jeux d'entraînement d'Around the Clock au JDC Challenge, un objectif quotidien, une série d'entraînement et des records personnels.
 
     [:octicons-arrow-right-24: Training games](games.md#training-games)
 
@@ -69,23 +69,23 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     [:octicons-arrow-right-24: Scoreboard at the board](scoreboard.md) · [Dashboard cards](cards.md)
 
-- ![Animation : la carte des touches passe des segments aux numéros et aux positions réelles des fléchettes, puis aux fléchettes d'un seul joueur](images/en/heatmap-modes.webp){ loading=lazy }
+- ![Animation : la carte de chaleur passe des segments aux numéros et aux positions réelles des fléchettes, puis aux fléchettes d'un seul joueur](images/en/heatmap-modes.webp){ loading=lazy }
 
-    :material-chart-line:{ .lg .middle } **Statistiques avec cartes des touches**
+    :material-chart-line:{ .lg .middle } **Statistiques avec cartes de chaleur**
 
     ---
 
-    Moyenne sur 3 fléchettes, moyenne des 9 premières, taux de finish et de doubles, une carte des touches de chaque segment ou des positions réelles des fléchettes, et l'endroit où chaque joueur marque le plus par fléchette. Des profils de joueurs avec badges, des tendances hebdomadaires, un classement, un rapport hebdomadaire et un calendrier d'entraînement.
+    Moyenne 3 fléchettes, moyenne First 9, taux de finish et de doubles, une carte de chaleur de chaque segment ou des positions réelles des fléchettes, et l'endroit où chaque joueur marque le plus par fléchette. Des profils de joueurs avec badges, des tendances hebdomadaires, un classement, un rapport hebdomadaire et un calendrier d'entraînement.
 
     [:octicons-arrow-right-24: Statistics and players](statistics.md)
 
-- ![La galerie des meilleurs moments dans le navigateur multimédia de Home Assistant, avec des photos d'un finish et de deux grosses volées](images/en/media-gallery.png){ loading=lazy }
+- ![La galerie des temps forts dans le navigateur multimédia de Home Assistant, avec des photos d'un finish et de deux grosses volées](images/en/media-gallery.png){ loading=lazy }
 
     :material-home-automation:{ .lg .middle } **Automatisations et blueprints**
 
     ---
 
-    Des événements de la cible pour chaque fléchette, volée, retrait, bust, manche et match gagnés, le début et la fin de chaque partie. Seize blueprints : spectacle de lumière, musique d'entrée, affichage du score, annonceurs des fléchettes et de l'entraînement, photos des meilleurs moments, rapports, alertes, routines, parties lancées et fléchettes saisies à la voix, et réponses d'Assist sur vos fléchettes.
+    Des événements de la cible pour chaque fléchette, volée, retrait, bust, manche et match gagnés, le début et la fin de chaque partie. Seize blueprints : spectacle lumineux, musique d'entrée, affichage du score, annonceurs des fléchettes et de l'entraînement, photos de temps forts, rapports, alertes, routines, parties lancées et fléchettes saisies à la voix, et réponses d'Assist sur vos fléchettes.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -95,7 +95,7 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     ---
 
-    Des tournois de trois à 32 joueurs, en poule avec un classement, en élimination directe, en double élimination ou en groupes suivis d'une élimination directe, sur une cible ou sur plusieurs cibles à la fois, et un bot du niveau 20 au niveau 120 contre qui jouer au X01 et au Cricket.
+    Des tournois de trois à 32 joueurs, en poule unique avec un classement, en élimination directe, en double élimination ou en poules suivies d'une élimination directe, sur une cible ou sur plusieurs cibles à la fois, et un bot du niveau 20 au niveau 120 contre qui jouer au X01 et au Cricket.
 
     [:octicons-arrow-right-24: Tournaments](games.md#tournaments) · [The bot](games.md#playing-against-the-bot)
 
@@ -105,7 +105,7 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     ---
 
-    Dites « Lance 501 pour Alex et Sam » à Assist, en français, anglais, allemand, espagnol ou néerlandais, et la partie commence ; ensuite « Alex a fait 140 » ou « Triple 20 » saisit les fléchettes, comme sur une machine de fléchettes, et « Quelle est ma moyenne cette semaine ? » obtient sa réponse des statistiques de la cible. Toute partie démarre aussi avec une seule action d'une automatisation.
+    Dites « Lance 501 pour Alex et Sam » à Assist, en français, anglais, allemand, espagnol ou néerlandais, et la partie commence ; ensuite « Alex a fait 140 » ou « Triple 20 » saisit les fléchettes, comme sur une machine de fléchettes, et « Quelle est ma moyenne aujourd'hui ? » obtient sa réponse des statistiques de la cible. Toute partie démarre aussi avec une seule action d'une automatisation.
 
     [:octicons-arrow-right-24: Start a game by voice](automations.md#start-a-game-by-voice)
 
@@ -132,27 +132,27 @@ Par rapport à l'application Autodarts avec l'extension Tools for Autodarts, à 
 
 - **Sans cloud :** HomeDarts parle à l'interface locale du Board Manager et n'a besoin d'aucun compte Autodarts.
 - **Entités et événements dans Home Assistant :** un événement pour chaque fléchette, volée, retrait, bust, manche et match, et seize blueprints qui en font quelque chose tout de suite.
-- **Statistiques à la maison :** moyennes, cartes des touches, profils et un an d'historique, enregistrés dans Home Assistant.
+- **Statistiques à la maison :** moyennes, cartes de chaleur, profils et un an d'historique, enregistrés dans Home Assistant.
 - **Même sans cible Autodarts :** sur un pavé numérique ou avec une Granboard via Bluetooth *(expérimental)*.
 - **Gratuit :** open source sous licence MIT, sans version payante.
 
-[Coming from another tool](coming-from.md) compare tout, avec les sources, et montre comment changer *(en anglais)*.
+[Coming from another tool](coming-from.md) compare tout, avec les sources, et montre comment passer à HomeDarts *(en anglais)*.
 
 ## Guides
 
 - :material-rocket-launch: [**De zéro au tableau des scores**](getting-started.fr.md) : Home Assistant, HACS, l'intégration et la première partie, pour les joueurs d'Autodarts qui découvrent Home Assistant
-- :material-download: [**Installation et configuration**](installation.fr.md) : la configuration requise, HACS ou à la main, et les façons d'ajouter une cible
+- :material-download: [**Installation et configuration**](installation.fr.md) : la configuration requise, HACS ou manuellement, et les façons d'ajouter une cible
 - :material-frequently-asked-questions: [**Questions fréquentes**](faq.fr.md) : le compte, les appareils, le jeu en ligne, la confidentialité, plusieurs cibles, les écrans, les langues et les mises à jour
 
 En anglais :
 
 - :material-pencil: [**Play without Autodarts**](without-autodarts.md) : n'importe quelle cible, avec tous les jeux, l'entraînement et les statistiques, les fléchettes saisies sur un pavé numérique
 - :material-bluetooth: [**Granboard over Bluetooth**](granboard.md) : les fléchettes d'une Granboard via le Bluetooth de Home Assistant et les proxys ESPHome *(expérimental)*
-- :material-swap-horizontal: [**Coming from another tool**](coming-from.md) : les autres intégrations, les ponts MQTT, darts-caller, darts-wled et Tools for Autodarts comparés, et comment changer
+- :material-swap-horizontal: [**Coming from another tool**](coming-from.md) : les autres intégrations, les passerelles MQTT, darts-caller, darts-wled et Tools for Autodarts comparés, et comment passer à HomeDarts
 - :material-rename-box: [**From Autodarts to HomeDarts**](new-name.md) : le nouveau nom depuis la version 2.0, et comment HomeDarts reprend vos cibles
 - :material-bullseye-arrow: [**Games and rules**](games.md) : chaque jeu en un coup d'œil, quatre façons d'en lancer un, les matchs, les équipes, les handicaps, le bull-off et les tournois
 - :material-television: [**Scoreboard at the board**](scoreboard.md) : une tablette ou une télévision à côté de la cible, en paysage et en portrait, l'écran de nouvelle partie, l'annonceur et le mode veille
-- :material-chart-line: [**Statistics and players**](statistics.md) : les séances, les records personnels, les cartes des touches, où viser, les progrès, les profils, les succès et le classement
+- :material-chart-line: [**Statistics and players**](statistics.md) : les sessions, les records personnels, les cartes de chaleur, où viser, les progrès, les profils, les succès et le classement
 - :material-home-automation: [**Automations**](automations.md) : seize blueprints, leurs réglages, les événements de la cible et des exemples prêts à l'emploi
 - :material-play-network: [**Online matches**](online-matches.md) : les busts, manches et matchs gagnés des matchs en ligne comme événements de la cible, avec Tools for Autodarts *(expérimental)*
 
@@ -198,7 +198,7 @@ En anglais :
 
 </div>
 
-Ce que chaque version a apporté se trouve dans le [journal des modifications](changelog.md), ce qui vient ensuite dans la [feuille de route](roadmap.md). Pour les vidéos, les articles et les publications, le [kit des créateurs](creator-kit.md) contient des faits, des textes prêts à publier, des vidéos et des images, libres d'utilisation.
+Ce que chaque version a apporté se trouve dans le [journal des modifications](changelog.md), ce qui vient ensuite dans la [feuille de route](roadmap.md). Pour les vidéos, les articles et les publications, le [kit pour les créateurs](creator-kit.md) contient des faits, des textes prêts à publier, des vidéos et des images, libres d'utilisation.
 
 ## Appareils pris en charge
 
@@ -212,6 +212,6 @@ Tout matériel qui fait tourner le Board Manager d'Autodarts fonctionne, car l'i
 
 ## Langues
 
-L'intégration parle français, anglais, allemand, néerlandais et espagnol : la configuration, les options, les entités et leurs états, les actions, les messages et les réparations, les cartes avec leurs éditeurs et l'annonceur du tableau des scores. Elle suit la langue de Home Assistant ; une variante régionale comme `fr-CA` compte comme sa langue.
+L'intégration parle français, anglais, allemand, néerlandais et espagnol : la configuration, les options, les entités et leurs états, les actions, les messages et les réparations, les cartes avec leurs éditeurs et l'annonceur du tableau des scores. Elle suit la langue de Home Assistant ; une variante régionale comme `fr-CA` compte comme cette langue.
 
-Ce site est en anglais et en allemand, et l'accueil, le démarrage rapide, l'installation et les questions fréquentes existent aussi en néerlandais, en français et en espagnol. Il montre les autres pages en anglais. Vous parlez français ? [Aidez-nous à traduire](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/481) : corrigez une phrase ou traduisez une page qui vous manque, directement sur GitHub, sans programmer.
+Ce site est en anglais et en allemand, et l'accueil, le démarrage rapide, l'installation et les questions fréquentes existent aussi en néerlandais, en français et en espagnol. Il montre les autres pages en anglais. Vous parlez français ? [Aidez-nous à traduire](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations) : corrigez une phrase ou traduisez une page qui vous manque, directement sur GitHub, sans programmer.

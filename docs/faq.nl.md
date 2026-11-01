@@ -14,21 +14,21 @@ Korte antwoorden, elk met de pagina die de details heeft; die pagina's zijn mees
 
 ### Heb ik een Autodarts-account of een abonnement nodig?
 
-Nee. De integratie praat met de Board Manager op de pc van je bord, via je eigen netwerk, op TCP-poort 3180. Ze heeft geen Autodarts-login, wachtwoord of API-sleutel nodig, en geen abonnement zoals Autodarts Plus, en ze verandert nooit de registratie van je bord bij Autodarts. Een dartbord zonder Autodarts heeft helemaal niets van Autodarts nodig. [Vereisten](installation.nl.md#vereisten)
+Nee. De integratie praat met de Board Manager op je bord-pc, via je eigen netwerk, op TCP-poort 3180. Ze heeft geen Autodarts-login, wachtwoord of API-sleutel nodig, en geen abonnement zoals Autodarts Plus, en ze verandert nooit de registratie van je bord bij Autodarts. Een dartbord zonder Autodarts heeft helemaal niets van Autodarts nodig. [Vereisten](installation.nl.md#vereisten)
 
 ### Wat heb ik nodig?
 
-Home Assistant 2026.8 of nieuwer met [HACS](https://hacs.xyz), en een Autodarts-bord in je netwerk of een willekeurig dartbord waarvan je de darts op een toetsenblok invoert. Nieuw met Home Assistant? [Van nul tot het scorebord](getting-started.nl.md) brengt je van niets tot het eerste spel op het scorebord.
+Home Assistant 2026.8 of nieuwer met [HACS](https://hacs.xyz), en een Autodarts-bord in je netwerk of een willekeurig dartbord waarvan je de darts op een toetsenblok invoert. Nog geen ervaring met Home Assistant? [Van nul tot het scorebord](getting-started.nl.md) brengt je van nul tot het eerste spel op het scorebord.
 
 ### Werkt het met Autodarts Desktop, Autodarts X of Lens?
 
 De integratie heeft een Board Manager nodig die Home Assistant in je netwerk bereikt. Board Manager 2 is getest tot 2.1.0, de klassieke Board Manager 1 werkt ook, en volgens een speler werkt Autodarts Desktop 2.0.2 op Linux. Autodarts Desktop op Windows en Autodarts X zijn nog niet getest. Een [compatibiliteitsrapport](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) vertelt ons hoe het met de jouwe gaat, of het nu werkt of niet. [Ondersteunde apparaten](index.nl.md#ondersteunde-apparaten)
 
-Lens scoort met de camera van een telefoon of tablet in de Autodarts-app, zonder Board Manager in je netwerk, dus de integratie kan de darts niet lezen. Voer ze in plaats daarvan in op het toetsenblok. Een koppeling via de cloud van Autodarts komt er ook niet: Autodarts geeft geen client-ID's uit aan integraties van derden ([beslissing 0025](decisions/0025-no-cloud-link.md)). [Play without Autodarts](without-autodarts.md)
+Lens telt de score met de camera van een telefoon of tablet in de Autodarts-app, zonder Board Manager in je netwerk, dus de integratie kan de darts niet lezen. Voer ze in plaats daarvan in op het toetsenblok. Een koppeling via de cloud van Autodarts komt er ook niet: Autodarts geeft geen client-ID's uit aan integraties van derden ([beslissing 0025](decisions/0025-no-cloud-link.md)). [Play without Autodarts](without-autodarts.md)
 
 ### Kost het iets?
 
-Nee. De integratie is gratis en open source onder de [MIT-licentie](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/LICENSE), zonder iets om te betalen en zonder betaalde versie. [Sponsoren](https://github.com/sponsors/Dennis-Otto) helpt het project en is helemaal vrijwillig.
+Nee. De integratie is gratis en open source onder de [MIT-licentie](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/LICENSE): er valt niets te betalen en er is geen betaalde versie. [Sponsoren](https://github.com/sponsors/Dennis-Otto) helpt het project en is helemaal vrijwillig.
 
 ### Is dit een officiële integratie van Autodarts?
 
@@ -38,15 +38,15 @@ Nee. HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden
 
 ### Ik heb geen Autodarts-bord. Kan ik het gebruiken?
 
-Ja. Stel een dartbord zonder Autodarts in en voer elke dart in op het toetsenblok van het scorebord, of met je stem. Elk spel, de training en de statistieken werken. Krijgt je dartbord later Autodarts, dan houdt het de spellen, spelers en statistieken. [Play without Autodarts](without-autodarts.md)
+Ja. Stel een dartbord zonder Autodarts in en voer elke dart in op het toetsenblok van het scorebord, of met je stem. Elk spel, de training en de statistieken werken. Krijgt je dartbord later Autodarts, dan behoudt het de spellen, spelers en statistieken. [Play without Autodarts](without-autodarts.md)
 
 ### Kan ik onlinewedstrijden spelen?
 
-Ja, op play.autodarts.io zoals voorheen. De integratie ziet dan de darts op je eigen bord: `dart_detected`, `visit_thrown` en de takeout komen zoals gewoonlijk binnen. Busts, gewonnen legs en wedstrijden gebeuren in de browser; de optionele onlinebrug brengt ze naar Home Assistant met de browserextensie Tools for Autodarts *(experimenteel)*. [Online matches](online-matches.md)
+Ja, op play.autodarts.io zoals voorheen. De integratie ziet dan de darts op je eigen bord: `dart_detected`, `visit_thrown` en het verwijderen van de darts komen zoals gewoonlijk binnen. Busts, gewonnen legs en wedstrijden gebeuren in de browser; de optionele onlinebrug brengt ze naar Home Assistant met de browserextensie Tools for Autodarts *(experimenteel)*. [Online matches](online-matches.md)
 
-### Het bord las een dart verkeerd. Hoe verbeter ik dat?
+### Het bord las een dart verkeerd. Hoe corrigeer ik dat?
 
-Tik op het scorebord op de dart en kies waar hij landde, op de toetsen of op een afbeelding van het bord. In automatiseringen doet `homedarts.correct_dart` hetzelfde, en `homedarts.undo_visit` neemt de laatste beurt terug. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+Tik op het scorebord op de dart en kies waar hij terechtkwam, op de toetsen of op een afbeelding van het bord. In automatiseringen doet `homedarts.correct_dart` hetzelfde, en `homedarts.undo_visit` neemt de laatste beurt terug. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
 
 ### Kan ik meerdere borden gebruiken?
 
@@ -54,7 +54,7 @@ Ja. Elk bord is een eigen vermelding en een eigen apparaat, met eigen entiteiten
 
 Een clubavond kan ook [één toernooi op meerdere borden tegelijk](games.md#a-tournament-on-several-boards) spelen, elk bord met een eigen wedstrijd.
 
-Een speler die op twee borden gooit, heeft op elk een profiel. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) met `mode: merge` voegt een back-up van het ene bord toe aan het andere, en de cijfers van de speler tellen op. [Backups](statistics.md#backups)
+Een speler die op twee borden gooit, heeft op elk een profiel. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) met `mode: merge` voegt een back-up van het ene bord toe aan het andere, en de cijfers van de speler worden opgeteld. [Backups](statistics.md#backups)
 
 ## Schermen en talen
 
@@ -70,21 +70,21 @@ Nederlands, Engels, Duits, Frans en Spaans, volgens de taal van Home Assistant: 
 
 ### Wat verlaat mijn netwerk?
 
-Niets, in de lokale modus. Alleen wat je zelf kiest, praat met internet: de bordzoekfunctie vraagt de openbare zoekdienst van Autodarts één keer, en de onlinebrug ontvangt alleen de oproepen van Tools for Autodarts. Geheimen van het bord worden nooit opgeslagen, en de diagnose verbergt de ID's van borden, adressen en spelersnamen. Sommige browsers spreken de oproepen van het scorebord uit met online stemmen; een offline stem van het apparaat houdt ze thuis. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
+Niets, in de lokale modus. Alleen wat je zelf kiest, praat met het internet: de bordzoekfunctie raadpleegt de openbare zoekdienst van Autodarts één keer, en de onlinebrug ontvangt alleen de oproepen van Tools for Autodarts. Geheimen van het bord worden nooit opgeslagen, en de diagnose verbergt de ID's van borden, adressen en spelersnamen. Sommige browsers spreken de oproepen van het scorebord uit met online stemmen; een offline stem van het apparaat houdt ze thuis. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
 
 ### Waar worden mijn statistieken bewaard?
 
-In de eigen opslag van Home Assistant, nooit in de cloud: de trainingssessies, het oefenspel, de persoonlijke records, de spelersprofielen met hun wedstrijden, en de trainingskalender met een jaar aan sessies en wedstrijden. Wie het bord verwijdert, verwijdert ze ook, maar pas na een [back-up](statistics.md#backups) ervan, en [`homedarts.export`](entities.md#export-training-data-homedartsexport) schrijft ze weg voor een spreadsheet. [Stored data](how-it-works.md#stored-data)
+In de eigen opslag van Home Assistant, nooit in de cloud: de trainingssessies, het oefenspel, de persoonlijke records, de spelersprofielen met hun wedstrijden, en de trainingsagenda met een jaar aan sessies en wedstrijden. Wie het bord verwijdert, verwijdert ze ook, maar pas na een [back-up](statistics.md#backups) ervan, en [`homedarts.export`](entities.md#export-training-data-homedartsexport) schrijft ze weg voor een spreadsheet. [Stored data](how-it-works.md#stored-data)
 
 ### Ik heb mijn bord verwijderd. Zijn mijn statistieken weg?
 
-Nee. Voordat een bord wordt verwijderd, schrijft HomeDarts een back-up van alles wat het heeft opgeslagen naar `homedarts/backups` in de mediamap. Voeg het bord opnieuw toe, en de reparatie *A backup of … is available* brengt alles terug; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) zet elke back-up terug. [Backups](statistics.md#backups)
+Nee. Voordat een bord wordt verwijderd, schrijft HomeDarts een back-up van alles wat het heeft opgeslagen naar `homedarts/backups` in de mediamap. Voeg het bord opnieuw toe, en de reparatie *Er is een back-up van …* brengt alles terug; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) zet elke back-up terug. [Backups](statistics.md#backups)
 
 ## Updates en overstappen
 
 ### Hoe werk ik de Board Manager bij?
 
-Op de pc van het bord, zoals Autodarts het beschrijft. Home Assistant laat je weten wanneer een update nodig is: met Board Manager 2 toont de update-entiteit *Software* de geïnstalleerde en de nieuwste versie, en een bord met Board Manager 1 krijgt een reparatiemelding voor de stap naar Board Manager 2. De integratie zelf werk je bij via HACS. [Update to Board Manager 2](installation.md#update-from-board-manager-1-to-board-manager-2) · [Health and connections](entities.md#health-and-connections)
+Op de bord-pc, zoals Autodarts het beschrijft. Home Assistant laat je weten wanneer een update nodig is: met Board Manager 2 toont de update-entiteit *Software* de geïnstalleerde en de nieuwste versie, en een bord met Board Manager 1 krijgt een reparatiemelding voor de stap naar Board Manager 2. De integratie zelf werk je bij via HACS. [Update to Board Manager 2](installation.md#update-from-board-manager-1-to-board-manager-2) · [Health and connections](entities.md#health-and-connections)
 
 ### De integratie heette Autodarts. Wat verandert er voor mij?
 
@@ -92,7 +92,7 @@ Sinds versie 2.0 heet ze HomeDarts for Autodarts, met het domein `homedarts`. Vo
 
 ### Ik gebruik de oorspronkelijke HACSAutodarts. Hoe stap ik over?
 
-Installeer HomeDarts ernaast: het origineel heeft het domein `autodarts`, HomeDarts het domein `homedarts`, dus beide draaien tegelijk. Voeg je bord toe aan HomeDarts, verplaats je automatiseringen, verwijder dan de vermelding van HACSAutodarts en verwijder het in HACS. HomeDarts neemt die vermelding niet over. [Switch from the original integration](installation.md#switch-from-the-original-integration)
+Installeer HomeDarts ernaast: het origineel heeft het domein `autodarts`, HomeDarts het domein `homedarts`, dus beide draaien tegelijk. Voeg je bord toe aan HomeDarts, zet je automatiseringen over, verwijder dan de vermelding van HACSAutodarts en verwijder het in HACS. HomeDarts neemt die vermelding niet over. [Switch from the original integration](installation.md#switch-from-the-original-integration)
 
 ### Ik gebruik een ander Autodarts-hulpmiddel. Hoe stap ik over?
 
