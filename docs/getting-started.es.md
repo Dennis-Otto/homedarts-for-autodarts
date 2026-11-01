@@ -41,7 +41,9 @@ HACS es la tienda de integraciones y tarjetas de la comunidad, como esta. Sigue 
 
 [![Abre tu Home Assistant y empieza a configurar HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Con Board Manager 2, Home Assistant suele encontrar la diana por sí solo: **Configuración → Dispositivos y servicios** muestra **Diana Autodarts encontrada** en *Descubierto*. Selecciona **Añadir** y confirma.
+Con Board Manager 2, Home Assistant suele encontrar la diana por sí solo: **Configuración → Dispositivos y servicios** muestra **Diana Autodarts encontrada** en *Descubierto*. Selecciona **Añadir** y confirma. La animación muestra el camino desde aquí hasta el marcador, en menos de un minuto.
+
+<img src="images/en/setup.webp" alt="Animación: la configuración en cinco pasos con leyendas, en inglés, en la pantalla de un teléfono. 1: Home Assistant muestra la diana encontrada en Descubierto. 2: añadir y confirmar en la ventana Diana Autodarts encontrada; la diana queda configurada y se abre su página de dispositivo. 3: configuración, paneles de control, añadir panel de control. 4: la búsqueda encuentra HomeDarts, el título HomeDarts, crear. 5: el panel nuevo se abre en la vista en directo y después en el marcador, que cuenta tres triples 20 hasta 180" width="100%">
 
 Si no, selecciona el botón de arriba y elige **Buscar dianas en esta red**, o **Introducir la dirección de la diana** con la dirección IP del PC de la diana. No necesitas una cuenta de Autodarts.
 
@@ -51,7 +53,7 @@ La [guía de instalación](installation.es.md#añadir-tu-diana) explica cada for
 
 ## 5. Crear el panel
 
-Ve a **Configuración → Paneles de control → Añadir panel de control → HomeDarts**. Un clic crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
+Ve a **Configuración → Paneles de control → Añadir panel de control → HomeDarts**. Dale un título y selecciona **Crear**: así se crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
 
 <img src="images/en/dashboard-strategy.png" alt="La vista de entrenamiento del panel automático" width="760">
 

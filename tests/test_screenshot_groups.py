@@ -138,6 +138,16 @@ def test_the_steps_that_depend_on_each_other_share_a_group():
         section for section in GROUPS[group_of["calendar"]] if section != "manual"
     ]
     assert calendar[-1] == "calendar"
+    # The quick start removes the board of the demo and sets it up again as new.
+    assert GROUPS[group_of["setup"]][-1] == "setup"
+
+
+def test_the_quick_start_has_every_caption_in_both_languages():
+    captions = ast.literal_eval(assigned("SETUP_CAPTIONS"))
+    buttons = ast.literal_eval(assigned("SETUP_BUTTONS"))
+    assert set(captions) == set(buttons) == {"en", "de"}
+    assert len(captions["en"]) == len(captions["de"]) == 5
+    assert buttons["en"].keys() == buttons["de"].keys()
 
 
 def test_no_group_takes_much_longer_than_the_shortest():
