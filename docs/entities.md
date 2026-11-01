@@ -189,7 +189,7 @@ The **Training calendar** (`calendar.*_training_calendar`) shows your finished t
 - **Sessions** run from their start to their end. The description lists the 180s, 140+ and 100+ visits and the highest visit (*Max*).
 - **Matches** of several players, of every game, run from their first dart to the deciding dart. The title shows the sets won, or the legs when one set decides the match; players without a name appear as `#1` to `#4` and the bot as *Bot*, and a team match names both teams, for example *501 · Alex & Kim 1:0 Sam & Lea*. The description lists each player's average, marks per round or points. Matches played before version 1.6 have no first dart and appear as one minute.
 - **A year of history.** The calendar keeps the sessions and matches of the last 365 days, at most 3,000 of each. After the update, it takes over the last 20 sessions and matches already stored.
-- **State:** the calendar is *off*, because nothing lies ahead. Its attributes show the session or match that ended last. In the hour that repeats when the clocks go back, they stay empty until the clock reaches its end again.
+- **State:** the calendar is *off*, because nothing lies ahead. Its attributes show the session or match that ended last. If it ended in the first pass of the hour that repeats when the clocks go back, they stay empty until the first update after the clock reaches its end again.
 
 Calendar triggers and the action `calendar.get_events` work as with any calendar, for example to count the sessions of a month in a template.
 
