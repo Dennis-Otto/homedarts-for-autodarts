@@ -96,7 +96,7 @@ test("tiles show the session records, and nothing opens with a tap on them", () 
   assert.equal($(card, ".tile .cue"), null);
 });
 
-test("the heatmap colours every hit bed from blue to red with its share", () => {
+test("the heatmap colours every hit bed from dark to light with its share", () => {
   const { card } = setup();
   const beds = $$(card, ".heat-bed");
   assert.equal(beds.length, 10);
@@ -113,14 +113,35 @@ test("the heatmap colours every hit bed from blue to red with its share", () => 
   const hottest = beds.find((bed) => bed.getAttribute("d") === bedPath("SI20"));
   assert.deepEqual(
     [hottest.getAttribute("fill"), hottest.getAttribute("fill-opacity")],
-    ["hsl(0, 90%, 55%)", "0.95"]
+    ["#f1e323", "0.95"]
   );
   const coldest = beds.find((bed) => bed.getAttribute("d") === bedPath("D16"));
   assert.deepEqual(
     [coldest.getAttribute("fill"), coldest.getAttribute("fill-opacity")],
-    ["hsl(220, 90%, 55%)", "0.6"]
+    ["#5844bc", "0.9"]
   );
   assert.equal(text(card, ".legend-max"), "6");
+  assert.equal(text(card, ".legend-min"), "1");
+  assert.match($(card, ".legend-bar").getAttribute("style"), /linear-gradient\(90deg, #5844bc, .*, #f1e323\)/);
+  // The bars of the most hit beds follow the scale.
+  assert.match($(card, ".top-row .fill").getAttribute("style"), /background:#f1e323/);
+});
+
+test("the thermal palette keeps the former colours of the training card", () => {
+  const { card } = setup({}, { heatmap_palette: "thermal" });
+  const fills = (selector) => [$(card, selector).getAttribute("fill"), $(card, selector).getAttribute("fill-opacity")];
+  assert.deepEqual(fills(`.heat-layer path[d="${bedPath("SI20")}"]`), ["hsl(0, 90%, 55%)", "0.95"]);
+  assert.deepEqual(fills(`.heat-layer path[d="${bedPath("D16")}"]`), ["hsl(220, 90%, 55%)", "0.6"]);
+  assert.equal(
+    $(card, ".legend-bar").getAttribute("style"),
+    "background: linear-gradient(90deg, hsl(220, 90%, 55%), hsl(165, 90%, 55%), hsl(110, 90%, 55%), hsl(55, 90%, 55%), hsl(0, 90%, 55%))"
+  );
+  assert.match($(card, ".top-row .fill").getAttribute("style"), /background:hsl\(0, 90%, 55%\)/);
+});
+
+test("an unknown palette falls back to the accessible one", () => {
+  const { card } = setup({}, { heatmap_palette: "rainbow" });
+  assert.equal($(card, `.heat-layer path[d="${bedPath("SI20")}"]`).getAttribute("fill"), "#f1e323");
 });
 
 test("in numbers mode the heatmap sums every bed of a number", () => {

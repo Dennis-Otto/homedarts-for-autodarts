@@ -340,6 +340,13 @@ class HeldWorker extends FakeWorker {
   }
 }
 
+test("the aim map takes the palette of the card", () => {
+  const field = aimField(aimRequest(aimView(AIM).model));
+  assert.match(aimHtml(field, AIM.best), /fill="#f1e323" fill-opacity="0\.95"/);
+  assert.match(aimHtml(field, AIM.best, "thermal"), /fill="hsl\(\d+, 90%, 55%\)" fill-opacity="0\.\d+"/);
+  assert.doesNotMatch(aimHtml(field, AIM.best), /hsl\(/);
+});
+
 test("a Web Worker computes the map, with the numbers of the card", async () => {
   await withWorkers(FakeWorker, async (revoked) => {
     const { card, hass } = setup();

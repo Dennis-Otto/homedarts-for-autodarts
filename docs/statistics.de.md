@@ -71,7 +71,7 @@ Home Assistant behält den besten Wert jeder Bestleistung und meldet `personal_b
 
 Das Trefferbild der Trainingskarte hat vier Modi, die die Umschalter über der Scheibe wählen:
 
-- **Felder:** jedes Feld danach eingefärbt, wie oft du es getroffen hast, von Blau (selten) bis Rot (am häufigsten). Fahre mit der Maus über ein Feld für Anzahl und Anteil.
+- **Felder:** jedes Feld danach eingefärbt, wie oft du es getroffen hast, von einem dunklen Blauviolett (selten) bis zu einem hellen Gelb (am häufigsten), auch für farbenblinde Spieler und in Grau lesbar. Fahre mit der Maus über ein Feld für Anzahl und Anteil.
 - **Zahlen:** Single, Double und Triple jeder Zahl zusammengefasst; das zeigt auf einen Blick, ob du zur 5 oder zur 1 abdriftest.
 - **Positionen:** wo die Darts wirklich gelandet sind, aus den Positionen, die das Board meldet: eine geglättete Dichte mit den neuesten 300 Darts als Punkten und unter der Scheibe die [Streuung](#trends-und-streuung) an bis zu drei Feldern, auf die du gezielt hast. Bei der Session erscheinen die Darts der aktuellen Aufnahme sofort als blaue Pins; beim Ziehen gehen sie in die gespeicherten Darts über. Ein Dart neben der Scheibe samt Zahlenring wird nicht gezeichnet.
 - **Zielpunkt:** wo du mit deiner eigenen Streuung die meisten Punkte pro Dart machst, siehe [Wohin zielen](#wohin-zielen).
@@ -92,10 +92,10 @@ player: Alex
 
 Die Triple 20 bringt nur dann die meisten Punkte, wenn deine Darts eng beieinander landen. Je weiter sie streuen, desto mehr kostet ein Fehlwurf neben der 20, wo die 1 und die 5 liegen, und desto besser ist ein Punkt, dessen Felder ringsum mehr wert sind: die Triple 19 mit der 7 und der 16 daneben und bei weiter Streuung ein Punkt links vom Bull. Tibshirani, Price und Taylor haben das in *A statistician plays darts* (Journal of the Royal Statistical Society, Series A 174, 2011) ausgerechnet; die Zielkarte rechnet es mit deinen eigenen Darts.
 
-<img src="images/de/training-aim.png" alt="Die Zielkarte von Alex: die Scheibe von Blau bis Rot nach den Punkten pro Dart an jedem Zielpunkt eingefärbt, am hellsten um die Triple 19, mit einem Ring am besten Zielpunkt; darunter der beste Zielpunkt, T19 mit 18,3 Punkten pro Dart, gegen die Triple 20 mit 17,3 und das Bull mit 15,7, und die Streuung, aus der sie stammt" width="620">
+<img src="images/de/training-aim.png" alt="Die Zielkarte von Alex: die Scheibe von Blauviolett bis Gelb nach den Punkten pro Dart an jedem Zielpunkt eingefärbt, am hellsten um die Triple 19, mit einem Ring am besten Zielpunkt; darunter der beste Zielpunkt, T19 mit 18,3 Punkten pro Dart, gegen die Triple 20 mit 17,3 und das Bull mit 15,7, und die Streuung, aus der sie stammt" width="620">
 
 - **Aus deinen Darts:** Die Karte braucht 30 Darts, die du auf ein Triple geworfen hast, unter deinen letzten 1000 gespeicherten Darts. In X01 zielt jeder Dart einer Aufnahme zum Punkten auf die Triple 20; Checkout-Wege zielen auf andere Triples. Bis dahin sagt die Karte, wie viele Darts noch fehlen.
-- **Die Karte:** jede Stelle der Scheibe nach den Punkten pro Dart eingefärbt, die du machst, wenn du dorthin zielst, von 60 % des Besten (Blau) bis zum Besten (Rot). Ein Ring markiert den besten Zielpunkt.
+- **Die Karte:** jede Stelle der Scheibe nach den Punkten pro Dart eingefärbt, die du machst, wenn du dorthin zielst, von 60 % des Besten (Blauviolett) bis zum Besten (Gelb). Ein Ring markiert den besten Zielpunkt.
 - **Unter der Scheibe:** der beste Zielpunkt mit seinen Punkten pro Dart, die Punkte pro Dart der Triple 20, der Triple 19 und des Bulls mit dem, was sie weniger bringen, und die Streuung, aus der die Karte stammt: seitlich, in der Höhe und wo deine Darts im Mittel landen.
 - **Für die Session oder einen Spieler,** wie der zweite Umschalter es wählt.
 
@@ -148,7 +148,7 @@ Die Entitäts-IDs hängen vom Namen deines Boards und der Sprache bei der Einric
 
 ## Doppelanalyse
 
-<img src="images/de/doubles-card.png" alt="Doubles-Karte: der Doppelring nach Quote von Rot bis Grün eingefärbt und eine Liste der Doubles mit Treffern, Darts und Quote, das beste zuerst" width="760">
+<img src="images/de/doubles-card.png" alt="Doubles-Karte: der Doppelring nach Quote von Blauviolett bis Gelb eingefärbt und eine Liste der Doubles mit Treffern, Darts und Quote, das beste zuerst" width="760">
 
 Home Assistant zählt jedes Double, das du triffst, in jedem Spiel und im Training ohne Spiel, egal wohin der Dart zielte. Für die Quote zählt es zusätzlich jeden Dart aufs Double und ob er getroffen hat: bei X01 mit Double-Out, sobald ein Double den Rest checken könnte, im Doppeltraining, bei Bob's 27, im Checkout-Training, beim 121-Checkout und bei Catch 40 genauso wie bei X01 und im Double-Teil der JDC Challenge. Die [Doubles-Karte](cards.de.md#doubles-karte) zeigt jedes getroffene Double auf der Scheibe, wie oft du es getroffen hast und, wo Darts darauf zielten, seine Quote, für alle oder mit `player` für einen Spieler mit Namen. Ein Dart in der D20 beim Zielen auf die Triple 20 zählt als Treffer der D20, aber nicht für die Quote der D20. *Lieblingsdouble* nennt dein bestes Double mit mindestens 10 Darts.
 
