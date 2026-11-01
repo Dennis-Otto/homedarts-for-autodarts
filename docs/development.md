@@ -642,6 +642,30 @@ failure, is *Wait until Harden-Runner has removed Docker*, which runs after a fa
 too: it waits until neither `apt-get` nor `dpkg` runs, for two minutes at most, which
 costs a job that runs longer nothing.
 
+GitHub is trying out a DNS resolver and an outbound proxy of its own on some of its
+runners, so far those in the Azure region `westus2`. There, a drop-in of
+`systemd-resolved`, `90-egress-proxy.conf`, empties the list of its DNS servers, and
+`/etc/resolv.conf` names `127.0.0.100`, so the lookups of a job pass Harden-Runner by. It
+never learns the addresses that they return and drops the connections to them: a step
+fails within milliseconds on a host that its job allows, with `Couldn't connect to server`
+or `connection refused`, and the runner, whose own hosts are dropped the same way, hangs
+after *Complete job* until GitHub cancels the job at its timeout. At least 33 of the 46
+jobs that [#463](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/463) lists went this way, every one of them
+in `westus2`. Harden-Runner takes the experiment away itself since v2.22.3, when one
+request for its feature flags answers within 3 seconds
+([its issue](https://github.com/step-security/harden-runner/issues/708)), so
+`tests/test_workflow_network.py` keeps every job of these workflows at that release or a
+later one. Every job with sudo also does it itself in its next step, *Let Harden-Runner
+see the DNS lookups*, in case that request didn't answer, and does nothing on any other
+runner. A job without sudo can't: for it, the timeout of the job remains the last resort,
+and the flaky-test bot runs it again. Once GitHub has ended the experiment or Harden-Runner
+no longer depends on that request, this step goes again.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/en/harden-runner-dns-dark.png">
+  <img src="images/en/harden-runner-dns-light.png" alt="Why Harden-Runner has to see the DNS lookups of a job: A step or the runner looks up a host. When Harden-Runner answers, it notes the address of an allowed host and the connection passes. On a runner with GitHub's DNS experiment, so far in the region westus2, another resolver answers. Harden-Runner never sees the address and drops the connection, so the step fails and the runner hangs until the timeout of the job. Harden-Runner since v2.22.3, when its feature flags come within 3 seconds, and the step after it in every job with sudo take the experiment away." width="560">
+</picture>
+
 A host that a job doesn't list fails its step with an error such as a failed DNS lookup
 or a refused connection. The host itself appears as `domain not allowed: <host>` in the
 log of the job's last step, *Post Block every host that the job doesn't need*, and on
@@ -649,8 +673,9 @@ the page of StepSecurity's insights that Harden-Runner links in its first step. 
 that needs it, with a comment that says why, and into `tests/test_workflow_network.py`.
 That test fails for a job of these workflows that it doesn't know, a host that a job
 doesn't need, a job back in audit mode, a job without containers that keeps sudo, a job
-without sudo and Docker that doesn't wait for their removal, and a job that may write
-and reaches more than GitHub. Harden-Runner filters the addresses of
+without sudo and Docker that doesn't wait for their removal, a job with sudo that doesn't
+let Harden-Runner see its lookups, a release of Harden-Runner before v2.22.3, and a job
+that may write and reaches more than GitHub. Harden-Runner filters the addresses of
 the runner and of Docker's default network; the containers of the Compose networks get
 their addresses from its DNS, which resolves only the hosts of the job. The
 workflows that the blueprint keeps follow its own rules.

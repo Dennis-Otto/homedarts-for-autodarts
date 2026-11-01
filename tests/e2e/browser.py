@@ -21,6 +21,8 @@ from pages import (
     CARDS_DRAWN,
     STATES,
     expect_state,
+    find,
+    open_card_form,
     probe,
     run_until,
     settle,
@@ -66,20 +68,6 @@ WANTED = os.environ.get("BROWSER_STEPS", "")
 SHARD = os.environ.get("BROWSER_SHARD", "")
 # The integration as mounted by browser.sh, for the texts every language expects.
 INTEGRATION = Path(__file__).resolve().parents[2] / "custom_components" / "homedarts"
-
-
-def find(tag: str) -> str:
-    """A page function returning every card element with this tag, in shadow roots too."""
-    return f"""
-() => {{
-  const cards = [];
-  (function collect(root) {{
-    root.querySelectorAll('{tag}').forEach((card) => cards.push(card));
-    root.querySelectorAll('*').forEach((el) => el.shadowRoot && collect(el.shadowRoot));
-  }})(document);
-  return cards;
-}}
-"""
 
 
 CARDS = find("homedarts-card")
@@ -3005,21 +2993,7 @@ def editor(
 ) -> None:
     """Home Assistant builds the card's form from getConfigForm."""
     page, problems = open_view(browser, view, cards, ready)
-    page.goto(f"{HA}/homedarts-demo/{view}?edit=1")
-    page.wait_for_function(
-        f"() => ({cards})().some((card) => card.shadowRoot?.querySelector('{ready}'))",
-        timeout=30000,
-    )
-    # The path of a card names its view, its section and its place, as the pencil of
-    # Home Assistant sends it. From 2026.11 on Home Assistant opens the card the path
-    # names, in whichever view the event comes from, so it has to name this view; before
-    # that it took the view and the section from the element around the event.
-    page.evaluate(
-        f"() => ({cards})()[0].dispatchEvent(new CustomEvent('ll-edit-card',"
-        " {bubbles: true, composed: true, detail: {path:"
-        f" [({find('hui-view')})()[0].index, 0, 0]}}}}))"
-    )
-    page.locator("hui-form-editor ha-form").first.wait_for(timeout=15000)
+    open_card_form(page, cards)
     fields = page.evaluate(f"() => ({FORM_EDITORS})()[0].schema.length")
     check(fields == rows, f"{view} form has {fields} rows")
     # The labels are the card's own, not generic names.

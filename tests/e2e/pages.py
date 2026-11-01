@@ -161,6 +161,60 @@ class Unsettled(AssertionError):
     """A page that did not reach what the test waits for."""
 
 
+def find(tag: str) -> str:
+    """A page function returning every card element with this tag, in shadow roots too."""
+    return f"""
+() => {{
+  const cards = [];
+  (function collect(root) {{
+    root.querySelectorAll('{tag}').forEach((card) => cards.push(card));
+    root.querySelectorAll('*').forEach((el) => el.shadowRoot && collect(el.shadowRoot));
+  }})(document);
+  return cards;
+}}
+"""
+
+
+def card_frame(cards: str) -> str:
+    """A page function returning the frame around the first card that the page function
+    `cards` finds, which a card has only in the edit mode of a dashboard."""
+    return f"""
+() => {{
+  let frame = ({cards})()[0];
+  while (frame && frame.localName !== 'hui-card-edit-mode') {{
+    frame = frame.parentNode ?? frame.host;
+  }}
+  return frame ?? null;
+}}
+"""
+
+
+def edit_card(cards: str) -> str:
+    """A page function that opens the form of the first card that the page function
+    `cards` finds, as its pencil does in the edit mode of a dashboard: with the path
+    that Home Assistant gave the frame of the card. Home Assistant 2026.11 takes the
+    path as it is, so a fixed one opens the first card of the first view."""
+    return f"""
+() => {{
+  const frame = ({card_frame(cards)})();
+  frame.dispatchEvent(new CustomEvent('ll-edit-card', {{
+    bubbles: true, composed: true, detail: {{path: frame.path}},
+  }}));
+}}
+"""
+
+
+def open_card_form(page: Page, cards: str) -> None:
+    """Open the form of the first card of a dashboard that has drawn it. Edit mode comes
+    from the dashboard itself, as the address alone is not enough: Home Assistant drops
+    ?edit=1 when the dashboard draws before it knows the user (#249)."""
+    page.evaluate(f"() => ({find('hui-root')})()[0].lovelace.setEditMode(true)")
+    page.wait_for_function(card_frame(cards), timeout=15000)
+    page.evaluate(edit_card(cards))
+    # Home Assistant builds the form of the card from getConfigForm.
+    page.locator("hui-form-editor ha-form").first.wait_for(timeout=15000)
+
+
 def probe(target: Page | BrowserContext) -> None:
     """Follow the websocket of every page of a context, or of one page, from its load."""
     target.add_init_script(WS_PROBE)
