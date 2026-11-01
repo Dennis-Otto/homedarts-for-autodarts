@@ -778,6 +778,30 @@ def test_firefox_plays_the_cards_that_the_steps_in_chromium_check():
     assert {"scoreboard", "lobby", "training_after_others", "editor"} <= called
 
 
+@pytest.mark.parametrize("name", ["safari", "firefox"])
+def test_a_browser_of_its_own_keeps_its_screenshots_when_a_wait_is_cancelled(name):
+    """The budget of a step ends a wait in a page with a CancelledError, which is no
+    Exception. main() sees only the pages of Chromium, so the step saves its own."""
+    tree = ast.parse((E2E / "browser.py").read_text(encoding="utf-8"))
+    (function,) = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == name
+    ]
+    (handler,) = [
+        node
+        for node in ast.walk(function)
+        if isinstance(node, ast.ExceptHandler)
+        and any(
+            isinstance(call, ast.Name) and call.id == "keep_screenshots"
+            for call in ast.walk(node)
+        )
+    ]
+    assert isinstance(handler.type, ast.Tuple)
+    caught = {ast.unparse(item) for item in handler.type.elts}
+    assert caught == {"Exception", "asyncio.CancelledError"}
+
+
 def test_the_nightly_beta_runs_every_group_with_one_browser():
     job = WORKFLOW["jobs"]["beta"]
     browser = [step for step in job["steps"] if "browser.sh" in step.get("run", "")]

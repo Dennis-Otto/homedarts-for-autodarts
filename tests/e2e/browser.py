@@ -5,6 +5,7 @@ Runs in the Playwright container on the demo's Compose network (see browser.sh).
 
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 import os
@@ -1884,8 +1885,9 @@ def safari(playwright: Playwright) -> None:
         page.locator(f"{card} [data-lobby='close']").tap()
         errors = page_errors(page, [])
         check(not errors, f"Console problems: {errors}")
-    except Exception:
-        # The pages of this browser, which the screenshots of main() don't see.
+    except (Exception, asyncio.CancelledError):
+        # The pages of this browser, which the screenshots of main() don't see. A wait
+        # in a page that outlasts the budget ends with a CancelledError (watchdog.py).
         keep_screenshots(browser, step)
         keep_trace(browser, step, timeline)
         raise
@@ -1929,8 +1931,9 @@ def firefox(playwright: Playwright) -> None:
         for part in parts:
             board.between_games()
             part()
-    except Exception:
-        # The pages of this browser, which the screenshots of main() don't see.
+    except (Exception, asyncio.CancelledError):
+        # The pages of this browser, which the screenshots of main() don't see. A wait
+        # in a page that outlasts the budget ends with a CancelledError (watchdog.py).
         keep_screenshots(browser, "Firefox on a desktop", besides=board.page)
         raise
     finally:
@@ -3736,9 +3739,9 @@ def steps(browser: Browser, playwright: Playwright) -> list[Step]:
     short steps of group 1. The groups 3 and 4 have a runner each, so that Safari's
     WebKit in group 4 shares the CPU with no other browser: it failed to load the
     scripts of Home Assistant while every screen size opened nine screens beside it.
-    Firefox runs in group 3, the shortest of the groups, with no browser beside it
-    either. A step that runs longer than its budget fails (shards.BUDGET): one of about
-    three times its longest run in CI, at least two minutes."""
+    Firefox runs in group 3, with no browser beside it either. A step that runs longer
+    than its budget fails (shards.BUDGET): one of about three times its longest run in
+    CI, at least two minutes."""
     return [
         # Both read the demo as demo.py left it: the training card its session before
         # any control changes it, the live card the visit on the board.

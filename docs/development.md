@@ -240,7 +240,7 @@ Every step starts from the board between games, whatever the step before it left
 
 `tests/test_e2e_shards.py` checks the groups without a browser: every step has one, every number of shards from one to four runs every step once and in its order, the steps that read the demo as it started come first, the dartboard without Autodarts comes last, and the steps launch Chromium, WebKit and Firefox, with Firefox in a job of one worker. It also runs `browser.sh` with a stand-in for `docker`, which shows the shard, project and artifacts of every worker, and that a failed worker fails the run and keeps its logs alone.
 
-Firefox has one step, *Firefox on a desktop*, in group 3: that group had the most room, and its runner has no second browser. The image of Playwright already contains Firefox, so the step needs no job, no host and no image of its own, and it adds about 20 seconds to its shard, which stays shorter than the shards 1/4 and 2/4.
+Firefox has one step, *Firefox on a desktop*, in group 3, whose runner has no second browser. The image of Playwright already contains Firefox, so the step needs no job, no host and no image of its own, and it adds about 15 seconds to its shard.
 
 The seconds of its steps make a group slower or faster. When a step grows, `browser-steps-table.md` of its shard shows it, and moving a step to another group in `steps()` balances the shards again.
 
