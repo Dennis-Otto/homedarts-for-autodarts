@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
   accTitle: Aufgezeichnete Antworten des Board Managers
-  accDescr: scripts/capture_board.py zeichnet auf, was ein echtes Board antwortet, und ersetzt seine ID, seine Schlüssel und die Adressen seines Netzwerks durch Platzhalter. Die Aufzeichnungen von Board Manager 1.0.7, 2.0.0 und 2.0.2 in tests/fixtures/board_manager sind das, was das Double der Unit-Tests und das des Docker-End-to-End-Tests antworten. tests/test_board_contract.py prüft, dass beide jede Route in der Form ihrer Aufzeichnung beantworten, dass die Integration jede Aufzeichnung liest und dass keine ein Geheimnis enthält, und schlägt fehl, wenn ein Double abweicht.
+  accDescr: scripts/capture_board.py zeichnet auf, was ein echtes Board antwortet, und ersetzt seine ID, seine Schlüssel und die Adressen seines Netzwerks durch Platzhalter. Die Aufzeichnungen von Board Manager 1.0.7, 2.0.0, 2.0.2 und 2.1.0 in tests/fixtures/board_manager sind das, was das Double der Unit-Tests und das des Docker-End-to-End-Tests antworten. tests/test_board_contract.py prüft, dass beide jede Route in der Form ihrer Aufzeichnung beantworten, dass die Integration jede Aufzeichnung liest und dass keine ein Geheimnis enthält, und schlägt fehl, wenn ein Double abweicht.
 
   BOARD["Ein echtes Board,<br/>Board Manager 1 oder 2"] --> CAPTURE["scripts/capture_board.py:<br/>Platzhalter für seine ID,<br/>seine Schlüssel und Adressen"]
-  CAPTURE --> RECORDINGS[("tests/fixtures/board_manager:<br/>1.0.7, 2.0.0 und 2.0.2")]
+  CAPTURE --> RECORDINGS[("tests/fixtures/board_manager:<br/>1.0.7, 2.0.0, 2.0.2 und 2.1.0")]
   RECORDINGS --> UNIT["Double der Unit-Tests,<br/>tests/local_helpers.py"]
   RECORDINGS --> E2E["Double des Docker-<br/>End-to-End-Tests,<br/>tests/e2e/board_mock.py"]
   UNIT --> CONTRACT{{"tests/test_board_contract.py:<br/>jede Route in der Form<br/>ihrer Aufzeichnung, jede Aufzeichnung<br/>von der Integration gelesen,<br/>kein Geheimnis"}}

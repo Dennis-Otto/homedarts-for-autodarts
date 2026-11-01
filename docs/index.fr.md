@@ -202,7 +202,7 @@ Ce que chaque version a apporté se trouve dans le [journal des modifications](c
 
 ## Appareils pris en charge
 
-- **Board Manager 2 :** Autodarts 2 sans écran (headless), testé jusqu'à la version 2.0.2 et détecté automatiquement.
+- **Board Manager 2 :** Autodarts 2 sans écran (headless), testé jusqu'à la version 2.1.0 et détecté automatiquement.
 - **Board Manager 1 :** l'application classique, testée avec la version 1.0.7.
 - **Autodarts Desktop** sous Linux fonctionne, selon un joueur ; Autodarts Desktop sous Windows et les appareils de Winmau comme Autodarts X n'ont pas encore été testés.
 - **Home Assistant** 2026.8 ou plus récent.

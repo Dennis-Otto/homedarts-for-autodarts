@@ -1,7 +1,7 @@
 """The recorded answers of the Board Manager, and the two doubles that answer like them.
 
-tests/fixtures/board_manager holds what Board Manager 1.0.7, 2.0.0 and 2.0.2 answer,
-redacted by scripts/capture_board.py. The double of the unit tests (local_helpers.py)
+tests/fixtures/board_manager holds what Board Manager 1.0.7, 2.0.0, 2.0.2 and 2.1.0
+answer, redacted by scripts/capture_board.py. The double of the unit tests (local_helpers.py)
 and that of the Docker end-to-end test (tests/e2e/board_mock.py) answer like them.
 These tests fail when a double answers a route in another shape than its recording,
 when the integration can't read a recording, when a recording keeps a secret, and
@@ -13,6 +13,7 @@ import importlib.util
 import json
 from contextlib import asynccontextmanager
 from datetime import date
+from functools import partial
 from pathlib import Path
 
 import aiohttp
@@ -21,7 +22,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestServer
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from custom_components.homedarts.local_api import AutodartsLocalClient
+from custom_components.homedarts.local_api import (
+    AutodartsEndpointMissing,
+    AutodartsLocalClient,
+    _snake_case,
+    board_state,
+    board_system,
+)
 
 from .local_helpers import (
     BASE,
@@ -55,8 +62,19 @@ capture_board = load("capture_board", ROOT / "scripts" / "capture_board.py")
 ROUTES = capture_board.ROUTES
 PLACEHOLDERS = capture_board.PLACEHOLDERS
 VERSIONS = sorted(path.name for path in RECORDINGS.iterdir() if path.is_dir())
-# The generations of the end-to-end double, by the version it answers as.
-GENERATIONS = [(1, "1.0.7"), (2, "2.0.0")]
+# What BOARD_MANAGER says to the end-to-end double, by the version it answers as.
+GENERATIONS = [(1, "1.0.7"), (2, "2.0.0"), ("2.1", "2.1.0")]
+# The doubles the capture script can record: on 2.1 it still leaves the board ID in a
+# recording. The fix of issue 526 removes this constant and captures all GENERATIONS.
+CAPTURED = GENERATIONS[:2]
+# The routes of a Board Manager that its version doesn't have.
+ABSENT = {
+    "1.0.7": {"/api/system", "/api/host"},
+    "2.1.0": {"/api/state/motion"},
+}
+# The frames of a real board of 2.1.0 with real darts: the recording of 2.1.0 comes
+# from a board on which none was thrown.
+THROWN_2_1 = RECORDINGS.parent / "board_manager_2.1.0_frames.jsonl"
 
 
 def shape(value):
@@ -105,8 +123,12 @@ def frames(version: str) -> list[dict]:
 
 
 def states(version: str) -> list[dict]:
-    """The state frames of a recording."""
-    return [frame for frame in frames(version) if frame["type"] == "state"]
+    """The state frames of a recording, and of 2.1.0 those with real darts."""
+    recorded_frames = frames(version)
+    if version == "2.1.0":
+        lines = THROWN_2_1.read_text(encoding="utf-8").splitlines()
+        recorded_frames += [json.loads(line) for line in lines]
+    return [frame for frame in recorded_frames if frame["type"] == "state"]
 
 
 def summary(version: str) -> dict:
@@ -158,7 +180,7 @@ def replay(version: str) -> web.Application:
 
 def test_every_tested_version_is_recorded():
     # A new capture adds a folder, which every test here takes up by itself.
-    assert {"1.0.7", "2.0.0", "2.0.2"} <= set(VERSIONS)
+    assert {"1.0.7", "2.0.0", "2.0.2", "2.1.0"} <= set(VERSIONS)
     assert {version for _, version in GENERATIONS} <= set(VERSIONS)
 
 
@@ -175,9 +197,9 @@ def test_a_recording_answers_every_route_or_names_it_absent(version):
     assert summary(version)["board_manager"] == version
     # As the board answers it, maybe with a v, which the folder leaves out.
     assert capture_board.folder_name(recorded(version, "version.txt")) == version
-    # Board Manager 2 has /api/system and /api/host, the classic one neither.
-    generation = int(version.split(".")[0])
-    assert absent == (set() if generation >= 2 else {"/api/system", "/api/host"})
+    # Board Manager 2 has /api/system and /api/host, the classic one neither, and
+    # 2.1 no /api/state/motion.
+    assert absent == ABSENT.get(version, set())
     # A recording says whether it comes from a real board, and when.
     captured = summary(version)["captured"]
     assert captured is None or date.fromisoformat(captured)
@@ -191,15 +213,31 @@ def test_a_recording_keeps_only_placeholders(version):
     assert capture_board.secrets([recording, frames(version)]) == {}
     assert capture_board.redact(recording, {}) == recording
     assert capture_board.redact(frames(version), {}) == frames(version)
-    # The placeholders stand where the board keeps the secrets.
-    auth = recording["config.json"]["auth"]
+    # The placeholders stand where the board keeps the secrets, in its spelling; a
+    # board without a key has an empty one, which is no secret.
+    auth = _snake_case(recording["config.json"]["auth"])
     assert auth["board_id"] == PLACEHOLDERS["board_id"]
-    assert auth["api_key"] == PLACEHOLDERS["api_key"]
+    assert auth["api_key"] in (PLACEHOLDERS["api_key"], "")
     if "system.json" in recording:
-        host = recording["system.json"]["config"]["host"]
-        assert host["tls_key"] == PLACEHOLDERS["tls_key"]
+        host = _snake_case(recording["system.json"]["config"]["host"])
+        assert host["tls_key"] in (PLACEHOLDERS["tls_key"], "")
         names = {key: recording["host.json"][key] for key in ("hostname", "ip")}
         assert names == {key: PLACEHOLDERS[key] for key in names}
+
+
+@pytest.mark.parametrize("version", VERSIONS)
+def test_the_capture_script_writes_a_recording_byte_for_byte_again(version):
+    # A change of the redaction shows here before it changes a recording of a board.
+    _, content = capture_board.files(
+        answers(version), frames(version), [], PLACEHOLDERS["hostname"], None
+    )
+
+    assert set(content) == {
+        path.name for path in (RECORDINGS / version).iterdir() if path.is_file()
+    }
+    for name, text in content.items():
+        if name != capture_board.CAPTURE:
+            assert text == (RECORDINGS / version / name).read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("version", VERSIONS)
@@ -212,13 +250,19 @@ async def test_the_integration_reads_every_recording(version):
             "version": version,
             "camera_count": len(recording["config.json"]["cam"]["cams"]),
         }
-        assert await client.get_state() == recording["state.json"]
-        assert await client.get_stats() == recording["state-stats.json"]
-        assert await client.get_camera_stats() == recording["cams-stats.json"]
+        assert await client.get_state() == board_state(recording["state.json"])
+        assert await client.get_stats() == {"fps": recording["state-stats.json"]["fps"]}
+        assert await client.get_camera_stats() == {
+            "fps": recording["cams-stats.json"]["fps"]
+        }
         assert await client.get_camera_state() == recording["cams-state.json"]
-        assert await client.get_motion_state() == recording["state-motion.json"]
+        if "state-motion.json" in recording:
+            assert await client.get_motion_state() == recording["state-motion.json"]
+        else:
+            with pytest.raises(AutodartsEndpointMissing):
+                await client.get_motion_state()
         if "system.json" in recording:
-            raw = recording["system.json"]
+            raw = board_system(recording["system.json"])
             system = await client.get_system()
             assert system["version"] == version
             assert system["config"]["board_id"] == "board-1"
@@ -232,6 +276,7 @@ async def test_the_integration_reads_every_recording(version):
                 "memory_bytes": raw["stats"]["memoryBytes"],
                 "update_available": raw["updateAvailable"] or None,
                 "cloud_link": raw["link"],
+                "calibrating_cameras": raw.get("calibratingCams"),
             }
             # Every detail of the board PC that the integration keeps is understood.
             host = await client.get_host()
@@ -239,7 +284,11 @@ async def test_the_integration_reads_every_recording(version):
         received = [event async for event in REAL_EVENTS(client)]
     assert received[0] == ("connected", {})
     assert received[1:-1] == [
-        (frame["type"], frame["data"]) for frame in frames(version)
+        (
+            frame["type"],
+            board_state(frame["data"]) if frame["type"] == "state" else frame["data"],
+        )
+        for frame in frames(version)
     ]
     assert received[-1][0] == "closed"
     assert client.ignored_frames == 0
@@ -268,14 +317,15 @@ async def test_the_end_to_end_double_keeps_the_identity_of_the_test(
 ):
     async with serve(board_mock.create_app(generation)) as (server, session):
         async with session.get(server.make_url("/api/config")) as response:
-            auth = (await response.json())["auth"]
+            auth = _snake_case((await response.json())["auth"])
         assert auth == {"board_id": board_mock.BOARD_ID, "api_key": board_mock.API_KEY}
-        if generation >= 2:
+        if board_mock.generation_of(generation) >= 2:
             async with session.get(server.make_url("/api/system")) as response:
-                system = await response.json()
-            assert system["config"]["host"]["tls_key"] == board_mock.TLS_KEY
+                system = board_system(await response.json())
+            host = _snake_case(system["config"]["host"])
+            assert host["tls_key"] == board_mock.TLS_KEY
             assert system["version"] == board_mock.version_of(generation) == version
-            assert system["updateAvailable"] == board_mock.UPDATE
+            assert system["updateAvailable"] == board_mock.UPDATES[str(generation)]
 
 
 @pytest.mark.parametrize(("generation", "version"), GENERATIONS)
@@ -298,8 +348,72 @@ async def test_the_end_to_end_double_sends_frames_like_its_recording(
                 assert shape(sent) == shape(frame), frame
 
 
+async def test_the_end_to_end_double_says_the_words_of_the_scenario_as_2_1_does():
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    darts = [
+        {
+            "segment": {
+                "name": "T20",
+                "number": 20,
+                "multiplier": 3,
+                "bed": "Triple",
+            },
+            "coords": {"x": 0.0123, "y": 0.5981},
+        }
+    ]
+    async with serve(app) as (server, session):
+        async with session.ws_connect(server.make_url("/api/events")) as socket:
+            await until(lambda: double.sockets)
+            await session.post(
+                server.make_url("/control/state"),
+                json={
+                    "running": True,
+                    "status": "Takeout in progress",
+                    "event": "Takeout started",
+                    "throws": darts,
+                },
+            )
+            sent = await socket.receive_json(timeout=5)
+    data = sent["data"]
+    assert (data["status"], data["event"]) == ("takeoutInProgress", "takeoutStarted")
+    # As a real board sends a dart.
+    real = next(frame for frame in states("2.1.0") if frame["data"]["throws"])
+    assert shape(data["throws"]) == shape(real["data"]["throws"][:1])
+    # It reads as what the scenario said.
+    assert board_state(data)["throws"] == darts
+    assert board_state(data)["status"] == "Takeout in progress"
+
+
+async def test_the_end_to_end_double_of_2_1_refuses_the_spelling_of_2_0():
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    async with serve(app) as (server, session):
+        old = {"motion": {"standby_minutes": 30}}
+        async with session.patch(server.make_url("/api/config"), json=old) as response:
+            assert response.status == 400
+        assert double.unexpected
+        new = {"motion": {"standbyMinutes": 30}}
+        async with session.patch(server.make_url("/api/config"), json=new) as response:
+            assert response.status == 200
+        assert double.config["motion"]["standbyMinutes"] == 30
+
+
+def test_the_words_of_board_manager_2_1_stay_as_they_are():
+    for words in ("throw", "takeoutInProgress", "stopped", "throwDetected"):
+        assert board_mock.words_of_2_1(words) == words
+    assert board_mock.words_of_2_1("Throw") == "throw"
+    assert board_mock.words_of_2_1("Throw detected") == "throwDetected"
+
+
 @pytest.mark.parametrize(
-    ("setup", "version"), [(mock_board, "1.0.7"), (mock_board_v2, "2.0.0")]
+    ("setup", "version"),
+    [
+        (mock_board, "1.0.7"),
+        (mock_board_v2, "2.0.0"),
+        (partial(mock_board_v2, recording="2.0.2"), "2.0.2"),
+        (partial(mock_board_v2, recording="2.1.0"), "2.1.0"),
+    ],
 )
 async def test_the_unit_double_answers_as_recorded(
     hass, aioclient_mock, setup, version
@@ -321,10 +435,11 @@ def test_the_darts_of_the_unit_tests_have_only_keys_the_board_sends(version):
     thrown = [frame for frame in states(version) if frame["data"]["throws"]]
     assert thrown
     for frame in thrown:
-        assert within(shape(board(T20, S20, BULL)), shape(frame["data"])), frame
+        data = shape(board_state(frame["data"]))
+        assert within(shape(board(T20, S20, BULL)), data), frame
 
 
-@pytest.mark.parametrize(("generation", "version"), GENERATIONS)
+@pytest.mark.parametrize(("generation", "version"), CAPTURED)
 async def test_a_capture_of_the_end_to_end_double_matches_its_recording(
     tmp_path, generation, version
 ):

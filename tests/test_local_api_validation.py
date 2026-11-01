@@ -138,6 +138,7 @@ async def test_texts_of_the_board_are_checked(client, aioclient_mock):
         "memory_bytes": 5,
         "update_available": None,
         "cloud_link": None,
+        "calibrating_cameras": None,
     }
     host = await client.get_host()
     assert host["os"] is None

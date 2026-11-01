@@ -178,7 +178,7 @@ How HomeDarts compares with the Autodarts app and its browser extension, with da
 
 **Home Assistant 2026.8 or newer** with [HACS](https://hacs.xyz), and an Autodarts board in your network, or any dartboard whose darts you enter on a keypad ([play without Autodarts](https://dennis-otto.github.io/homedarts-for-autodarts/without-autodarts.html)), or a Granboard within reach of Home Assistant's Bluetooth ([Granboard](https://dennis-otto.github.io/homedarts-for-autodarts/granboard.html), experimental). No Autodarts account is needed.
 
-- **Board Manager 2**, Autodarts 2 without a screen, is recommended and tested up to 2.0.2; the classic **Board Manager 1** works too.
+- **Board Manager 2**, Autodarts 2 without a screen, is recommended and tested up to 2.1.0; the classic **Board Manager 1** works too.
 - A player reports that **Autodarts Desktop** 2.0.2 on Linux works too.
 - Autodarts Desktop on Windows and Winmau Autodarts devices such as Autodarts X have not been tested yet; a [compatibility report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) helps, whether it works or not.
 

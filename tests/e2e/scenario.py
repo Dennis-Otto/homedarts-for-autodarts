@@ -17,7 +17,16 @@ from collections.abc import Awaitable
 from pathlib import Path
 
 import aiohttp
-from board_mock import API_KEY, BOARD_ID, GENERATION, PORT, TLS_KEY, UPDATE, VERSION
+from board_mock import (
+    API_KEY,
+    BOARD_ID,
+    GENERATION,
+    INTERFACE_2_1,
+    PORT,
+    TLS_KEY,
+    UPDATE,
+    VERSION,
+)
 from ha_reports import reports
 from pictures import board_photo
 from watchdog import within
@@ -529,6 +538,9 @@ class Scenario:
             expected |= {"cloud_link": "on", "board_software": "on"}
         else:
             expected |= {"upstream": "on"}
+        if INTERFACE_2_1:
+            # An option that Board Manager 2.1 no longer has.
+            expected["auto_calibrate"] = "unavailable"
         await self.expect_states(expected)
         if GENERATION >= 2:
             update = await self.state("board_software")
@@ -558,12 +570,20 @@ class Scenario:
             {
                 "method": "PATCH",
                 "path": "/api/config",
-                "body": {"cam": {"auto_distortion": True}},
+                "body": {
+                    "cam": {
+                        "autoDistortion" if INTERFACE_2_1 else "auto_distortion": True
+                    }
+                },
             },
             {
                 "method": "PATCH",
                 "path": "/api/config",
-                "body": {"motion": {"standby_minutes": 30}},
+                "body": {
+                    "motion": {
+                        "standbyMinutes" if INTERFACE_2_1 else "standby_minutes": 30
+                    }
+                },
             },
             {
                 "method": "POST",

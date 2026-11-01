@@ -57,6 +57,59 @@ def answers():
 
 FRAMES = [{"type": "state", "data": {"board": BOARD_ID, "from": f"{HOSTNAME}.lan"}}]
 
+# What Board Manager 2.1 answers in place of that, with its keys in camelCase and
+# the serial numbers of the cameras, the name of its link server and the name of the
+# device it streams to. tests/fixtures/board_manager keeps none of these values.
+SERIALS = ("A1B2C3D4E5", "F6A7B8C9D0", "E1F2A3B4C5")
+LINK_SERVER = "kellerbar-board"
+STREAMING_TO = "kitchen-tablet"
+SECRETS_2_1 = (*SECRETS, *SERIALS, LINK_SERVER, STREAMING_TO)
+
+
+def camera(port: int, serial: str) -> str:
+    return (
+        f"vid=1dfc&pid=8513&serial={serial}&location=pci-0000:00:14.0-usb-0:{port}:1.0"
+    )
+
+
+def answers_2_1():
+    config = {
+        "auth": {"apiKey": API_KEY, "boardId": BOARD_ID},
+        "cam": {
+            "autoCalibrateOnStart": False,
+            "cams": [camera(port, serial) for port, serial in zip((3, 4, 8), SERIALS)],
+        },
+        "host": {"port": "3180", "tlsCert": TLS_CERT, "tlsKey": TLS_KEY, "tlsPort": ""},
+        "linkServer": {"enabled": True, "interfaces": [ADDRESS], "name": LINK_SERVER},
+    }
+    return {
+        "version.txt": "2.1.0\n",
+        "config.json": config,
+        "system.json": {
+            "camStats": [{"fps": 30, "height": 1024, "id": 0, "width": 1280}],
+            "config": config,
+            "status": {
+                "link": "connected",
+                "linkServer": {
+                    "error": f"board {BOARD_ID} lost camera {SERIALS[0]}",
+                    "interfaces": [ADDRESS],
+                    "streamingTo": STREAMING_TO,
+                },
+                "version": "2.1.0",
+            },
+            "vantage": {"motion": {"camStates": [{"camId": 0, "isHand": False}]}},
+        },
+        "host.json": {
+            "cam1": {"name": "USB Camera", "pid": "8513", "vid": "1dfc"},
+            "cpu": {"cores": 4, "model": "Intel(R) Core(TM) i3-9100T CPU @ 3.10GHz"},
+            "hostname": HOSTNAME,
+            "ip": ADDRESS,
+        },
+    }
+
+
+FRAMES_2_1 = [{"type": "state", "data": {"board": BOARD_ID, "event": "throwDetected"}}]
+
 
 def written(content: dict[str, str]) -> dict:
     return {
@@ -116,6 +169,414 @@ def test_a_recording_says_placeholders_instead_of_the_secrets_of_the_board():
             # Neither as it is nor as JSON writes it, such as a key of several lines.
             assert secret not in text
             assert json.dumps(secret)[1:-1] not in text
+
+
+def test_a_recording_of_board_manager_2_1_says_placeholders_too():
+    version, content = capture_board.files(
+        answers_2_1(), FRAMES_2_1, ["/api/state/motion"], ADDRESS, "2026-10-31"
+    )
+
+    assert version == "2.1.0"
+    files = written(content)
+    config = files["config.json"]
+    assert config["auth"] == {
+        "apiKey": PLACEHOLDERS["api_key"],
+        "boardId": PLACEHOLDERS["board_id"],
+    }
+    assert config["host"] == {
+        "port": "3180",
+        "tlsCert": PLACEHOLDERS["tls_cert"],
+        "tlsKey": PLACEHOLDERS["tls_key"],
+        "tlsPort": "",
+    }
+    # The serial number goes; the port keeps three cameras of one model apart.
+    assert config["cam"]["cams"] == [
+        f"vid=1dfc&pid=8513&serial={PLACEHOLDERS['serial']}"
+        f"&location=pci-0000:00:14.0-usb-0:{port}:1.0"
+        for port in (3, 4, 8)
+    ]
+    assert config["linkServer"] == {
+        "enabled": True,
+        "interfaces": [PLACEHOLDERS["ip"]],
+        "name": "private-linkServer-name",
+    }
+    system = files["system.json"]
+    assert system["config"] == config
+    assert system["status"]["linkServer"] == {
+        "error": f"board board-1 lost camera {PLACEHOLDERS['serial']}",
+        "interfaces": [PLACEHOLDERS["ip"]],
+        "streamingTo": "private-streamingTo",
+    }
+    # What the tests of the contract read stays as the board said it.
+    assert system["camStats"] == answers_2_1()["system.json"]["camStats"]
+    assert system["vantage"] == answers_2_1()["system.json"]["vantage"]
+    assert system["status"]["link"] == "connected"
+    assert files["host.json"] == {
+        **answers_2_1()["host.json"],
+        "hostname": PLACEHOLDERS["hostname"],
+        "ip": PLACEHOLDERS["ip"],
+    }
+    assert content[capture_board.FRAMES] == (
+        '{"type":"state","data":{"board":"board-1","event":"throwDetected"}}\n'
+    )
+    for text in content.values():
+        for secret in SECRETS_2_1:
+            assert secret not in text
+            assert json.dumps(secret)[1:-1] not in text
+
+
+def test_nothing_is_written_that_still_holds_a_secret_of_board_manager_2_1(
+    monkeypatch,
+):
+    monkeypatch.setattr(capture_board, "redact", lambda value, found: value)
+
+    with pytest.raises(SystemExit) as stopped:
+        capture_board.files(answers_2_1(), FRAMES_2_1, [], ADDRESS, "2026-10-31")
+
+    # The check finds each of them by itself, not only the one that was found first.
+    for what in (
+        PLACEHOLDERS["board_id"],
+        PLACEHOLDERS["api_key"],
+        PLACEHOLDERS["tls_key"],
+        PLACEHOLDERS["tls_cert"],
+        PLACEHOLDERS["hostname"],
+        PLACEHOLDERS["serial"],
+        "private-linkServer-name",
+        "private-streamingTo",
+        "a private IPv4 address",
+    ):
+        assert what in str(stopped.value)
+
+
+@pytest.mark.parametrize(
+    ("spellings", "name"),
+    [
+        (("boardId", "board_id", "BoardID", "BOARD_ID", "board-id"), "board_id"),
+        (("apiKey", "api_key", "ApiKey", "API_KEY", "api-key"), "api_key"),
+        (("tlsKey", "tls_key", "TlsKey", "TLS_KEY", "tls-key"), "tls_key"),
+        (("tlsCert", "tls_cert", "TLSCert", "TLS_CERT", "tls-cert"), "tls_cert"),
+        (("hostname", "hostName", "host_name", "HOSTNAME"), "hostname"),
+        (("ip", "IP", "Ip"), "ip"),
+    ],
+)
+def test_a_key_is_the_same_key_in_every_spelling(spellings, name):
+    for key in spellings:
+        value = "zq-real-value-of-the-board"
+        _, content = capture_board.files(
+            {"version.txt": "2.2.0", "config.json": {key: value, "log": f"at {value}"}},
+            [],
+            [],
+            "",
+            None,
+        )
+
+        assert json.loads(content["config.json"]) == {
+            key: PLACEHOLDERS[name],
+            "log": f"at {PLACEHOLDERS[name]}",
+        }
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        # An ID of the board, of an account or of what belongs to them.
+        "accountId",
+        "account_id",
+        "userId",
+        "ownerId",
+        "customer_id",
+        "playerId",
+        "dartboardId",
+        "machineId",
+        "hardware_id",
+        "deviceId",
+        "installationId",
+        "sessionId",
+        "boardUuid",
+        "boardIds",
+        "uuid",
+        "GUID",
+        # Names and how to reach someone.
+        "boardName",
+        "accountName",
+        "userName",
+        "username",
+        "displayName",
+        "first_name",
+        "surname",
+        "computerName",
+        "email",
+        "emailAddress",
+        # What a device and its network go by.
+        "serial",
+        "serialNumber",
+        "serial_no",
+        "macAddress",
+        # What a person or a host goes by, without "id" or "name".
+        "user",
+        "owner",
+        "account",
+        "login",
+        "uid",
+        "clientId",
+        "hostId",
+        "systemId",
+        "serverName",
+        "wifiSsid",
+        "ipv6",
+        "ipAddress",
+        "publicIp",
+        "localIpv4",
+        "ipAddr",
+        "ip_addr",
+        "externalIp",
+        "clientIp",
+        # Secrets, also in the middle of a key and as a list.
+        "privateKey",
+        "tlsCertificate",
+        "accessTokenHash",
+        "clientSecretValue",
+        "password",
+        "passwd",
+        "credentials",
+        "apiKeys",
+    ],
+)
+def test_a_key_of_a_later_board_manager_is_recognised(key):
+    value = "zq-real-value-of-the-board"
+    answer = {key: value, "list": {key: [value, value]}, "log": f"at {value}"}
+
+    _, content = capture_board.files(
+        {"version.txt": "2.2.0", "config.json": answer}, [], [], "", None
+    )
+
+    assert value not in content["config.json"]
+    assert set(json.loads(content["config.json"])) == {key, "list", "log"}
+
+
+@pytest.mark.parametrize(
+    ("answer", "placeholder"),
+    [
+        ({"account": {"id": "zq-real-value"}}, "private-account"),
+        ({"board": {"id": "zq-real-value"}}, PLACEHOLDERS["board_id"]),
+        ({"boards": [{"id": "zq-real-value"}]}, "private-boards-id"),
+        ({"user": {"name": "zq-real-value"}}, "private-user"),
+        ({"linkServer": {"name": "zq-real-value"}}, "private-linkServer-name"),
+        ({"link_server": {"name": "zq-real-value"}}, "private-link_server-name"),
+        ({"token": {"value": "zq-real-value"}}, "private-token"),
+        ({"credentials": [{"login": "zq-real-value"}]}, "private-credentials"),
+    ],
+)
+def test_a_value_is_judged_by_the_key_above_it_where_its_own_says_little(
+    answer, placeholder
+):
+    _, content = capture_board.files(
+        {"version.txt": "2.2.0", "config.json": answer}, [], [], "", None
+    )
+
+    assert "zq-real-value" not in content["config.json"]
+    assert placeholder in content["config.json"]
+
+
+@pytest.mark.parametrize("key", ["boardId", "accountId", "user_id"])
+def test_a_number_can_be_an_id_too(key):
+    number = 48151623
+    _, content = capture_board.files(
+        {
+            "version.txt": "2.2.0",
+            "config.json": {
+                key: number,
+                "link": f"https://boards.example/{number}/live",
+                "log": f"lost board {number}.",
+                "url": f"{number}.boards.example",
+                "serial": "000000",
+                "fps": [29.0000005],
+                "homography": [1.0000000000000002, 148151623.5],
+            },
+        },
+        [],
+        [],
+        "",
+        None,
+    )
+
+    config = json.loads(content["config.json"])
+    assert config[key] == capture_board.placeholder(key)
+    assert str(number) not in config["link"]
+    assert str(number) not in config["log"]
+    assert str(number) not in config["url"]
+    # The digits of an ID or a serial number inside other numbers are no leftover.
+    assert config["fps"] == [29.0000005]
+    assert config["homography"] == [1.0000000000000002, 148151623.5]
+
+
+def test_what_says_nothing_about_a_person_or_a_device_stays():
+    answer = {
+        # The index of a camera, of a dart or of a route is no identity.
+        "camStats": [{"fps": 30, "id": 0, "width": 1280}],
+        "camStates": [{"camId": 2, "isHand": False}],
+        "deviceId": 1,
+        "id": "throw-17",
+        "name": "kept",
+        "isBoard": True,
+        "boardId": True,
+        "cam1": {"name": "USB Camera", "pid": "8513", "vid": "1dfc"},
+        "cpu": {"model": "Intel(R) Core(TM) i3-9100T CPU @ 3.10GHz"},
+        # The words of the state and the settings of 2.1.
+        "segmentName": "S3",
+        "method": "UnanimousCam",
+        "clientVersion": "2.1.0",
+        "tlsPort": "",
+        "zip": "kept",
+        "clip": "kept",
+        "pin": "1234",
+        # Texts that look a little like an address or an ID.
+        "kernelVersion": "6.12.107+deb13-amd64",
+        "location": "pci-0000:00:14.0-usb-0:3:1.0",
+        "time": "12:30:45",
+        "symbol": "cv::Mat and ad::fade",
+        "loopback": "::1 and ::",
+        "docs": "2001:db8::1",
+        "multicast": "ff02::1",
+        "url": "wss://api.autodarts.io/ws",
+        "note": "serial= and darts@home",
+        "date": "2026-10-31T12:00:00Z",
+    }
+
+    _, content = capture_board.files(
+        {"version.txt": "2.1.0", "config.json": answer}, [], [], "", None
+    )
+
+    assert json.loads(content["config.json"]) == answer
+
+
+@pytest.mark.parametrize(
+    ("text", "replaced", "what"),
+    [
+        (
+            "ref 5f0c2d8e-3b1a-4c6f-9e2d-7a8b9c0d1e2f.",
+            f"ref {PLACEHOLDERS['uuid']}.",
+            "a UUID",
+        ),
+        (
+            "ref {5F0C2D8E-3B1A-4C6F-9E2D-7A8B9C0D1E2F}",
+            "ref {" + PLACEHOLDERS["uuid"] + "}",
+            "a UUID",
+        ),
+        (
+            "wss://example.org/board-5f0c2d8e-3b1a-4c6f-9e2d-7a8b9c0d1e2f-live",
+            f"wss://example.org/board-{PLACEHOLDERS['uuid']}-live",
+            "a UUID",
+        ),
+        (
+            "signed in as jane.doe+darts@mail.example.org",
+            f"signed in as {PLACEHOLDERS['email']}",
+            "an e-mail address",
+        ),
+        ("eth0 a4:b1:c2:d3:e4:f5", f"eth0 {PLACEHOLDERS['mac']}", "a MAC address"),
+        ("eth0 A4-B1-C2-D3-E4-F5", f"eth0 {PLACEHOLDERS['mac']}", "a MAC address"),
+        (
+            "on fe80::1c2d:3eff:fe4f:5a6b%eth0",
+            f"on {PLACEHOLDERS['ipv6']}%eth0",
+            "an IPv6 address",
+        ),
+        ("on 2a02:8070:1234::5", f"on {PLACEHOLDERS['ipv6']}", "an IPv6 address"),
+        ("on fd00:1:2:3:4:5:6:7", f"on {PLACEHOLDERS['ipv6']}", "an IPv6 address"),
+        (
+            "vid=1&serial=XY12&location=1",
+            f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
+            "a serial number",
+        ),
+        (
+            "SerialNumber=XY12, port 3",
+            f"SerialNumber={PLACEHOLDERS['serial']}, port 3",
+            "a serial number",
+        ),
+        (
+            "serial_number=XY12",
+            f"serial_number={PLACEHOLDERS['serial']}",
+            "a serial number",
+        ),
+        (
+            "vid=1&serial=USB CAM 01&location=1",
+            f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
+            "a serial number",
+        ),
+    ],
+)
+def test_what_identifies_a_device_or_a_person_goes_under_any_key(text, replaced, what):
+    assert capture_board.redact({"note": text}, {}) == {"note": replaced}
+    # What it is replaced by counts as no leftover, the value itself does.
+    assert capture_board.secrets({"note": replaced}) == {}
+    assert capture_board.leftovers(replaced, {}) == []
+    assert capture_board.leftovers(text, {}) == [what]
+
+
+@pytest.mark.parametrize("escape", ["\n", "\r", "\t", "\b", "\f", "\\", "\x01"])
+def test_the_escape_of_a_recording_is_no_part_of_what_follows_it(escape):
+    # The placeholder after a line break is no leftover, as it would be with the "n".
+    clean = json.dumps(f"signed in{escape}{PLACEHOLDERS['email']}")
+    assert capture_board.leftovers(clean, {}) == []
+    # And the letter of an escape doesn't hide an address behind it.
+    for address, what in (
+        ("fe80::1", "an IPv6 address"),
+        ("b8:27:eb:12:34:56", "a MAC address"),
+        ("192.168.1.50", "a private IPv4 address"),
+    ):
+        assert capture_board.leftovers(json.dumps(f"a{escape}{address}"), {}) == [what]
+
+
+@pytest.mark.parametrize(
+    ("answer", "secret"),
+    [
+        ({"sessionId": 123456, "bytes": 123456}, "123456"),
+        (
+            {"cam": "vid=1&serial=200901010001&location=1", "bytes": 200901010001},
+            "200901010001",
+        ),
+    ],
+)
+def test_a_number_that_equals_a_secret_does_not_stop_the_recording(answer, secret):
+    _, content = capture_board.files(
+        {"version.txt": "2.2.0", "config.json": answer}, [], [], "", None
+    )
+
+    assert secret not in content["config.json"]
+
+
+def test_a_serial_number_of_digits_goes_at_the_end_of_a_sentence():
+    number = "200901010001"
+    _, content = capture_board.files(
+        {
+            "version.txt": "2.2.0",
+            "config.json": {
+                "cam": f"vid=1&serial={number}&location=1",
+                "log": f"lost camera {number}.",
+            },
+        },
+        [],
+        [],
+        "",
+        None,
+    )
+
+    assert number not in content["config.json"]
+
+
+def test_a_serial_number_goes_wherever_the_board_names_it():
+    found = capture_board.secrets(
+        {"cams": [camera(3, SERIALS[0]), "serial=short"], "log": f"opened {SERIALS[0]}"}
+    )
+
+    # A short one only where it stands as a serial number: it can be a "pid" as well.
+    assert found == {SERIALS[0]: PLACEHOLDERS["serial"]}
+    assert capture_board.redact(
+        {"log": f"opened {SERIALS[0]}", "cam": "serial=short", "pid": "short"}, found
+    ) == {
+        "log": f"opened {PLACEHOLDERS['serial']}",
+        "cam": f"serial={PLACEHOLDERS['serial']}",
+        "pid": "short",
+    }
 
 
 def test_the_name_of_the_board_pc_it_was_given_is_replaced_too():

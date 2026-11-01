@@ -22,7 +22,7 @@ Home Assistant ab 2026.8 mit [HACS](https://hacs.xyz) und ein Autodarts-Board in
 
 ### Funktioniert es mit Autodarts Desktop, Autodarts X oder Lens?
 
-Die Integration braucht einen Board Manager, den Home Assistant in deinem Netzwerk erreicht. Board Manager 2 ist bis 2.0.2 getestet, der klassische Board Manager 1 funktioniert auch, und laut dem Bericht eines Spielers läuft Autodarts Desktop 2.0.2 unter Linux. Autodarts Desktop unter Windows und Autodarts X sind noch nicht getestet. Ein [Kompatibilitätsbericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) sagt uns, wie es mit deinem läuft, ob es klappt oder nicht. [Unterstützte Geräte](README.de.md#unterstützte-geräte)
+Die Integration braucht einen Board Manager, den Home Assistant in deinem Netzwerk erreicht. Board Manager 2 ist bis 2.1.0 getestet, der klassische Board Manager 1 funktioniert auch, und laut dem Bericht eines Spielers läuft Autodarts Desktop 2.0.2 unter Linux. Autodarts Desktop unter Windows und Autodarts X sind noch nicht getestet. Ein [Kompatibilitätsbericht](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) sagt uns, wie es mit deinem läuft, ob es klappt oder nicht. [Unterstützte Geräte](README.de.md#unterstützte-geräte)
 
 Lens zählt mit der Kamera eines Handys oder Tablets in der Autodarts-App, ohne Board Manager in deinem Netzwerk, deshalb kann die Integration seine Darts nicht lesen. Gib sie stattdessen auf dem Tastenfeld ein. Eine Verbindung über die Autodarts-Cloud kommt auch nicht: Autodarts vergibt keine Client-IDs an Integrationen von Dritten ([Entscheidung 0025](decisions/0025-no-cloud-link.md), auf Englisch). [Spielen ohne Autodarts](without-autodarts.de.md)
 

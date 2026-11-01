@@ -2,12 +2,15 @@
 
 Serves the local HTTP and WebSocket protocol used by the integration, records every
 write command and rejects routes the integration is not expected to call. It
-answers like the recordings of Board Manager 1.0.7 and 2.0.0 in
+answers like the recordings of Board Manager 1.0.7, 2.0.0 and 2.1.0 in
 tests/fixtures/board_manager, which compose.yaml mounts at /fixtures/board_manager,
 with the identity of the test and the state of the board it simulates;
 tests/test_board_contract.py holds it to them, as it does the double of the unit
 tests. BOARD_MANAGER=2 switches to the headless Board Manager 2: /api/system, no
-upstream routes, and an mDNS announcement like the real board.
+upstream routes, and an mDNS announcement like the real board. BOARD_MANAGER=2.1
+answers like Board Manager 2.1: the new shape of its state and of /api/system, the
+camelCase of its settings, no /api/state/motion. The scenario speaks in the words
+of Board Manager 2.0 with either, and this double says them as 2.1 says them.
 
 POST /control/fault injects the faults of a real network and board: dropped or
 refused sockets, failing or slow reads, malformed frames, restarts and the takeout
@@ -32,16 +35,26 @@ BOARD_ID = "e2e-board"
 API_KEY = "e2e-only-board-api-key"
 TLS_KEY = "e2e-only-tls-key"
 PORT = 3180
-GENERATION = int(os.environ.get("BOARD_MANAGER", "1"))
+BOARD_MANAGER = os.environ.get("BOARD_MANAGER", "1")
+# The Board Manager versions the double answers as, those of its recordings, and
+# the update each announces.
+VERSIONS = {"1": "1.0.7", "2": "2.0.0", "2.1": "2.1.0"}
+UPDATES = {"1": "2.0.2", "2": "2.0.2", "2.1": "2.1.1"}
 
 
-def version_of(generation: int) -> str:
+def generation_of(board_manager: int | str) -> int:
+    return int(str(board_manager).split(".")[0])
+
+
+def version_of(board_manager: int | str) -> str:
     """The Board Manager version the double answers as, that of its recording."""
-    return "2.0.0" if generation >= 2 else "1.0.7"
+    return VERSIONS[str(board_manager)]
 
 
-VERSION = version_of(GENERATION)
-UPDATE = "2.0.2"
+GENERATION = generation_of(BOARD_MANAGER)
+VERSION = version_of(BOARD_MANAGER)
+UPDATE = UPDATES[BOARD_MANAGER]
+INTERFACE_2_1 = BOARD_MANAGER == "2.1"
 # Next to tests/e2e in the repository, and at /fixtures next to /e2e in the
 # container of the double. Read when the double starts: the scenario imports this
 # module in the container of Home Assistant, which doesn't mount them.
@@ -60,14 +73,52 @@ COMMANDS = {
 }
 
 
+def words_of_2_1(words: str) -> str:
+    """A status or event as Board Manager 2.1 says it, "takeoutInProgress" for
+    "Takeout in progress"."""
+    first, *others = words.split(" ")
+    if not others and first != first.capitalize():
+        return first  # In its words already, such as "takeoutStarted".
+    return first.lower() + "".join(word.capitalize() for word in others)
+
+
+def dart_of_2_1(dart: dict) -> dict:
+    """A dart as Board Manager 2.1 sends it; one of its own stays as it is."""
+    if "segment" not in dart:
+        return dart
+    segment, coords = dart["segment"], dart.get("coords", {})
+    return {
+        "bed": segment.get("bed", "Single"),
+        "bouncer": False,
+        "coordsX": coords.get("x", 0.0),
+        "coordsY": coords.get("y", 0.0),
+        "failed": False,
+        "method": "UnanimousCam",
+        "multiplier": segment["multiplier"],
+        "segmentName": segment["name"],
+        "segmentNumber": segment["number"],
+    }
+
+
 class Board:
-    def __init__(self, generation: int = GENERATION) -> None:
-        self.generation = generation
-        self.version = version_of(generation)
+    def __init__(self, board_manager: int | str = BOARD_MANAGER) -> None:
+        self.generation = generation_of(board_manager)
+        self.version = version_of(board_manager)
+        self.update = UPDATES[str(board_manager)]
+        self.interface_2_1 = str(board_manager) == "2.1"
         self.state = self.recorded("state.json")
         self.config = self.recorded("config.json")
         # The identity of the test, never that of the recording.
-        self.config["auth"].update(board_id=BOARD_ID, api_key=API_KEY)
+        if self.interface_2_1:
+            self.config["auth"].update(boardId=BOARD_ID, apiKey=API_KEY)
+            # The settings the scenario starts from; those of the board it has none
+            # of its own for, like the other recordings.
+            self.config["cam"].update(autoCalibrateOnStart=True, autoDistortion=False)
+            # Stopped, as the other recordings begin: the recording of 2.1.0 was made
+            # with the detection running.
+            self.state.update(running=False, status="stopped", event="stopped")
+        else:
+            self.config["auth"].update(board_id=BOARD_ID, api_key=API_KEY)
         self.commands: list[dict] = []
         self.unexpected: list[str] = []
         # Reads by path, so a test can tell when an injected fault was read.
@@ -118,11 +169,24 @@ class Board:
             {"method": request.method, "path": request.path_qs, "body": body}
         )
 
+    def answered_state(self) -> dict:
+        """The state of the board, as its Board Manager says it."""
+        if not self.interface_2_1:
+            return self.state
+        return {
+            "connected": self.state["connected"],
+            "event": words_of_2_1(self.state["event"]),
+            "running": self.state["running"],
+            "status": words_of_2_1(self.state["status"]),
+            "throws": [dart_of_2_1(dart) for dart in self.state["throws"]],
+        }
+
     async def publish(self, changes: dict) -> None:
         self.state.update(changes)
-        self.state["numThrows"] = len(self.state["throws"])
+        if not self.interface_2_1:
+            self.state["numThrows"] = len(self.state["throws"])
         for client in list(self.sockets):
-            await client.send_json({"type": "state", "data": self.state})
+            await client.send_json({"type": "state", "data": self.answered_state()})
 
 
 def routes(board: Board) -> web.RouteTableDef:
@@ -134,7 +198,7 @@ def routes(board: Board) -> web.RouteTableDef:
 
     @api.get("/api/state")
     async def state(request):
-        return web.json_response(board.state)
+        return web.json_response(board.answered_state())
 
     @api.get("/api/config")
     async def config(request):
@@ -144,6 +208,14 @@ def routes(board: Board) -> web.RouteTableDef:
     async def patch_config(request):
         await board.record(request)
         for section, values in (await request.json()).items():
+            if (
+                board.interface_2_1
+                and not values.keys() <= board.config[section].keys()
+            ):
+                # A key in another spelling: nothing says what the real board makes
+                # of it, so the integration must never send one.
+                board.unexpected.append(f"PATCH /api/config {values}")
+                raise web.HTTPBadRequest
             board.config[section].update(values)
         # The real Board Manager echoes its full configuration, including the key.
         return web.json_response(board.config)
@@ -171,9 +243,11 @@ def routes(board: Board) -> web.RouteTableDef:
             {**recorded, "isRunning": running, "isOpened": running}
         )
 
-    @api.get("/api/state/motion")
     async def motion(request):
         return web.json_response(board.recorded("state-motion.json"))
+
+    if not board.interface_2_1:
+        api.get("/api/state/motion")(motion)
 
     @api.post("/api/reset")
     async def reset(request):
@@ -196,9 +270,13 @@ def routes(board: Board) -> web.RouteTableDef:
         fps = 30.0 if running else 0.0
         system = board.recorded("system.json")
         # The configuration and state of the board, and the TLS key of the test.
-        host = {**system["config"]["host"], "tls_key": TLS_KEY}
+        tls_key = "tlsKey" if board.interface_2_1 else "tls_key"
+        host = {**system["config"]["host"], tls_key: TLS_KEY}
         system["config"] = {**copy.deepcopy(board.config), "host": host}
-        system["state"] = {key: board.state[key] for key in system["state"]}
+        if board.interface_2_1:
+            system["turn"] = board.answered_state()
+        else:
+            system["state"] = {key: board.state[key] for key in system["state"]}
         system["stats"]["fps"] = 12.5 if running else 0.0
         cameras = system["camStats"]
         system["camStats"] = [
@@ -206,7 +284,9 @@ def routes(board: Board) -> web.RouteTableDef:
             for index in range(len(board.config["cam"]["cams"]))
         ]
         system["camState"].update(isRunning=running, isOpened=running)
-        system["link"] = "connected" if board.state["connected"] else "disconnected"
+        status = system["status"] if board.interface_2_1 else system
+        status["link"] = "connected" if board.state["connected"] else "disconnected"
+        status["updateAvailable"] = board.update
         return web.json_response(system)
 
     async def host(request):
@@ -312,8 +392,9 @@ def fault_injection(board: Board):
 BOARD = web.AppKey("board", Board)
 
 
-def create_app(generation: int = GENERATION) -> web.Application:
-    board = Board(generation)
+def create_app(board_manager: int | str = BOARD_MANAGER) -> web.Application:
+    board = Board(board_manager)
+    generation = board.generation
     app = web.Application(middlewares=[fault_injection(board)])
     app[BOARD] = board
     app.add_routes(routes(board))

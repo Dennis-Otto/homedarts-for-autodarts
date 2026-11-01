@@ -1,21 +1,49 @@
-"""Board Manager 2.1 sends its state in a new shape, which reads as that of 2.0.
+"""Board Manager 2.1 answers in a new shape, which reads as that of 2.0.
 
 tests/fixtures/board_manager_2.1.0_frames.jsonl holds the frames of the socket of a
 real board with Board Manager 2.1.0, captured with scripts/capture_board.py while
-four visits were thrown and taken out.
+four visits were thrown and taken out. tests/fixtures/board_manager/2.1.0 holds what
+another real board answers on every route, with its detection running.
 """
 
 import json
+import time
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.homedarts.local_api import AutodartsLocalClient, board_state
+from custom_components.homedarts.diagnostics import async_get_config_entry_diagnostics
+from custom_components.homedarts.errors import AutodartsConnectionError
+from custom_components.homedarts.local_api import (
+    AutodartsEndpointMissing,
+    AutodartsLocalClient,
+    _config_summary,
+    board_state,
+    board_system,
+)
 
-from .local_helpers import BASE, RECORDINGS, entity_id, setup_local, state
+from .local_helpers import (
+    BASE,
+    RECORDINGS,
+    entity_id,
+    local_entry_data,
+    mock_board,
+    mock_board_v2,
+    recorded,
+    setup_local,
+    setup_v2,
+    state,
+    switch,
+)
 from .test_realtime import REAL_EVENTS, Socket, entity_events
 
 FRAMES = Path(__file__).parent / "fixtures" / "board_manager_2.1.0_frames.jsonl"
@@ -112,10 +140,17 @@ def test_what_board_manager_2_1_does_not_explain_stays_as_it_is():
     assert board_state({"throws": [], "numThrows": 1}) == {"throws": [], "numThrows": 1}
 
 
+def config_summary(raw: dict) -> dict:
+    """What the integration keeps of the answer to /api/config."""
+    return _config_summary(raw, "/api/config")
+
+
 def recorded_states() -> list[tuple[str, dict]]:
     """Every state that the recordings of earlier Board Managers hold."""
     result = []
     for folder in sorted(path for path in RECORDINGS.iterdir() if path.is_dir()):
+        if folder.name == "2.1.0":
+            continue
         state_file = folder / "state.json"
         result.append((folder.name, json.loads(state_file.read_text(encoding="utf-8"))))
         lines = (folder / "ws-frames.jsonl").read_text(encoding="utf-8").splitlines()
@@ -203,3 +238,526 @@ async def test_the_darts_and_takeouts_of_a_real_board_manager_2_1(hass, aioclien
     assert state(hass, "sensor", "training_darts") == "9"
     assert state(hass, "sensor", "local_status") == "throw"
     assert state(hass, "sensor", "local_visit_score") == "0"
+
+
+# -- the whole local interface, from the recording of a real board ---------------
+
+
+def system_2_1(**status) -> dict:
+    """What the real board answers to /api/system, with the changes of its status."""
+    system = recorded("2.1.0", "system.json")
+    system["status"].update(status)
+    return system
+
+
+def motion_2_1(**flags) -> dict:
+    """What the real board answers to /api/system, with the motion flags given."""
+    system = recorded("2.1.0", "system.json")
+    system["vantage"]["motion"].update(flags)
+    return system
+
+
+def running_2_1() -> dict:
+    """The state of the real board with its detection running."""
+    return recorded("2.1.0", "state.json")
+
+
+def answer(aioclient_mock, path: str, method: str = "GET", **response) -> None:
+    """The board answers the route anew from now on."""
+    url = f"{BASE}{path}"
+    aioclient_mock.mock_calls.clear()
+    aioclient_mock._mocks[:] = [
+        mock
+        for mock in aioclient_mock._mocks
+        if not (mock.method.lower() == method.lower() and str(mock.url) == url)
+    ]
+    aioclient_mock.request(method, url, **response)
+
+
+async def reread(hass, coordinator) -> None:
+    """The next read of the board, as the timer starts it."""
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+
+def sw_version(hass, entry) -> str:
+    """The version on the page of the device."""
+    device = dr.async_get(hass).async_get_device_by_identifier(
+        ("homedarts", "board-1"), entry.entry_id
+    )
+    return device.sw_version
+
+
+def reads_of(aioclient_mock, path: str) -> int:
+    return sum(
+        call[0].upper() == "GET" and str(call[1]).endswith(path)
+        for call in aioclient_mock.mock_calls
+    )
+
+
+def writes(aioclient_mock) -> list[dict]:
+    return [call[2] for call in aioclient_mock.mock_calls if call[0].upper() == "PATCH"]
+
+
+@pytest.fixture
+def telemetry(hass):
+    """The entities a user turns on: the load of the board PC, the frame rates and
+    the motion readings for diagnosis."""
+    registry = er.async_get(hass)
+    for key in ("cpu_usage", "memory_usage", "detection_fps", "camera_0_fps"):
+        registry.async_get_or_create("sensor", "homedarts", f"board-1_{key}")
+    for key in ("image_stable", "takeout_full"):
+        registry.async_get_or_create("binary_sensor", "homedarts", f"board-1_{key}")
+
+
+def test_the_settings_of_board_manager_2_1_read_as_those_of_2_0():
+    assert config_summary(recorded("2.1.0", "config.json")) == {
+        "auto_calibrate_on_start": False,
+        "auto_distortion": True,
+        "board_id": "board-1",
+        "camera_count": 3,
+        "standby_minutes": 15,
+    }
+
+
+@pytest.mark.parametrize("version", ["1.0.7", "2.0.0", "2.0.2"])
+def test_the_settings_of_an_earlier_board_manager_read_as_before(version):
+    assert config_summary(recorded(version, "config.json")) == {
+        "auto_calibrate_on_start": True,
+        "auto_calibrate": True,
+        "auto_distortion": False,
+        "board_id": "board-1",
+        "camera_count": 3,
+        "standby_minutes": 15,
+    }
+
+
+def test_a_system_read_of_board_manager_2_1_reads_as_one_of_2_0():
+    raw = recorded("2.1.0", "system.json")
+    sent = deepcopy(raw)
+    system = board_system(raw)
+    assert raw == sent
+    for key in ("version", "link", "updateAvailable", "blocker", "takenOver"):
+        assert system[key] == raw["status"][key]
+    assert system["motion"] == raw["vantage"]["motion"]
+    assert system["state"] == board_state(raw["turn"])
+    assert system["config"] == raw["config"]
+
+
+def test_a_system_read_of_2_1_without_its_readings_has_empty_ones():
+    system = board_system({"status": {"version": "2.1.0"}, "vantage": "odd"})
+    assert system["version"] == "2.1.0"
+    assert system["motion"] == {}
+    assert system["state"] == {}
+
+
+@pytest.mark.parametrize("version", ["2.0.0", "2.0.2"])
+def test_a_system_read_of_an_earlier_board_manager_stays_as_it_is(version):
+    raw = recorded(version, "system.json")
+    assert board_system(raw) == raw
+
+
+async def test_a_board_rolled_back_from_2_1_is_set_up_anew(hass, aioclient_mock):
+    er.async_get(hass).async_get_or_create(
+        "button", "homedarts", "board-1_start_streams"
+    )
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    connect(coordinator, running_2_1())
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=2)
+    assert state(hass, "button", "start_streams") == "unavailable"
+    # Board Manager 1 has no /api/system: its version reloads the entry, so nothing
+    # of 2.1 outlives the client, neither its pace nor the commands it hides.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{BASE}/api/system", status=404)
+    mock_board(aioclient_mock)
+    await reread(hass, coordinator)
+    assert entry.runtime_data.local is not coordinator
+    coordinator = entry.runtime_data.local
+    connect(coordinator, recorded("1.0.7", "state.json"))
+    assert coordinator.client.interface_2_1 is False
+    assert coordinator.update_interval == timedelta(seconds=30)
+    assert state(hass, "button", "start_streams") != "unavailable"
+
+
+@pytest.mark.usefixtures("telemetry")
+async def test_every_entity_reads_the_right_value_on_board_manager_2_1(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    assert entry.state == ConfigEntryState.LOADED
+    assert entry.data["api_generation"] == 2
+    host = recorded("2.1.0", "host.json")
+    stats = recorded("2.1.0", "system.json")["stats"]
+    assert float(state(hass, "sensor", "cpu_usage")) == pytest.approx(
+        stats["cpuPercent"]
+    )
+    for platform, key, value in (
+        # The detection.
+        ("switch", "detection", "on"),
+        ("sensor", "local_status", "throw"),
+        ("binary_sensor", "cameras_active", "on"),
+        ("binary_sensor", "calibrating", "off"),
+        # The settings.
+        ("switch", "auto_calibrate_on_start", "off"),
+        ("switch", "auto_distortion", "on"),
+        ("select", "standby_minutes", "15"),
+        # The motion readings.
+        ("binary_sensor", "hand_detected", "off"),
+        ("binary_sensor", "image_stable", "on"),
+        ("binary_sensor", "takeout_partial", "off"),
+        ("binary_sensor", "takeout_full", "off"),
+        # The cloud link and the update.
+        ("binary_sensor", "cloud_link", "on"),
+        ("update", "board_software", "off"),
+        # The board PC.
+        ("sensor", "vision_version", "3.0.0"),
+        ("sensor", "host_os", "Debian 13"),
+        ("sensor", "host_processor", host["cpu"]["model"]),
+        # The load and the frame rates.
+        ("sensor", "memory_usage", str(stats["memoryBytes"])),
+        ("sensor", "detection_fps", "30"),
+        ("sensor", "camera_0_fps", "30"),
+    ):
+        assert state(hass, platform, key) == value, key
+    update = hass.states.get(entity_id(hass, "update", "board_software"))
+    assert update.attributes["installed_version"] == "2.1.0"
+    assert update.attributes["latest_version"] == "2.1.0"
+    assert sw_version(hass, entry) == "2.1.0"
+    # A camera for each of the three the board reports.
+    assert entry.runtime_data.local.data["settings"]["camera_count"] == 3
+    # Nothing keeps asking for a route the board doesn't have.
+    assert reads_of(aioclient_mock, "/api/state/motion") == 0
+    assert not entry.runtime_data.local.reads.failing()
+
+
+@pytest.mark.usefixtures("telemetry")
+async def test_a_recording_of_2_0_2_gives_what_it_gave(hass, aioclient_mock):
+    await setup_v2(
+        hass,
+        aioclient_mock,
+        recording="2.0.2",
+        state={**recorded("2.0.2", "state.json"), "running": True, "status": "Throw"},
+    )
+    for platform, key, value in (
+        ("switch", "auto_calibrate_on_start", "on"),
+        ("switch", "auto_calibrate", "on"),
+        ("switch", "auto_distortion", "off"),
+        ("select", "standby_minutes", "15"),
+        ("binary_sensor", "image_stable", "on"),
+        ("binary_sensor", "hand_detected", "off"),
+        ("binary_sensor", "cloud_link", "on"),
+        ("sensor", "vision_version", "2.0.2"),
+    ):
+        assert state(hass, platform, key) == value, key
+
+
+async def test_a_board_on_2_1_with_another_id_counts_as_the_wrong_board(
+    hass, aioclient_mock
+):
+    system = recorded("2.1.0", "system.json")
+    system["config"]["auth"]["boardId"] = "another-board"
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", system=system)
+    assert ir.async_get(hass).async_get_issue(
+        "homedarts", f"wrong_board_{entry.entry_id}"
+    )
+
+
+async def test_a_board_on_2_1_can_be_set_up(hass, aioclient_mock):
+    mock_board_v2(aioclient_mock, recording="2.1.0")
+    client = AutodartsLocalClient("192.0.2.10", 3180, async_get_clientsession(hass))
+    assert await client.identify() == {
+        "board_id": "board-1",
+        "version": "2.1.0",
+        "camera_count": 3,
+    }
+
+
+async def test_an_option_board_manager_2_1_no_longer_has_is_not_offered(
+    hass, aioclient_mock
+):
+    await setup_v2(hass, aioclient_mock, recording="2.1.0")
+    assert state(hass, "switch", "auto_calibrate") == "unavailable"
+    client = AutodartsLocalClient("192.0.2.10", 3180, async_get_clientsession(hass))
+    aioclient_mock.patch(f"{BASE}/api/config", status=204)
+    with pytest.raises(AutodartsEndpointMissing):
+        await client.set_config_switch("auto_calibrate", True)
+    assert not writes(aioclient_mock)
+
+
+async def test_the_writes_of_board_manager_2_1_use_its_spelling(hass, aioclient_mock):
+    await setup_v2(hass, aioclient_mock, recording="2.1.0")
+    aioclient_mock.patch(f"{BASE}/api/config", status=204)
+    await switch(hass, "auto_calibrate_on_start", True)
+    await switch(hass, "auto_distortion", False)
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": entity_id(hass, "select", "standby_minutes"), "option": "30"},
+        blocking=True,
+    )
+    assert writes(aioclient_mock) == [
+        {"cam": {"autoCalibrateOnStart": True}},
+        {"cam": {"autoDistortion": False}},
+        {"motion": {"standbyMinutes": 30}},
+    ]
+
+
+@pytest.mark.parametrize("version", ["1.0.7", "2.0.0", "2.0.2"])
+async def test_the_writes_of_an_earlier_board_manager_keep_their_spelling(
+    hass, aioclient_mock, version
+):
+    mock_board(aioclient_mock, recording=version)
+    aioclient_mock.patch(f"{BASE}/api/config", status=204)
+    client = AutodartsLocalClient("192.0.2.10", 3180, async_get_clientsession(hass))
+    await client.set_config_switch("auto_calibrate", False)
+    await client.set_standby_minutes(30)
+    assert writes(aioclient_mock) == [
+        {"cam": {"auto_calibrate": False}},
+        {"motion": {"standby_minutes": 30}},
+    ]
+
+
+async def test_a_write_right_after_an_update_uses_the_new_spelling(
+    hass, aioclient_mock
+):
+    # The integration last read the board on 2.0.2; the board has 2.1.0 by now.
+    await setup_v2(hass, aioclient_mock, recording="2.0.2")
+    answer(aioclient_mock, "/api/config", json=recorded("2.1.0", "config.json"))
+    aioclient_mock.patch(f"{BASE}/api/config", status=204)
+    await switch(hass, "auto_distortion", True)
+    assert writes(aioclient_mock) == [{"cam": {"autoDistortion": True}}]
+
+
+async def test_no_write_goes_out_when_the_spelling_is_unknown(hass, aioclient_mock):
+    # Without an answer about the settings nothing tells how to write them.
+    aioclient_mock.get(f"{BASE}/api/config", status=500)
+    aioclient_mock.patch(f"{BASE}/api/config", status=204)
+    client = AutodartsLocalClient("192.0.2.10", 3180, async_get_clientsession(hass))
+    with pytest.raises(AutodartsConnectionError):
+        await client.set_standby_minutes(30)
+    assert not writes(aioclient_mock)
+
+
+@pytest.mark.usefixtures("telemetry")
+async def test_the_motion_of_2_1_comes_from_the_system_read(hass, aioclient_mock):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    assert state(hass, "binary_sensor", "hand_detected") == "off"
+    answer(
+        aioclient_mock,
+        "/api/system",
+        json=motion_2_1(isHand=True, isStable=False, isTakeoutPartial=True),
+    )
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "hand_detected") == "on"
+    assert state(hass, "binary_sensor", "image_stable") == "off"
+    assert state(hass, "binary_sensor", "takeout_partial") == "on"
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isTakeoutFull=True))
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "hand_detected") == "off"
+    assert state(hass, "binary_sensor", "takeout_full") == "on"
+    assert reads_of(aioclient_mock, "/api/state/motion") == 0
+
+
+@pytest.mark.usefixtures("telemetry")
+async def test_what_the_socket_of_2_1_no_longer_sends_comes_from_the_read(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    system = recorded("2.1.0", "system.json")
+    system["camState"] = {"isOpened": False, "isRunning": False}
+    system["stats"].update(fps=12, cpuPercent=7.5, memoryBytes=1024)
+    system["camStats"][0]["fps"] = 12
+    answer(aioclient_mock, "/api/system", json=system)
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "cameras_active") == "off"
+    assert state(hass, "sensor", "detection_fps") == "12"
+    assert state(hass, "sensor", "camera_0_fps") == "12"
+    assert state(hass, "sensor", "cpu_usage") == "7.5"
+
+
+async def test_the_system_read_of_2_1_keeps_the_board_current(hass, aioclient_mock):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0")
+    coordinator = entry.runtime_data.local
+    answer(
+        aioclient_mock,
+        "/api/system",
+        json=system_2_1(
+            updateAvailable="2.2.0", link="disconnected", calibratingCams=2
+        ),
+    )
+    await reread(hass, coordinator)
+    update = hass.states.get(entity_id(hass, "update", "board_software"))
+    assert update.state == "on"
+    assert update.attributes["latest_version"] == "2.2.0"
+    assert state(hass, "binary_sensor", "cloud_link") == "off"
+    assert state(hass, "binary_sensor", "calibrating") == "on"
+
+
+async def test_an_update_of_the_board_shows_at_once(hass, aioclient_mock):
+    # The stale values on a real Home Assistant right after its board went to 2.1.0.
+    entry = await setup_v2(hass, aioclient_mock, recording="2.0.2")
+    coordinator = entry.runtime_data.local
+    assert state(hass, "sensor", "vision_version") == "2.0.2"
+    answer(aioclient_mock, "/api/host", json=recorded("2.1.0", "host.json"))
+    answer(aioclient_mock, "/api/system", json=recorded("2.1.0", "system.json"))
+    answer(aioclient_mock, "/api/state", json=running_2_1())
+    await reread(hass, coordinator)
+    assert state(hass, "sensor", "vision_version") == "3.0.0"
+    update = hass.states.get(entity_id(hass, "update", "board_software"))
+    assert update.attributes["installed_version"] == "2.1.0"
+    assert sw_version(hass, entry) == "2.1.0"
+    # The option that update took away is no longer offered.
+    assert state(hass, "switch", "auto_calibrate") == "unavailable"
+    assert state(hass, "switch", "auto_distortion") == "on"
+
+
+def connect(coordinator, *frames) -> None:
+    """The socket of the board is open, and has sent the frames."""
+    coordinator.stream_connected = True
+    for frame in frames:
+        coordinator.async_receive("state", board_state(frame))
+
+
+async def test_a_running_detection_on_2_1_is_read_as_often_as_without_a_socket(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    stopped = {
+        **running_2_1(),
+        "running": False,
+        "status": "stopped",
+        "event": "stopped",
+    }
+    connect(coordinator, running_2_1())
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=2)
+    # A stopped detection has no readings to follow: the board has its rest, also
+    # while its socket stays silent and proves nothing by a frame.
+    answer(aioclient_mock, "/api/state", json=stopped)
+    connect(coordinator, stopped)
+    await reread(hass, coordinator)
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=10)
+    coordinator._stream_live = False
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=10)
+    # Without a socket, the reads are all there is.
+    coordinator.stream_connected = False
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=2)
+
+
+async def test_an_earlier_board_manager_keeps_its_pace(hass, aioclient_mock):
+    running = {**recorded("2.0.2", "state.json"), "running": True, "status": "Throw"}
+    entry = await setup_v2(hass, aioclient_mock, recording="2.0.2", state=running)
+    coordinator = entry.runtime_data.local
+    connect(coordinator, running)
+    await reread(hass, coordinator)
+    assert coordinator.update_interval == timedelta(seconds=10)
+
+
+@pytest.mark.usefixtures("telemetry")
+async def test_the_quick_reads_of_2_1_report_the_load_no_more_often_than_before(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=running_2_1())
+    coordinator = entry.runtime_data.local
+    connect(coordinator, running_2_1())
+
+    def load(percent: float, **flags) -> dict:
+        system = motion_2_1(**flags)
+        system["stats"]["cpuPercent"] = percent
+        return system
+
+    answer(aioclient_mock, "/api/system", json=load(1.0))
+    coordinator._telemetry_reported = 0.0
+    await reread(hass, coordinator)
+    assert state(hass, "sensor", "cpu_usage") == "1.0"
+    # The next quick read: not yet, while a change of the motion shows at once.
+    answer(aioclient_mock, "/api/system", json=load(2.0, isHand=True))
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "hand_detected") == "on"
+    assert state(hass, "sensor", "cpu_usage") == "1.0"
+    # Ten seconds after the last report.
+    answer(aioclient_mock, "/api/system", json=load(3.0, isHand=True))
+    coordinator._telemetry_reported = time.monotonic() - 10
+    await reread(hass, coordinator)
+    assert state(hass, "sensor", "cpu_usage") == "3.0"
+
+
+async def test_the_diagnostics_keep_the_secrets_of_2_1_out(hass, aioclient_mock):
+    secrets = {
+        "boardId": "secret-board-id",
+        "apiKey": "secret-api-key",
+        "tlsKey": "secret-tls-key",
+        "tlsCert": "secret-tls-cert",
+    }
+    system = recorded("2.1.0", "system.json")
+    system["config"]["auth"].update(
+        boardId=secrets["boardId"], apiKey=secrets["apiKey"]
+    )
+    system["config"]["host"].update(
+        tlsKey=secrets["tlsKey"], tlsCert=secrets["tlsCert"]
+    )
+    entry = MockConfigEntry(
+        domain="homedarts", version=2, data=local_entry_data(secrets["boardId"])
+    )
+    mock_board_v2(aioclient_mock, recording="2.1.0", system=system)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    report = json.dumps(await async_get_config_entry_diagnostics(hass, entry))
+    for secret in secrets.values():
+        assert secret not in report
+    # Whatever may once reach the data of the board, in either spelling.
+    local = entry.runtime_data.local
+    local.data = {
+        **local.data,
+        "leaked": {**secrets, "api_key": "secret-api-key", "tls_key": "secret-tls-key"},
+    }
+    report = json.dumps(await async_get_config_entry_diagnostics(hass, entry))
+    for secret in secrets.values():
+        assert secret not in report
+
+
+@pytest.mark.parametrize("command", ["start_streams", "stop_streams"])
+async def test_commands_board_manager_2_1_no_longer_has_are_not_offered(
+    hass, aioclient_mock, command
+):
+    er.async_get(hass).async_get_or_create("button", "homedarts", f"board-1_{command}")
+    await setup_v2(hass, aioclient_mock, recording="2.1.0")
+    assert state(hass, "button", command) == "unavailable"
+
+
+async def test_commands_of_an_earlier_board_manager_stay_offered(hass, aioclient_mock):
+    er.async_get(hass).async_get_or_create(
+        "button", "homedarts", "board-1_start_streams"
+    )
+    await setup_v2(hass, aioclient_mock, recording="2.0.2")
+    assert state(hass, "button", "start_streams") != "unavailable"
+
+
+async def test_a_hand_in_the_system_read_holds_back_a_stuck_takeout(
+    hass, aioclient_mock
+):
+    empty = {
+        "connected": True,
+        "event": "takeoutStarted",
+        "running": True,
+        "status": "takeoutInProgress",
+        "throws": [],
+    }
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=empty)
+    coordinator = entry.runtime_data.local
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
+    await reread(hass, coordinator)
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
+    await reread(hass, coordinator)
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
