@@ -4,6 +4,19 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.1.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.0...v2.1.1) (2026-11-01)
+
+
+### Bug fixes
+
+* a heatmap scale that shows the difference between often and rarely hit ([#532](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/532)) ([bad1253](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/bad125324a17c89a275b067db33ff97729a254c5))
+* **i18n:** review the website translations in Spanish, French and Dutch ([#528](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/528)) ([431c940](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/431c9406e04a7fdc032c116a4ea6501da35c4cd0))
+* keep the board ID of Board Manager 2.1 out of a recording ([#527](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/527)) ([7cbb6eb](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/7cbb6eb2b5bc3218dc8e3b0152a062a1a633bbfb))
+* make Findings pass on main ([#523](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/523)) ([1c65e3b](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/1c65e3b1072857f7665a04a6e49920046ed45491))
+* read the darts of Board Manager 2.1 ([#522](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/522)) ([45b89c0](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/45b89c02e916147007bdafdd2101215d2bb24523))
+* stop the flaky browser and E2E tests and the takeover race behind them ([#525](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/525)) ([e874d33](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/e874d3376985dfb05297cfedd4c2bcd695e13827))
+* support the whole local interface of Board Manager 2.1 ([#531](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/531)) ([35f06b5](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/35f06b5a9ac30e84b5286e9a39d6572bd1896dc0))
+
 ## [2.1.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.0.1...v2.1.0) (2026-10-25)
 
 ### Fixed
