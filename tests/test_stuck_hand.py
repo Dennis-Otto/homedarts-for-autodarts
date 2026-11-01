@@ -773,6 +773,44 @@ async def test_the_notice_restarts_the_detection_when_confirmed(
     assert notice(hass, entry) is None
 
 
+async def test_the_confirmed_notice_finishes_the_takeout_that_held_the_board(
+    hass, at_board, hass_client
+):
+    entry, _, board = at_board
+    await switch(hass, "free_stuck_takeout", False)
+    fired = events_of(hass)
+    await board.play(hand_recording(START))
+    await stuck_at(board)
+    assert ("takeout_finished", None) not in fired_kinds(fired)
+    await fix(hass, hass_client, f"stuck_hand_{entry.entry_id}")
+    assert fired_kinds(fired).count(("takeout_finished", None)) == 1
+
+
+async def test_a_restart_finishes_the_takeout_that_held_the_board(hass, at_board):
+    _, _, board = at_board
+    fired = events_of(hass)
+    await board.play(hand_recording(START))
+    assert ("takeout_started", None) in fired_kinds(fired)
+    await stuck_at(board)
+    assert board.commands == ["stop", "start"]
+    assert fired_kinds(fired).count(("takeout_finished", None)) == 1
+
+
+async def test_a_refused_stop_finishes_no_takeout(hass, at_board):
+    _, coordinator, board = at_board
+    fired = events_of(hass)
+    await board.play(hand_recording(START))
+    board.errors["stop"] = AutodartsLocalCommandError("refused")
+    await stuck_at(board)
+    assert board.commands == ["stop"]
+    assert ("takeout_finished", None) not in fired_kinds(fired)
+    # What the restart left behind doesn't change what a later stop does.
+    board.show(STOPPED)
+    await hass.async_block_till_done()
+    assert ("takeout_finished", None) not in fired_kinds(fired)
+    assert coordinator.diagnostics()["stuck_hand"]["failed_restarts"] == 1
+
+
 async def test_a_hand_that_stays_after_the_repair_brings_the_notice_back(
     hass, at_board, hass_client
 ):

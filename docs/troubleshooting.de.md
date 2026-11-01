@@ -154,7 +154,7 @@ Der Status bleibt *Darts werden entnommen*, obwohl das Board leer ist, und neue 
 
 *Hand erkannt* bleibt auf Board Manager 2.1 an, obwohl niemand am Board ist, und kein Dart zählt, auch nach einer Kalibrierung. Bei einem echten Board begann das, als sein Lichtring bei laufender Erkennung eingeschaltet wurde; das Licht ist die wahrscheinliche Ursache, aber nicht bewiesen. Siehe [Eine Hand, die das Board ständig sieht](entities.de.md#eine-hand-die-das-board-ständig-sieht).
 
-- Stoppe und starte die Erkennung, mit dem Schalter *Erkennung* oder indem du den Hinweis *Autodarts-Board sieht ständig eine Hand* bestätigst. Solange *Hängende Entnahme lösen* an ist, tut die Integration das nach einer Minute selbst, wenn kein Spiel läuft und kein Dart im Board steckt.
+- Stoppe und starte die Erkennung, mit dem Schalter *Erkennung* oder indem du den Hinweis *Autodarts-Board sieht ständig eine Hand* bestätigst. Solange *Hängende Entnahme lösen* an ist, tut die Integration das nach einer Minute selbst, wenn kein von ihr geführtes Spiel läuft und kein Dart im Board steckt. Ein Match auf play.autodarts.io hält sie nicht auf.
 - Schaltet eine Routine das Licht des Boards, schalte es, bevor die Erkennung startet, oder [starte die Erkennung danach neu](automations.de.md#die-erkennung-nach-dem-licht-neu-starten).
 
 ### Eine Kamera wird als gestört gemeldet
@@ -202,7 +202,7 @@ Ein Spieler hat einen Board-PC mit Ubuntu 24.04 und drei Kameras von Autodarts 1
 - die Board-Manager-Generation, die Verbindungen und das Leseintervall;
 - das Übungsspiel mit seinen Regeln und ob gerade ausgebullt wird;
 - die Zahl der gespeicherten Sessions, Bestleistungen, Spielerprofile, Matches und Darts aufs Double;
-- unter `connection` den Verlauf der Verbindung: verpasste Lesevorgänge in Folge, die Art des letzten Fehlers, das letzte erfolgreiche Lesen, wie lange das Board schon fehlt, die Dauer des letzten Lesens, Abfragen mit unbekanntem Format und für die Echtzeitverbindung Verbindungsaufbauten, fehlgeschlagene Versuche, den aktuellen Abstand bis zum nächsten Versuch, den Grund des letzten Abbruchs und die Zahl übersprungener Nachrichten, außerdem unter `stuck_takeout`, ob hängende Entnahmen gelöst werden, ob gerade eine abgewartet wird und wie viele Zurücksetzungen das Board angenommen oder abgelehnt hat.
+- unter `connection` den Verlauf der Verbindung: verpasste Lesevorgänge in Folge, die Art des letzten Fehlers, das letzte erfolgreiche Lesen, wie lange das Board schon fehlt, die Dauer des letzten Lesens, Abfragen mit unbekanntem Format und für die Echtzeitverbindung Verbindungsaufbauten, fehlgeschlagene Versuche, den aktuellen Abstand bis zum nächsten Versuch, den Grund des letzten Abbruchs und die Zahl übersprungener Nachrichten, außerdem unter `stuck_takeout`, ob hängende Entnahmen gelöst werden, ob gerade eine abgewartet wird und wie viele Zurücksetzungen das Board angenommen oder abgelehnt hat, und unter `stuck_hand`, ob eine Hand als hängend gilt, ob gerade eine abgewartet wird und wie viele Neustarts das Board angenommen oder abgelehnt hat, mit dem letzten.
 
 Board-ID, Board-Name, Adressen und Spielernamen sind geschwärzt; Fehlermeldungen sind nicht enthalten.
 

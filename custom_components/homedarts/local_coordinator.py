@@ -228,6 +228,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         self._observed_state: dict[str, Any] | None = None
         self._observed_motion: dict[str, Any] | None = None
         self._taking_out = False
+        # A restart of the detection ends a takeout, and says so.
+        self._restarting_detection = False
         # Reset the board when it keeps a takeout without darts; a stored setting.
         self.free_stuck_takeout = True
         self._takeout_unsub: CALLBACK_TYPE | None = None
@@ -608,7 +610,11 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             state.get("running") is not True
             or str(status).lower() in LIFECYCLE_STATUSES
         ):
-            self._taking_out = False
+            if self._restarting_detection:
+                # The board freed by a restart never reports the end of its takeout.
+                self._finish_takeout(source)
+            else:
+                self._taking_out = False
         elif marker in ("takeout started", "takeout in progress"):
             self._start_takeout(source)
         elif marker == "takeout finished" or state.get("numThrows") == 0:
@@ -821,7 +827,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
 
     def _may_restart_detection(self, state: dict[str, Any]) -> bool:
         """Once for each occurrence, under the switch that frees a stuck takeout, on an
-        empty board and with no game running."""
+        empty board and with no game running that the integration knows of: a match on
+        play.autodarts.io doesn't show here, and on a stuck board it counts no darts."""
         games = self.games
         count = state.get("numThrows")
         return (
@@ -853,7 +860,11 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
 
     async def async_restart_detection(self) -> None:
         """Stop the detection and start it again, each command sent once."""
-        await self.async_action(self._restart_detection)
+        self._restarting_detection = True
+        try:
+            await self.async_action(self._restart_detection)
+        finally:
+            self._restarting_detection = False
 
     async def _restart_detection(self) -> None:
         client = self.client
