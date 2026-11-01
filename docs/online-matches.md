@@ -8,7 +8,7 @@ description: "Play online on play.autodarts.io and let Home Assistant celebrate:
 
 Play online on play.autodarts.io and let Home Assistant celebrate with you: busts, won legs and matches, and the darts of your opponents arrive as board events, for the light show, a caller or a notification when your tournament match is ready.
 
-**On this page:** [How it works](#how-it-works) · [Set up the bridge](#set-up-the-bridge) · [Triggers and events](#triggers-and-events) · [Security](#security) · [Limitations](#limitations)
+**On this page:** [How it works](#how-it-works) · [Set up the bridge](#set-up-the-bridge) · [Triggers and events](#triggers-and-events) · [Security](#security) · [Limitations](#limitations) · [Several accounts at one display](#several-accounts-at-one-display)
 
 ## How it works
 
@@ -90,3 +90,7 @@ mode: single
   - A plain http address in your home network, such as `http://homeassistant.local:8123`, if the browser lets the calls through: allow *Insecure content* for play.autodarts.io in the site settings of Chrome or Edge, and allow access to devices on your local network when the browser asks.
   - Whichever you choose, the *Online bridge last event* sensor shows whether the moments arrive.
 - **Board events only.** Online moments don't count in the training session, the practice game or the personal bests.
+
+## Several accounts at one display
+
+Several players at one display, each online on their own Autodarts account, would have to sign out and in for every change of player. The Chrome extension [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), by the author of this integration, keeps every account ready: one tap on a tile puts that account on the board, with no signing in. It needs no Home Assistant, and the integration sees the darts on your board whoever is signed in.

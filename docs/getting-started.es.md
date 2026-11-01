@@ -53,7 +53,9 @@ La [guía de instalación](installation.es.md#añadir-tu-diana) explica cada for
 
 ## 5. Crear el panel
 
-Ve a **Configuración → Paneles de control → Añadir panel de control → HomeDarts**. Dale un título y selecciona **Crear**: así se crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
+[![Abre tu Home Assistant y muestra tus paneles de control.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+El botón abre **Configuración → Paneles de control**. Allí, selecciona **Añadir panel de control → HomeDarts**, dale un título y selecciona **Crear**: así se crea un panel completo para tu diana, con vistas para la partida en directo, el marcador, el entrenamiento, los jugadores y la diana. Se actualiza solo cuando añades una diana o una versión posterior trae vistas nuevas.
 
 <img src="images/en/dashboard-strategy.png" alt="La vista de entrenamiento del panel automático" width="760">
 

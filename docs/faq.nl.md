@@ -44,6 +44,10 @@ Ja. Stel een dartbord zonder Autodarts in en voer elke dart in op het toetsenblo
 
 Ja, op play.autodarts.io zoals voorheen. De integratie ziet dan de darts op je eigen bord: `dart_detected`, `visit_thrown` en het verwijderen van de darts komen zoals gewoonlijk binnen. Busts, gewonnen legs en wedstrijden gebeuren in de browser; de optionele onlinebrug brengt ze naar Home Assistant met de browserextensie Tools for Autodarts *(experimenteel)*. [Online matches](online-matches.md)
 
+### Meerdere spelers met hun eigen Autodarts-account op één scherm?
+
+Ja, online op play.autodarts.io: de Chrome-extensie [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), van de auteur van deze integratie, houdt ieders account klaar, en één tik op een tegel wisselt van speler, zonder in te loggen. Ze heeft geen Home Assistant nodig, en de integratie ziet de darts op je bord, wie er ook is ingelogd. [Online matches](online-matches.md#several-accounts-at-one-display)
+
 ### Het bord las een dart verkeerd. Hoe corrigeer ik dat?
 
 Tik op het scorebord op de dart en kies waar hij terechtkwam, op de toetsen of op een afbeelding van het bord. In automatiseringen doet `homedarts.correct_dart` hetzelfde, en `homedarts.undo_visit` neemt de laatste beurt terug. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)

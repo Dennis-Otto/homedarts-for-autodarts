@@ -44,6 +44,10 @@ Sí. Configura una diana sin Autodarts e introduce cada dardo en el teclado num�
 
 Sí, en play.autodarts.io como antes. La integración ve entonces los dardos de tu propia diana: `dart_detected`, `visit_thrown` y la retirada de dardos llegan como siempre. Los busts, los legs y los partidos ganados ocurren en el navegador; el puente en línea opcional los lleva a Home Assistant con la extensión de navegador Tools for Autodarts *(experimental)*. [Online matches](online-matches.md)
 
+### ¿Varios jugadores con su propia cuenta de Autodarts en una sola pantalla?
+
+Sí, en línea en play.autodarts.io: la extensión de Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), del autor de esta integración, mantiene lista la cuenta de cada uno, y un toque en un mosaico cambia de jugador, sin iniciar sesión. No necesita Home Assistant, y la integración ve los dardos de tu diana, sea quien sea quien tenga la sesión iniciada. [Online matches](online-matches.md#several-accounts-at-one-display)
+
 ### La diana leyó mal un dardo. ¿Cómo lo corrijo?
 
 Toca el dardo en el marcador y elige dónde se clavó, en las teclas o en una imagen de la diana. En las automatizaciones, `homedarts.correct_dart` hace lo mismo, y `homedarts.undo_visit` deshace la última tirada. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)

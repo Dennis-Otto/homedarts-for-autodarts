@@ -44,6 +44,10 @@ Ja. Richte eine Dartscheibe ohne Autodarts ein und gib jeden Dart auf dem Tasten
 
 Ja, wie bisher auf play.autodarts.io. Die Integration sieht dabei die Darts auf deinem eigenen Board: `dart_detected`, `visit_thrown` und die Entnahme kommen wie gewohnt an. Überwerfen, gewonnene Legs und Matches passieren im Browser; die optionale Online-Brücke bringt sie mit der Browser-Erweiterung Tools for Autodarts nach Home Assistant *(experimentell)*. [Online-Matches](online-matches.de.md)
 
+### Mehrere Spieler mit eigenen Autodarts-Konten an einem Bildschirm?
+
+Ja, online auf play.autodarts.io: Die Chrome-Erweiterung [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/de/), vom Autor dieser Integration, hält die Konten aller bereit, und ein Tipp auf eine Kachel wechselt den Spieler, ohne Anmelden. Sie braucht kein Home Assistant, und die Integration sieht die Darts auf deinem Board, egal wer angemeldet ist. [Online-Matches](online-matches.de.md#mehrere-konten-an-einem-bildschirm)
+
 ### Das Board hat einen Dart falsch erkannt. Wie korrigiere ich ihn?
 
 Tippe den Dart auf der Anzeigetafel an und wähle, wo er gelandet ist, auf den Tasten oder auf einem Bild des Boards. In Automationen macht `homedarts.correct_dart` dasselbe, und `homedarts.undo_visit` nimmt die letzte Aufnahme zurück. [Darts korrigieren und eingeben](scoreboard.de.md#darts-korrigieren-und-eingeben)

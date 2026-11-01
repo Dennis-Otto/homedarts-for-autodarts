@@ -53,7 +53,9 @@ Die [Installationsanleitung](installation.de.md#board-hinzufügen) erklärt die 
 
 ## 5. Dashboard anlegen
 
-Öffne **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Gib ihm einen Titel und wähle **Erstellen**: Das legt ein komplettes Dashboard für dein Board an, mit Ansichten für das laufende Spiel, die Anzeigetafel, das Training, die Spieler und das Board. Es aktualisiert sich selbst, wenn du ein Board hinzufügst oder eine neue Version neue Ansichten bringt.
+[![Home Assistant öffnen und deine Dashboards anzeigen.](https://my.home-assistant.io/badges/lovelace_dashboards.svg)](https://my.home-assistant.io/redirect/lovelace_dashboards/)
+
+Die Schaltfläche öffnet **Einstellungen → Dashboards**. Wähle dort **Dashboard hinzufügen → HomeDarts**, gib ihm einen Titel und wähle **Erstellen**: Das legt ein komplettes Dashboard für dein Board an, mit Ansichten für das laufende Spiel, die Anzeigetafel, das Training, die Spieler und das Board. Es aktualisiert sich selbst, wenn du ein Board hinzufügst oder eine neue Version neue Ansichten bringt.
 
 <img src="images/de/dashboard-strategy.png" alt="Die Trainingsansicht des automatischen Dashboards" width="760">
 

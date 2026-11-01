@@ -44,6 +44,10 @@ Oui. Configurez une cible sans Autodarts et saisissez chaque fléchette sur le p
 
 Oui, sur play.autodarts.io comme avant. L'intégration voit alors les fléchettes de votre propre cible : `dart_detected`, `visit_thrown` et le retrait arrivent comme d'habitude. Les busts, les manches et les matchs gagnés se passent dans le navigateur ; la passerelle en ligne facultative les amène dans Home Assistant avec l'extension de navigateur Tools for Autodarts *(expérimental)*. [Online matches](online-matches.md)
 
+### Plusieurs joueurs avec leur propre compte Autodarts sur un seul écran ?
+
+Oui, en ligne sur play.autodarts.io : l'extension Chrome [Player Switch for Autodarts](https://dennis-otto.github.io/player-switch-for-autodarts/), de l'auteur de cette intégration, garde le compte de chacun prêt, et un appui sur une tuile change de joueur, sans se connecter. Elle n'a pas besoin de Home Assistant, et l'intégration voit les fléchettes de votre cible, quel que soit le compte connecté. [Online matches](online-matches.md#several-accounts-at-one-display)
+
 ### La cible a mal lu une fléchette. Comment la corriger ?
 
 Touchez la fléchette sur le tableau des scores et choisissez où elle s'est plantée, sur les touches ou sur une image de la cible. Dans les automatisations, `homedarts.correct_dart` fait la même chose, et `homedarts.undo_visit` annule la dernière volée. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
