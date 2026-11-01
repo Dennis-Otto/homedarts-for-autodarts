@@ -13,9 +13,10 @@ the Board Manager becomes a change of a recording, and both test suites follow i
 | [`1.0.7`](1.0.7/) | Board Manager 1, the classic app | Built from the shapes the integration was developed against |
 | [`2.0.0`](2.0.0/) | Board Manager 2, headless | Built from the shapes the integration was developed against |
 | [`2.0.2`](2.0.2/) | Board Manager 2, headless | Built from the shapes the integration was developed against, with the takeout that 2.0.2 sometimes never finishes |
-| [`2.1.0`](2.1.0/) | Board Manager 2, headless, in the shape of 2.1 | A real board with its detection running; its socket while the detection stopped, started and stopped again |
+| [`2.1.0`](2.1.0/) | Board Manager 2, headless, in the shape of 2.1 | A real board with its detection running; its two sockets side by side, in a later capture, while the detection started and stopped |
 
-No dart was thrown on the board of `2.1.0`. The frames of a real board of 2.1.0 with
+No dart was thrown on the board of `2.1.0`, and nobody stood at it, so its motion shows
+no hand. The frames of a real board of 2.1.0 with
 real darts and takeouts, from another board, are in
 [`board_manager_2.1.0_frames.jsonl`](../board_manager_2.1.0_frames.jsonl), and those of
 the same board with two darts in the surround, a bouncer and a dart placed in the wrong
@@ -39,6 +40,7 @@ which a capture replaces.
 | `system.json` | `GET /api/system`, Board Manager 2 |
 | `host.json` | `GET /api/host`, Board Manager 2 |
 | `ws-frames.jsonl` | The frames of the socket `/api/events`, one per line, while darts are thrown and taken out |
+| `ws-system-frames.jsonl` | The frames of the second socket of Board Manager 2.1, `/api/events/system`, one per line. Of those that repeat, `vantage` 30 times a second and `stats` and `vantageConfig` once, it holds the first, each that says something new and one every ten seconds. A board without that socket has no such file |
 | `capture.json` | The version, the day of the capture, its source and the routes the board doesn't have (`absent`) |
 
 ## Placeholders
@@ -81,7 +83,8 @@ python scripts/capture_board.py 192.168.1.50
 ```
 
 It reads every route above, then records the socket for 60 seconds
-(`--seconds`, or `--frames` for a number of frames): start the detection, throw a few
+(`--seconds`, or `--frames` for a number of frames), and the second socket with it where
+the board has one: start the detection, throw a few
 darts and take them out. It writes the folder of the version the board reports, such
 as `tests/fixtures/board_manager/2.0.2/`, replacing the files of an earlier recording.
 Look through the files before you share them, then attach the folder as a zip file to

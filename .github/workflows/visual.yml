@@ -3,7 +3,7 @@ name: Visual check
 # Renders every image of the documentation from the demo, with its frozen clock, for
 # each pull request that changes the integration with its cards, the blueprints that
 # the demo shows or the screenshot tool, and compares them with the committed ones
-# pixel by pixel. The images come in three fixed groups
+# pixel by pixel. The images come in four fixed groups
 # (GROUPS in tests/e2e/screenshots.py): each group of each language renders on a
 # runner of its own from a fresh demo, all side by side, and then the compare job of
 # a language puts its groups together and compares them (tests/e2e/collect.sh), as
@@ -52,11 +52,10 @@ concurrency:
 
 jobs:
   render:
-    name: render (${{ matrix.language }}, ${{ matrix.group }}/3)
+    name: render (${{ matrix.language }}, ${{ matrix.group }}/4)
     runs-on: ubuntu-latest
-    # The demo takes about two minutes, the images of the longest group, the second
-    # or the third, about seven and a half; the step that renders them ends after
-    # 21 minutes.
+    # The demo takes about two minutes, the images of the longest group about six;
+    # the step that renders them ends after 21 minutes.
     timeout-minutes: 25
     permissions:
       # The images of an earlier run with the same key (tests/e2e/render_key.py).
@@ -67,7 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         language: [en, de]
-        group: [1, 2, 3]
+        group: [1, 2, 3, 4]
     steps:
       # Only the hosts of the steps: the code from github.com, Home Assistant from
       # GitHub's registry (ghcr.io, pkg-containers.githubusercontent.com), Playwright
@@ -147,7 +146,7 @@ jobs:
         timeout-minutes: 21
         env:
           LANGUAGES: ${{ matrix.language }}
-          SCREENSHOT_GROUP: ${{ matrix.group }}/3
+          SCREENSHOT_GROUP: ${{ matrix.group }}/4
           IMAGES: tests/e2e/artifacts/rendered
         run: exec bash tests/e2e/screenshots.sh
       - name: List how long the sections took
@@ -194,7 +193,7 @@ jobs:
       - name: Explain the failure
         if: failure()
         env:
-          CHECK: render (${{ matrix.language }}, ${{ matrix.group }}/3)
+          CHECK: render (${{ matrix.language }}, ${{ matrix.group }}/4)
         run: python3 .github/blueprint.py coach explain "$CHECK"
 
   compare:

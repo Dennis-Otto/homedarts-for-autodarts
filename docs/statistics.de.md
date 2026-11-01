@@ -156,7 +156,7 @@ Mit *Übungsspiel persönliche Checkout-Wege* bevorzugt der Checkout-Weg die st�
 
 ## Spielerprofile
 
-<img src="images/de/players-card.png" alt="Spielerkarte mit den Profilen von Alex, Sam und Kim mit ihren Bildern, Averages und Bestleistungen, dem direkten Vergleich von Alex und Sam und den letzten Matches" width="760">
+<img src="images/de/players-card.png" alt="Spielerkarte mit den Profilen von Alex, Sam und Kim mit ihren Bildern, Averages und Bestleistungen, den direkten Vergleichen der Spieler und den letzten Matches" width="760">
 
 Jeder Spieler mit Namen bekommt im Übungsspiel ein Profil mit Werten über seine ganze Zeit: gespielte und gewonnene Legs und Matches, 3-Dart-Average, First-9-Average, Checkout-Quote, Marks pro Runde, die höchste Aufnahme und der höchste Checkout, die besten Marks pro Runde und die wenigsten Darts für jede Startpunktzahl. Die [Spielerkarte](cards.de.md#spielerkarte) zeigt sie mit den direkten Vergleichen jedes Gegnerpaars und den letzten Matches.
 

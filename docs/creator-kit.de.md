@@ -84,8 +84,8 @@ Alle Screenshots der Dokumentation liegen in [`docs/images/de`](https://github.c
 
 | Auf der Anzeigetafel | In Home Assistant |
 | --- | --- |
-| <img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301, drei Legs pro Satz, Double-Out und die Start-Taste" width="100%"> | <img src="images/de/players-card.png" alt="Spielerkarte mit den Profilen von Alex, Sam und Kim mit ihren Bildern, ihren Averages und Bestleistungen, dem direkten Vergleich von Alex und Sam und den letzten Matches" width="100%"> |
-| <img src="images/de/match-summary.png" alt="Anzeigetafel, nachdem Alex Sam in 301 mit 2 : 1 geschlagen hat: die Match-Zusammenfassung mit Legs, 3-Dart-Average, First 9, Checkout-Quote, höchstem Checkout, 180ern, 140+, 100+, bestem Leg, Darts aufs Double und Darts beider Spieler" width="100%"> | <img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von der Warnung bei Board-Problemen bis zum Wochenbericht, und ihren Dateinamen" width="100%"> |
+| <img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301, drei Legs pro Satz, Double-Out und die Start-Taste" width="100%"> | <img src="images/de/players-card.png" alt="Spielerkarte mit den Profilen von Alex, Sam und Kim mit ihren Bildern, ihren Averages und Bestleistungen, den direkten Vergleichen der Spieler und den letzten Matches" width="100%"> |
+| <img src="images/de/match-summary.png" alt="Anzeigetafel, nachdem Alex Sam in 301 mit 2 : 1 geschlagen hat: die Match-Zusammenfassung mit Legs, 3-Dart-Average, First 9, Checkout-Quote, höchstem Checkout, 180ern, 140+, 100+, bestem Leg, Darts aufs Double und Darts beider Spieler" width="100%"> | <img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von den Fragen an Assist zu deinen Darts bis zum Wochenbericht, und ihren Dateinamen" width="100%"> |
 
 ## Deine Spiele streamen
 

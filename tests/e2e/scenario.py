@@ -104,6 +104,11 @@ EXPECTED_TRACEBACKS = (
     "import_module with args ('probatio.codecs',)",
 )
 MANIFEST = Path("/config/custom_components/homedarts/manifest.json")
+# Where the integration and its blueprints name their icons (compose.yaml).
+ICON_FILES = (
+    "/config/custom_components/homedarts",
+    "/config/blueprints/automation/Dennis-Otto",
+)
 # A record of the log at the level of a warning or above, such as "2026-10-25
 # 01:02:03.456 WARNING (MainThread) [homeassistant.helpers.frame] Detected that ...",
 # with its message.
@@ -134,6 +139,7 @@ ENTITIES = {
     "local_visit_score": "sensor",
     "detection_fps": "sensor",
     "training_darts": "sensor",
+    "hand_detected": "binary_sensor",
     "training_triples": "sensor",
     "training_bulls": "sensor",
     "training_points": "sensor",
@@ -2078,6 +2084,105 @@ class Scenario:
             f"Onboarding set up Radio Browser, which reaches the internet: {entries}",
         )
 
+    async def icons(self) -> None:
+        """Every icon that the integration and its blueprints name exists. The frontend
+        shows nothing for an icon that Material Design Icons doesn't have, and no log
+        says so. Home Assistant brings its frontend only here, not to the unit tests."""
+        import hass_frontend
+
+        names = Path(hass_frontend.__file__).with_name("static") / "mdi/iconList.json"
+        known = {icon["name"] for icon in json.loads(names.read_text(encoding="utf-8"))}
+        missing = {
+            f"{path.name}: mdi:{name}"
+            for folder in ICON_FILES
+            for path in Path(folder).rglob("*")
+            if path.suffix in (".js", ".json", ".py", ".yaml")
+            for name in re.findall(
+                r"mdi:([a-z0-9-]+)", path.read_text(encoding="utf-8")
+            )
+            if name not in known
+        }
+        check(not missing, f"Icons that the frontend doesn't have: {sorted(missing)}")
+
+    async def second_socket(self) -> None:
+        """Board Manager 2.1 sends its motion on a socket of its own, and everything of
+        the first there too: each dart counts once, and the read of /api/system takes
+        over when the frames stop or the socket isn't there."""
+        await self.board(
+            "POST",
+            "/control/state",
+            json={
+                "running": True,
+                "status": "Throw",
+                "event": "Started",
+                "throws": [],
+            },
+        )
+        await self.expect_states({"realtime_connected": "on", "hand_detected": "off"})
+        started = int((await self.state("training_darts"))["state"])
+        self.fired_board_events()
+
+        # 1. With its read failing, the board can only tell of the hand in a frame.
+        await self.fault(http_status=503, paths=["/api/system"])
+        await self.board("POST", "/control/motion", json={"isHand": True})
+        await self.expect_states({"hand_detected": "on"}, timeout=3)
+        await self.board("POST", "/control/motion", json={"isHand": False})
+        await self.expect_states({"hand_detected": "off"}, timeout=3)
+        await self.fault(clear=True)
+
+        # 2. The first dart after a takeout arrives twice, and counts once.
+        for event in ("Takeout finished", "Throw detected"):
+            await self.board(
+                "POST", "/control/state", json={"throws": [T20], "event": event}
+            )
+        await self.expect_states({"last_throw": "T20", "num_throws": "1"})
+
+        # 3. The frames stop with a hand at the board: no entity stays at that value.
+        await self.board("POST", "/control/motion", json={"isHand": True})
+        await self.expect_states({"hand_detected": "on"}, timeout=3)
+        await self.fault(motion_frames=False)
+        await self.board("POST", "/control/motion", json={"isHand": False})
+        await self.expect_states({"hand_detected": "off"}, timeout=8)
+        await self.fault(motion_frames=True)
+        await self.board("POST", "/control/motion", json={"isHand": True})
+        await self.expect_states({"hand_detected": "on"}, timeout=3)
+        await self.board("POST", "/control/motion", json={"isHand": False})
+        await self.expect_states({"hand_detected": "off"}, timeout=3)
+
+        # 4. A board without the second socket: the first and the read do its work.
+        await self.fault(second_socket=False, drop_sockets=True)
+
+        async def on_the_first_socket():
+            requests = await self.board("GET", "/control/requests")
+            return requests["sockets"] == 1 and requests["second_sockets"] == 0
+
+        await wait_for(on_the_first_socket, "the first socket", 30)
+        await self.expect_states({"realtime_connected": "on"})
+        await self.board("POST", "/control/state", json={"throws": [T20, T20]})
+        await self.expect_states({"num_throws": "2"})
+        await self.board("POST", "/control/motion", json={"isHand": True})
+        await self.expect_states({"hand_detected": "on"}, timeout=8)
+        await self.board("POST", "/control/motion", json={"isHand": False})
+        await self.expect_states({"hand_detected": "off"}, timeout=8)
+
+        # 5. It comes back with the next connection.
+        await self.fault(second_socket=True, drop_sockets=True)
+
+        async def on_the_second_socket():
+            requests = await self.board("GET", "/control/requests")
+            return requests["sockets"] == 1 and requests["second_sockets"] == 1
+
+        await wait_for(on_the_second_socket, "the second socket", 30)
+        await self.expect_states({"realtime_connected": "on"})
+        await self.board("POST", "/control/state", json={"throws": []})
+        await self.expect_states({"training_darts": str(started + 2)})
+        darts = [
+            item["segment"]
+            for item in self.fired_board_events()
+            if item["event_type"] == "dart_detected"
+        ]
+        check(darts == ["T20", "T20"], f"Darts that counted: {darts}")
+
     async def logs(self) -> None:
         items = await self.ws("system_log/list")
         problems = [
@@ -2178,6 +2283,7 @@ async def main() -> None:
         await phase("connection", scenario.connect())
         entry_id = await phase("setup", scenario.setup())
         await phase("registries", scenario.registries(entry_id))
+        await phase("icons", scenario.icons())
         await phase("initial state", scenario.initial_state())
         await phase("controls", scenario.controls())
         await phase("realtime", scenario.realtime(entry_id))
@@ -2198,6 +2304,8 @@ async def main() -> None:
         await phase("manual board", scenario.manual_board())
         await phase("diagnostics", scenario.diagnostics(entry_id))
         await phase("offline", scenario.offline())
+        if INTERFACE_2_1:
+            await phase("second socket", scenario.second_socket())
         await phase("logs", scenario.logs())
         await phase("removal", scenario.remove(entry_id))
         await scenario.socket.close()
@@ -2206,7 +2314,12 @@ async def main() -> None:
         + ("mDNS discovery, " if GENERATION >= 2 else "")
         + "local config flow and validation, registries, "
         "controls, realtime darts/corrections/takeouts with positions, persistence, "
-        "dropped sockets mid-visit, outages, failing and slow reads, malformed "
+        + (
+            "the second socket and what takes over without it, "
+            if INTERFACE_2_1
+            else ""
+        )
+        + "dropped sockets mid-visit, outages, failing and slow reads, malformed "
         "frames, a restart, a stuck takeout freed, the online bridge, weekly report, "
         "training calendar, "
         "exports, Golf, Tactics and a team match with start scores, an achievement "

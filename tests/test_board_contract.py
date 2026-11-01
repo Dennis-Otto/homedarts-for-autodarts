@@ -28,6 +28,7 @@ from custom_components.homedarts.local_api import (
     _snake_case,
     board_state,
     board_system,
+    motion_flags,
 )
 
 from .local_helpers import (
@@ -122,6 +123,14 @@ def frames(version: str) -> list[dict]:
     return [json.loads(line) for line in text.splitlines()]
 
 
+def system_frames(version: str) -> list[dict]:
+    """The frames of the second socket, of a version that has one."""
+    path = RECORDINGS / version / capture_board.SYSTEM_FRAMES
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
 def states(version: str) -> list[dict]:
     """The state frames of a recording, and of 2.1.0 those with real darts."""
     recorded_frames = frames(version)
@@ -175,7 +184,17 @@ def replay(version: str) -> web.Application:
         await socket.close()
         return socket
 
+    async def system_events(request):
+        socket = web.WebSocketResponse()
+        await socket.prepare(request)
+        for frame in system_frames(version):
+            await socket.send_json(frame)
+        await socket.close()
+        return socket
+
     app.router.add_get(capture_board.EVENTS, events)
+    if system_frames(version):
+        app.router.add_get(capture_board.SYSTEM_EVENTS, system_events)
     return app
 
 
@@ -192,7 +211,7 @@ def test_a_recording_answers_every_route_or_names_it_absent(version):
     assert {path.name for path in folder.iterdir()} == recorded_routes | {
         capture_board.FRAMES,
         capture_board.CAPTURE,
-    }
+    } | ({capture_board.SYSTEM_FRAMES} if system_frames(version) else set())
     absent = {path for name, path in ROUTES.items() if name not in recorded_routes}
     assert set(summary(version)["absent"]) == absent
     assert summary(version)["board_manager"] == version
@@ -211,9 +230,11 @@ def test_a_recording_keeps_only_placeholders(version):
     recording = answers(version)
     # Every secret is a placeholder already, and redacted again a recording stays
     # the same: it keeps no private address either.
-    assert capture_board.secrets([recording, frames(version)]) == {}
+    second = system_frames(version)
+    assert capture_board.secrets([recording, frames(version), second]) == {}
     assert capture_board.redact(recording, {}) == recording
     assert capture_board.redact(frames(version), {}) == frames(version)
+    assert capture_board.redact(second, {}) == second
     # The placeholders stand where the board keeps the secrets, in its spelling; a
     # board without a key has an empty one, which is no secret.
     auth = _snake_case(recording["config.json"]["auth"])
@@ -230,7 +251,12 @@ def test_a_recording_keeps_only_placeholders(version):
 def test_the_capture_script_writes_a_recording_byte_for_byte_again(version):
     # A change of the redaction shows here before it changes a recording of a board.
     _, content = capture_board.files(
-        answers(version), frames(version), [], PLACEHOLDERS["hostname"], None
+        answers(version),
+        frames(version),
+        [],
+        PLACEHOLDERS["hostname"],
+        None,
+        system_frames(version),
     )
 
     assert set(content) == {
@@ -284,15 +310,151 @@ async def test_the_integration_reads_every_recording(version):
             assert None not in host.values(), host
         received = [event async for event in REAL_EVENTS(client)]
     assert received[0] == ("connected", {})
-    assert received[1:-1] == [
-        (
-            frame["type"],
-            board_state(frame["data"]) if frame["type"] == "state" else frame["data"],
-        )
-        for frame in frames(version)
-    ]
+    second = system_frames(version)
+    assert received[1:-1] == (
+        [notification(frame) for frame in second if notification(frame)]
+        if second
+        else [
+            (
+                frame["type"],
+                board_state(frame["data"])
+                if frame["type"] == "state"
+                else frame["data"],
+            )
+            for frame in frames(version)
+        ]
+    )
     assert received[-1][0] == "closed"
     assert client.ignored_frames == 0
+
+
+def notification(frame: dict) -> tuple[str, dict] | None:
+    """What the client makes of a frame of the second socket: the state and the
+    motion; the rest is what the read of /api/system says as well."""
+    if frame["type"] == "state":
+        return "state", board_state(frame["data"])
+    if frame["type"] == "vantage" and frame["data"]["vantage"]:
+        return "vantage", motion_flags(frame["data"]["vantage"]["motion"])
+    return None
+
+
+def test_the_second_socket_sends_every_frame_of_the_first():
+    # Why Board Manager 2.1 needs one socket: the recording holds both side by side.
+    # The second may have more, as the first dart after a takeout once showed.
+    second = iter(frame for frame in system_frames("2.1.0") if frame["type"] == "state")
+    first = frames("2.1.0")
+    assert first
+    assert all(frame in second for frame in first)
+
+
+def test_the_recording_of_the_second_socket_shows_what_the_integration_reads():
+    second = system_frames("2.1.0")
+    # The kinds the double repeats and the integration reads. The next recording, with
+    # darts or made while the detection runs, may hold others and not hold a change.
+    assert {frame["type"] for frame in second} >= (
+        board_mock.SECOND_SOCKET_KINDS - board_mock.SECOND_SOCKET_CHANGES
+    )
+    # A stop ends the motion with a frame without any, so not all of them have one.
+    motions = [
+        frame["data"]["vantage"]
+        for frame in second
+        if frame["type"] == "vantage" and frame["data"]["vantage"]
+    ]
+    assert motions
+    for key in ("isHand", "isStable", "isTakeoutPartial", "isTakeoutFull"):
+        assert all(type(motion["motion"][key]) is bool for motion in motions)
+    # A recording stays small: the board sends about 2 MB of these a minute, and a
+    # visit keeps each change of its flags.
+    path = RECORDINGS / "2.1.0" / capture_board.SYSTEM_FRAMES
+    assert path.stat().st_size < 1024 * 1024
+
+
+async def test_the_end_to_end_double_sends_the_second_socket_like_its_recording():
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    recording = {}
+    for frame in system_frames("2.1.0"):
+        recording.setdefault(frame["type"], []).append(shape(frame))
+    async with serve(app) as (server, session):
+        path = server.make_url(capture_board.SYSTEM_EVENTS)
+        async with session.ws_connect(path) as socket:
+            await until(lambda: double.sockets)
+            start = {"running": True, "status": "throw", "event": "started"}
+            await session.post(server.make_url("/control/state"), json=start)
+            await session.post(
+                server.make_url("/control/motion"), json={"isHand": True}
+            )
+            kinds = set()
+            hand = False
+            while kinds != set(recording) & board_mock.SECOND_SOCKET_KINDS or not hand:
+                sent = await socket.receive_json(timeout=5)
+                kinds.add(sent["type"])
+                assert shape(sent) in recording[sent["type"]], sent["type"]
+                if sent["type"] == "vantage":
+                    hand = sent["data"]["vantage"]["motion"]["isHand"]
+            # The read tells the same.
+            async with session.get(server.make_url("/api/system")) as response:
+                system = await response.json()
+            assert system["vantage"]["motion"]["isHand"] is True
+
+
+@pytest.mark.parametrize("generation", [1, 2])
+async def test_the_end_to_end_double_of_an_earlier_board_has_no_second_socket(
+    generation,
+):
+    app = board_mock.create_app(generation)
+    async with serve(app) as (server, session):
+        path = server.make_url(capture_board.SYSTEM_EVENTS)
+        with pytest.raises(aiohttp.WSServerHandshakeError) as refused:
+            await session.ws_connect(path)
+    assert refused.value.status == 404
+    assert app[board_mock.BOARD].unexpected == [f"GET {capture_board.SYSTEM_EVENTS}"]
+
+
+async def test_the_end_to_end_double_plays_a_recording_without_a_start():
+    # Made while the detection ran, a recording has no calibration and no cams.
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    del double.frames["calibration"], double.frames["cams"]
+    start = {"running": True, "status": "throw", "event": "started"}
+    async with serve(app) as (server, session):
+        path = server.make_url(capture_board.SYSTEM_EVENTS)
+        async with session.ws_connect(path):
+            await until(lambda: double.second_sockets)
+            control = server.make_url("/control/state")
+            async with session.post(control, json=start) as response:
+                assert response.status == 200
+
+
+async def test_the_second_socket_of_the_end_to_end_double_has_its_faults():
+    app = board_mock.create_app("2.1")
+    double = app[board_mock.BOARD]
+    start = {"running": True, "status": "throw", "event": "started"}
+    async with serve(app) as (server, session):
+        fault = server.make_url("/control/fault")
+        path = server.make_url(capture_board.SYSTEM_EVENTS)
+        await session.post(server.make_url("/control/state"), json=start)
+        async with session.ws_connect(path) as socket:
+            await session.post(fault, json={"motion_frames": False})
+            await until(lambda: not double.motion_frames)
+            # The socket lives on, with no motion in it.
+            while (await socket.receive_json(timeout=5))["type"] == "vantage":
+                pass
+            for _ in range(3):
+                sent = await socket.receive_json(timeout=5)
+                assert sent["type"] != "vantage"
+                await session.post(fault, json={"motion_frames": False})
+            await session.post(
+                fault, json={"second_socket": False, "drop_sockets": True}
+            )
+            await until(lambda: not double.second_sockets)
+        with pytest.raises(aiohttp.WSServerHandshakeError) as refused:
+            await session.ws_connect(path)
+        assert refused.value.status == 404
+        # The first socket stays, and the reads don't count the sockets.
+        async with session.ws_connect(server.make_url(capture_board.EVENTS)):
+            await until(lambda: double.sockets)
+        assert capture_board.SYSTEM_EVENTS not in double.reads
 
 
 @pytest.mark.parametrize(("generation", "version"), GENERATIONS)

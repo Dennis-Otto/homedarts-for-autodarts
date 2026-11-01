@@ -932,6 +932,18 @@ async ([service, data]) => {
 """
 
 
+# Whether Home Assistant shows this many darts on the board.
+DARTS_ON_BOARD = """
+(darts) => {
+  const hass = document.querySelector('home-assistant').hass;
+  const entity = Object.values(hass.entities).find(
+    (item) => item.platform === 'homedarts' && item.translation_key === 'num_throws'
+  );
+  return hass.states[entity.entity_id]?.state === String(darts);
+}
+"""
+
+
 # Whether the tournament sensor's status is one of the given ones.
 TOURNAMENT_IN = """
 (statuses) => {
@@ -1259,8 +1271,8 @@ def checkout_101(page: Page, loser: list[str] | None = None) -> None:
     visit(page, ["T20", "S1", "D20"])
 
 
-def tournament_bracket_animation(page: Page) -> None:
-    """A knockout of five filling its bracket: every winner slides into the next round."""
+def start_tournament_of_five(page: Page) -> None:
+    """A knockout of five with a match for third place, 101 in one leg each."""
     pull_darts()
     game(page, "off")
     page.evaluate(
@@ -1282,6 +1294,11 @@ def tournament_bracket_animation(page: Page) -> None:
             },
         ],
     )
+
+
+def tournament_bracket_animation(page: Page) -> None:
+    """A knockout of five filling its bracket: every winner slides into the next round."""
+    start_tournament_of_five(page)
     board = tablet(page, "homedarts-demo/tournament")
     wait_card(board, "r.querySelectorAll('.player').length === 2", SCOREBOARD, 60000)
     ready(board)
@@ -1363,6 +1380,17 @@ FIELD = [
 ]  # fmt: skip
 
 
+def quick_visit(page: Page, names: list[str]) -> None:
+    """A visit that shows in no picture, such as in a match that only leads up to
+    one: every move waits until Home Assistant took it, not a fixed time."""
+    darts = [at(name) for name in names]
+    for count in range(1, len(darts) + 1):
+        control({"event": "Throw detected", "throws": darts[:count]})
+        page.wait_for_function(DARTS_ON_BOARD, arg=count)
+    pull_darts()
+    page.wait_for_function(DARTS_ON_BOARD, arg=0)
+
+
 def play_tournament(page: Page, matches: int) -> None:
     """Play the first `matches` matches of the tournament, most of them won by the
     first player and every third by the second."""
@@ -1370,8 +1398,21 @@ def play_tournament(page: Page, matches: int) -> None:
         if page.evaluate(TOURNAMENT_IN, ["waiting"]):
             page.evaluate(CALL_ACTION, ["next_tournament_match", {}])
             page.wait_for_function(TOURNAMENT_IN, arg=["playing"])
-        checkout_101(page, ["S20", "S20", "S1"] if played % 3 == 2 else None)
+        if played % 3 == 2:
+            quick_visit(page, ["S20", "S20", "S1"])
+        quick_visit(page, ["T20", "S1", "D20"])
         page.wait_for_function(TOURNAMENT_IN, arg=["waiting", "finished"])
+
+
+def players_matches(page: Page) -> None:
+    """The matches of the players: a knockout of five, with no picture of it. The
+    animation of its bracket plays the same matches in a group of its own."""
+    start_tournament_of_five(page)
+    page.wait_for_function(TOURNAMENT_IN, arg=["playing"])
+    play_tournament(page, 5)
+    page.evaluate(CALL_ACTION, ["stop_tournament", {}])
+    players(page, 1)
+    game(page, "off")
 
 
 def big_tournament(
@@ -2346,6 +2387,13 @@ def weekly_report_notification(page: Page) -> None:
     """
     report = local_page(page)
     open_dashboard(report, "board")
+    due = None
+    if (now := demo_now()) is not None:
+        # The frozen clock moves on to the last second before the report time first:
+        # Home Assistant waits for that time in real seconds, from the moment the
+        # report time is set, and without this for up to the rest of the minute.
+        due = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+        move_clock(max(now, due - timedelta(seconds=1)))
     day, time = report.evaluate(NEXT_MINUTE)
     report.evaluate(
         CALL_SERVICE, ["select", "select_option", "weekly_report_day", {"option": day}]
@@ -2353,10 +2401,9 @@ def weekly_report_notification(page: Page) -> None:
     report.evaluate(
         CALL_SERVICE, ["time", "set_value", "weekly_report_time", {"time": time}]
     )
-    if (now := demo_now()) is not None:
-        # The frozen clock moves on to the report time, as the minute would pass;
-        # Home Assistant sends the report when it checks the time again.
-        due = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    if due is not None:
+        # The minute passes; Home Assistant sends the report when it checks the time
+        # again.
         move_clock(due)
         report.clock.set_fixed_time(due)
     for _ in range(90):
@@ -3005,11 +3052,8 @@ def settings_texts(page: Page) -> None:
     )
 
 
-def blueprints_page(page: Page) -> None:
-    """The blueprints of the integration in Home Assistant, and the light show's form."""
-    context = own_context(
-        page, viewport={"width": 1280, "height": 900}, device_scale_factor=2
-    )
+def blueprint_list(context: BrowserContext) -> Page:
+    """A new page with the blueprints of Home Assistant, in the texts of the settings."""
     view = context.new_page()
     view.goto(f"{HA}/config/blueprint/dashboard")
     view.get_by_text("HomeDarts: light show").first.wait_for(timeout=60000)
@@ -3019,12 +3063,62 @@ def blueprints_page(page: Page) -> None:
         "Automations" if LANGUAGE == "en" else "Automationen", exact=True
     ).first.wait_for(timeout=30000)
     view.wait_for_timeout(1500)
-    page_shot(view, "blueprints")
+    return view
+
+
+def blueprint_form(view: Page, blueprint: str, name: str, height: int) -> None:
+    """The form of a blueprint of the list, as the picture `name`; closes the page."""
     # A blueprint opens a new automation with its form.
-    view.get_by_text("HomeDarts: light show").first.click()
+    view.get_by_text(blueprint).first.click()
     view.wait_for_url("**/config/automation/edit/new", timeout=30000)
+    view.set_viewport_size({"width": 1280, "height": height})
     view.wait_for_timeout(3000)
-    page_shot(view, "blueprint-light-show")
+    page_shot(view, name)
+    view.close()
+
+
+# The names of the automation blueprints that Home Assistant knows, which its list shows.
+BLUEPRINT_NAMES = """
+async () => {
+  const hass = document.querySelector('home-assistant').hass;
+  const blueprints = await hass.callWS({ type: 'blueprint/list', domain: 'automation' });
+  return Object.values(blueprints).flatMap((blueprint) => blueprint.metadata?.name ?? []);
+}
+"""
+
+
+def require_every_blueprint(view: Page) -> None:
+    """Fail if the window cuts off a row of the list: it draws only the rows in view,
+    so a new blueprint would otherwise drop out of the picture without a word."""
+    bottom = view.viewport_size["height"]
+    cut_off = []
+    names = view.evaluate(BLUEPRINT_NAMES)
+    for name in names:
+        row = view.get_by_text(name, exact=True)
+        box = row.first.bounding_box() if row.count() else None
+        if box is None or box["y"] + box["height"] > bottom:
+            cut_off.append(name)
+    if cut_off or not names:
+        raise AssertionError(
+            f"The list of {len(names)} blueprints doesn't fit into the {bottom} px of"
+            f" the window, raise the height in blueprints_page(): {cut_off}"
+        )
+
+
+def blueprints_page(page: Page) -> None:
+    """The blueprints of the integration in Home Assistant, and two of their forms."""
+    # So high that the list shows every blueprint: it only draws the rows in view.
+    context = own_context(
+        page, viewport={"width": 1280, "height": 1180}, device_scale_factor=2
+    )
+    view = blueprint_list(context)
+    require_every_blueprint(view)
+    page_shot(view, "blueprints")
+    blueprint_form(view, "HomeDarts: light show", "blueprint-light-show", 900)
+    # So high that its short form shows whole, with the sections that open closed.
+    blueprint_form(
+        blueprint_list(context), "HomeDarts: walk-on music", "blueprint-walk-on", 1150
+    )
     context.close()
 
 
@@ -3567,7 +3661,7 @@ def later_games(browser: Browser) -> tuple[BrowserContext, Page]:
 
 
 def more_games(browser: Browser) -> None:
-    """More games and a tournament of five, whose matches fill the players card."""
+    """More games and the bracket of a tournament of five."""
     context, page = later_games(browser)
     checkout_121_animation(page)
     tournament_bracket_animation(page)
@@ -3620,7 +3714,7 @@ def formats(browser: Browser) -> None:
 
 def people(browser: Browser) -> None:
     """The players and their progress, the lobby, the tournaments, the media, the
-    blueprints and the match summary."""
+    blueprints and the match summary, after the matches that fill the players card."""
     context = new_context(
         browser,
         viewport={"width": 1280, "height": 1000},
@@ -3635,6 +3729,7 @@ def people(browser: Browser) -> None:
         open_dashboard(page, "board")
         return page
 
+    players_matches(on_board())
     players_card(context.new_page())
     doubles_card(context.new_page())
     lobby_screen(on_board())
@@ -3722,36 +3817,40 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
 # visual.yml and screenshots.yml know how many there are.
 GROUPS = (
-    # The dartboard without Autodarts last: its second board would be the first of
-    # the cards without one.
-    ("cards", "live", "practice", "games", "manual"),
-    # The players card shows the five players of the tournament.
-    ("more games", "people"),
+    # The cards before the games, whose legs would end the graphs of the week.
+    ("cards", "live", "practice", "games"),
+    ("more games",),
+    # The players play their own matches. The dartboard without Autodarts last: its
+    # second board would be the first of the cards without one.
+    ("people", "manual"),
     # The bot plays its first match in the corrections, as it did before the groups.
     # The big tournaments before the calendar's weekly report, which starts a new week.
     ("corrections", "formats", "tournaments", "calendar"),
 )
 # The seconds of each section on a runner of GitHub, the mean of both languages in
-# the visual check of 25 October 2026 (run 40170950991), once the big tournaments
-# stopped at their pictures. No group may take more than SLOWER of group_times.py
-# times the seconds of the shortest (tests/test_screenshot_groups.py), and the job
-# that puts the groups of a language together marks one that did. Each job also
-# starts its demo, about two and a half minutes. A fourth group would need more
-# games and the people apart, and its start would cost more than it saves: three
-# groups take the fewest minutes of the runners.
+# the visual check of 1 November 2026 (run 41288192544). No group may take more than
+# SLOWER of group_times.py times the seconds of the shortest
+# (tests/test_screenshot_groups.py), and the job that puts the groups of a language
+# together marks one that did. Each job also starts its demo (STARTUP): with four
+# groups, the longest job stays within nine minutes, and the runners take about as
+# many minutes as with three.
 SECONDS = {
-    "cards": 39.0,
-    "live": 24.0,
-    "practice": 24.0,
-    "games": 218.0,
-    "more games": 250.0,
-    "people": 189.0,
-    "corrections": 55.0,
-    "formats": 124.0,
-    "tournaments": 203.0,
-    "calendar": 60.0,
-    "manual": 47.0,
+    "cards": 43.0,
+    "live": 27.0,
+    "practice": 25.0,
+    "games": 240.0,
+    "more games": 284.0,
+    "people": 214.0,
+    "corrections": 53.0,
+    "formats": 122.0,
+    "tournaments": 109.0,
+    "calendar": 9.0,
+    "manual": 46.0,
 }
+# The seconds of a job of a group before its first section and after its last: it
+# pulls Home Assistant and starts its demo, about two and a half minutes, and keeps
+# its images.
+STARTUP = 160.0
 # The seconds after which the watchdog fails a section (watchdog.py): about twice
 # its longest run in CI (SECONDS) and at least two minutes, and with GRACE less than
 # the time limit of its step in visual.yml and screenshots.yml.
@@ -3761,13 +3860,12 @@ BUDGETS = {
     "more games": 570.0,
     "formats": 270.0,
     "people": 450.0,
-    "tournaments": 420.0,
-    "calendar": 150.0,
+    "tournaments": 240.0,
 }
 
 
 def chosen_group(value: str) -> int:
-    """The group that SCREENSHOT_GROUP, such as 2/3, chooses, counted from 1."""
+    """The group that SCREENSHOT_GROUP, such as 2/4, chooses, counted from 1."""
     match = re.fullmatch(r"([1-9][0-9]*)/([1-9][0-9]*)", value.strip())
     if not match:
         raise SystemExit(

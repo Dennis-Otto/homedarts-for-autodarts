@@ -35,7 +35,8 @@ Assistant before the containers start, up to three times 10 seconds apart, so th
 pull the registry cuts off doesn't fail them. The browser test does the same with the
 image of Playwright.
 
-The scenario uses only Home Assistant's public REST and WebSocket APIs and verifies:
+The scenario talks to Home Assistant only through its public REST and WebSocket APIs,
+apart from reading the icon list of its frontend, and verifies:
 
 - onboarding and local config flow, including invalid-host, unreachable-board and
   duplicate-board handling
@@ -51,6 +52,9 @@ The scenario uses only Home Assistant's public REST and WebSocket APIs and verif
   must come through them
 - a takeout the board keeps on the empty board, as Board Manager 2.0.2 sometimes
   does, which the integration frees with one reset after ten seconds
+- on Board Manager 2.1, its second socket: a hand shows by a frame while the read
+  fails, each dart counts once, and the read takes over when the frames stop or the
+  socket isn't there
 - the online bridge: switched on in the options, calls of Tools for Autodarts
   become board events and the diagnostic sensor, and switched off it is gone
 - the weekly report and its settings, the training calendar through
@@ -70,6 +74,8 @@ The scenario uses only Home Assistant's public REST and WebSocket APIs and verif
   down, and no entry of Radio Browser exists; in CI, Harden-Runner also blocks every
   host that a job doesn't need (see
   [Network of the jobs](../../docs/development.md#network-of-the-jobs))
+- every `mdi:` icon that the integration and its blueprints name exists in the icon
+  list of the frontend, read from the `hass_frontend` package inside the container
 - removal of the entry, its entities, the realtime connection and the stored
   training session, weekly report and journal
 

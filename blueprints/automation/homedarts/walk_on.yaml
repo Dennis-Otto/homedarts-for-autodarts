@@ -100,7 +100,7 @@ blueprint:
               unit_of_measurement: s
     games:
       name: Games
-      icon: mdi:dart
+      icon: mdi:scoreboard
       collapsed: true
       input:
         modes:

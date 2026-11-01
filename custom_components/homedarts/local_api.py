@@ -6,6 +6,7 @@ import asyncio
 import math
 import re
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from typing import Any, cast
 
 import aiohttp
@@ -23,8 +24,35 @@ MAX_CAMERAS = 8
 CLOSING = (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSING, aiohttp.WSMsgType.CLOSED)
 # Home Assistant stores states of at most 255 characters.
 MAX_TEXT = 255
+# The sockets of a board. Board Manager 2.1 sends everything of the first on the
+# second as well, and its motion there alone.
+EVENTS = "/api/events"
+SYSTEM_EVENTS = "/api/events/system"
 # Notifications the integration follows; the board may send others.
 EVENT_KINDS = ("state", "motion_state", "cam_state", "stats", "cam_stats")
+# What the second socket sends besides, which the integration reads in /api/system.
+# Its "stats" has another shape than that of the first socket.
+SYSTEM_READ_KINDS = ("board", "stats", "vantageConfig", "calibration", "cams")
+# The readings of the motion the integration keeps.
+MOTION_FLAGS = (
+    "isWaiting",
+    "isStable",
+    "isDart",
+    "isHand",
+    "isTakeoutPartial",
+    "isTakeoutFull",
+)
+# A frame of the motion comes 30 times a second, and these flags stand in it in a row,
+# unlike those of a camera, which has no isTakeoutFull. Reading them costs a sixth of
+# parsing the frame, whose rest nothing needs. A frame in another form is parsed.
+MOTION_FRAME = '{"type":"vantage"'
+MOTION_TEXT = re.compile(
+    r'"isDart":(?P<isDart>true|false),"isHand":(?P<isHand>true|false),'
+    r'"isStable":(?P<isStable>true|false),'
+    r'"isTakeoutFull":(?P<isTakeoutFull>true|false),'
+    r'"isTakeoutPartial":(?P<isTakeoutPartial>true|false),'
+    r'"isWaiting":(?P<isWaiting>true|false)'
+)
 # Board Manager 2.1 writes status and event in camelCase, "takeoutInProgress"
 # where 2.0 wrote "Takeout in progress", and the keys of its settings, "boardId"
 # where 2.0 wrote "board_id".
@@ -102,6 +130,18 @@ def camera_stats_summary(fps: object) -> dict[str, Any]:
     """Frame rates in camera order; values that are no number read as unknown."""
     values = fps if isinstance(fps, list) else []
     return {"fps": [number(value) for value in values[:MAX_CAMERAS]]}
+
+
+def motion_flags(raw: dict[str, Any]) -> dict[str, bool]:
+    """The readings of the motion that are there; nothing else is kept."""
+    return {key: raw[key] for key in MOTION_FLAGS if isinstance(raw.get(key), bool)}
+
+
+def quick_motion_flags(text: str) -> dict[str, bool] | None:
+    """The readings of a frame of the motion without parsing it, if it has their form."""
+    if not text.startswith(MOTION_FRAME) or not (match := MOTION_TEXT.search(text)):
+        return None
+    return {key: value == "true" for key, value in match.groupdict().items()}
 
 
 def camera_state_summary(raw: object) -> dict[str, bool]:
@@ -236,9 +276,14 @@ class AutodartsLocalClient:
         self._command_lock = asyncio.Lock()
         # Socket frames that were no known notification, for diagnostics.
         self.ignored_frames = 0
-        # The last answer to /api/system had the shape of Board Manager 2.1: its
-        # motion readings come from that read, and its socket sends only states.
+        # The last answer to /api/system had the shape of Board Manager 2.1, which
+        # reports its motion on a socket of its own.
         self.interface_2_1 = False
+        # The socket that is open, and the one that was asked for when it opened.
+        self.socket_path: str | None = None
+        self._open_socket: aiohttp.ClientWebSocketResponse | None = None
+        self._asked_second_socket = False
+        self._leaving_first_socket = False
 
     async def _request(
         self,
@@ -397,27 +442,32 @@ class AutodartsLocalClient:
     async def events(self) -> AsyncIterator[tuple[str, dict[str, Any]]]:
         """Receive local notifications; no subscription or control writes needed.
 
-        Yields ("connected", {}) once the socket is open and ("closed", {"code": ...})
+        Yields ("connected", {}) each time a socket opens and ("closed", {"code": ...})
         when the board closes it; a broken connection raises instead.
+
+        One socket is open at a time, so that no frame can arrive twice: on Board
+        Manager 2.1 its second, which also sends everything of the first, and the
+        first where a board doesn't have that one.
         """
         try:
-            async with asyncio.timeout(10):
-                socket = await open_session(self._session).ws_connect(
-                    f"{self.base_url}/api/events",
-                    heartbeat=30,
-                    timeout=aiohttp.ClientWSTimeout(ws_close=5),
-                    max_msg_size=1024 * 1024,
-                )
-            async with socket:
-                yield "connected", {}
-                async for message in socket:
-                    if message.type == aiohttp.WSMsgType.ERROR:
-                        raise AutodartsConnectionError("Local event connection failed")
-                    if message.type in CLOSING:
-                        break
-                    if (event := self._event(message)) is not None:
-                        yield event
-                code = socket.close_code
+            while True:
+                socket = await self._connect_socket()
+                async with socket:
+                    self._open_socket = socket
+                    yield "connected", {}
+                    async for message in socket:
+                        if message.type == aiohttp.WSMsgType.ERROR:
+                            raise AutodartsConnectionError(
+                                "Local event connection failed"
+                            )
+                        if message.type in CLOSING:
+                            break
+                        if (event := self._event(message)) is not None:
+                            yield event
+                    code = socket.close_code
+                if not self._leaving_first_socket:
+                    break
+                self._leaving_first_socket = False
             yield "closed", {"code": code if type(code) is int else None}
         except aiohttp.WSServerHandshakeError as err:
             if err.status in (401, 403):
@@ -429,11 +479,48 @@ class AutodartsLocalClient:
             raise AutodartsConnectionError(
                 "Local event connection unavailable"
             ) from err
+        finally:
+            self._open_socket = self.socket_path = None
+
+    async def _connect_socket(self) -> aiohttp.ClientWebSocketResponse:
+        """The socket of this board: the second of Board Manager 2.1, and the first
+        where the board refuses that one, which then says why if it refuses that too.
+        A connection that fails on the way says nothing about the sockets."""
+        self._asked_second_socket = self.interface_2_1
+        if self.interface_2_1:
+            with suppress(aiohttp.WSServerHandshakeError):
+                socket = await self._connect(SYSTEM_EVENTS)
+                self.socket_path = SYSTEM_EVENTS
+                return socket
+        socket = await self._connect(EVENTS)
+        self.socket_path = EVENTS
+        return socket
+
+    async def _connect(self, path: str) -> aiohttp.ClientWebSocketResponse:
+        async with asyncio.timeout(10):
+            return await open_session(self._session).ws_connect(
+                f"{self.base_url}{path}",
+                heartbeat=30,
+                timeout=aiohttp.ClientWSTimeout(ws_close=5),
+                max_msg_size=1024 * 1024,
+            )
+
+    async def leave_first_socket(self) -> None:
+        """A read found Board Manager 2.1 after the first socket opened, as on a board
+        that started after Home Assistant or got its update meanwhile: move to the
+        second socket. A board that refused that one keeps the first until it drops."""
+        socket = self._open_socket
+        if socket is not None and self.interface_2_1 and not self._asked_second_socket:
+            self._leaving_first_socket = True
+            await socket.close()
 
     def _event(self, message: aiohttp.WSMessage) -> tuple[str, dict[str, Any]] | None:
         """A known notification; other frames are counted and skipped."""
+        second_socket = self.socket_path == SYSTEM_EVENTS
         envelope = None
         if message.type == aiohttp.WSMsgType.TEXT:
+            if second_socket and (flags := quick_motion_flags(message.data)):
+                return "vantage", flags
             try:
                 envelope = message.json()
             except (ValueError, TypeError):
@@ -443,8 +530,18 @@ class AutodartsLocalClient:
             if isinstance(envelope, dict)
             else (None, None)
         )
-        if kind in EVENT_KINDS and isinstance(data, dict):
-            return kind, board_state(data) if kind == "state" else data
+        if isinstance(data, dict):
+            if second_socket:
+                if kind == "vantage":
+                    # None when the detection stops, with {"vantage": null}, and when
+                    # its flags have other names: then the read stays in charge.
+                    motion = _dict(data.get("vantage")).get("motion")
+                    flags = motion_flags(_dict(motion))
+                    return ("vantage", flags) if flags else None
+                if kind in SYSTEM_READ_KINDS:
+                    return None
+            if kind in EVENT_KINDS:
+                return kind, board_state(data) if kind == "state" else data
         self.ignored_frames += 1
         return None
 

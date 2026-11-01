@@ -195,6 +195,41 @@ async def test_the_client_reads_board_manager_2_1_in_the_shape_of_2_0(
     ]
 
 
+# What the frames of the real board announce. Each visit: its three darts, the takeout
+# and the empty board that completes it.
+VISITS = [["S17", "S16", "S12"], ["S9", "S14", "T5"], ["S12", "S9", "S20"]]
+THROWN = [
+    ("status_changed", "Takeout in progress"),
+    ("takeout_started", None),
+    ("status_changed", "Throw"),
+    ("takeout_finished", None),
+]
+for visit in VISITS:
+    THROWN += [("dart_detected", segment) for segment in visit]
+    THROWN += [
+        ("visit_thrown", visit),
+        ("status_changed", "Takeout"),
+        ("status_changed", "Takeout in progress"),
+        ("takeout_started", None),
+        ("visit_completed", visit),
+        ("status_changed", "Throw"),
+        ("takeout_finished", None),
+    ]
+
+
+def fired_kinds(fired: list[tuple[dict, object]]) -> list[tuple[str, object]]:
+    """The events that were fired, each with what it says."""
+    return [
+        (
+            attributes["event_type"],
+            attributes.get("segment")
+            or attributes.get("segments")
+            or attributes.get("status"),
+        )
+        for attributes, _ in fired
+    ]
+
+
 async def test_the_darts_and_takeouts_of_a_real_board_manager_2_1(hass, aioclient_mock):
     entry = await setup_local(hass, aioclient_mock, state=LEFT_OVER)
     coordinator = entry.runtime_data.local
@@ -212,34 +247,7 @@ async def test_the_darts_and_takeouts_of_a_real_board_manager_2_1(hass, aioclien
             if kind == "state":
                 coordinator.async_receive(kind, data)
                 await hass.async_block_till_done()
-    # Each visit: its three darts, the takeout and the empty board that completes it.
-    visits = [["S17", "S16", "S12"], ["S9", "S14", "T5"], ["S12", "S9", "S20"]]
-    expected = [
-        ("status_changed", "Takeout in progress"),
-        ("takeout_started", None),
-        ("status_changed", "Throw"),
-        ("takeout_finished", None),
-    ]
-    for visit in visits:
-        expected += [("dart_detected", segment) for segment in visit]
-        expected += [
-            ("visit_thrown", visit),
-            ("status_changed", "Takeout"),
-            ("status_changed", "Takeout in progress"),
-            ("takeout_started", None),
-            ("visit_completed", visit),
-            ("status_changed", "Throw"),
-            ("takeout_finished", None),
-        ]
-    assert [
-        (
-            attributes["event_type"],
-            attributes.get("segment")
-            or attributes.get("segments")
-            or attributes.get("status"),
-        )
-        for attributes, _ in fired
-    ] == expected
+    assert fired_kinds(fired) == THROWN
     # The darts left in the board when Home Assistant started count for nobody.
     assert state(hass, "sensor", "training_darts") == "9"
     assert state(hass, "sensor", "local_status") == "throw"
