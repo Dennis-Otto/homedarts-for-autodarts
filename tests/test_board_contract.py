@@ -64,9 +64,6 @@ PLACEHOLDERS = capture_board.PLACEHOLDERS
 VERSIONS = sorted(path.name for path in RECORDINGS.iterdir() if path.is_dir())
 # What BOARD_MANAGER says to the end-to-end double, by the version it answers as.
 GENERATIONS = [(1, "1.0.7"), (2, "2.0.0"), ("2.1", "2.1.0")]
-# The doubles the capture script can record: on 2.1 it still leaves the board ID in a
-# recording. The fix of issue 526 removes this constant and captures all GENERATIONS.
-CAPTURED = GENERATIONS[:2]
 # The routes of a Board Manager that its version doesn't have.
 ABSENT = {
     "1.0.7": {"/api/system", "/api/host"},
@@ -443,7 +440,7 @@ def test_the_darts_of_the_unit_tests_have_only_keys_the_board_sends(version):
         assert within(shape(board(T20, S20, BULL)), data), frame
 
 
-@pytest.mark.parametrize(("generation", "version"), CAPTURED)
+@pytest.mark.parametrize(("generation", "version"), GENERATIONS)
 async def test_a_capture_of_the_end_to_end_double_matches_its_recording(
     tmp_path, generation, version
 ):
@@ -496,4 +493,7 @@ async def test_a_capture_of_the_end_to_end_double_matches_its_recording(
     everything = "".join(path.read_text(encoding="utf-8") for path in folder.iterdir())
     for secret in (board_mock.BOARD_ID, board_mock.API_KEY, board_mock.TLS_KEY):
         assert secret not in everything
-    assert written["config.json"]["auth"] == recorded(version, "config.json")["auth"]
+    assert written["config.json"]["auth"] == {
+        key: capture_board.placeholder(key)
+        for key in recorded(version, "config.json")["auth"]
+    }
