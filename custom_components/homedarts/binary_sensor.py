@@ -155,6 +155,9 @@ class AutodartsLocalState(AutodartsBoardEntity, BinarySensorEntity):
             running = self.coordinator.readings.get("camera_state", {}).get("isRunning")
             return running if isinstance(running, bool) else None
         if self._key == "calibrating":
+            # Board Manager 2.1 also counts the cameras it calibrates.
+            if (data.get("system") or {}).get("calibrating_cameras"):
+                return True
             status = state.get("status")
             return status.lower() == "calibrating" if isinstance(status, str) else None
         if self._key == "realtime_connected":

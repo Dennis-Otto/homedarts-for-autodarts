@@ -17,8 +17,16 @@ from .runtime import AutodartsConfigEntry
 TO_REDACT = {
     "board_id",
     "host",
-    # A token of the Board Manager, should one ever reach the board's data.
+    # A token of the Board Manager, should one ever reach the board's data, and
+    # its keys in the spelling of each version. The client keeps them to itself.
     "token",
+    "boardId",
+    "api_key",
+    "apiKey",
+    "tls_key",
+    "tlsKey",
+    "tls_cert",
+    "tlsCert",
     "ip",
     "name",
     "team_name",

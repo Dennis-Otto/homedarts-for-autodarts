@@ -497,7 +497,7 @@ The recorder stores neither `fixtures`, `standings`, `bracket`, `current`, `next
 | Start automatic calibration | Button, *Configuration* | Calibrates all cameras. |
 | Calibrate camera *N* | Button, *Configuration* | Calibrates one camera. |
 | Restart Board Manager | Button, *Configuration* | Restarts the Board Manager service. |
-| Start camera streams, Stop camera streams | Buttons, *Configuration*, *Disabled* | Controls the camera streams of the Board Manager. |
+| Start camera streams, Stop camera streams | Buttons, *Configuration*, *Disabled* | Controls the camera streams of the Board Manager. Unavailable on Board Manager 2.1, which no longer has these commands. |
 | Cloud link | Switch, **BM 1** | Connects or disconnects the board's own connection to Autodarts. |
 | Connect cloud link, Disconnect cloud link | Buttons, **BM 1**, *Disabled* | The same as buttons. |
 
@@ -523,7 +523,7 @@ Each reset is logged at info level, and the [diagnostics](troubleshooting.md#dow
 | Entity | Type | Description |
 | --- | --- | --- |
 | Calibrate on start | Switch, *Configuration* | Calibrates when the detection starts. |
-| Automatic recalibration | Switch, *Configuration* | Lets the Board Manager recalibrate by itself. |
+| Automatic recalibration | Switch, *Configuration* | Lets the Board Manager recalibrate by itself. Unavailable on Board Manager 2.1, which no longer has this option. |
 | Distortion correction | Switch, *Configuration* | Corrects lens distortion during calibration. |
 | Camera standby | Select, *Configuration* | Puts the cameras on standby after 5, 10, 15, 30 or 60 idle minutes. |
 
@@ -563,7 +563,7 @@ Per-camera entities carry a `camera` attribute with the camera number, which the
 | Darts partially removed | Binary sensor, *Diagnostic* | Some darts are removed. |
 | Darts fully removed | Binary sensor, *Diagnostic*, *Disabled* | All darts are removed. |
 
-These sensors are *off* while the detection is stopped, starting, stopping or calibrating. They change with nearly every dart and takeout, and each change is recorded. The live card shows a hand at the board and a takeout from the first and third, so these two are enabled; the other two start disabled. Boards set up with an earlier version keep all four enabled; disable those you do not need in the entity settings.
+These sensors are *off* while the detection is stopped, starting, stopping or calibrating. On Board Manager 2.1, they update every 2 seconds while the detection runs, because the board no longer sends these readings by itself. They change with nearly every dart and takeout, and each change is recorded. The live card shows a hand at the board and a takeout from the first and third, so these two are enabled; the other two start disabled. Boards set up with an earlier version keep all four enabled; disable those you do not need in the entity settings.
 
 ## Cameras
 

@@ -13,7 +13,7 @@ Deze pagina beschrijft het installeren en het toevoegen van een bord. Het opnieu
 | Vereiste | Details |
 | --- | --- |
 | Home Assistant | **2026.8** of nieuwer ([waarom 2026.8](decisions/0022-home-assistant-2026-8-as-the-oldest-release.md), in het Engels) |
-| Autodarts-bord | Ingesteld en werkend in de Board Manager van Autodarts: **Board Manager 2**, Autodarts 2 zonder scherm (headless, aanbevolen, getest tot 2.0.2), of de klassieke **Board Manager 1**. Volgens een speler werkt ook **Autodarts Desktop** 2.0.2 op Linux. Autodarts Desktop op Windows en de **apparaten van Winmau** zoals Autodarts X of Lens zijn nog niet getest; [laat ons weten](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) hoe het met de jouwe werkt |
+| Autodarts-bord | Ingesteld en werkend in de Board Manager van Autodarts: **Board Manager 2**, Autodarts 2 zonder scherm (headless, aanbevolen, getest tot 2.1.0), of de klassieke **Board Manager 1**. Volgens een speler werkt ook **Autodarts Desktop** 2.0.2 op Linux. Autodarts Desktop op Windows en de **apparaten van Winmau** zoals Autodarts X of Lens zijn nog niet getest; [laat ons weten](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) hoe het met de jouwe werkt |
 | Netwerk | Home Assistant bereikt de bord-pc in het lokale netwerk, standaard op TCP-poort **3180** |
 | Zonder Autodarts | Elk dartbord: je voert de darts in op een toetsenblok, zie [Play without Autodarts](without-autodarts.md); dan heb je geen pc bij het bord en geen netwerk naar het bord nodig |
 

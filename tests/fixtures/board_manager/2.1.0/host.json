@@ -1,0 +1,42 @@
+{
+  "appVersion": null,
+  "cam1": {
+    "name": "",
+    "pid": "",
+    "vid": ""
+  },
+  "cam2": {
+    "name": "",
+    "pid": "",
+    "vid": ""
+  },
+  "cam3": {
+    "name": "",
+    "pid": "",
+    "vid": ""
+  },
+  "clientVersion": "2.1.0",
+  "cpu": {
+    "cores": 4,
+    "mhz": 900.002,
+    "model": "Intel(R) Core(TM) i3-9100T CPU @ 3.10GHz"
+  },
+  "cpu2": null,
+  "desktopVersion": null,
+  "hasAutodartsVisionCam": false,
+  "hostname": "dartboard-pc",
+  "insecurePort": "",
+  "ip": "198.51.100.7",
+  "kernelArch": "x86_64",
+  "kernelVersion": "6.12.107+deb13-amd64",
+  "model": "",
+  "openCVVersion": "5.0.0",
+  "os": "linux",
+  "platform": "debian",
+  "platformFamily": "debian",
+  "platformVersion": "13",
+  "port": "",
+  "protocol": "",
+  "tlsPort": "",
+  "visionVersion": "3.0.0"
+}

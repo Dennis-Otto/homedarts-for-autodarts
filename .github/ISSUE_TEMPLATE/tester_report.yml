@@ -28,7 +28,7 @@ body:
     id: board_software_version
     attributes:
       label: Version of the Autodarts software
-      placeholder: "2.0.2"
+      placeholder: "2.1.0"
   - type: input
     id: integration_version
     attributes:

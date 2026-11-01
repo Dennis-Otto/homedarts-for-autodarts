@@ -107,7 +107,7 @@ Start the detection when you enter the darts room, stop it when you leave, and g
 
 | Setup | Supported | Tested with |
 | --- | --- | --- |
-| Board Manager 2: Autodarts 2 without a screen (headless) | 2.x | 2.0.0 and 2.0.2 |
+| Board Manager 2: Autodarts 2 without a screen (headless) | 2.x | 2.0.0, 2.0.2 and 2.1.0 |
 | Board Manager 1 (classic app) | 1.x | 1.0.7 |
 | Autodarts Desktop on Linux | Works, as reported by a player | 2.0.2 on Ubuntu 24.04 ([report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/105)) |
 | Autodarts Desktop on Windows and other systems | Not tested yet | – |
@@ -117,7 +117,13 @@ Start the detection when you enter the darts room, stop it when you leave, and g
 
 Any board hardware that runs the Autodarts Board Manager works, because the integration talks to the Board Manager, not to the cameras. Rows reported by a player were tested by a player on their own board, not by the project.
 
-Since September 2026, the Autodarts documentation describes the Board Manager as the browser interface of Autodarts 0.x that is not supported from version 2 on. The local interface on port 3180 that the integration uses still answers on Autodarts 2.0.2. If an update changes it, the integration shows a repair notice instead of failing silently (see [troubleshooting](troubleshooting.md#repairs)). If your setup is not in the table, a [compatibility report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) helps, even when everything works.
+Since September 2026, the Autodarts documentation describes the Board Manager as the browser interface of Autodarts 0.x that is not supported from version 2 on. The local interface on port 3180 that the integration uses still answers on Autodarts 2.1.0. If an update changes it, the integration shows a repair notice instead of failing silently (see [troubleshooting](troubleshooting.md#repairs)). If your setup is not in the table, a [compatibility report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=board_compatibility.yml) helps, even when everything works.
+
+On **Board Manager 2.1**, the integration works as before, with these differences:
+
+- The switch *Automatic recalibration* is unavailable, because Board Manager 2.1 no longer has this option. *Calibrate on start* and *Distortion correction* remain.
+- The buttons *Start camera streams* and *Stop camera streams* are unavailable, because Board Manager 2.1 no longer has these commands. The live view of the cameras works without them.
+- *Hand detected*, *Image stable*, *Darts partially removed* and *Darts fully removed* update every 2 seconds while the detection runs, because the board no longer sends these readings by itself. A hand that is at the board for a moment only may not show.
 
 ## Languages
 

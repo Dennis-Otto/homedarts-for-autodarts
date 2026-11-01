@@ -56,7 +56,7 @@ CARD_MODULE = "**/homedarts-card.js*"
 # waits for the element of a dashboard strategy.
 CARD_MODULE_DELAY = 6
 # Board Manager generation of the demo board, passed on by browser.sh.
-GENERATION = int(os.environ.get("BOARD_MANAGER", "1"))
+GENERATION = int(os.environ.get("BOARD_MANAGER", "1").split(".")[0])
 # Writable folder for screenshots, traces and timelines of a failed step, mounted by
 # browser.sh.
 ARTIFACTS = os.environ.get("BROWSER_ARTIFACTS", "")
