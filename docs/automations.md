@@ -42,7 +42,7 @@ Not sure which one you need? Start from what your home should do:
 
 The buttons import a blueprint from GitHub, for example one you deleted. Without My Home Assistant, go to **Settings → Automations & scenes → Blueprints → Import blueprint** and paste the link to the file in [`blueprints/automation/homedarts`](https://github.com/Dennis-Otto/homedarts-for-autodarts/tree/main/blueprints/automation/homedarts). An imported blueprint is kept up to date like the others.
 
-<img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the sixteen HomeDarts blueprints, from the board problem alert to the weekly report, and their file names" width="760">
+<img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the sixteen HomeDarts blueprints, from asking Assist about your darts to the weekly report, and their file names" width="760">
 
 ### Updates of the blueprints
 
@@ -278,6 +278,10 @@ The blueprint needs version 1.12.4 or later of the integration, which brings `ho
 The actions can use `moment` (`game_start`, `maximum`, `high_finish`, `bust`, `leg`, `match`, `personal_best`, `daily_goal`, `bull_off`, `achievement`, `tournament`, `takeout` or `board_clear`), `who` (the player's name, the word for the bot, or "Player 2"; empty at the start of a game), `player`, `score` (of a 180), `checkout` (of a won leg) and `trigger.to_state.attributes` for every detail of the [board event](entities.md#board-events). See [light show with WLED and other lights](#light-show-with-wled-and-other-lights).
 
 ### Walk-on music
+
+The form opens with the sections *Winner* and *Games* closed; the table has their settings too.
+
+<img src="images/en/blueprint-walk-on.png" alt="A new automation from the walk-on music blueprint: its description, the Events entity of the board, the speakers, the song pack and the seconds per walk-on, with the sections Winner and Games closed" width="760">
 
 | Setting | Default | What it does |
 | --- | --- | --- |

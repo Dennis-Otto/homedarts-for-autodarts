@@ -440,7 +440,7 @@
       "service": "mdi:waveform"
     },
     "link_player": {
-      "service": "mdi:account-link"
+      "service": "mdi:account-check"
     },
     "unlink_player": {
       "service": "mdi:account-cancel"

@@ -44,7 +44,7 @@ Die Buttons importieren einen Blueprint von GitHub, etwa einen, den du gelöscht
 
 Die Blueprints sind auf Englisch beschriftet. Ihre Ansagen, der Trainings- und der Wochenbericht sprechen von sich aus die [Sprache von Home Assistant](#ansagen-in-der-sprache-von-home-assistant), und ihre Texte kannst du beim Anlegen frei wählen.
 
-<img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von der Warnung bei Board-Problemen bis zum Wochenbericht, und ihren Dateinamen" width="760">
+<img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von den Fragen an Assist zu deinen Darts bis zum Wochenbericht, und ihren Dateinamen" width="760">
 
 ### Updates der Blueprints
 
@@ -280,6 +280,10 @@ Der Blueprint braucht Version 1.12.4 oder neuer der Integration, die `homedarts.
 Die Aktionen können `moment` (`game_start`, `maximum`, `high_finish`, `bust`, `leg`, `match`, `personal_best`, `daily_goal`, `bull_off`, `achievement`, `tournament`, `takeout` oder `board_clear`), `who` (der Name des Spielers, das Wort für den Bot oder „Player 2“; leer beim Start eines Spiels), `player`, `score` (einer 180), `checkout` (eines gewonnenen Legs) und `trigger.to_state.attributes` für alle Details des [Board-Ereignisses](entities.de.md#board-ereignisse) nutzen. Siehe [Lichtshow mit WLED und anderem Licht](#lichtshow-mit-wled-und-anderem-licht).
 
 ### Walk-on music
+
+Das Formular öffnet sich mit eingeklappten Abschnitten *Winner* und *Games*; die Tabelle nennt auch ihre Einstellungen.
+
+<img src="images/de/blueprint-walk-on.png" alt="Eine neue Automation aus dem Blueprint Walk-on music: seine Beschreibung, die Entität Ereignisse des Boards, die Lautsprecher, das Song-Paket und die Sekunden pro Walk-on, mit eingeklappten Abschnitten Winner und Games" width="760">
 
 | Einstellung | Standard | Was sie bewirkt |
 | --- | --- | --- |
