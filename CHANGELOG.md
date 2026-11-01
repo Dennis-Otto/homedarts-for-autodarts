@@ -4,6 +4,16 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.0...v2.2.1) (2026-11-01)
+
+### Fixed
+
+- **Checks that failed at random on a host they may reach:** every job of the end-to-end tests, the visual check, the screenshot bot and the translation bot now first waits until Harden-Runner lets its hosts through, for two minutes at most. A pull request no longer waits for a check that fails on an address that Harden-Runner never saw.
+
+### Performance
+
+- **Pages without a darts card open faster:** every page of Home Assistant and every start of the companion app used to load and parse all the cards, more than half a megabyte of JavaScript, also without a darts card anywhere. A page now loads a small module of less than 20 KB, and the cards follow with the first darts card on a page. Cards, their editors, the card picker, the automatic dashboard and Home Assistant Cast work as before. If you keep your dashboard resources in YAML, the line for `homedarts-card.js` can go.
+
 ## [2.2.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.1...v2.2.0) (2026-11-01)
 
 ### Features
