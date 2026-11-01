@@ -41,7 +41,9 @@ HACS ist der Store für Integrationen und Karten aus der Community, wie diese hi
 
 [![Home Assistant öffnen und HomeDarts for Autodarts einrichten.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Mit Board Manager 2 findet Home Assistant das Board meist von selbst: **Einstellungen → Geräte & Dienste** zeigt unter *Entdeckt* **Autodarts-Board gefunden**. Wähle **Hinzufügen** und bestätige.
+Mit Board Manager 2 findet Home Assistant das Board meist von selbst: **Einstellungen → Geräte & Dienste** zeigt unter *Entdeckt* **Autodarts-Board gefunden**. Wähle **Hinzufügen** und bestätige. Die Animation zeigt den Weg von hier bis zur Anzeigetafel, in unter einer Minute.
+
+<img src="images/de/setup.webp" alt="Animation: die Einrichtung in fünf Schritten mit Untertiteln, auf dem Bildschirm eines Telefons. 1: Home Assistant zeigt das gefundene Board unter Entdeckt in Geräte & Dienste. 2: Hinzufügen, und OK im Dialog Autodarts-Board gefunden; das Board ist eingerichtet und seine Geräteseite öffnet sich. 3: Einstellungen, Dashboards, Dashboard hinzufügen. 4: Die Suche findet HomeDarts, der Titel HomeDarts, Erstellen. 5: Das neue Dashboard öffnet sich mit seiner Live-Ansicht, dann mit seiner Anzeigetafel, die drei Triple 20 bis 180 zählt" width="100%">
 
 Sonst wählst du die Schaltfläche oben und dann **Boards im Netzwerk suchen** oder **Board-Adresse eingeben** mit der IP-Adresse des Board-PCs. Ein Autodarts-Konto brauchst du nicht.
 
@@ -51,7 +53,7 @@ Die [Installationsanleitung](installation.de.md#board-hinzufügen) erklärt die 
 
 ## 5. Dashboard anlegen
 
-Öffne **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Ein Klick legt ein komplettes Dashboard für dein Board an, mit Ansichten für das laufende Spiel, die Anzeigetafel, das Training, die Spieler und das Board. Es aktualisiert sich selbst, wenn du ein Board hinzufügst oder eine neue Version neue Ansichten bringt.
+Öffne **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Gib ihm einen Titel und wähle **Erstellen**: Das legt ein komplettes Dashboard für dein Board an, mit Ansichten für das laufende Spiel, die Anzeigetafel, das Training, die Spieler und das Board. Es aktualisiert sich selbst, wenn du ein Board hinzufügst oder eine neue Version neue Ansichten bringt.
 
 <img src="images/de/dashboard-strategy.png" alt="Die Trainingsansicht des automatischen Dashboards" width="760">
 

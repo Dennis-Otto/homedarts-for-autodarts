@@ -41,7 +41,9 @@ HACS is de winkel voor integraties en kaarten van de community, zoals deze. Volg
 
 [![Open je Home Assistant en begin met het instellen van HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-Met Board Manager 2 vindt Home Assistant het bord meestal vanzelf: **Instellingen → Apparaten en diensten** toont **Autodarts-bord gevonden** onder *Ontdekt*. Selecteer **Voeg toe** en bevestig.
+Met Board Manager 2 vindt Home Assistant het bord meestal vanzelf: **Instellingen → Apparaten en diensten** toont **Autodarts-bord gevonden** onder *Ontdekt*. Selecteer **Voeg toe** en bevestig. De animatie toont de weg van hier naar het scorebord, in minder dan een minuut.
+
+<img src="images/en/setup.webp" alt="Animatie: het instellen in vijf stappen met bijschriften, in het Engels, op het scherm van een telefoon. 1: Home Assistant toont het gevonden bord onder Ontdekt. 2: toevoegen en bevestigen in het venster Autodarts-bord gevonden; het bord is ingesteld en de apparaatpagina opent. 3: instellingen, dashboards, dashboard toevoegen. 4: de zoekopdracht vindt HomeDarts, de titel HomeDarts, aanmaken. 5: het nieuwe dashboard opent op de liveweergave en dan op het scorebord, dat drie triple 20's optelt tot 180" width="100%">
 
 Selecteer anders de knop hierboven en kies **Borden zoeken in dit netwerk**, of **Bordadres invoeren** met het IP-adres van de bord-pc. Je hebt geen Autodarts-account nodig.
 
@@ -51,7 +53,7 @@ De [installatiehandleiding](installation.nl.md#je-bord-toevoegen) legt de manier
 
 ## 5. Het dashboard maken
 
-Ga naar **Instellingen → Dashboards → Voeg dashboard toe → HomeDarts**. Eén klik maakt een compleet dashboard voor je bord, met weergaven voor het livespel, het scorebord, de training, de spelers en het bord. Het werkt zichzelf bij wanneer je een bord toevoegt of wanneer een latere versie nieuwe weergaven brengt.
+Ga naar **Instellingen → Dashboards → Voeg dashboard toe → HomeDarts**. Geef het een titel en selecteer **Maak aan**: dat maakt een compleet dashboard voor je bord, met weergaven voor het livespel, het scorebord, de training, de spelers en het bord. Het werkt zichzelf bij wanneer je een bord toevoegt of wanneer een latere versie nieuwe weergaven brengt.
 
 <img src="images/en/dashboard-strategy.png" alt="De trainingsweergave van het automatische dashboard" width="760">
 

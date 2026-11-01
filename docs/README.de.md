@@ -14,7 +14,9 @@ Die [Website der Dokumentation](https://dennis-otto.github.io/homedarts-for-auto
 
 ## Schnellstart
 
-Du brauchst Home Assistant ab 2026.8 mit [HACS](https://hacs.xyz) und ein Autodarts-Board in deinem Netzwerk oder eine beliebige Dartscheibe, deren Darts du auf einem Tastenfeld eingibst ([Voraussetzungen](#voraussetzungen)).
+Du brauchst Home Assistant ab 2026.8 mit [HACS](https://hacs.xyz) und ein Autodarts-Board in deinem Netzwerk oder eine beliebige Dartscheibe, deren Darts du auf einem Tastenfeld eingibst ([Voraussetzungen](#voraussetzungen)). Ist HomeDarts installiert, dauert der Rest keine Minute:
+
+<img src="images/de/setup.webp" alt="Animation: die Einrichtung in fünf Schritten mit Untertiteln, auf dem Bildschirm eines Telefons. 1: Home Assistant zeigt das gefundene Board unter Entdeckt in Geräte & Dienste. 2: Hinzufügen, und OK im Dialog Autodarts-Board gefunden; das Board ist eingerichtet und seine Geräteseite öffnet sich. 3: Einstellungen, Dashboards, Dashboard hinzufügen. 4: Die Suche findet HomeDarts, der Titel HomeDarts, Erstellen. 5: Das neue Dashboard öffnet sich mit seiner Live-Ansicht, dann mit seiner Anzeigetafel, die drei Triple 20 bis 180 zählt" width="100%">
 
 1. **Mit HACS installieren, dann Home Assistant neu starten.**
 
@@ -28,7 +30,7 @@ Du brauchst Home Assistant ab 2026.8 mit [HACS](https://hacs.xyz) und ein Autoda
 
    Wähle **Boards im Netzwerk suchen** oder **Board-Adresse eingeben** und bestätige. Ohne Autodarts wählst du **Dartscheibe ohne Autodarts: jeden Dart selbst eingeben**.
 
-3. **Karten hinzufügen.** Erzeuge in einem Schritt ein komplettes Dashboard: **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Oder bearbeite ein Dashboard, wähle **Karte hinzufügen** und suche nach *HomeDarts*.
+3. **Karten hinzufügen.** Erzeuge in einem Schritt ein komplettes Dashboard: **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**, gib ihm einen Titel und wähle **Erstellen**. Oder bearbeite ein Dashboard, wähle **Karte hinzufügen** und suche nach *HomeDarts*.
 
 Neu bei Home Assistant? [Von null bis zur Anzeigetafel](https://dennis-otto.github.io/homedarts-for-autodarts/de/getting-started.html) führt dich von null bis zur Anzeigetafel neben deinem Board. Die [Installationsanleitung](https://dennis-otto.github.io/homedarts-for-autodarts/de/installation.html) beschreibt die manuelle Installation, die Neukonfiguration, Updates und das Entfernen.
 

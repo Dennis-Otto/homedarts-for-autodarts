@@ -41,7 +41,9 @@ HACS is the store for integrations and cards from the community, like this one. 
 
 [![Open your Home Assistant instance and start setting up HomeDarts for Autodarts.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=homedarts)
 
-With Board Manager 2, Home Assistant usually finds the board by itself: **Settings → Devices & services** shows **Autodarts board found** under *Discovered*. Select **Add** and confirm.
+With Board Manager 2, Home Assistant usually finds the board by itself: **Settings → Devices & services** shows **Autodarts board found** under *Discovered*. Select **Add** and confirm. The animation shows the way from here to the scoreboard, in under a minute.
+
+<img src="images/en/setup.webp" alt="Animation: the setup in five steps with captions, at the screen of a phone. 1: Home Assistant shows the board that it found under Discovered in Devices & services. 2: Add, and Submit in the dialog Autodarts board found; the board is set up and its device page opens. 3: Settings, Dashboards, Add dashboard. 4: the search finds HomeDarts, the title HomeDarts, Create. 5: the new dashboard opens on its live view, then on its scoreboard, which counts three triple 20s up to 180" width="100%">
 
 Otherwise, select the button above and choose **Search for boards on this network**, or **Enter board address** with the IP address of the board PC. You need no Autodarts account.
 
@@ -51,7 +53,7 @@ The [installation guide](installation.md#add-your-board) explains the ways in de
 
 ## 5. Create the dashboard
 
-Go to **Settings → Dashboards → Add dashboard → HomeDarts**. One click creates a complete dashboard for your board, with views for the live game, the scoreboard, training, the players and the board. It updates itself when you add a board or a later version brings new views.
+Go to **Settings → Dashboards → Add dashboard → HomeDarts**. Give it a title and select **Create**: that makes a complete dashboard for your board, with views for the live game, the scoreboard, training, the players and the board. It updates itself when you add a board or a later version brings new views.
 
 <img src="images/en/dashboard-strategy.png" alt="The training view of the automatic dashboard" width="760">
 
