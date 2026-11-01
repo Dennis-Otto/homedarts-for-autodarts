@@ -1,0 +1,18 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Which matches move the rating
+  accDescr: Which matches move the rating: a finished match of X01 or a Cricket game moves it when every seat has a named player, so without the bot or a guest, and all of them start from the same score, so without a handicap. Other matches leave the rating alone. A match that counts takes from the losers what it gives the winners, and undoing the deciding visit takes it back.
+  START(["A match is decided"]) --> GAME{"X01 or a<br/>Cricket game?"}
+  GAME -- "no" --> NONE["The ratings stay<br/>as they are"]
+  GAME -- "yes" --> SEATS{"A named player<br/>in every seat?"}
+  SEATS -- "no" --> NONE
+  SEATS -- "yes" --> SCORE{"Everybody from<br/>the same start score?"}
+  SCORE -- "no" --> NONE
+  SCORE -- "yes" --> MOVE["The winners gain<br/>what the losers lose"]
+  MOVE -. "the deciding visit<br/>is undone" .-> BACK["Everybody is back<br/>at the rating from before"]
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class MOVE done

@@ -9,6 +9,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.homedarts.const import DOMAIN
 
 from .local_helpers import (
+    NOW,
     S20,
     T20,
     board,
@@ -159,6 +160,33 @@ async def test_start_game_sets_up_teams_handicaps_and_rounds(hass, aioclient_moc
     await throw(hass, coordinator, S20)
 
 
+async def test_start_game_with_a_fair_start_scales_from_the_averages(
+    hass, aioclient_mock
+):
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    coordinator = entry.runtime_data.local
+    practice = coordinator.games.practice
+    for name, points in (("Alex", 600), ("Sam", 300)):
+        practice.profiles.leg(501, [{"name": name, "points": points, "darts": 30}], NOW)
+    await hass.services.async_call(
+        DOMAIN,
+        "start_game",
+        {"game": "501", "players": ["Alex", "Sam"], "fair_start": True},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert practice.starts == [0, 250, 0, 0]
+    assert [player.remaining for player in practice.players] == [501, 250]
+    # Off, the scores set stay until the action sets others.
+    await hass.services.async_call(
+        DOMAIN,
+        "start_game",
+        {"game": "501", "players": ["Alex", "Sam"], "fair_start": False},
+        blocking=True,
+    )
+    assert practice.starts == [0, 250, 0, 0]
+
+
 async def test_start_game_checks_teams_and_start_scores(hass, aioclient_mock):
     await setup_local(hass, aioclient_mock, state=board())
     for data, key in (
@@ -176,6 +204,7 @@ async def test_start_game_checks_teams_and_start_scores(hass, aioclient_mock):
         assert error.value.translation_key == key
     for data in (
         {"game": "501", "start_scores": ["many"]},
+        {"game": "501", "start_scores": [301], "fair_start": True},
         {"game": "501", "holes": 12},
         {"game": "501", "rounds": 21},
     ):

@@ -986,6 +986,17 @@ class PracticeGame:
         """The player and their partner in a team, in seat order."""
         return [index % 2, index % 2 + 2] if self._teamed() else [index]
 
+    def _rated(self) -> bool:
+        """Whether a match moves the ratings of its players: X01 or a Cricket
+        game of named players only, all from one start score. The bot and a guest
+        have no rating, and a handicap evens out what a win says about strength."""
+        seats = range(len(self.players))
+        return (
+            self.mode.rated
+            and all(self._name(index) for index in seats)
+            and len({self.mode.start(index) for index in seats}) == 1
+        )
+
     def _winners(self) -> list[int]:
         return [] if self.winner is None else self._side(self.winner)
 
@@ -1163,6 +1174,12 @@ class PracticeGame:
                         "sets": sets,
                         "scores": self._final(winner, legs, sets),
                         **won_match,
+                        "rating_changes": self.profiles.changes(
+                            [self._name(index) for index in range(len(self.players))],
+                            self._side(winner),
+                        )
+                        if self._rated()
+                        else [],
                     },
                 )
             )
@@ -1417,6 +1434,7 @@ class PracticeGame:
                 side,
                 self.match_started,
                 now=now,
+                rated=self._rated(),
             )
             return
         players = len(self.players)

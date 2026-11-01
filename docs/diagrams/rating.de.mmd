@@ -1,0 +1,18 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Welche Matches die Wertung bewegen
+  accDescr: Welche Matches die Wertung bewegen: Ein beendetes Match von X01 oder einem Cricket-Spiel bewegt sie, wenn jeder Platz einen Spieler mit Namen hat, also ohne Bot und ohne Gast, und alle mit denselben Punkten starten, also ohne Handicap. Andere Matches lassen die Wertung in Ruhe. Ein Match, das zählt, nimmt den Verlierern, was es den Gewinnern gibt, und das Rückgängigmachen der entscheidenden Aufnahme nimmt es zurück.
+  START(["Ein Match ist entschieden"]) --> GAME{"X01 oder ein<br/>Cricket-Spiel?"}
+  GAME -- "nein" --> NONE["Die Wertungen<br/>bleiben, wie sie sind"]
+  GAME -- "ja" --> SEATS{"Auf jedem Platz ein<br/>Spieler mit Namen?"}
+  SEATS -- "nein" --> NONE
+  SEATS -- "ja" --> SCORE{"Alle mit denselben<br/>Startpunkten?"}
+  SCORE -- "nein" --> NONE
+  SCORE -- "ja" --> MOVE["Die Gewinner bekommen,<br/>was die Verlierer abgeben"]
+  MOVE -. "die entscheidende Aufnahme<br/>wird rückgängig gemacht" .-> BACK["Alle haben wieder<br/>die Wertung von vorher"]
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  class MOVE done

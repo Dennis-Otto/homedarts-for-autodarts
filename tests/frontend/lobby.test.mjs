@@ -1,13 +1,17 @@
 // The new game screen of the scoreboard: choosing a game, players, the format and rules, and starting it.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { $, $$, DEVICE, READY, loadCards, makeHass, mount, text, update, window } from "./dom.mjs";
 
 const {
+  botMatch,
+  fairStarts,
   gameGroup,
   gameRules,
   gameState,
+  lobbyAverages,
   lobbyChange,
   lobbyChoice,
   lobbyGames,
@@ -167,6 +171,7 @@ test("the choice starts from what the board has set, with every name once", () =
     players: ["Alex", "", "Sam"],
     starts: [0, 0, 0],
     handicap: false,
+    fair_start: false,
     teams: false,
     legs: 11,
     sets: 1,
@@ -378,7 +383,10 @@ test("between games a big button opens the new game screen with the board's sett
   ]);
   assert.equal($(card, '[data-lobby="max_rounds"][data-value="-1"]').disabled, true);
   assert.equal($(card, '[data-lobby="max_rounds"][data-value="1"]').getAttribute("aria-label"), "More: Max rounds");
-  assert.deepEqual(options(card), [["bull_off", "false"]]);
+  assert.deepEqual(options(card), [
+    ["bull_off", "false"],
+    ["fair_start", "false"],
+  ]);
   assert.equal(text(card, ".lobby .start"), "Start 501");
   // Without a game there is nothing to end.
   assert.equal($(card, '[data-lobby="end"]'), null);
@@ -550,6 +558,7 @@ test("X01 rules, bull-off by distance and the board's config entry go with the s
   assert.deepEqual(options(card), [
     ["bull_off", "true"],
     ["bull_off_distance", "false"],
+    ["fair_start", "false"],
   ]);
   assert.equal(text(card, '[data-value="bull_off_distance"]'), "Bull-off by distance");
   lobbyTap(card, "toggle", "bull_off_distance");
@@ -815,7 +824,7 @@ test("the new game screen speaks German and names newer games as Home Assistant 
   );
   assert.equal($$(card, ".game").at(-1).textContent, "Bingo");
   assert.equal(text(card, ".lobby .start"), "501 starten");
-  assert.deepEqual(options(card).map(([option]) => text(card, `[data-value="${option}"]`)), ["Ausbullen"]);
+  assert.deepEqual(options(card).map(([option]) => text(card, `[data-value="${option}"]`)), ["Ausbullen", "Fairer Start"]);
   assert.deepEqual(choices(card)[0], ["In", "Straight*", "Double", "Master"]);
   assert.equal(steppers(card).at(-1), "Maximale Runden−Keine Grenze+");
   assert.deepEqual(
@@ -930,12 +939,14 @@ test("the new game screen offers teams and start scores of their own", () => {
   assert.deepEqual(options(card), [
     ["bull_off", "false"],
     ["teams", "false"],
+    ["fair_start", "false"],
   ]);
   assert.equal(text(card, '[data-value="teams"]'), "Teams (1 + 3 against 2 + 4)");
   lobbyTap(card, "toggle", "teams");
   tap(card, ".lobby .start");
   const [[, , data]] = started(hass);
-  assert.deepEqual([data.start_scores, data.teams], [[601, 301, 1001, 101], true]);
+  // A team plays from the start score of its first player, and the action takes one per team.
+  assert.deepEqual([data.start_scores, data.teams], [[601, 301], true]);
   // Cricket has no start scores; without the team switch, no teams are offered.
   const cricket = setup({ "number.practice_players": "4" });
   tap(cricket.card, ".lobby-toggle");
@@ -1057,4 +1068,274 @@ test("a start with detection stopped switches detection on, which the screen say
     lobbyTap(other.card, "start");
     assert.deepEqual(other.hass.calls.map(([domain]) => domain), ["homedarts"]);
   }
+});
+
+// Fair start ---------------------------------------------------------------------
+
+const FAIR = new Map([
+  ["alex", 60],
+  ["sam", 30],
+  ["kim", 45],
+  ["lea", 15],
+]);
+const fairChoice = (board, averages = FAIR) => ({
+  ...lobbyChoice({ game: "501", names: [], ...board, players: board.names.length }, ["101", "301", "501", "cricket"]),
+  averages,
+});
+// The profiles with their averages, as the sensor shows them, and the board's players.
+const PLAYERS_AVERAGES = {
+  "sensor.player_profiles": {
+    state: "2",
+    attributes: {
+      players: [
+        { name: "Alex", person: null, recent_average: 60 },
+        { name: "Sam", person: null, recent_average: 30 },
+      ],
+    },
+  },
+};
+const shownStarts = (card) => $$(card, ".lobby-start b").map((start) => start.textContent);
+
+test("a fair start works out the scores that the integration does", () => {
+  const cases = JSON.parse(readFileSync(new URL("../fixtures/fair_starts.json", import.meta.url), "utf8"));
+  for (const { why, game, averages, starts } of cases) assert.deepEqual(fairStarts(game, averages), starts, why);
+});
+
+test("the averages of the profiles are by name, without those of players who have none", () => {
+  const averages = lobbyAverages({
+    attributes: {
+      players: [
+        { name: "Alex", recent_average: 60.5 },
+        { name: "Sam", recent_average: null },
+        { name: "", recent_average: 40 },
+        null,
+      ],
+    },
+  });
+  assert.deepEqual([...averages], [["alex", 60.5]]);
+  assert.deepEqual([...lobbyAverages(undefined)], []);
+});
+
+test("a fair start sets the scores, follows the players and the game, and goes back when off", () => {
+  let choice = lobbyChange(fairChoice({ names: ["Alex", "Sam"] }), "toggle", "fair_start");
+  assert.deepEqual([choice.fair_start, choice.starts], [true, [0, 250]]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 250]);
+  // − and + still change a score, and another option leaves it.
+  choice = lobbyChange(choice, "lower", "1");
+  choice = lobbyChange(choice, "toggle", "bull_off");
+  choice = lobbyChange(choice, "legs", "1");
+  assert.deepEqual(choice.starts, [0, 150]);
+  // Another line-up works them out again, also with a player without an average.
+  choice = lobbyChange(choice, "add", "Kim");
+  assert.deepEqual(choice.starts, [0, 250, 380]);
+  choice = lobbyChange(choice, "add", "Nobody");
+  assert.deepEqual(choice.starts, [0, 250, 380, 0]);
+  choice = lobbyChange(choice, "remove", "3");
+  choice = lobbyChange(choice, "up", "1");
+  assert.deepEqual([choice.players, choice.starts], [["Sam", "Alex", "Kim"], [250, 0, 380]]);
+  choice = lobbyChange(choice, "game", "301");
+  assert.deepEqual(choice.starts, [150, 0, 230]);
+  // A game without start scores plays from nothing, and X01 from its share again.
+  choice = lobbyChange(choice, "game", "cricket");
+  assert.deepEqual(choice.starts, [0, 0, 0]);
+  choice = lobbyChange(choice, "game", "501");
+  assert.deepEqual(choice.starts, [250, 0, 380]);
+  // Off, everybody plays the game's score, and no start scores go with the start.
+  choice = lobbyChange(choice, "toggle", "fair_start");
+  assert.deepEqual([choice.fair_start, choice.starts], [false, [0, 0, 0]]);
+  assert.equal("start_scores" in startGameData(choice), false);
+});
+
+test("without a fair start a change of the line-up leaves the scores alone", () => {
+  let choice = fairChoice({ names: ["Alex", "Sam"], starts: [301, 0] });
+  choice = lobbyChange(choice, "add", "Kim");
+  choice = lobbyChange(choice, "toggle", "teams");
+  assert.deepEqual(choice.starts, [301, 0, 0]);
+});
+
+test("a fair start without averages leaves everybody at the game's score", () => {
+  let choice = lobbyChoice({ game: "501", names: ["Alex", "Sam"], players: 2 }, ["501"]);
+  choice = lobbyChange(choice, "toggle", "fair_start");
+  assert.deepEqual(choice.starts, [0, 0]);
+  assert.equal(botMatch(choice), null);
+});
+
+test("players who rest get no fair start and count for nobody", () => {
+  let choice = fairChoice({ names: ["Lea", "Sam", "Kim", "Alex"], bot: 40 });
+  // The bot takes the fourth seat, so Alex rests, and Kim is the strongest player.
+  choice = lobbyChange(choice, "toggle", "fair_start");
+  assert.deepEqual([choice.starts, choice.botStart], [[170, 330, 0, 0], 450]);
+});
+
+test("the bot plays a fair start by its level, and its score goes with the start", () => {
+  let choice = lobbyChange(fairChoice({ names: ["Alex"] }), "bot", "add");
+  choice = lobbyChange(choice, "toggle", "fair_start");
+  // As strong as Alex, at the medium level.
+  assert.deepEqual([choice.starts, choice.botStart], [[0], 0]);
+  choice = lobbyChange(choice, "bot", "lower");
+  choice = lobbyChange(choice, "bot", "lower");
+  assert.deepEqual([choice.bot, choice.starts, choice.botStart], [40, [0], 330]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 330]);
+  choice = lobbyChange(choice, "bot", "raise");
+  choice = lobbyChange(choice, "bot", "raise");
+  choice = lobbyChange(choice, "bot", "raise");
+  assert.deepEqual([choice.bot, choice.starts, choice.botStart], [70, [430], 0]);
+  assert.deepEqual(startGameData(choice).start_scores, [430]);
+  // Gone, it leaves the start score of its seat behind.
+  choice = lobbyChange(choice, "bot", "remove");
+  assert.deepEqual([choice.starts, choice.botStart], [[0], 0]);
+  assert.deepEqual("start_scores" in startGameData(choice), false);
+});
+
+test("partners play a fair start from one score, by the average of both", () => {
+  let choice = lobbyChange(fairChoice({ names: ["Alex", "Sam", "Kim", "Lea"], teams: true }), "toggle", "fair_start");
+  // Alex and Kim average 52.5, Sam and Lea 22.5.
+  assert.deepEqual(choice.starts, [0, 210, 0, 210]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 210]);
+  // − and + of either partner change the score of both.
+  choice = lobbyChange(choice, "lower", "3");
+  assert.deepEqual(choice.starts, [0, 110, 0, 110]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 110]);
+  // Alone, everybody plays from their own again.
+  choice = lobbyChange(choice, "toggle", "teams");
+  assert.deepEqual(choice.starts, [0, 250, 380, 130]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 250, 380, 130]);
+});
+
+test("the bot as a partner counts by its level, and only the teams have a score", () => {
+  const seats = fairChoice({ names: ["Alex", "Sam", "Kim"], teams: true, bot: 50 });
+  const choice = lobbyChange(seats, "toggle", "fair_start");
+  // Alex and Kim average 52.5, Sam and the bot 40.
+  assert.deepEqual([choice.starts, choice.botStart], [[0, 380, 0], 380]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 380]);
+  // − and + of the player beside the bot change the score of the team; nobody else plays from it.
+  assert.deepEqual(lobbyChange(choice, "lower", "1").starts, [0, 280, 0]);
+});
+
+test("the board's start scores of a team show for both partners", () => {
+  const board = { game: "501", names: ["Alex", "Sam", "Kim", "Lea"], players: 4, teams: true, starts: [0, 210, 0, 0] };
+  assert.deepEqual(lobbyChoice(board, ["501"]).starts, [0, 210, 0, 210]);
+  const bot = { ...board, names: ["Alex", "Sam", "Kim"], players: 3, bot: 50 };
+  assert.deepEqual(lobbyChoice(bot, ["501"]).starts, [0, 210, 0]);
+  assert.deepEqual(lobbyChoice({ ...board, teams: false }, ["501"]).starts, [0, 210, 0, 0]);
+});
+
+test("a tournament goes by its whole field", () => {
+  let choice = lobbyChange(fairChoice({ names: ["Alex", "Sam", "Kim"], bot: 80 }), "mode", "tournament");
+  choice = lobbyChange(choice, "toggle", "fair_start");
+  // A tournament has no bot.
+  assert.deepEqual([choice.starts, choice.botStart], [[0, 250, 380], 0]);
+});
+
+test("the bot's level for the players goes in the bot's steps and within its levels", () => {
+  const level = (averages, names = ["Alex"]) => botMatch(fairChoice({ names }, new Map(averages)));
+  assert.equal(level([["alex", 64]]), 60);
+  assert.equal(level([["alex", 65]]), 70);
+  assert.equal(level([["alex", 12]]), 20);
+  assert.equal(level([["alex", 140]]), 120);
+  assert.equal(level([]), null);
+  // With several players, what they average; a player without an average doesn't count.
+  assert.equal(
+    level(
+      [
+        ["alex", 60],
+        ["sam", 40],
+      ],
+      ["Alex", "Sam", "Kim"]
+    ),
+    50
+  );
+  let choice = lobbyChange(fairChoice({ names: ["Alex"] }), "bot", "add");
+  assert.equal(lobbyChange({ ...choice, bot: 40 }, "bot", "match").bot, 60);
+  // Without a suggestion, the bot stays.
+  choice = lobbyChange({ ...choice, bot: 40, averages: new Map() }, "bot", "match");
+  assert.equal(choice.bot, 40);
+});
+
+test("the new game screen offers a fair start, shows its scores and says who has none", () => {
+  const { hass, card } = setup({
+    ...PLAYERS_AVERAGES,
+    "select.practice_game": { state: "501", attributes: { options: OPTIONS } },
+  });
+  withNames(hass, ["Alex", "Sam"]);
+  card.hass = { ...hass };
+  tap(card, ".lobby-toggle");
+  assert.deepEqual(shownStarts(card), ["501", "501"]);
+  assert.equal(text(card, '[data-value="fair_start"]'), "Fair start");
+  lobbyTap(card, "toggle", "fair_start");
+  assert.deepEqual(options(card).at(-1), ["fair_start", "true"]);
+  assert.deepEqual(shownStarts(card), ["501", "250"]);
+  assert.equal($$(card, ".lobby-start.own").length, 1);
+  assert.equal($(card, ".lobby-hint"), null);
+  // A guest has no history.
+  lobbyTap(card, "guest");
+  assert.deepEqual(shownStarts(card), ["501", "250", "501"]);
+  assert.equal(text(card, ".lobby-hint"), "Players without X01 legs yet start from the game's score.");
+  lobbyTap(card, "remove", "2");
+  tap(card, ".lobby .start");
+  const [[, , data]] = started(hass);
+  assert.deepEqual(data.start_scores, [0, 250]);
+});
+
+test("a game without start scores offers no fair start, and says nothing about it", () => {
+  const { card } = setup();
+  tap(card, ".lobby-toggle");
+  lobbyTap(card, "toggle", "fair_start");
+  lobbyTap(card, "game", "cricket");
+  assert.deepEqual(options(card).map(([option]) => option), ["bull_off"]);
+  assert.equal($(card, ".lobby-hint"), null);
+});
+
+test("a tournament whose game the board doesn't have works out the scores of the game it plays", () => {
+  const tournament = {
+    "select.tournament_game": { state: "501", attributes: { options: ["501"] } },
+    "select.tournament_format": { state: "round_robin", attributes: { options: ["round_robin"] } },
+    ...PLAYERS_AVERAGES,
+    "select.practice_game": { state: "301", attributes: { options: OPTIONS } },
+  };
+  const { card } = setup(tournament);
+  tap(card, ".lobby-toggle");
+  lobbyTap(card, "toggle", "fair_start");
+  assert.deepEqual(shownStarts(card), ["301", "150"]);
+  lobbyTap(card, "mode", "tournament");
+  assert.deepEqual(shownStarts(card), ["501", "250"]);
+});
+
+test("the bot's row suggests the level of the players and shows a fair start of its own", () => {
+  const { hass, card } = setup({
+    ...PLAYERS_AVERAGES,
+    "number.practice_players": "1",
+    "number.practice_bot_level": "40",
+  });
+  withNames(hass, ["Alex"]);
+  card.hass = { ...hass };
+  tap(card, ".lobby-toggle");
+  assert.equal(text(card, ".bot-match"), "At my level: 60");
+  assert.equal($(card, ".lobby-from"), null);
+  lobbyTap(card, "toggle", "fair_start");
+  assert.equal(text(card, ".lobby-from"), "from 330");
+  // Tapped, the bot plays at that level, and so as strong as Alex from the same score.
+  lobbyTap(card, "bot", "match");
+  assert.equal(text(card, ".lobby-player.bot .lobby-start b"), "60");
+  assert.equal($(card, ".bot-match"), null);
+  assert.equal($(card, ".lobby-from"), null);
+  assert.equal(text(card, ".said"), "Bot 60");
+});
+
+// axe-core, the engine of the accessibility check in a real browser, runs its rules that need
+// no layout here too: the names of the buttons and their pressed states.
+test("the new game screen with a fair start and the bot's level passes axe-core's WCAG 2.1 A and AA rules", async () => {
+  window.eval(readFileSync(new URL("../../node_modules/axe-core/axe.min.js", import.meta.url), "utf8"));
+  const { hass, card } = setup({
+    ...PLAYERS_AVERAGES,
+    "number.practice_players": "1",
+    "number.practice_bot_level": "40",
+  });
+  withNames(hass, ["Alex"]);
+  card.hass = { ...hass };
+  tap(card, ".lobby-toggle");
+  lobbyTap(card, "toggle", "fair_start");
+  const result = await window.axe.run($(card, ".lobby"), { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] });
+  assert.deepEqual(Array.from(result.violations, (rule) => rule.id), []);
+  assert.ok(Array.from(result.passes, (rule) => rule.id).includes("button-name"));
 });

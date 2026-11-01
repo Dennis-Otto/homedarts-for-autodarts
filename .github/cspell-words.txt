@@ -11,6 +11,7 @@ Dartraum
 Dartscheibe
 Dartscheiben
 Dartwoche
+Elo
 ESPHome
 Entitäts
 Entitätseinstellungen

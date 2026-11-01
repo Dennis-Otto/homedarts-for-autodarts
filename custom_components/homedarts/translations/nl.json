@@ -1370,6 +1370,10 @@
           "name": "Startscores",
           "description": "X01-startscores van de spelers in gooivolgorde, voor een handicap, bijvoorbeeld 501 en 301; ook de plaats van de bot na de spelers heeft er een. Bij 0 of een ontbrekende score geldt de startscore van het spel. Teams spelen vanaf de startscores van speler 1 en 2."
         },
+        "fair_start": {
+          "name": "Eerlijke start",
+          "description": "X01: elke speler start met de score die zijn gemiddelde van de laatste 30 legs waard is tegen de sterkste speler, die de startscore van het spel houdt, net als een speler zonder legs. De bot telt met zijn niveau, een team met het gemiddelde van beide partners. Niet samen met startscores."
+        },
         "holes": {
           "name": "Golf-holes",
           "description": "Aantal holes van een ronde Golf: 9 of 18."

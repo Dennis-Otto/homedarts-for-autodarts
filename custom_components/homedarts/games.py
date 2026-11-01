@@ -26,10 +26,11 @@ from .local_api import number
 from .manual import ManualDarts
 from .modes import VisitRefused
 from .moments import stamp
-from .practice import PracticeGame
+from .practice import TEAM_PLAYERS, PracticeGame
 from .profiles import clean_name, valid_name
 from .progress import Progress
 from .quality import DetectionQuality
+from .rating import fair_starts, team_averages
 from .records import PersonalRecords
 from .tournament import FINISHED, MAX_BOARDS, TournamentDirector
 from .training import TrainingSession, hit_key, segments
@@ -699,6 +700,7 @@ class BoardGames:
         teams: bool | None = None,
         three_in_a_bed: bool | None = None,
         start_scores: list[int] | None = None,
+        fair_start: bool = False,
         holes: int | None = None,
         rounds: int | None = None,
         bot_level: int | None = None,
@@ -711,7 +713,8 @@ class BoardGames:
         target_score: int | None = None,
     ) -> None:
         """Set up a practice game in one step; unset values stay as they are.
-        Double in and double out set the In and Out mode to double or straight."""
+        Double in and double out set the In and Out mode to double or straight.
+        A fair start sets the start scores of an X01 game from the averages."""
         practice = self.practice
         if names and not all(valid_name(name) for name in names):
             raise ActionRefused("invalid_player_name")
@@ -743,6 +746,12 @@ class BoardGames:
         if names:
             for index in range(len(practice.names)):
                 practice.set_name(index, names[index] if index < len(names) else "")
+        if fair_start and isinstance(game, int):
+            start_scores = self._fair_starts(
+                game,
+                len(names) if names else practice.humans,
+                practice.bot_level if bot_level is None else bot_level,
+            )
         if start_scores is not None:
             # Players without a start score of their own play the game's.
             for index in range(len(practice.starts)):
@@ -756,6 +765,19 @@ class BoardGames:
         if bot_level is not None:
             practice.bot_level = bot_level
         practice.play(game, len(names) if names else humans)
+
+    def _fair_starts(self, game: int, humans: int, bot_level: int) -> list[int]:
+        """The fair start score of each seat, or of each team: the players by
+        their recent average, and the bot by its level, which is its average."""
+        practice = self.practice
+        averages: list[float | None] = [
+            practice.profiles.recent_average(name) for name in practice.names[:humans]
+        ]
+        if bot_level:
+            averages.append(float(bot_level))
+        if practice.teams and len(averages) == TEAM_PLAYERS:
+            averages = team_averages(averages)
+        return fair_starts(game, averages)
 
     # -- corrections and darts entered by hand -----------------------------------
 

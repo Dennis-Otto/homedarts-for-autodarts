@@ -1370,6 +1370,10 @@
           "name": "Startpunkte",
           "description": "X01-Startpunkte der Spieler in Wurfreihenfolge, für ein Handicap, zum Beispiel 501 und 301; auch der Platz des Bots nach den Spielern hat welche. 0 oder ein fehlender Wert spielt die Startpunkte des Spiels. Teams spielen von den Startpunkten der Spieler 1 und 2."
         },
+        "fair_start": {
+          "name": "Fairer Start",
+          "description": "X01: Jeder Spieler startet mit den Punkten, die sein Average der letzten 30 Legs gegen den stärksten Spieler wert ist. Der stärkste Spieler behält die Startpunkte des Spiels, ebenso ein Spieler ohne Legs. Der Bot zählt mit seiner Stärke, ein Team mit dem Average beider Partner. Nicht zusammen mit Startpunkten."
+        },
         "holes": {
           "name": "Golf-Löcher",
           "description": "Löcher einer Runde Golf: 9 oder 18."

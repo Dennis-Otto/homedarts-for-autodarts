@@ -2191,6 +2191,7 @@ function playersView(profiles, lastMatch) {
       legsWon: finite(player.legs_won) ?? 0,
       matchesPlayed: finite(player.matches_played) ?? 0,
       matchesWon: finite(player.matches_won) ?? 0,
+      rating: finite(player.rating),
       average: finite(player.average),
       first9: finite(player.first_9_average),
       checkoutRate: finite(player.checkout_rate),
@@ -2284,6 +2285,7 @@ function playersHtml(view, ui) {
   const players = view.players
     .map((player) => {
       const rows = [
+        ...(player.rating === null ? [] : [[t("rating"), value(player.rating)]]),
         [t("average"), value(player.average, 1)],
         [t("first_9"), value(player.first9, 1)],
         [t("checkout_short"), percent(player.checkoutRate, 1)],
@@ -2383,7 +2385,7 @@ const PARTY_PLAYERS = 8;
 const KNOWN_GAMES = ["101", "301", "501", "701", "901", "1001", ...CRICKET_GAMES, ...PARTY_GAMES, ...DRILLS];
 // A game that ended opens the new game screen after this pause, so the result shows first.
 const LOBBY_DELAY = 8000;
-const LOBBY_OPTIONS = ["bull_off", "bull_off_distance", "teams", "three_in_a_bed"];
+const LOBBY_OPTIONS = ["bull_off", "bull_off_distance", "teams", "three_in_a_bed", "fair_start"];
 // The round limit of X01 in the steps the screen offers, 0 for none, up to 50.
 const ROUND_STEPS = [0, 5, 10, 15, 20, 30, 50];
 // Teams are two pairs of players; start scores of their own go in steps of 100.
@@ -2394,6 +2396,12 @@ const BOT_STEP = 10;
 const BOT_DEFAULT = 60;
 const START_STEP = 100;
 const START_LIMITS = [101, 1001];
+// A fair start score is rounded to this.
+const FAIR_STEP = 10;
+// The changes of a choice after which a fair start works out the scores again; other
+// changes leave them, with what − and + did to them.
+const LINEUP_ACTIONS = ["game", "mode", "add", "guest", "remove", "up", "down", "bot"];
+const FAIR_TOGGLES = ["fair_start", "teams"];
 
 function gameGroup(game) {
   if (/^\d+$/.test(game)) return "x01";
@@ -2445,13 +2453,18 @@ function lobbyChoice(board, games) {
   // Players without any name need not be chosen: the game starts with one of them.
   const chosen = players.some(Boolean) ? players : [];
   const starts = Array.isArray(board.starts) ? board.starts : [];
-  const start = (index) => (Number.isInteger(starts[index]) ? starts[index] : 0);
+  // Partners play from the start score of the first player of their team.
+  const seats = count + Number(Number.isInteger(board.bot) && board.bot > 0);
+  const own = (index) => (board.teams === true && seats === TEAM_SIZE ? index % 2 : index);
+  const start = (index) => (Number.isInteger(starts[own(index)]) ? starts[own(index)] : 0);
   return {
     game,
     players: chosen,
     // The start score of every player, 0 for the game's; set ones go back with the start.
     starts: chosen.map((_, index) => start(index)),
     handicap: starts.some((value) => Number.isInteger(value) && value > 0),
+    // Whether the start scores come from the players' averages.
+    fair_start: false,
     teams: board.teams === true,
     legs: within(board.legs, LOBBY_LIMITS.legs, 1),
     sets: within(board.sets, LOBBY_LIMITS.sets, 1),
@@ -2486,6 +2499,75 @@ const playerLimit = (choice) =>
   choice.tournament
     ? tournamentPlayers(choice.format)[1]
     : (gameGroup(choice.game) === "party" ? PARTY_PLAYERS : LOBBY_LIMITS.players) - Number(botSeat(choice));
+
+// Whether a choice is a match of two teams, the bot in one of them or not.
+const teamsPlay = (choice) =>
+  choice.teams === true &&
+  !choice.tournament &&
+  gameRules(choice.game).teams &&
+  choice.players.length + Number(botSeat(choice)) === TEAM_SIZE;
+
+// The 3-dart averages of the players' last legs, which a fair start goes by.
+function lobbyAverages(profiles) {
+  const players = Array.isArray(profiles?.attributes?.players) ? profiles.attributes.players : [];
+  return new Map(
+    players
+      .filter((player) => player && named(player.name) && finite(player.recent_average))
+      .map((player) => [nameKey(player.name), player.recent_average])
+  );
+}
+
+// The players of a choice who get a seat, and their averages.
+const seatedPlayers = (choice) => choice.players.slice(0, playerLimit(choice));
+const averageOf = (choice, name) => choice.averages?.get(nameKey(name)) ?? null;
+const meanOf = (numbers) => {
+  const known = numbers.filter(Boolean);
+  return known.length ? known.reduce((sum, number) => sum + number, 0) / known.length : null;
+};
+
+// Each player's start score in an X01 game, as the integration works it out in
+// fair_starts of rating.py, and the tests of both read the same cases: the strongest
+// player, and a player without an average, keep the game's, which is 0. Everybody else
+// starts from their share of it, rounded to 10 and at least 101.
+function fairStarts(game, averages) {
+  const top = Math.max(0, ...averages.filter(Boolean));
+  return averages.map((average) => {
+    if (!average || average === top) return 0;
+    const start = Math.max(Math.trunc((game * average) / top / FAIR_STEP + 0.5) * FAIR_STEP, START_LIMITS[0]);
+    return start >= game ? 0 : start;
+  });
+}
+
+// The start scores of a choice with a fair start, by the players' averages and the
+// level of the bot, and without one the game's. Partners play from one score, by the
+// average of both.
+function fairLineup(choice) {
+  if (!choice.fair_start || gameGroup(choice.game) !== "x01") {
+    return { starts: choice.players.map(() => 0), botStart: 0 };
+  }
+  const game = Number(choice.game);
+  const seated = seatedPlayers(choice);
+  const averages = seated.map((name) => averageOf(choice, name));
+  const bot = botSeat(choice);
+  if (bot) averages.push(choice.bot);
+  let starts = fairStarts(game, averages);
+  if (teamsPlay(choice)) {
+    const teams = fairStarts(game, [0, 1].map((team) => meanOf(averages.filter((_, seat) => seat % 2 === team))));
+    starts = averages.map((_, seat) => teams[seat % 2]);
+  }
+  return {
+    starts: choice.players.map((_, index) => (index < seated.length ? starts[index] : 0)),
+    botStart: bot ? starts.at(-1) : 0,
+  };
+}
+
+// The level at which the bot plays like the players of a choice: their average, in the
+// steps of the bot; none before they have one.
+function botMatch(choice) {
+  const mean = meanOf(seatedPlayers(choice).map((name) => averageOf(choice, name)));
+  if (mean === null) return null;
+  return Math.min(Math.max(Math.round(mean / BOT_STEP) * BOT_STEP, BOT_LEVELS[0]), BOT_LEVELS[1]);
+}
 
 // The choice after a tap: a game, a player added, moved or removed, the format or a rule.
 function lobbyChange(choice, action, value) {
@@ -2540,6 +2622,9 @@ function lobbyChange(choice, action, value) {
     const shown = (next.starts[index] || game) + (action === "raise" ? START_STEP : -START_STEP);
     const start = Math.min(Math.max(shown, START_LIMITS[0]), START_LIMITS[1]);
     next.starts[index] = start === game ? 0 : start;
+    // Partners play from one score.
+    const partner = (index + TEAM_SIZE / 2) % TEAM_SIZE;
+    if (teamsPlay(next) && partner in next.players) next.starts[partner] = next.starts[index];
   } else if (action === "legs" || action === "sets") {
     next[action] = within(next[action] + index, LOBBY_LIMITS[action], next[action]);
   } else if ((action === "in_mode" || action === "out_mode") && X01_MODES.includes(value)) {
@@ -2553,10 +2638,21 @@ function lobbyChange(choice, action, value) {
   } else if (action === "toggle" && [...LOBBY_OPTIONS, "third_place", "random_draw"].includes(value)) {
     next[value] = !next[value];
   } else if (action === "bot") {
-    // In, out, weaker or stronger; a new bot plays at a medium level.
-    const level = { add: BOT_DEFAULT, remove: 0, lower: next.bot - BOT_STEP, raise: next.bot + BOT_STEP }[value];
+    // In, out, weaker, stronger or at the players' level; a new bot plays at a medium level.
+    const level = {
+      add: BOT_DEFAULT,
+      remove: 0,
+      lower: next.bot - BOT_STEP,
+      raise: next.bot + BOT_STEP,
+      match: botMatch(next) ?? next.bot,
+    }[value];
     const seated = value === "add" ? room && !next.bot : Boolean(next.bot);
     if (seated && level !== undefined) next.bot = level && Math.min(Math.max(level, BOT_LEVELS[0]), BOT_LEVELS[1]);
+  }
+  const fairToggled = action === "toggle" && FAIR_TOGGLES.includes(value);
+  // Off, a fair start leaves the game's start scores behind.
+  if ((next.fair_start && (LINEUP_ACTIONS.includes(action) || fairToggled)) || (fairToggled && value === "fair_start")) {
+    Object.assign(next, fairLineup(next));
   }
   return next;
 }
@@ -2597,11 +2693,15 @@ function startGameData(choice, { entry = null, distance = false, bed = false } =
       max_rounds: choice.max_rounds,
     });
   }
-  // Start scores go with the start once any is set, so the game's start comes back, too.
-  const starts = players.map((_, index) => choice.starts?.[index] ?? 0);
-  if (rules.x01 && (choice.handicap || starts.some(Boolean))) data.start_scores = starts;
-  // The bot plays its games once chosen, and leaves them with level 0.
   const bot = botSeat(choice);
+  // Start scores go with the start once any is set, so the game's start comes back, too:
+  // one per player, the bot's after them, or one per team, from its first player.
+  const starts = players.map((_, index) => choice.starts?.[index] ?? 0);
+  if (bot && choice.botStart) starts.push(choice.botStart);
+  if (rules.x01 && (choice.handicap || starts.some(Boolean))) {
+    data.start_scores = teamsPlay(choice) ? starts.slice(0, TEAM_SIZE / 2) : starts;
+  }
+  // The bot plays its games once chosen, and leaves them with level 0.
   if (rules.bot && "bot" in choice) data.bot_level = bot ? choice.bot : 0;
   if (rules.teams && players.length + Number(bot) === TEAM_SIZE) data.teams = choice.teams === true;
   if (bed && choice.game === "wild_mouse") data.three_in_a_bed = choice.three_in_a_bed !== false;
@@ -2688,14 +2788,24 @@ function lobbyHtml(choice, ui) {
   };
   const bot = botSeat(choice);
   const seats = choice.tournament ? tournamentPlayers(choice.format)[1] : rules.maxPlayers - Number(bot);
-  // The bot sits after the players, at its level.
+  // The bot sits after the players, at its level, with the start score of a fair start
+  // and the level of the players, where these have an average.
+  const level = bot ? botMatch(choice) : null;
   const botRow = bot
     ? `<li class="lobby-player bot"><span class="bot-icon" aria-hidden="true">🤖</span>` +
-      `<span class="who">${text("bot")}</span><span class="lobby-start own">` +
+      `<span class="who">${text("bot")}</span>` +
+      (rules.x01 && choice.botStart
+        ? `<span class="lobby-from">${text("lobby_bot_start", { start: choice.botStart })}</span>`
+        : "") +
+      `<span class="lobby-start own">` +
       button("bot", "lower", "−", ` aria-label="${text("lobby_bot_lower")}"${choice.bot <= BOT_LEVELS[0] ? " disabled" : ""}`) +
       `<b>${choice.bot}</b>` +
       button("bot", "raise", "+", ` aria-label="${text("lobby_bot_raise")}"${choice.bot >= BOT_LEVELS[1] ? " disabled" : ""}`) +
-      `</span>${button("bot", "remove", "✕", ` aria-label="${text("lobby_bot_remove")}"`)}</li>`
+      `</span>` +
+      (level === null || level === choice.bot
+        ? ""
+        : button("bot", "match", text("lobby_bot_match", { level }), ' class="bot-match"')) +
+      `${button("bot", "remove", "✕", ` aria-label="${text("lobby_bot_remove")}"`)}</li>`
     : "";
   const players = choice.players
     .map((name, index) => {
@@ -2797,6 +2907,7 @@ function lobbyHtml(choice, ui) {
       ? ["teams"]
       : []),
     ...(!choice.tournament && ui.bed && choice.game === "wild_mouse" ? ["three_in_a_bed"] : []),
+    ...(rules.x01 ? ["fair_start"] : []),
     ...(choice.tournament && THIRD_PLACE_FORMATS.includes(choice.format) && knockoutPlayers(choice) >= THIRD_PLACE_PLAYERS
       ? ["third_place"]
       : []),
@@ -2896,6 +3007,10 @@ function lobbyHints(choice, ui) {
   } else if (choice.players.length >= limit && ui.suggestions.length) {
     // A full game takes no more of the suggestions, which fade.
     hints.push(fill(t("lobby_full"), { count: limit }));
+  }
+  // A fair start can only say so much about a player who has no X01 legs yet.
+  if (rules.x01 && choice.fair_start && seatedPlayers(choice).some((name) => !averageOf(choice, name))) {
+    hints.push(t("lobby_fair_unknown"));
   }
   if (choice.tournament && ui.tournamentRunning) hints.push(t("lobby_tournament_running"));
   if (ui.detectionOff) hints.push(t("lobby_detection"));
@@ -4702,6 +4817,7 @@ function aimSummaryHtml(view, ui) {
 
 // Records across all players: all time from the profiles, a period from the weeks.
 const LEADERBOARD_RECORDS = [
+  { key: "rating", digits: 0, always: true },
   { key: "average", digits: 1 },
   { key: "checkout", digits: 0 },
   { key: "maximums", digits: 0 },
@@ -4725,6 +4841,7 @@ function leaderboardRecords(profiles, achievements, period = "all") {
     if (!weeks) {
       return {
         name: player.name,
+        rating: finite(player.rating),
         average: finite(player.average),
         checkout: finite(player.highest_checkout),
         maximums: finite(player.maximums),
@@ -7118,6 +7235,8 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
   .lobby-start b { min-width: 3.2ch; text-align: center; font-size: .85em; color: var(--ad-muted-text); }
   .lobby-start.own b { color: var(--ad-accent-text); }
   .lobby-player .lobby-start button { min-width: 40px; }
+  .lobby-from { font-size: .85em; font-weight: 400; color: var(--ad-muted-text); font-variant-numeric: tabular-nums; }
+  .lobby-player .bot-match { padding: 0 12px; }
   .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .lobby .suggestion { display: inline-flex; align-items: center; border-radius: 999px; }
   .suggestion .home { margin-left: 6px; color: var(--ad-ok-text); }
@@ -10713,8 +10832,7 @@ function createElements(Base) {
       } else if (action === "mode") {
         const next = lobbyChange(choice, action, value);
         const games = (next.tournament ? this._tournamentGames() : this._lobbyGames()).flatMap((group) => group.games);
-        if (!games.includes(next.game)) next.game = games.includes("501") ? "501" : games[0];
-        this._lobby = next;
+        this._lobby = games.includes(next.game) ? next : lobbyChange(next, "game", games.includes("501") ? "501" : games[0]);
       } else if (action === "add-name") {
         const field = this._el.main.querySelector(".lobby-name");
         this._lobby = lobbyChange(choice, "add", field.value);
@@ -10754,7 +10872,7 @@ function createElements(Base) {
       const games = this._lobbyGames().flatMap((group) => group.games);
       // Between the matches of a tournament, its table or bracket shows instead.
       if (this.preview || !games.length || this._lobby || (auto && this._tournamentOwned)) return;
-      this._lobby = { ...lobbyChoice(this._board(), games), auto };
+      this._lobby = { ...lobbyChoice(this._board(), games), auto, averages: lobbyAverages(this._state("profiles")) };
       // The screen that opens by itself also waits the idle time before idle mode takes over.
       this._activity = Date.now();
       this._idleOff();
@@ -11975,6 +12093,9 @@ export {
   leaderboardRecordsHtml,
   livePanel,
   loadSound,
+  botMatch,
+  fairStarts,
+  lobbyAverages,
   lobbyChange,
   lobbyChoice,
   lobbyHints,

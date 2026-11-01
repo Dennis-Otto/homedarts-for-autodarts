@@ -136,7 +136,8 @@ START_GAME_SCHEMA = vol.Schema(
         vol.Optional("bull_off_distance"): cv.boolean,
         vol.Optional("teams"): cv.boolean,
         vol.Optional("three_in_a_bed"): cv.boolean,
-        vol.Optional("start_scores"): START_SCORES,
+        vol.Exclusive("start_scores", "start_scores"): START_SCORES,
+        vol.Exclusive("fair_start", "start_scores"): cv.boolean,
         vol.Optional("holes"): vol.All(vol.Coerce(int), vol.In(GOLF_HOLES)),
         vol.Optional("rounds"): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=MAX_ROUNDS)
@@ -749,6 +750,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             teams=call.data.get("teams"),
             three_in_a_bed=call.data.get("three_in_a_bed"),
             start_scores=call.data.get("start_scores"),
+            fair_start=call.data.get("fair_start", False),
             holes=call.data.get("holes"),
             rounds=call.data.get("rounds"),
             bot_level=call.data.get("bot_level"),

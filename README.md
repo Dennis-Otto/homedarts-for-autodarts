@@ -111,6 +111,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 <summary>Trends, reports, the calendar and exports</summary>
 
 - Weekly trends, head-to-head records and the match history of every player
+- A [rating](https://dennis-otto.github.io/homedarts-for-autodarts/statistics.html#rating) of who beats whom, and [fair start scores](https://dennis-otto.github.io/homedarts-for-autodarts/games.html#fair-start) from the averages, so nobody has to guess a handicap
 - The hit rate of every double, a weekly report, a training calendar and exports to CSV or JSON
 - A backup of every board before it is deleted, which a board added again restores, and the players of two boards merged into one
 - Long-term statistics for graphs over weeks and months
