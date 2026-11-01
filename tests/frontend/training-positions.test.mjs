@@ -78,6 +78,18 @@ test("the heatmap switches between beds, numbers and positions", async () => {
   assert.equal($(card, "svg[role=img]").getAttribute("aria-label"), "Dartboard colored by how often each bed was hit");
 });
 
+test("a new palette colours the darts anew, without a new request", async () => {
+  const asked = [];
+  const { card } = setup({ mode: "positions" }, board(asked));
+  await settle();
+  const fills = () => new Set($$(card, ".heat-layer .density rect").map((cell) => cell.getAttribute("fill").slice(0, 1)));
+  assert.deepEqual(fills(), new Set(["#"]));
+  card.setConfig({ device_id: DEVICE, mode: "positions", heatmap_palette: "thermal" });
+  await settle();
+  assert.deepEqual(fills(), new Set(["h"]));
+  assert.equal(asked.length, 1);
+});
+
 test("positions load again only when a visit was booked", async () => {
   const asked = [];
   const { hass, card } = setup({ mode: "positions" }, board(asked));
