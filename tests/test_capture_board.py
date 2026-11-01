@@ -442,6 +442,11 @@ def test_what_says_nothing_about_a_person_or_a_device_stays():
         "url": "wss://api.autodarts.io/ws",
         "note": "serial= and darts@home",
         "date": "2026-10-31T12:00:00Z",
+        # Network interfaces whose names hold no MAC address.
+        "interfaces": "eth0 enp3s0 wlp2s0 enx12345 renx00e04c680001 enx00e04c6800019",
+        # A camera as a model, without the instance of one on one PC.
+        "driver": r"USB\VID_1DFC&PID_8513&REV_0100&MI_00",
+        "model": "vid_1dfc&pid_8513",
     }
 
     _, content = capture_board.files(
@@ -503,6 +508,51 @@ def test_what_says_nothing_about_a_person_or_a_device_stays():
             f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
             "a serial number",
         ),
+        (
+            "vid=1&serial=USB CAM 01",
+            f"vid=1&serial={PLACEHOLDERS['serial']}",
+            "a serial number",
+        ),
+        (
+            "vid=1&SerialNumber=USB CAM 01 , port 3",
+            f"vid=1&SerialNumber={PLACEHOLDERS['serial']}, port 3",
+            "a serial number",
+        ),
+        # Without the "&" of a description, a serial number ends at a space.
+        (
+            "serial=XY12 lost",
+            f"serial={PLACEHOLDERS['serial']} lost",
+            "a serial number",
+        ),
+        ("link on enx00e04c680001", "link on enx00005e005307", "a MAC address"),
+        ("wlx00e04c680001 is up", "wlx00005e005307 is up", "a MAC address"),
+        (
+            "/sys/class/net/wwx00E04C680001/address",
+            "/sys/class/net/wwx00005e005307/address",
+            "a MAC address",
+        ),
+        (
+            r"USB\VID_1DFC&PID_8513&MI_00\7&2A1B3C4D&0&0000",
+            rf"USB\VID_1DFC&PID_8513&MI_00\{PLACEHOLDERS['serial']}",
+            "the instance of a camera",
+        ),
+        (
+            r"USB\VID_1DFC&PID_8513\CAM123456",
+            rf"USB\VID_1DFC&PID_8513\{PLACEHOLDERS['serial']}",
+            "the instance of a camera",
+        ),
+        (
+            r"\\?\usb#vid_1dfc&pid_8513&mi_00#7&2a1b3c4d&0&0000#{private-uuid}\global",
+            rf"\\?\usb#vid_1dfc&pid_8513&mi_00#{PLACEHOLDERS['serial']}"
+            r"#{private-uuid}\global",
+            "the instance of a camera",
+        ),
+        (
+            r"\\?\usb#vid_1dfc&pid_8513#CAM123456#{private-uuid}\global",
+            rf"\\?\usb#vid_1dfc&pid_8513#{PLACEHOLDERS['serial']}"
+            r"#{private-uuid}\global",
+            "the instance of a camera",
+        ),
     ],
 )
 def test_what_identifies_a_device_or_a_person_goes_under_any_key(text, replaced, what):
@@ -511,6 +561,83 @@ def test_what_identifies_a_device_or_a_person_goes_under_any_key(text, replaced,
     assert capture_board.secrets({"note": replaced}) == {}
     assert capture_board.leftovers(replaced, {}) == []
     assert capture_board.leftovers(text, {}) == [what]
+
+
+@pytest.mark.parametrize(
+    ("text", "what"),
+    [
+        ("enx00e04c680001", "a MAC address"),
+        (r"USB\VID_1DFC&PID_8513&MI_00\7&2A1B3C4D&0&0000", "the instance of a camera"),
+        (
+            r"\\?\usb#vid_1dfc&pid_8513#CAM123456#{private-uuid}",
+            "the instance of a camera",
+        ),
+        ("vid=1&serial=USB CAM 01", "a serial number"),
+    ],
+)
+def test_nothing_is_written_that_holds_them_as_json_writes_them(text, what):
+    assert capture_board.leftovers(json.dumps({"note": text}), {}) == [what]
+    answers = {"version.txt": "2.2.0", "config.json": {"note": text}}
+    _, content = capture_board.files(answers, [text], [], "", None)
+    # Each is replaced, and what stays of it is no leftover.
+    assert all(capture_board.leftovers(file, {}) == [] for file in content.values())
+
+
+@pytest.mark.parametrize(
+    ("text", "replaced"),
+    [
+        ("vid=1&serial=SN12345 lost", f"vid=1&serial={PLACEHOLDERS['serial']}"),
+        (
+            "opened vid=1&pid=2&serial=SN12345 at port 3",
+            f"opened vid=1&pid=2&serial={PLACEHOLDERS['serial']}",
+        ),
+        ("vid=1&serial=SN12345 ", f"vid=1&serial={PLACEHOLDERS['serial']}"),
+        (
+            "vid=1&serial=SN12345 &location=1",
+            f"vid=1&serial={PLACEHOLDERS['serial']}&location=1",
+        ),
+        (
+            r"cam (USB\VID_1DFC&PID_8513\SN12345) ok",
+            rf"cam (USB\VID_1DFC&PID_8513\{PLACEHOLDERS['serial']}) ok",
+        ),
+        (
+            r"[USB\VID_1DFC&PID_8513\SN12345] ok",
+            rf"[USB\VID_1DFC&PID_8513\{PLACEHOLDERS['serial']}] ok",
+        ),
+    ],
+)
+def test_a_serial_number_goes_from_the_other_texts_as_well(text, replaced):
+    # What follows a serial number in its text doesn't hide it where it stands alone.
+    answers = {"a": text, "b": "lost SN12345"}
+    found = capture_board.secrets(answers)
+    redacted = capture_board.redact(answers, found)
+    assert redacted == {"a": replaced, "b": f"lost {PLACEHOLDERS['serial']}"}
+    assert capture_board.leftovers(json.dumps(redacted), found) == []
+
+
+def test_a_line_break_ends_a_serial_number():
+    text = "vid=1&serial=USB CAM 01\nvid=1&serial=USB CAM 02\n"
+    found = capture_board.secrets({"note": text})
+    assert found == {
+        "USB CAM 01": PLACEHOLDERS["serial"],
+        "USB CAM 02": PLACEHOLDERS["serial"],
+    }
+    redacted = capture_board.redact({"note": text}, found)
+    assert redacted == {
+        "note": f"vid=1&serial={PLACEHOLDERS['serial']}\n"
+        f"vid=1&serial={PLACEHOLDERS['serial']}\n"
+    }
+    # As JSON writes it, the line break still ends the serial number.
+    assert capture_board.leftovers(json.dumps(redacted), found) == []
+
+
+def test_the_instance_of_a_camera_goes_wherever_the_board_names_it():
+    path = r"USB\VID_1DFC&PID_8513\CAM123456"
+    found = capture_board.secrets({"cam": path, "log": "opened CAM123456"})
+    assert found == {"CAM123456": PLACEHOLDERS["serial"]}
+    assert capture_board.redact({"log": "opened CAM123456"}, found) == {
+        "log": f"opened {PLACEHOLDERS['serial']}"
+    }
 
 
 @pytest.mark.parametrize("escape", ["\n", "\r", "\t", "\b", "\f", "\\", "\x01"])

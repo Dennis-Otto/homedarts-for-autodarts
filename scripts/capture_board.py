@@ -25,11 +25,12 @@ its cameras and the name and addresses of the board PC. They are replaced by the
 placeholders of PLACEHOLDERS before anything is written, in whatever spelling the
 board writes their keys (boardId, board_id). So is every value of a key that names a
 secret or the ID or name of a board, an account or a person, also a key that a later
-Board Manager adds, and under any key every UUID, e-mail address, MAC address, IPv6
-address, private IPv4 address and "serial=" of a camera. The script writes nothing if
-one of them is left. The port of a camera ("location=") stays: it is the same on
-every PC of that model and keeps cameras of one model apart. Look through the files
-all the same before you share them.
+Board Manager adds, and under any key every UUID, e-mail address, MAC address, also
+in the name of a network interface, IPv6 address, private IPv4 address, "serial=" of a
+camera and instance of a camera in a Windows path. The script writes nothing if one of
+them is left. The port of a camera ("location=") stays: it is the same on every PC of
+that model and keeps cameras of one model apart. Look through the files all the same
+before you share them.
 
 It needs Python 3.13 or newer and aiohttp (`pip install aiohttp`), which the test
 environment of requirements-test.txt has.
@@ -143,12 +144,28 @@ EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 MAC = re.compile(
     r"(?<![0-9A-Fa-f:-])(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}(?![0-9A-Fa-f:-])"
 )
+# The MAC address in the name of a network interface, as Linux names one by its
+# address, such as "enx00e04c680001".
+INTERFACE_MAC = re.compile(
+    r"(?<=(?<![0-9A-Za-z])(?:en|ib|sl|wl|ww)x)[0-9A-Fa-f]{12}(?![0-9A-Za-z])"
+)
 # The serial number in the description of a camera, such as
-# "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0". Up to the
-# next "&" it may hold spaces, as "USB CAM 01" does; in other texts it ends at one.
+# "vid=1dfc&pid=8513&serial=SN0001&location=pci-0000:00:14.0-usb-0:3:1.0". After an "&"
+# or up to the next one it may hold spaces, as "USB CAM 01" does; in other texts it
+# ends at one.
 SERIAL = re.compile(
-    r"(?i:(?<=serial=)|(?<=serialnumber=)|(?<=serial_number=))"
+    r"(?i:(?<=&serial=)|(?<=&serialnumber=)|(?<=&serial_number=))[^&,;\r\n\"'\\]+"
+    r"|(?i:(?<=serial=)|(?<=serialnumber=)|(?<=serial_number=))"
     r"(?:[^&,;\n\"'\\]+(?=&)|[^&,;\s\"'\\]+)"
+)
+# The instance of a camera in a Windows path, such as
+# "USB\VID_1DFC&PID_8513&MI_00\7&2A1B3C4D&0&0000" or
+# "\\?\usb#vid_1dfc&pid_8513#SN0001#{...}\global": its serial number, or a number made
+# from where it is plugged in on that PC. What stands before it names only the model.
+WINDOWS_INSTANCE = re.compile(
+    r"(?i:(?<=vid_[0-9a-f]{4}&pid_[0-9a-f]{4}[#\\])"
+    r"|(?<=vid_[0-9a-f]{4}&pid_[0-9a-f]{4}&mi_[0-9a-f]{2}[#\\]))"
+    r"[^#\\\s\"',;)\]]+"
 )
 # What JSON writes for a line break, a tab or a backslash: its letters are no part of
 # what follows, as the "n" in "signed in\nplayer@example.com" is not.
@@ -216,11 +233,14 @@ def secrets(answers: object, host: str = "") -> dict[str, str]:
             found.setdefault(secret, placeholder(key))
         elif isinstance(value, str):
             # The serial number of a camera may stand in other texts as well. A short
-            # one goes only where SERIAL finds it, as a short "pid" of a camera can
+            # one goes only where it is found as one, as a short "pid" of a camera can
             # be the same text.
-            for serial in SERIAL.findall(value):
-                if len(serial) >= SHORTEST_SECRET and not is_placeholder(serial):
-                    found.setdefault(serial, PLACEHOLDERS["serial"])
+            for match in (*SERIAL.findall(value), *WINDOWS_INSTANCE.findall(value)):
+                # A match may run on past the serial number, as in "&serial=SN0001 at
+                # port 3": its first word counts as well, to find that one elsewhere.
+                for serial in {match.strip(), *match.split()[:1]}:
+                    if len(serial) >= SHORTEST_SECRET and not is_placeholder(serial):
+                        found.setdefault(serial, PLACEHOLDERS["serial"])
 
     walk(answers)
     if host and not is_placeholder(host):
@@ -284,7 +304,9 @@ IDENTIFYING = (
     Identifying("a UUID", UUID, PLACEHOLDERS["uuid"]),
     Identifying("an e-mail address", EMAIL, PLACEHOLDERS["email"]),
     Identifying("a MAC address", MAC, PLACEHOLDERS["mac"]),
+    Identifying("a MAC address", INTERFACE_MAC, PLACEHOLDERS["mac"].replace(":", "")),
     Identifying("a serial number", SERIAL, PLACEHOLDERS["serial"]),
+    Identifying("the instance of a camera", WINDOWS_INSTANCE, PLACEHOLDERS["serial"]),
 )
 
 
@@ -319,6 +341,15 @@ def redact(value: Any, found: dict[str, str]) -> Any:
         return text(item) if isinstance(item, str) else item
 
     return walk(value)
+
+
+def written_plainly(content: str) -> str:
+    """The text of a file without what JSON writes for a character: a line break for
+    each, which ends what stands before it, and a backslash for itself, which a Windows
+    path needs."""
+    return JSON_ESCAPE.sub(
+        lambda match: "\\" if match.group() == "\\\\" else "\n", content
+    )
 
 
 def alternation(texts: Iterable[str]) -> re.Pattern[str]:
@@ -358,7 +389,7 @@ def leftovers(content: str, found: dict[str, str]) -> list[str]:
         for match in search.findall(content)
         if match in written and match not in allowed
     }
-    plain = JSON_ESCAPE.sub(" ", content)
+    plain = written_plainly(content)
     left.update(item.what for item in IDENTIFYING if item.is_left_in(plain))
     return sorted(left)
 

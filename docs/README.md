@@ -121,7 +121,7 @@ Since September 2026, the Autodarts documentation describes the Board Manager as
 
 On **Board Manager 2.1**, the integration works as before, with these differences:
 
-- The switch *Automatic recalibration* is unavailable, because Board Manager 2.1 no longer has this option. *Calibrate on start* and *Distortion correction* remain.
+- The switch *Automatic recalibration* is unavailable, because Board Manager 2.1 no longer has this option, and the generated dashboard leaves it out. *Calibrate on start* and *Distortion correction* remain.
 - The buttons *Start camera streams* and *Stop camera streams* are unavailable, because Board Manager 2.1 no longer has these commands. The live view of the cameras works without them.
 - *Hand detected*, *Image stable*, *Darts partially removed* and *Darts fully removed* come from the second socket of the board, `/api/events/system`, the moment they change. Only if that socket stays away do they update every 2 seconds while the detection runs, and a hand that is at the board for a moment only may not show then.
 

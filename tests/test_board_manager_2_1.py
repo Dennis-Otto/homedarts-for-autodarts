@@ -45,6 +45,7 @@ from .local_helpers import (
     switch,
 )
 from .test_realtime import REAL_EVENTS, Socket, entity_events
+from .test_stuck_takeout import pass_time
 
 FRAMES = Path(__file__).parent / "fixtures" / "board_manager_2.1.0_frames.jsonl"
 
@@ -750,18 +751,36 @@ async def test_commands_of_an_earlier_board_manager_stay_offered(hass, aioclient
     assert state(hass, "button", "start_streams") != "unavailable"
 
 
+# A takeout on an empty board. The hand flag of the real board never turned on in the
+# live test, as no dart was thrown, so the tests of it rest on the shape of the recording.
+EMPTY_TAKEOUT = {
+    "connected": True,
+    "event": "takeoutStarted",
+    "running": True,
+    "status": "takeoutInProgress",
+    "throws": [],
+}
+
+
+async def empty_takeout(hass, aioclient_mock):
+    """A board on 2.1 that shows a takeout without darts and takes a reset."""
+    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=EMPTY_TAKEOUT)
+    aioclient_mock.post(f"{BASE}/api/reset")
+    return entry.runtime_data.local
+
+
+def resets(aioclient_mock) -> int:
+    """The resets since the last answer() to the board."""
+    return sum(
+        call[0].upper() == "POST" and call[1].path == "/api/reset"
+        for call in aioclient_mock.mock_calls
+    )
+
+
 async def test_a_hand_in_the_system_read_holds_back_a_stuck_takeout(
     hass, aioclient_mock
 ):
-    empty = {
-        "connected": True,
-        "event": "takeoutStarted",
-        "running": True,
-        "status": "takeoutInProgress",
-        "throws": [],
-    }
-    entry = await setup_v2(hass, aioclient_mock, recording="2.1.0", state=empty)
-    coordinator = entry.runtime_data.local
+    coordinator = await empty_takeout(hass, aioclient_mock)
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
     answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
     await reread(hass, coordinator)
@@ -769,3 +788,80 @@ async def test_a_hand_in_the_system_read_holds_back_a_stuck_takeout(
     answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
     await reread(hass, coordinator)
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+
+
+async def test_a_stuck_takeout_is_not_reset_with_a_hand_at_the_board(
+    hass, aioclient_mock, freezer
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=True))
+    await reread(hass, coordinator)
+    await pass_time(hass, freezer, 30)
+    assert resets(aioclient_mock) == 0
+    # The hand is gone: the takeout gets its whole period from the read that shows it.
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
+    await reread(hass, coordinator)
+    await pass_time(hass, freezer, 9)
+    assert resets(aioclient_mock) == 0
+    await pass_time(hass, freezer, 2)
+    assert resets(aioclient_mock) == 1
+
+
+@pytest.mark.parametrize(
+    "look",
+    [{"json": motion_2_1(isHand=True)}, {"status": 500}],
+    ids=["a hand", "no answer"],
+)
+async def test_the_board_is_looked_at_right_before_its_reset(
+    hass, aioclient_mock, freezer, look
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    # No poll comes before the reset, and the socket of 2.1 announces no hand.
+    coordinator._async_unsub_refresh()
+    answer(aioclient_mock, "/api/system", **look)
+    await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 0
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+    # A period later the board has no hand at it, and takes its reset.
+    answer(aioclient_mock, "/api/system", json=motion_2_1(isHand=False))
+    await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 1
+
+
+async def test_a_state_during_the_look_at_the_board_ends_the_wait(
+    hass, aioclient_mock, freezer
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    coordinator._async_unsub_refresh()
+    client = coordinator.client
+    read = client.get_system
+
+    async def freed_meanwhile():
+        coordinator.async_receive("state", board_state(running_2_1()))
+        return await read()
+
+    with patch.object(client, "get_system", freed_meanwhile):
+        await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 0
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is False
+
+
+async def test_a_new_wait_during_the_look_at_the_board_gets_its_whole_period(
+    hass, aioclient_mock, freezer
+):
+    coordinator = await empty_takeout(hass, aioclient_mock)
+    coordinator._async_unsub_refresh()
+    client = coordinator.client
+    read = client.get_system
+
+    async def freed_and_stuck_again():
+        coordinator.async_receive("state", board_state(running_2_1()))
+        coordinator.async_receive("state", board_state(EMPTY_TAKEOUT))
+        return await read()
+
+    with patch.object(client, "get_system", freed_and_stuck_again):
+        await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 0
+    assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
+    await pass_time(hass, freezer, 11)
+    assert resets(aioclient_mock) == 1

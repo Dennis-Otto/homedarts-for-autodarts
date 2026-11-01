@@ -523,7 +523,7 @@ Each reset is logged at info level, and the [diagnostics](troubleshooting.md#dow
 | Entity | Type | Description |
 | --- | --- | --- |
 | Calibrate on start | Switch, *Configuration* | Calibrates when the detection starts. |
-| Automatic recalibration | Switch, *Configuration* | Lets the Board Manager recalibrate by itself. Unavailable on Board Manager 2.1, which no longer has this option. |
+| Automatic recalibration | Switch, *Configuration* | Lets the Board Manager recalibrate by itself. Unavailable on Board Manager 2.1, which no longer has this option; the generated dashboard leaves it out there. |
 | Distortion correction | Switch, *Configuration* | Corrects lens distortion during calibration. |
 | Camera standby | Select, *Configuration* | Puts the cameras on standby after 5, 10, 15, 30 or 60 idle minutes. |
 

@@ -105,6 +105,37 @@ test("a chosen board and title are respected, and missing entities are left out"
   assert.equal(config.views[3].sections.length, 1);
 });
 
+test("the board view leaves out a setting the board doesn't have, but not those of a board that is away", () => {
+  const entities = [
+    entity("binary_sensor.b_connected", "local_connected", "dev1"),
+    entity("switch.b_calibrate_on_start", "auto_calibrate_on_start", "dev1"),
+    entity("switch.b_recalibrate", "auto_calibrate", "dev1"),
+    entity("switch.b_distortion", "auto_distortion", "dev1"),
+    entity("select.b_standby", "standby_minutes", "dev1"),
+    entity("switch.b_free_stuck_takeout", "free_stuck_takeout", "dev1"),
+  ];
+  const rows = (connected, recalibrate, others = "on") => {
+    const states = Object.fromEntries(entities.map((item) => [item.entity_id, { state: others }]));
+    states["binary_sensor.b_connected"].state = connected;
+    states["switch.b_recalibrate"].state = recalibrate;
+    const config = dashboardStrategy({ ...hass(entities), states });
+    const board = config.views.find((view) => view.path === "board");
+    return board.sections[1].cards.find((card) => card.type === "entities").entities;
+  };
+  const all = entities.slice(1).map((item) => item.entity_id);
+  // Board Manager 2.1 no longer has this option: the row would only say unavailable.
+  assert.deepEqual(
+    rows("on", "unavailable"),
+    all.filter((id) => id !== "switch.b_recalibrate")
+  );
+  // Board Manager 2.0 has it, in either state.
+  assert.deepEqual(rows("on", "on"), all);
+  assert.deepEqual(rows("on", "off"), all);
+  // Away, every setting is unavailable and says nothing about the board: all stay.
+  assert.deepEqual(rows("off", "unavailable", "unavailable"), all);
+  assert.deepEqual(rows("unavailable", "unavailable", "unavailable"), all);
+});
+
 test("without boards the dashboard explains what to do", () => {
   const config = dashboardStrategy({ locale: { language: "de" }, entities: {} });
   assert.match(config.views[0].cards[0].content, /^Kein Board gefunden\. Richte HomeDarts for Autodarts ein/);
