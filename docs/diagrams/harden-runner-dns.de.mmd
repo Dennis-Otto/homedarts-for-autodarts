@@ -1,0 +1,18 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+  accTitle: Warum Harden-Runner die DNS-Abfragen eines Jobs sehen muss
+  accDescr: Ein Schritt oder der Runner fragt nach einem Host. Antwortet Harden-Runner, merkt er sich die Adresse eines erlaubten Hosts, und die Verbindung kommt durch. Auf einem Runner mit GitHubs DNS-Experiment, bisher in der Region westus2, antwortet ein anderer Resolver. Harden-Runner sieht die Adresse nie und verwirft die Verbindung, also schlägt der Schritt fehl, und der Runner hängt bis zum Timeout des Jobs. Harden-Runner seit v2.22.3, wenn seine Feature-Flags innerhalb von 3 Sekunden kommen, und der Schritt nach ihm in jedem Job mit sudo nehmen das Experiment weg.
+  LOOKUP(["Ein Schritt oder der Runner<br/>fragt nach einem Host"]) --> WHO{"Wer antwortet?"}
+  WHO -- "Harden-Runner" --> SEEN["Er merkt sich die Adresse<br/>eines erlaubten Hosts"]
+  SEEN --> PASS["Die Verbindung kommt durch"]
+  WHO -- "GitHubs DNS-Experiment<br/>(Region westus2)" --> HIDDEN["Harden-Runner sieht<br/>die Adresse nie"]
+  HIDDEN --> DROP["Die Verbindung wird verworfen:<br/>Der Schritt schlägt fehl, und der Runner<br/>hängt bis zum Timeout des Jobs"]
+  FIX["Harden-Runner v2.22.3 und der Schritt<br/>Let Harden-Runner see the DNS lookups<br/>in jedem Job mit sudo"] -. "nehmen das<br/>Experiment weg" .-> WHO
+  classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+  classDef problem fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+  class PASS done
+  class DROP problem

@@ -22,7 +22,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import monotonic
 
-from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, probe
+from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, open_card_form, probe
 from PIL import Image
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -131,12 +131,6 @@ SEEK = (
     + FIND_CARDS
     + ")()) { for (const animation of card.shadowRoot.getAnimations()) {"
     " animation.pause(); animation.currentTime = time; } } }"
-)
-EDIT_CARD = (
-    "() => { const [card] = ("
-    + FIND_CARDS
-    + ")(); card.dispatchEvent(new CustomEvent('ll-edit-card', {bubbles: true,"
-    " composed: true, detail: {path: [0, 0, 0]}})); }"
 )
 
 
@@ -2266,20 +2260,12 @@ def device_page(page: Page) -> None:
 
 def editor(page: Page) -> None:
     page.goto(f"{HA}/homedarts-demo/board")
-    root = f"({find('hui-root')})()[0]"
     # The dashboard has loaded once the card has drawn its board.
     page.wait_for_function(
         f"() => ({FIND_CARDS})().some((c) => c.shadowRoot.querySelector('.board svg'))",
         timeout=60000,
     )
-    # Then it turns to edit mode, as ?edit=1 would. The address alone is not enough:
-    # Home Assistant drops ?edit=1 when the dashboard draws before it knows the user.
-    page.evaluate(f"() => {root}.lovelace.setEditMode(true)")
-    page.wait_for_function(f"() => {root}.lovelace.editMode === true", timeout=15000)
-    page.wait_for_timeout(1500)
-    page.evaluate(EDIT_CARD)
-    # Home Assistant builds the form of the card from getConfigForm.
-    page.locator("hui-form-editor ha-form").first.wait_for(timeout=15000)
+    open_card_form(page, FIND_CARDS)
     page.wait_for_timeout(2000)
     peak(page)
     page_shot(page, "card-editor")

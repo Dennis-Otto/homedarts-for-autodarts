@@ -260,8 +260,19 @@ needs_bash = pytest.mark.skipif(
 # as failed or as $FAILED_END, such as "took too long".
 # One whose words contain $HANG notes $FAILED_STEP as running, as browser.py does while
 # a step runs, and hangs until its demo goes down a second time, after its start.
+# The first call whose words contain $FAIL_ONCE fails, and Playwright's image is missing
+# with it, so that it has to be pulled.
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
+if [[ -n "${FAIL_ONCE:-}" ]]; then
+  if [[ "$*" == "image inspect "* ]]; then
+    exit 1
+  fi
+  if [[ "$*" == *"$FAIL_ONCE"* && $(grep -cF -- "$FAIL_ONCE" "$CALLS") == 1 ]]; then
+    echo "context deadline exceeded" >&2
+    exit 1
+  fi
+fi
 if [[ -n "${HANG:-}" && "$*" == *"$HANG"* ]]; then
   for word in "$@"; do
     if [[ "$word" == *:/artifacts ]]; then
@@ -301,6 +312,7 @@ def browser_sh(
         "DOCKER_BIN": str(docker),
         "CALLS": str(calls),
         "E2E_ARTIFACTS": str(tmp_path / "artifacts"),
+        "E2E_PULL_PAUSE": "0",
         "BROWSER_SH": str(E2E / "browser.sh"),
         **env,
     }
@@ -577,6 +589,20 @@ def test_images_that_fail_to_pull_are_no_failed_shard(tmp_path):
     assert result.returncode != 0
     assert "The browser check failed" not in result.stdout
     assert not any(" up " in call for call in calls)
+    assert sum(" pull " in call for call in calls) == 3
+    assert "Pulling the images failed 3 times" in result.stderr
+
+
+@needs_bash
+@pytest.mark.parametrize("image", [" pull ", "pull --quiet mcr.microsoft.com"])
+def test_a_pull_that_the_registry_cuts_off_is_tried_again(tmp_path, image):
+    # As "context deadline exceeded" from mcr.microsoft.com ended a run (#463).
+    result, calls = browser_sh(tmp_path, FAIL_ONCE=image)
+
+    assert result.returncode == 0, result.stderr
+    assert sum(image in call for call in calls) == 2
+    assert "failed (attempt 1 of 3); trying again in 0 s" in result.stderr
+    assert any(" up " in call for call in calls)
 
 
 @needs_bash

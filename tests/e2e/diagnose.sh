@@ -1,7 +1,27 @@
 # shellcheck shell=bash
 # Sourced by run.sh, browser.sh and screenshots.sh: what a run that failed or was
 # stopped prints about the containers of its Compose project, and how a signal stops
-# it (docs/development.md#when-a-step-hangs).
+# it (docs/development.md#when-a-step-hangs), and how a run pulls its images.
+
+# Run a command that pulls images, three times at most: a pull that the registry cuts
+# off, such as "unexpected EOF" from ghcr.io or "context deadline exceeded" from
+# mcr.microsoft.com, would otherwise end the run, and passes when tried again.
+PULL_ATTEMPTS=3
+PULL_PAUSE="${E2E_PULL_PAUSE:-10}"
+pull_images() {
+	local attempt
+	for ((attempt = 1; attempt <= PULL_ATTEMPTS; attempt++)); do
+		if "$@"; then
+			return 0
+		fi
+		if ((attempt < PULL_ATTEMPTS)); then
+			echo "Pulling the images failed (attempt ${attempt} of ${PULL_ATTEMPTS}); trying again in ${PULL_PAUSE} s" >&2
+			sleep "${PULL_PAUSE}"
+		fi
+	done
+	echo "Pulling the images failed ${PULL_ATTEMPTS} times; nothing started" >&2
+	return 1
+}
 
 # The state of the containers of a project, what each of them uses of the CPU and the
 # memory, and the last lines of the log of Home Assistant: diagnose 300 docker

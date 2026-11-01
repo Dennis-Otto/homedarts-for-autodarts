@@ -110,9 +110,7 @@ def test_images_that_fail_to_pull_three_times_start_no_scenario(tmp_path):
     assert calls[6].endswith(" tail -n 300 /config/home-assistant.log")
     assert not any("scenario.py" in call for call in calls)
     assert result.stderr.count("trying again in 0 s") == 2
-    assert "Pulling the images failed 3 times; the scenario did not start" in (
-        result.stderr
-    )
+    assert "Pulling the images failed 3 times; nothing started" in result.stderr
 
 
 def test_a_signal_stops_a_hung_scenario_with_the_logs_of_a_failed_run(tmp_path):

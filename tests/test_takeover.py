@@ -2,8 +2,11 @@
 Autodarts: their entities, device, stores, media and dashboards come over, and the
 old entry, the old cards and the old folder go."""
 
+import asyncio
 import json
 import logging
+import threading
+from contextlib import suppress
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -33,6 +36,7 @@ from custom_components.homedarts.takeover import (
     ISSUE_REFERENCES,
     ISSUE_RESTART,
     OLD_DOMAIN,
+    async_finish,
 )
 
 from .local_helpers import local_entry_data, mock_board_v2
@@ -314,6 +318,44 @@ async def test_the_media_move_to_the_new_folders(hass, hass_storage, config_dir)
     assert (media / DOMAIN / "voices" / "Anna" / ".homedarts-voice-pack").exists()
     assert not (media / DOMAIN / "voices" / "Anna" / ".autodarts-voice-pack").exists()
     assert (media / OLD_DOMAIN / "exports").is_dir()
+
+
+async def test_the_old_folder_stays_until_the_last_board_is_taken_over(
+    hass, hass_storage, config_dir
+):
+    # One after the other, so that the first board surely finds the second left: boards
+    # taken over at once may or may not (#463).
+    folder = old_folder(config_dir)
+    first = old_board(hass, hass_storage)
+    second = old_board(hass, hass_storage, "manual_other", "old-other", "Keller")
+    for old, left in ((first, True), (second, False)):
+        await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_IMPORT},
+            data={CONF_TAKEOVER: old.entry_id},
+        )
+        await hass.async_block_till_done()
+        assert folder.exists() is left
+        assert (
+            ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+        ) is left
+
+
+async def test_boards_that_end_at_once_finish_one_after_the_other(hass):
+    # Boards taken over at once can each find no old board left. Moved in two threads
+    # at once, a file that the other thread took first fails the setup of a board.
+    together = threading.Barrier(2, timeout=0.2)
+    met = []
+
+    def move_media(_roots: list[str]) -> None:
+        with suppress(threading.BrokenBarrierError):
+            together.wait()
+            met.append(True)
+
+    with patch("custom_components.homedarts.takeover._move_media", move_media):
+        await asyncio.gather(async_finish(hass), async_finish(hass))
+
+    assert not met
 
 
 async def test_the_old_folder_goes_and_a_restart_is_offered(
