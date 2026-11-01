@@ -724,6 +724,60 @@ def test_safari_shares_its_runner_with_no_other_browser():
     assert int(part["workers"]) == 1
 
 
+def test_the_steps_launch_every_browser_that_home_assistant_supports():
+    tree = ast.parse((E2E / "browser.py").read_text(encoding="utf-8"))
+    launched = {
+        node.func.value.attr
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "launch"
+        and isinstance(node.func.value, ast.Attribute)
+    }
+    assert launched == {"chromium", "webkit", "firefox"}
+
+
+def test_firefox_is_a_step_of_a_job_with_no_browser_beside_it():
+    """No job of its own: a step of a group that one browser job of each Home Assistant
+    and the nightly beta run anyway, with the CPU of the runner for itself."""
+    (step,) = [step for step in STEPS if step.name.startswith("Firefox")]
+    assert not step.drill
+    assert not step.as_started
+    (part,) = [
+        part
+        for part in browser_jobs()
+        if any(
+            step.group in worker
+            for worker in groups_of(part["shard"], int(part["workers"]))
+        )
+    ]
+    assert int(part["workers"]) == 1
+
+
+def test_firefox_comes_before_the_steps_with_the_long_names():
+    # Its new game screen expects the players of the demo, in every shard and in the
+    # whole run, as the step in Chromium does.
+    firefox = NAMES.index("Firefox on a desktop")
+    assert firefox < NAMES.index("touch screens")
+    assert firefox < NAMES.index("every screen size")
+
+
+def test_firefox_plays_the_cards_that_the_steps_in_chromium_check():
+    """The same functions as the steps in Chromium, so that the same checks run."""
+    tree = ast.parse((E2E / "browser.py").read_text(encoding="utf-8"))
+    (firefox,) = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "firefox"
+    ]
+    called = {
+        node.func.id
+        for node in ast.walk(firefox)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert {"scoreboard", "lobby", "training_after_others", "editor"} <= called
+
+
 def test_the_nightly_beta_runs_every_group_with_one_browser():
     job = WORKFLOW["jobs"]["beta"]
     browser = [step for step in job["steps"] if "browser.sh" in step.get("run", "")]

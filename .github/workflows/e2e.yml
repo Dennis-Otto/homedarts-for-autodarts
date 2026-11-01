@@ -236,7 +236,7 @@ jobs:
           - name: groups 1 and 2
             shard: 1/2
             workers: 2
-          # The tablet, every screen size and the dartboard without Autodarts.
+          # The tablet, every screen size, Firefox and the dartboard without Autodarts.
           - name: group 3
             shard: 3/4
             workers: 1

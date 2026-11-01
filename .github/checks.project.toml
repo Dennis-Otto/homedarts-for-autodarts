@@ -113,8 +113,8 @@ should do."""
 
 [check."browser (*)"]
 title = "The cards in a real browser"
-problem = """A step of `tests/e2e/browser.sh` failed for the cards in Chromium, or in
-WebKit for Safari, against the demo of Home Assistant: a card that is missing, wider
+problem = """A step of `tests/e2e/browser.sh` failed for the cards in Chromium, in
+WebKit for Safari or in Firefox, against the demo of Home Assistant: a card that is missing, wider
 than the screen, cuts off a text, changes its height during a game, or breaks a rule
 of accessibility (WCAG 2.1 A and AA). The log names the step and the screen; the
 artifact `e2e-browser-*` keeps a screenshot of every open page and the log of Home

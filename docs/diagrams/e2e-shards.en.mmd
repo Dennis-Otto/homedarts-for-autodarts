@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
   accTitle: The end-to-end tests side by side
-  accDescr: Once the job changes finds something to test, nine test jobs start at the same time. Three run the scenario, for Board Manager 1, Board Manager 2 and Home Assistant 2026.8.0. Six run the browser test, three for the current and three for the oldest supported Home Assistant, so all four shards of a version run at once, each on a demo instance of its own. The first runner of a version runs two workers, the cards, games and forms beside the steady heights; the second runs the tablet, every screen size and the dartboard without Autodarts; the third runs the touch screens, Safari and accessibility alone, so that Safari's WebKit shares its CPU with no other browser. The required check e2e waits for all of them.
+  accDescr: Once the job changes finds something to test, nine test jobs start at the same time. Three run the scenario, for Board Manager 1, Board Manager 2 and Home Assistant 2026.8.0. Six run the browser test, three for the current and three for the oldest supported Home Assistant, so all four shards of a version run at once, each on a demo instance of its own. The first runner of a version runs two workers, the cards, games and forms beside the steady heights; the second runs the tablet, every screen size, Firefox and the dartboard without Autodarts; the third runs the touch screens, Safari and accessibility alone, so that Safari's WebKit shares its CPU with no other browser. The required check e2e waits for all of them.
 
   CHANGES{{"changes: does the pull request<br/>change what the tests use?"}}
   CHANGES --> SCENARIO
@@ -20,7 +20,7 @@ flowchart TB
   subgraph CURRENT["browser, current"]
     direction LR
     C1["runner 1, two workers<br/>shard 1/4: cards, games, forms<br/>shard 2/4: steady heights"]
-    C2["runner 2<br/>shard 3/4: tablet,<br/>every screen size,<br/>dartboard without Autodarts"]
+    C2["runner 2<br/>shard 3/4: tablet,<br/>every screen size,<br/>Firefox, dartboard<br/>without Autodarts"]
     C3["runner 3<br/>shard 4/4: touch screens,<br/>Safari, accessibility"]
   end
 
