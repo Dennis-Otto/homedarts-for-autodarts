@@ -619,10 +619,31 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             self._takeout_unsub()
             self._takeout_unsub = None
 
+    async def _hand_may_have_come(self) -> bool:
+        """Whether Board Manager 2.1 shows a hand by now: its socket announces none,
+        and the last read may be seconds old. No answer can't rule one out."""
+        if not self.client.interface_2_1:
+            return False
+        try:
+            system = await self.client.get_system()
+        except AutodartsApiError:
+            return True
+        return system["motion"].get("isHand") is True
+
     async def _async_free_takeout(self, _now: datetime) -> None:
         """The takeout held a whole period: reset the board once. The state it
-        reports next ends the takeout; a board still stuck gets another period."""
+        reports next ends the takeout; a board still stuck, or with a hand at it by
+        now, gets another period."""
+        # The wait runs on during this look: what ends it meanwhile also ends this,
+        # and a wait that starts anew meanwhile has its own timer.
+        waiting = self._takeout_unsub
+        hand = await self._hand_may_have_come()
+        if self._takeout_unsub is not waiting:
+            return
         self._takeout_unsub = None
+        if hand:
+            self._watch_takeout(self.data or {})
+            return
         self._takeout_resets += 1
         connection = self.connection
         try:

@@ -5631,11 +5631,19 @@ function playersDashboardView(board) {
   };
 }
 
+// The settings a board has. One it lacks, such as Automatic recalibration on Board Manager
+// 2.1, shows unavailable while the board is connected. On a board that is away every setting
+// does, which says nothing about the board, so their rows stay.
+function boardSettings(board) {
+  const connected = board.state("binary_sensor.local_connected")?.state === "on";
+  return SETTING_KEYS.filter((key) => !connected || board.state(key)?.state !== "unavailable");
+}
+
 // The status card, the board settings, the software update and the detection quality;
 // a dartboard without Autodarts has none of them.
 function boardDashboardView(board) {
   if (board.state("sensor.local_status")?.state === "manual") return null;
-  const settings = board.rows(SETTING_KEYS);
+  const settings = board.rows(boardSettings(board));
   const maintenance = [{ type: "heading", heading: board.t("board_settings") }];
   if (settings.length) maintenance.push({ type: "entities", entities: settings });
   maintenance.push(...board.rows(["update.board_software", "sensor.correction_rate"]).map(tile));
