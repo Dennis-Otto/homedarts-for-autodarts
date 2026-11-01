@@ -526,6 +526,34 @@ def test_the_players_of_the_board_count_when_the_action_names_none():
     assert games.practice.lineup()["start_scores"] == [501, 250]
 
 
+def six_players_of_a_party_game(games: BoardGames) -> None:
+    """The board still has the players of a party game, who are more than X01 seats."""
+    for index, name in enumerate(("Alex", "Sam", "Kim", "Robin", "Max", "Lea")):
+        games.practice.set_name(index, name)
+    games.practice.set_players(6)
+
+
+def test_players_who_get_no_seat_count_for_nobody():
+    games = games_of(Alex=40, Sam=30, Kim=30, Robin=20, Max=80, Lea=25)
+    six_players_of_a_party_game(games)
+    games.start_game(501, fair_start=True)
+    assert games.practice.lineup()["start_scores"] == [501, 380, 380, 250]
+
+
+def test_players_who_get_no_seat_leave_the_teams_as_they_are():
+    games = games_of(Alex=40, Sam=30, Kim=40, Robin=30, Max=80, Lea=25)
+    six_players_of_a_party_game(games)
+    games.start_game(501, teams=True, fair_start=True)
+    assert games.practice.lineup()["start_scores"] == [501, 380, 501, 380]
+
+
+def test_the_bot_takes_a_seat_from_players_who_rest():
+    games = games_of(Alex=40, Sam=30, Kim=30, Robin=80)
+    six_players_of_a_party_game(games)
+    games.start_game(501, bot_level=20, fair_start=True)
+    assert games.practice.lineup()["start_scores"] == [501, 380, 380, 250]
+
+
 def test_a_game_without_start_scores_ignores_a_fair_start():
     games = games_of(Alex=60, Sam=30)
     games.start_game("cricket", names=["Alex", "Sam"], fair_start=True)

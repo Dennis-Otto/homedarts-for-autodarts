@@ -2454,7 +2454,8 @@ function lobbyChoice(board, games) {
   const chosen = players.some(Boolean) ? players : [];
   const starts = Array.isArray(board.starts) ? board.starts : [];
   // Partners play from the start score of the first player of their team.
-  const seats = count + Number(Number.isInteger(board.bot) && board.bot > 0);
+  const hasBot = Number.isInteger(board.bot) && board.bot > 0;
+  const seats = count + Number(hasBot);
   const own = (index) => (board.teams === true && seats === TEAM_SIZE ? index % 2 : index);
   const start = (index) => (Number.isInteger(starts[own(index)]) ? starts[own(index)] : 0);
   return {
@@ -2462,6 +2463,8 @@ function lobbyChoice(board, games) {
     players: chosen,
     // The start score of every player, 0 for the game's; set ones go back with the start.
     starts: chosen.map((_, index) => start(index)),
+    // The bot's, from the seat it takes after the players.
+    botStart: hasBot ? start(Math.min(count, LOBBY_LIMITS.players - 1)) : 0,
     handicap: starts.some((value) => Number.isInteger(value) && value > 0),
     // Whether the start scores come from the players' averages.
     fair_start: false,
@@ -2505,7 +2508,7 @@ const teamsPlay = (choice) =>
   choice.teams === true &&
   !choice.tournament &&
   gameRules(choice.game).teams &&
-  choice.players.length + Number(botSeat(choice)) === TEAM_SIZE;
+  seatedPlayers(choice).length + Number(botSeat(choice)) === TEAM_SIZE;
 
 // The 3-dart averages of the players' last legs, which a fair start goes by.
 function lobbyAverages(profiles) {
@@ -2653,6 +2656,11 @@ function lobbyChange(choice, action, value) {
   // Off, a fair start leaves the game's start scores behind.
   if ((next.fair_start && (LINEUP_ACTIONS.includes(action) || fairToggled)) || (fairToggled && value === "fair_start")) {
     Object.assign(next, fairLineup(next));
+  }
+  // Partners play from one score, the one of the team's first player, so that is what shows.
+  if (teamsPlay(next)) {
+    next.starts = next.starts.map((_, seat) => next.starts[seat % (TEAM_SIZE / 2)]);
+    if (botSeat(next)) next.botStart = next.starts[seatedPlayers(next).length % (TEAM_SIZE / 2)];
   }
   return next;
 }

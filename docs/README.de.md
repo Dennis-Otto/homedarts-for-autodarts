@@ -99,6 +99,7 @@ Du kommst von Autodarts Local, einer anderen Integration für Autodarts oder dar
 <summary>Trends, Berichte, Kalender und Exporte</summary>
 
 - Wochentrends, direkte Vergleiche und der Match-Verlauf jedes Spielers
+- Eine [Wertung](https://dennis-otto.github.io/homedarts-for-autodarts/de/statistics.html#wertung), die sagt, wer wen schlägt, und [faire Startpunkte](https://dennis-otto.github.io/homedarts-for-autodarts/de/games.html#fairer-start) aus den Averages, damit niemand ein Handicap raten muss
 - Die Quote jedes Doubles, ein Wochenbericht, ein Trainingskalender und Exporte als CSV oder JSON
 - Ein Backup jedes Boards, bevor es gelöscht wird, das ein wieder hinzugefügtes Board wiederherstellt, und die Spieler zweier Boards in einem zusammengeführt
 - Langzeitstatistik für Grafiken über Wochen und Monate
@@ -191,7 +192,7 @@ Wie sich HomeDarts mit der Autodarts-App und ihrer Browser-Erweiterung, mit dart
 
 - [Spiele und Regeln](https://dennis-otto.github.io/homedarts-for-autodarts/de/games.html): alle Spiele im Überblick, vier Wege, eines zu starten, Matches, Teams, Handicaps, das Ausbullen, die Match-Zusammenfassung, Turniere und die Regeln von X01, den Cricket-Spielen, den Partyspielen und den Trainingsspielen
 - [Anzeigetafel am Board](https://dennis-otto.github.io/homedarts-for-autodarts/de/scoreboard.html): ein Tablet oder Fernseher neben dem Board: Einrichtung, Quer- und Hochformat, Spielauswahl, Turniere, Caller und Ruhemodus
-- [Statistik und Spieler](https://dennis-otto.github.io/homedarts-for-autodarts/de/statistics.html): Trainingssessions, Bestleistungen, Trefferbild und Dart-Positionen, wohin zielen, Fortschritt über die Zeit, Doubles, Spielerprofile, Erfolge, Trends, Bestenliste, Wochenbericht, Trainingskalender, Exporte und Backups
+- [Statistik und Spieler](https://dennis-otto.github.io/homedarts-for-autodarts/de/statistics.html): Trainingssessions, Bestleistungen, Trefferbild und Dart-Positionen, wohin zielen, Fortschritt über die Zeit, Doubles, Spielerprofile, die Wertung, Erfolge, Trends, Bestenliste, Wochenbericht, Trainingskalender, Exporte und Backups
 - [Automationen](https://dennis-otto.github.io/homedarts-for-autodarts/de/automations.html): sechzehn Blueprints, ihre Einstellungen, Board-Ereignisse und fertige Beispiele
 - [Online-Matches](https://dennis-otto.github.io/homedarts-for-autodarts/de/online-matches.html): Überwerfen, gewonnene Legs und Matches von Online-Matches als Board-Ereignisse, mit der Browser-Erweiterung Tools for Autodarts *(experimentell)*
 

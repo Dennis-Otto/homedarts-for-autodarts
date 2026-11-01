@@ -170,6 +170,7 @@ test("the choice starts from what the board has set, with every name once", () =
     game: "cricket",
     players: ["Alex", "", "Sam"],
     starts: [0, 0, 0],
+    botStart: 0,
     handicap: false,
     fair_start: false,
     teams: false,
@@ -1209,7 +1210,51 @@ test("the bot as a partner counts by its level, and only the teams have a score"
   assert.deepEqual([choice.starts, choice.botStart], [[0, 380, 0], 380]);
   assert.deepEqual(startGameData(choice).start_scores, [0, 380]);
   // − and + of the player beside the bot change the score of the team; nobody else plays from it.
-  assert.deepEqual(lobbyChange(choice, "lower", "1").starts, [0, 280, 0]);
+  const lower = lobbyChange(choice, "lower", "1");
+  assert.deepEqual([lower.starts, lower.botStart], [[0, 280, 0], 280]);
+  assert.deepEqual(startGameData(lower).start_scores, [0, 280]);
+});
+
+test("a team of four seated players stays a team while others rest", () => {
+  const seats = fairChoice({ names: ["Alex", "Sam", "Kim", "Lea", "Max"], teams: true });
+  const choice = lobbyChange(seats, "toggle", "fair_start");
+  // Alex and Kim average 52.5, Sam and Lea 22.5, and Max does not count.
+  assert.deepEqual(choice.starts.slice(0, 4), [0, 210, 0, 210]);
+  const data = startGameData(choice);
+  assert.deepEqual([data.players.length, data.start_scores, data.teams], [4, [0, 210], true]);
+});
+
+test("partners show the one score they play from", () => {
+  const names = ["Alex", "Sam", "Kim", "Lea"];
+  // Teams on: the first player of each team decides.
+  let choice = lobbyChange(fairChoice({ names, starts: [401, 0, 301, 0] }), "toggle", "teams");
+  assert.deepEqual(choice.starts, [401, 0, 401, 0]);
+  assert.deepEqual(startGameData(choice).start_scores, [401, 0]);
+  // A move changes who plays from which score, and the row says so.
+  choice = lobbyChange(fairChoice({ names, teams: true, starts: [301, 0, 301, 0] }), "up", "1");
+  assert.deepEqual(choice.starts, [0, 301, 0, 301]);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 301]);
+  // − and + of the second partner move the team, too.
+  choice = lobbyChange(choice, "raise", "2");
+  assert.deepEqual(choice.starts, [601, 301, 601, 301]);
+  assert.deepEqual(startGameData(choice).start_scores, [601, 301]);
+});
+
+test("the bot's stored start score shows again and goes back with the start", () => {
+  const games = ["501"];
+  let choice = lobbyChoice({ game: "501", names: ["Alex"], players: 1, bot: 60, starts: [0, 330] }, games);
+  assert.equal(choice.botStart, 330);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 330]);
+  // In a team, it plays from the score of the second team.
+  const team = { game: "501", names: ["Alex", "Sam", "Kim"], players: 3, bot: 50, teams: true, starts: [0, 380, 0, 0] };
+  choice = lobbyChoice(team, games);
+  assert.equal(choice.botStart, 380);
+  assert.deepEqual(startGameData(choice).start_scores, [0, 380]);
+  // With every seat taken, the bot has the last one and a resting player none.
+  choice = lobbyChoice({ game: "501", names: ["Alex", "Sam", "Kim", "Lea"], players: 4, bot: 50, starts: [0, 0, 0, 280] }, games);
+  assert.equal(choice.botStart, 280);
+  // Without a bot, nobody has its score.
+  assert.equal(lobbyChoice({ game: "501", names: ["Alex"], players: 1, starts: [0, 330] }, games).botStart, 0);
 });
 
 test("the board's start scores of a team show for both partners", () => {

@@ -26,7 +26,7 @@ from .local_api import number
 from .manual import ManualDarts
 from .modes import VisitRefused
 from .moments import stamp
-from .practice import TEAM_PLAYERS, PracticeGame
+from .practice import MAX_PLAYERS, TEAM_PLAYERS, PracticeGame
 from .profiles import clean_name, valid_name
 from .progress import Progress
 from .quality import DetectionQuality
@@ -770,6 +770,8 @@ class BoardGames:
         """The fair start score of each seat, or of each team: the players by
         their recent average, and the bot by its level, which is its average."""
         practice = self.practice
+        # Players of a party game who get no seat here count for nobody.
+        humans = min(humans, MAX_PLAYERS - bool(bot_level))
         averages: list[float | None] = [
             practice.profiles.recent_average(name) for name in practice.names[:humans]
         ]
