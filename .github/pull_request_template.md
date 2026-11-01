@@ -10,12 +10,8 @@
 - [ ] The documentation in `docs/` is updated in English and German (the `.de.md` pages), and a new file in `changelog.d/` says what changes for users, or `CHANGELOG.md` under Unreleased.
 - [ ] Screenshots are regenerated with `bash tests/e2e/screenshots.sh` if a card or dialog looks different.
 - [ ] Every commit is signed off (`git commit -s`).
-<<<<<<< before updating
-- [ ] No tokens, keys, real board IDs or private addresses are included.
-=======
 - [ ] Every commit is signed as well (`git commit -S`), with a key that GitHub verifies; the sign-off alone is no signature.
-- [ ] No tokens, keys or personal data are included.
->>>>>>> after updating
+- [ ] No tokens, keys, real board IDs or private addresses are included.
 
 ## Test plan
 
