@@ -29,7 +29,7 @@ COLLECTED="${ARTIFACTS}/collected"
 IMAGES="${REPOSITORY_ROOT}/docs/images"
 DIAGRAMS="${REPOSITORY_ROOT}/docs/diagrams"
 # How many groups GROUPS in screenshots.py has.
-GROUP_COUNT=3
+GROUP_COUNT=4
 LANGUAGES="${LANGUAGES:-en de}"
 
 shopt -s nullglob

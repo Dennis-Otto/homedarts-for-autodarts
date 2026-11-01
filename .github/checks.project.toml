@@ -215,7 +215,7 @@ render the group on your machine with Docker, fix the integration, the blueprint
 card or the step of the screenshot tool that failed, put the committed images back,
 and push:"""
 commands = [
-  "SCREENSHOT_GROUP=2/3 LANGUAGES=en bash tests/e2e/visual.sh",
+  "SCREENSHOT_GROUP=2/4 LANGUAGES=en bash tests/e2e/visual.sh",
   "git checkout -- docs/images",
 ]
 docs = "docs/development.md#visual-check"

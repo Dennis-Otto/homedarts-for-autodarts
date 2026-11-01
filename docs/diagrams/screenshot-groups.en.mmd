@@ -5,20 +5,22 @@ config:
 ---
 flowchart TB
   accTitle: How the visual check and the screenshot bot render the images in groups
-  accDescr: Each language renders in three groups at once, each group on a runner of its own. First each job of a group looks for an earlier run of the visual check or of the screenshot bot, on a branch of this repository, that rendered the same files; it takes the images of that run in under a minute. Otherwise it renders them from a fresh demo. The cards, the first games and the dartboard without Autodarts make group 1, more games with the players group 2, the corrections of a dart, the formats, the big tournaments and the calendar group 3. Then one job per language puts the images of its three groups together and compares them with the committed images. The visual check writes the comparison into one comment on the pull request; the screenshot bot updates its pull request with every language that rendered.
+  accDescr: Each language renders in four groups at once, each group on a runner of its own. First each job of a group looks for an earlier run of the visual check or of the screenshot bot, on a branch of this repository, that rendered the same files; it takes the images of that run in under a minute. Otherwise it renders them from a fresh demo. The cards and the first games make group 1, more games group 2, the players with their own matches and the dartboard without Autodarts group 3, the corrections of a dart, the formats, the big tournaments and the calendar group 4. Then one job per language puts the images of its four groups together and compares them with the committed images. The visual check writes the comparison into one comment on the pull request; the screenshot bot updates its pull request with every language that rendered.
 
   START["A pull request or a push to main<br/>changes the integration, a blueprint or the screenshot tool"] --> KEY
   KEY["Each job of a group: did an earlier run<br/>of this repository render the same files?"]
   KEY -->|"yes"| TAKE["It takes the images of that run,<br/>in under a minute"]
-  KEY -->|"no, or weekly or on demand"| G1 & G2 & G3
-  G1["Group 1, a fresh demo:<br/>the cards, the live card,<br/>the first games, the manual board,<br/>about 9 min"]
-  G2["Group 2, a fresh demo:<br/>more games, a tournament,<br/>then the players, about 10 min"]
-  G3["Group 3, a fresh demo:<br/>the corrections, the formats,<br/>the big tournaments up to their pictures,<br/>the calendar, about 10 min"]
-  TAKE & G1 & G2 & G3 --> COLLECT["One job per language puts<br/>its groups together and compares<br/>them with the committed images"]
+  KEY -->|"no, or weekly or on demand"| RENDER["One runner for each group,<br/>each with a fresh demo"]
+  RENDER --> G1 & G2 & G3 & G4
+  G1["Group 1:<br/>the cards, the live card,<br/>the first games, about 8 min"]
+  G2["Group 2:<br/>more games, about 7 min"]
+  G3["Group 3:<br/>the players with their own matches,<br/>the manual board, about 7 min"]
+  G4["Group 4:<br/>the corrections, the formats,<br/>the big tournaments up to their pictures,<br/>the calendar, about 7 min"]
+  TAKE & G1 & G2 & G3 & G4 --> COLLECT["One job per language puts<br/>its groups together and compares<br/>them with the committed images"]
   COLLECT --> COMMENT["Visual check: one comment<br/>on the pull request"]
   COLLECT --> BOT["Screenshot bot: its pull request<br/>with every language that rendered"]
 
   classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
   classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
-  class KEY,G1,G2,G3,COLLECT bot
+  class KEY,RENDER,G1,G2,G3,G4,COLLECT bot
   class TAKE,COMMENT,BOT done
