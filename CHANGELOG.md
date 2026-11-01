@@ -4,6 +4,17 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.1.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.0...v2.1.1) (2026-11-01)
+
+### Fixed
+
+- **Board Manager 2.1:** darts, visits and takeouts come through again, and every entity, button and switch is right again. Board Manager 2.1 sends the state of the board in a new shape, in which the integration found no darts. The settings show their real state and can be changed, *Camera standby* is back, a new board can be set up, a board with another ID counts as the wrong board again, and the hand, image and takeout sensors work. The version, the detection version, the update, the cloud link and the cameras follow the board, also right after its update. *Automatic recalibration* and the buttons for the camera streams are unavailable there, because Board Manager 2.1 no longer has them. Thanks to @mharmuth, who reported this and fixed the darts.
+- **Taking over several boards at once:** the setup of a board can no longer fail when two boards finish at the same moment and both move the media or delete the folder of the integration under its former name.
+- **The website and the cards use the same words in Dutch, French and Spanish:** the start page, the quick start, the installation and the frequently asked questions name the buttons and menus as Home Assistant and HACS show them, such as **Configuración** in Spanish and **Découvertes** in French, and use the terms of the integration, such as "carte de chaleur" and "mapa de calor". The quick start also describes the full-screen button of the scoreboard. The last dialog of the setup and the heading of the heatmap on the cards say the same now.
+- **A heatmap for color-blind players:** the rainbow of the heatmap, with the same lightness from blue to red, hid the difference between often and rarely hit beds for color-blind players. The training card and the doubles card now use a scale from a dark blue violet to a light yellow that gets lighter with the hits, so it also reads in gray, and the doubles card has a legend. The new option `heatmap_palette: thermal` brings back the former colors.
+- **No known vulnerability left in the tools of the tests:** the security scan of the project reported minimatch 10.2.6, which ESLint installs on development machines only; HomeDarts doesn't ship it. It's minimatch 11.0.3 now, and your Home Assistant was not affected.
+- **A recording of a board on Board Manager 2.1 no longer holds its ID:** `scripts/capture_board.py` knew the board ID only as `board_id`, so the `boardId` of Board Manager 2.1 stayed in `config.json` and `system.json`. It now recognises a key in every spelling and also replaces the serial numbers of the cameras, the name of the link server and every UUID, e-mail address and MAC address. If you recorded a board on 2.1 before, look through the files again before you share them. Thanks to @mharmuth for the report (#521, #526).
+
 ## [2.1.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.0.1...v2.1.0) (2026-10-25)
 
 ### Fixed
