@@ -99,7 +99,7 @@ def row(
 
 
 def month(language: str) -> str:
-    today = datetime.date.today()
+    today = datetime.datetime.now().astimezone()
     return f"{MONTHS[language].split()[today.month - 1]} {today.year}"
 
 

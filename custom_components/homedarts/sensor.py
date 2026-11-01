@@ -186,7 +186,7 @@ def _number(value: Any) -> int | float | None:
 
 
 def _get_num_throws(data: dict[str, Any]) -> int | float | None:
-    """Number of throws in the current turn (from local board, 0–3)."""
+    """Number of throws in the current turn (from local board, 0 to 3)."""
     return _number(_local(data).get("numThrows"))
 
 

@@ -98,7 +98,11 @@ async def use_takeout(hass) -> None:
             }
         ]
     }
-    Path(hass.config.path("configuration.yaml")).write_text(safe_dump(config), "utf-8")
+    await hass.async_add_executor_job(
+        Path(hass.config.path("configuration.yaml")).write_text,
+        safe_dump(config),
+        "utf-8",
+    )
     assert await async_setup_component(hass, "automation", config)
     await hass.async_block_till_done()
     assert [state.state for state in hass.states.async_all("automation")] == ["on"]

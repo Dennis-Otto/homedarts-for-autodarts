@@ -12,7 +12,7 @@ import asyncio
 import importlib.util
 import json
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import date, datetime
 from functools import partial
 from pathlib import Path
 
@@ -41,6 +41,7 @@ from .local_helpers import (
     mock_board,
     mock_board_v2,
     recorded,
+    until,
 )
 
 # The doubles and the recordings answer on 127.0.0.1, the one address the tests of
@@ -151,12 +152,6 @@ async def serve(app: web.Application):
             yield server, session
     finally:
         await server.close()
-
-
-async def until(condition, seconds: float = 5) -> None:
-    async with asyncio.timeout(seconds):
-        while not condition():
-            await asyncio.sleep(0.01)
 
 
 def replay(version: str) -> web.Application:
@@ -493,18 +488,20 @@ async def test_the_end_to_end_double_sends_frames_like_its_recording(
 ):
     app = board_mock.create_app(generation)
     double = app[board_mock.BOARD]
-    async with serve(app) as (server, session):
-        async with session.ws_connect(server.make_url("/api/events")) as socket:
-            await until(lambda: double.sockets)
-            for frame in states(version):
-                # What the scenario sets; the double adds the rest of its state.
-                changes = {
-                    key: frame["data"][key]
-                    for key in ("running", "status", "event", "throws")
-                }
-                await session.post(server.make_url("/control/state"), json=changes)
-                sent = await socket.receive_json(timeout=5)
-                assert shape(sent) == shape(frame), frame
+    async with (
+        serve(app) as (server, session),
+        session.ws_connect(server.make_url("/api/events")) as socket,
+    ):
+        await until(lambda: double.sockets)
+        for frame in states(version):
+            # What the scenario sets; the double adds the rest of its state.
+            changes = {
+                key: frame["data"][key]
+                for key in ("running", "status", "event", "throws")
+            }
+            await session.post(server.make_url("/control/state"), json=changes)
+            sent = await socket.receive_json(timeout=5)
+            assert shape(sent) == shape(frame), frame
 
 
 async def test_the_end_to_end_double_says_the_words_of_the_scenario_as_2_1_does():
@@ -521,19 +518,21 @@ async def test_the_end_to_end_double_says_the_words_of_the_scenario_as_2_1_does(
             "coords": {"x": 0.0123, "y": 0.5981},
         }
     ]
-    async with serve(app) as (server, session):
-        async with session.ws_connect(server.make_url("/api/events")) as socket:
-            await until(lambda: double.sockets)
-            await session.post(
-                server.make_url("/control/state"),
-                json={
-                    "running": True,
-                    "status": "Takeout in progress",
-                    "event": "Takeout started",
-                    "throws": darts,
-                },
-            )
-            sent = await socket.receive_json(timeout=5)
+    async with (
+        serve(app) as (server, session),
+        session.ws_connect(server.make_url("/api/events")) as socket,
+    ):
+        await until(lambda: double.sockets)
+        await session.post(
+            server.make_url("/control/state"),
+            json={
+                "running": True,
+                "status": "Takeout in progress",
+                "event": "Takeout started",
+                "throws": darts,
+            },
+        )
+        sent = await socket.receive_json(timeout=5)
     data = sent["data"]
     assert (data["status"], data["event"]) == ("takeoutInProgress", "takeoutStarted")
     # As a real board sends a dart.
@@ -643,7 +642,7 @@ async def test_a_capture_of_the_end_to_end_double_matches_its_recording(
     ]
     assert json.loads((folder / capture_board.CAPTURE).read_text()) == {
         "board_manager": version,
-        "captured": date.today().isoformat(),
+        "captured": datetime.now().astimezone().date().isoformat(),
         "source": "scripts/capture_board.py",
         "absent": summary(version)["absent"],
     }

@@ -360,7 +360,7 @@ async def test_a_resting_seat_gives_its_name_up(hass, aioclient_mock):
 async def test_the_bots_seat_gives_its_name_up(hass, aioclient_mock):
     """The bot plays under no name; its seat keeps the name of whoever sat
     there before."""
-    entry, coordinator = await against_the_bot(hass, aioclient_mock)
+    _entry, coordinator = await against_the_bot(hass, aioclient_mock)
     practice = coordinator.games.practice
     await name_seat(hass, 2, "Sam")
     await name_seat(hass, 1, "SAM")

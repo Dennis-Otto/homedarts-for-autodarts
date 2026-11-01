@@ -147,7 +147,7 @@ ISSUES = (
     "unsupported_response",
 )
 # Jitter only spreads reconnects; it needs no cryptographic randomness.
-_RANDOM = random.Random()  # noqa: S311
+_RANDOM = random.Random()
 
 
 def _lifecycle(state: dict[str, Any]) -> tuple[object, str]:
@@ -1071,16 +1071,15 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
     def _poll_failed(self, error: AutodartsApiError) -> dict[str, Any]:
         """Keep the last values through a short hiccup; then the board is offline."""
         self._offline(_error_name(error))
-        if isinstance(error, AutodartsLocalAuthError):
-            if not self._access_denied:
-                _LOGGER.warning(
-                    "Board Manager at %s refused access (HTTP 401 or 403); it "
-                    "normally needs no login, so check proxies and firewalls between "
-                    "Home Assistant and the board",
-                    self.client.base_url,
-                )
-                self._access_denied = True
-                self._report_access()
+        if isinstance(error, AutodartsLocalAuthError) and not self._access_denied:
+            _LOGGER.warning(
+                "Board Manager at %s refused access (HTTP 401 or 403); it "
+                "normally needs no login, so check proxies and firewalls between "
+                "Home Assistant and the board",
+                self.client.base_url,
+            )
+            self._access_denied = True
+            self._report_access()
         if self.stream_connected and self.data:
             # Realtime events still arrive, so a missed poll is no outage.
             _LOGGER.debug("Board Manager missed a poll; realtime events continue")

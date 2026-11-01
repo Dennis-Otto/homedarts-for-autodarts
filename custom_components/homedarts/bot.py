@@ -401,7 +401,7 @@ class Bot:
 
     def __init__(self, rng: random.Random | None = None) -> None:
         # Darts need no cryptographic randomness.
-        self.rng = rng or random.Random()  # noqa: S311
+        self.rng = rng or random.Random()
 
     def throw(
         self, bed: str, level: int, cricket: bool = False

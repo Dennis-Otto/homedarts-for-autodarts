@@ -27,6 +27,7 @@ from .local_helpers import (
     record,
     setup_local,
     state,
+    until,
 )
 from .test_play_comfort import act, kinds, receive, start, throws
 from .test_practice_setup import select_game, set_number
@@ -254,8 +255,7 @@ async def test_the_bot_stops_before_the_unload_waits_for_a_read(
 
     async def slow_board(*_args):
         reading.set()
-        while not coordinator._shutting_down:
-            await asyncio.sleep(0)
+        await until(lambda: coordinator._shutting_down)
         for _ in range(100):
             await asyncio.sleep(0)
         # The bot's delay passes while the unload still waits for this read.

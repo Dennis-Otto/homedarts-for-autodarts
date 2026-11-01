@@ -271,7 +271,7 @@ def test_a_button_says_what_home_assistant_and_hacs_say(language):
         assert f"**{button}**" in text, button
 
 
-@pytest.mark.parametrize("page", ("README", "getting-started", "installation"))
+@pytest.mark.parametrize("page", ["README", "getting-started", "installation"])
 def test_the_german_pages_name_the_button_of_hacs_as_it_is(page):
     # German has no list of buttons here, but HACS is in English for everyone.
     text = read(f"{page}.de")
@@ -344,7 +344,7 @@ def test_the_start_page_quotes_sentences_that_assist_understands(language):
 
 
 @pytest.mark.parametrize("language", LANGUAGES)
-@pytest.mark.parametrize("page", ("getting-started", "faq"))
+@pytest.mark.parametrize("page", ["getting-started", "faq"])
 def test_a_page_with_all_of_the_english_page_keeps_up_with_it(language, page):
     # Both have every step and every question of the English page, so a change there
     # that adds a section or a link shows here until the translation follows.

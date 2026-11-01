@@ -247,7 +247,7 @@ def test_a_file_moved_away_from_the_tests_runs_them(tmp_path):
         "status": "renamed",
     }
     # The second page of the API: every page counts.
-    run, _, _ = decide(tmp_path, changed("README.md") + [[moved]])
+    run, _, _ = decide(tmp_path, [*changed("README.md"), [moved]])
 
     assert run == "true"
 

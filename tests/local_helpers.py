@@ -3,9 +3,10 @@ recordings in tests/fixtures/board_manager, the helpers that set a board up in
 Home Assistant, and those the tests of the practice games and of the blueprints
 share."""
 
+import asyncio
 import itertools
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -419,3 +420,11 @@ def fire(hass, event_type: str, **attributes) -> None:
         ),
         {"event_type": event_type, **attributes},
     )
+
+
+async def until(condition: Callable[[], object], seconds: float = 5) -> None:
+    """Wait for something that the code under test does and has no event for, which
+    it should not get only for a test."""
+    async with asyncio.timeout(seconds):
+        while not condition():  # noqa: ASYNC110
+            await asyncio.sleep(0)

@@ -31,6 +31,7 @@ from .local_helpers import (
     mock_board,
     setup_local,
     state,
+    until,
 )
 
 # The login that entries of the cloud link held, before version 2.2.
@@ -57,7 +58,7 @@ async def test_board_switched_off_at_setup_recovers(hass, aioclient_mock):
 
 
 @pytest.mark.parametrize(
-    "old,expected",
+    ("old", "expected"),
     [
         ({"host": "192.0.2.10", "port": 3180}, local_entry_data()),
         (
@@ -241,9 +242,7 @@ async def test_setting_switched_during_a_poll_shows_without_waiting(
             blocking=True,
         )
     )
-    async with asyncio.timeout(5):
-        while not any(call[0] == "PATCH" for call in aioclient_mock.mock_calls):
-            await asyncio.sleep(0)
+    await until(lambda: any(call[0] == "PATCH" for call in aioclient_mock.mock_calls))
     # The old answer arrives after the board has taken the new setting.
     answered.set()
     await poll
@@ -398,9 +397,14 @@ async def test_reconnect_back_off_doubles_to_a_minute_and_starts_over(
         assert await hass.config_entries.async_unload(entry.entry_id)
     bases = [1, 2, 4, 8, 16, 32, 60, 60, 60, 1, 2]
     assert len(waits) == len(bases)
-    assert all(0.8 * base <= delay <= base for delay, base in zip(waits, bases))
+    assert all(
+        0.8 * base <= delay <= base for delay, base in zip(waits, bases, strict=True)
+    )
     # The jitter spreads the waits instead of repeating exact values.
-    assert len({round(delay / base, 6) for delay, base in zip(waits, bases)}) > 1
+    assert (
+        len({round(delay / base, 6) for delay, base in zip(waits, bases, strict=True)})
+        > 1
+    )
 
 
 async def test_starting_twice_keeps_one_event_stream_and_one_day_timer(

@@ -33,7 +33,7 @@ async def test_read_real_response_shapes_and_discard_secrets(client, aioclient_m
 
 
 @pytest.mark.parametrize(
-    "command,method,path",
+    ("command", "method", "path"),
     [
         ("start", "PUT", "/api/start"),
         ("stop", "PUT", "/api/stop"),
@@ -75,9 +75,11 @@ async def test_rejected_command_not_retried(client, aioclient_mock, status):
 
 
 async def test_timeout_does_not_duplicate_command(client):
-    with patch.object(client._session, "request", side_effect=TimeoutError) as request:
-        with pytest.raises(AutodartsConnectionError):
-            await client.command("start")
+    with (
+        patch.object(client._session, "request", side_effect=TimeoutError) as request,
+        pytest.raises(AutodartsConnectionError),
+    ):
+        await client.command("start")
     assert request.call_count == 1
 
 
@@ -91,9 +93,9 @@ async def test_setting_changes_only_patch_requested_fields(client, aioclient_moc
         {"motion": {"standby_minutes": 30}},
     ]
     calls = len(aioclient_mock.mock_calls)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported board setting"):
         await client.set_config_switch("api_key", True)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported standby duration"):
         await client.set_standby_minutes(0)
     assert len(aioclient_mock.mock_calls) == calls
 

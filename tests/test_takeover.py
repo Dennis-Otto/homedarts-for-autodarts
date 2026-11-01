@@ -474,9 +474,9 @@ async def test_the_old_cards_leave_the_dashboard_resources(hass, hass_storage):
     old_board(hass, hass_storage)
     await take_over(hass)
     resources = hass.data[LOVELACE_DATA].resources
-    assert [item["url"] for item in resources.async_items()][
-        0
-    ] == "/local/other-card.js"
+    assert (
+        next(item["url"] for item in resources.async_items()) == "/local/other-card.js"
+    )
     assert not any("/autodarts/" in item["url"] for item in resources.async_items())
 
 

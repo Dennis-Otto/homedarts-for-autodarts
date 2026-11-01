@@ -30,6 +30,7 @@ from .local_helpers import (
     setup_v2,
     state,
     switch,
+    until,
 )
 
 STUCK = board(status="Takeout in progress", event="Takeout started")
@@ -389,8 +390,7 @@ async def test_a_reset_that_ends_after_unloading_waits_for_nothing(
     with patch.object(coordinator.client, "command", slow_reset):
         freezer.tick(timedelta(seconds=11))
         async_fire_time_changed(hass)
-        while not simulated.commands:
-            await asyncio.sleep(0)
+        await until(lambda: simulated.commands)
         assert await hass.config_entries.async_unload(entry.entry_id)
         release.set()
         await hass.async_block_till_done()

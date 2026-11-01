@@ -56,6 +56,13 @@ def stored(hass_storage, entry, name: str) -> dict:
     return hass_storage[f"homedarts.{entry.entry_id}.{name}"]["data"]
 
 
+async def exported(hass, result) -> str:
+    """The text of a file that the export wrote, without its byte order mark."""
+    return await hass.async_add_executor_job(
+        Path(result["path"]).read_text, "utf-8-sig"
+    )
+
+
 async def press(hass, key: str) -> None:
     await hass.services.async_call(
         "button", "press", {"entity_id": entity_id(hass, "button", key)}, blocking=True
@@ -427,7 +434,7 @@ async def test_export_everything_as_json(hass, played):
     assert result["url"] is None
     assert result["download"] == f"/api/homedarts/export/{path.name}"
     assert result["rows"] == {"sessions": 1, "matches": 1, "profiles": 2}
-    content = json.loads(path.read_text(encoding="utf-8"))
+    content = json.loads(await hass.async_add_executor_job(path.read_text, "utf-8"))
     assert content["exported"].startswith("2026-09-27T11:")
     session = content["sessions"][0]
     assert (session["darts"], session["average"]) == (3, 140.0)
@@ -448,16 +455,14 @@ async def test_export_tables_as_csv(hass, played):
     result = await export(hass, what="sessions")
     path = Path(result["path"])
     assert path.suffix == ".csv"
-    raw = path.read_bytes()
+    raw = await hass.async_add_executor_job(path.read_bytes)
     # The byte order mark lets spreadsheet programs detect UTF-8.
     assert raw.startswith(b"\xef\xbb\xbf")
     rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
     assert rows[0]["darts"] == "3" and rows[0]["average"] == "140.0"
 
     result = await export(hass, what="profiles", format="csv")
-    rows = list(
-        csv.DictReader(io.StringIO(Path(result["path"]).read_text("utf-8-sig")))
-    )
+    rows = list(csv.DictReader(io.StringIO(await exported(hass, result))))
     # A name that looks like a formula stays text in a spreadsheet.
     assert sorted(row["name"] for row in rows) == ["'=Alex", "Sam"]
     assert "fewest_darts_101" in rows[0]
@@ -497,9 +502,9 @@ async def test_an_empty_export_still_has_its_columns(hass, aioclient_mock, tmp_p
     with patch.object(hass, "http", None):
         result = await export(hass, what="profiles")
     assert result["url"] is None
-    assert Path(result["path"]).read_text("utf-8-sig") == "name\n"
+    assert await exported(hass, result) == "name\n"
     result = await export(hass, what="matches")
-    header = Path(result["path"]).read_text("utf-8-sig").splitlines()
+    header = (await exported(hass, result)).splitlines()
     # Columns are only ever added after the others, for tables that read them.
     assert header[0].split(",") == [
         "started",
@@ -555,16 +560,16 @@ async def test_a_party_of_eight_reaches_the_calendar_and_the_export(
     )
     assert event["description"].splitlines()[-1] == "Ben: 1"
     result = await export(hass, what="matches")
-    (row,) = csv.DictReader(io.StringIO(Path(result["path"]).read_text("utf-8-sig")))
+    (row,) = csv.DictReader(io.StringIO(await exported(hass, result)))
     assert [row[f"player_{number}_name"] for number in range(1, 9)] == names
     assert (row["player_8_points"], row["winner_name"]) == ("1", "Alex")
     result = await export(hass, what="matches", format="json")
-    (match,) = json.loads(Path(result["path"]).read_text("utf-8"))["matches"]
+    (match,) = json.loads(await exported(hass, result))["matches"]
     assert [player["name"] for player in match["players"]] == names
 
 
 @pytest.mark.parametrize(
-    "folder,shown",
+    ("folder", "shown"),
     [
         ("../outside", "../outside"),
         (".storage", ".storage"),
@@ -729,7 +734,7 @@ async def test_administrators_download_the_exports_of_this_run(
     user = await hass_client(access_token=hass_read_only_access_token)
     assert (await user.get(result["download"])).status == 401
     assert (await client.get("/api/homedarts/export/other.csv")).status == 404
-    Path(result["path"]).unlink()
+    await hass.async_add_executor_job(Path(result["path"]).unlink)
     assert (await client.get(result["download"])).status == 404
     # Only the latest exports stay available for download.
     with patch("custom_components.homedarts.export.KEPT_DOWNLOADS", 1):

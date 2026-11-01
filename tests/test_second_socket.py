@@ -219,10 +219,12 @@ async def test_a_board_that_refuses_both_sockets_says_so(hass):
     client.interface_2_1 = True
     session = async_get_clientsession(hass)
     connect = AsyncMock(side_effect=[refused(403), refused(403)])
-    with patch.object(session, "ws_connect", new=connect):
-        with pytest.raises(AutodartsLocalAuthError):
-            async for _ in REAL_EVENTS(client):
-                pass  # pragma: no cover
+    with (
+        patch.object(session, "ws_connect", new=connect),
+        pytest.raises(AutodartsLocalAuthError),
+    ):
+        async for _ in REAL_EVENTS(client):
+            pass  # pragma: no cover
     assert asked_for(connect) == [BASE + SYSTEM_EVENTS, BASE + EVENTS]
     assert client.socket_path is None
 
@@ -232,10 +234,12 @@ async def test_a_socket_that_breaks_on_the_way_is_no_missing_socket(hass):
     client.interface_2_1 = True
     session = async_get_clientsession(hass)
     connect = AsyncMock(side_effect=aiohttp.ClientConnectionError)
-    with patch.object(session, "ws_connect", new=connect):
-        with pytest.raises(AutodartsConnectionError):
-            async for _ in REAL_EVENTS(client):
-                pass  # pragma: no cover
+    with (
+        patch.object(session, "ws_connect", new=connect),
+        pytest.raises(AutodartsConnectionError),
+    ):
+        async for _ in REAL_EVENTS(client):
+            pass  # pragma: no cover
     # The board is away: it says nothing about its first socket, nothing to try.
     assert asked_for(connect) == [BASE + SYSTEM_EVENTS]
 

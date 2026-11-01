@@ -122,7 +122,7 @@ async def test_announced_address_property_is_preferred(hass, aioclient_mock):
 
 
 @pytest.mark.parametrize(
-    "addresses,advertised",
+    ("addresses", "advertised"),
     [
         # Any device can put any address into its announcement.
         (["2001:db8::5", "192.0.2.10"], "198.51.100.66"),
@@ -164,7 +164,7 @@ async def test_announcement_without_usable_address_is_ignored(hass, aioclient_mo
 
 
 @pytest.mark.parametrize(
-    "properties,port,expected",
+    ("properties", "port", "expected"),
     [
         ({"insecurePort": "3181"}, 443, 3181),
         ({"insecurePort": "none"}, 3182, 3182),
@@ -455,7 +455,7 @@ async def test_search_keeps_the_found_address_when_the_board_does_not_answer(
 
 
 @pytest.mark.parametrize(
-    "title,expected",
+    ("title", "expected"),
     [
         ("Autodarts (192.0.2.10)", "Autodarts (192.0.2.20)"),
         ("Autodarts (Living room)", "Autodarts (Living room)"),

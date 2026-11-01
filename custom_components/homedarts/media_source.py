@@ -71,30 +71,93 @@ PHOTO_NAME = re.compile(
 )
 MONTH = re.compile(r"^\d{4}-\d{2}$")
 MONTHS = {
-    "en": (
-        "January February March April May June July August September October"
-        " November December"
-    ).split(),
-    "de": (
-        "Januar Februar März April Mai Juni Juli August September Oktober"
-        " November Dezember"
-    ).split(),
-    "es": (
-        "Enero Febrero Marzo Abril Mayo Junio Julio Agosto Septiembre Octubre"
-        " Noviembre Diciembre"
-    ).split(),
-    "fr": (
-        "Janvier Février Mars Avril Mai Juin Juillet Août Septembre Octobre"
-        " Novembre Décembre"
-    ).split(),
-    "nl": (
-        "Januari Februari Maart April Mei Juni Juli Augustus September Oktober"
-        " November December"
-    ).split(),
+    "en": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ],
+    "de": [
+        "Januar",
+        "Februar",
+        "März",
+        "April",
+        "Mai",
+        "Juni",
+        "Juli",
+        "August",
+        "September",
+        "Oktober",
+        "November",
+        "Dezember",
+    ],
+    "es": [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+    ],
+    "fr": [
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre",
+    ],
+    "nl": [
+        "Januari",
+        "Februari",
+        "Maart",
+        "April",
+        "Mei",
+        "Juni",
+        "Juli",
+        "Augustus",
+        "September",
+        "Oktober",
+        "November",
+        "December",
+    ],
 }
 # "September 2026", in Spanish "Septiembre de 2026".
 MONTH_TITLES = {"es": "{month} de {year}"}
-SHORT_MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+SHORT_MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
 # Day and month as the language writes them: 26.09., 26/09 or 26-09.
 SHORT_DATES = {
     "de": "{day:02d}.{month:02d}.",
@@ -176,7 +239,7 @@ def highlight(path: Path) -> Highlight | None:
         return None
     match = PHOTO_NAME.match(path.stem)
     if match:
-        clock = (match["time"] or "00-00-00").split("-") + ["00"]
+        clock = [*(match["time"] or "00-00-00").split("-"), "00"]
         try:
             taken = datetime.fromisoformat(
                 f"{match['day']}T{clock[0]}:{clock[1]}:{clock[2]}"

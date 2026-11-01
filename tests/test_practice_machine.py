@@ -315,7 +315,7 @@ class PracticeMachine(RuleBasedStateMachine):
                     snapshot["player"], score["player"]
                 )
                 limited = bool(game.legs and game.legs[0].get("rounds"))
-                assert (score["remaining"] == 0) == (won and not limited or checkout)
+                assert (score["remaining"] == 0) == ((won and not limited) or checkout)
             elif snapshot["game"] in CRICKET_GAMES:
                 assert len(score["marks"]) == len(snapshot["numbers"])
                 assert all(0 <= mark <= 3 for mark in score["marks"])
@@ -604,7 +604,9 @@ class VisitMachine(RuleBasedStateMachine):
         for index, (kind, place) in enumerate(self.manual.sources):
             if kind == "board" and place in self.manual.fixes:
                 position = self.manual.fixes[place].position
-                expected = None if position is None else dict(zip("xy", position))
+                expected = (
+                    None if position is None else dict(zip("xy", position, strict=True))
+                )
                 assert throws[index].get("coords") == expected
 
     @invariant()

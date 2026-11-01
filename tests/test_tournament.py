@@ -2,7 +2,7 @@
 
 import json
 from datetime import UTC, datetime, timedelta
-from itertools import combinations
+from itertools import combinations, pairwise
 from unittest.mock import patch
 
 import pytest
@@ -139,7 +139,7 @@ def test_a_round_robin_plays_every_pair_once_in_rounds(count):
 
 def test_a_round_robin_avoids_back_to_back_matches_where_it_can():
     matches = round_robin(5)
-    for before, after in zip(matches, matches[1:], strict=False):
+    for before, after in pairwise(matches):
         if before.round != after.round:
             assert not set(before.players) & set(after.players)
     # Three players cannot avoid them: every match shares a player with the next.
@@ -518,7 +518,7 @@ def test_starting_takes_the_setup_and_the_practice_rules():
     ("players", "key", "placeholders"),
     [
         (["Alex", "Sam"], "tournament_players", {"count": "2", "min": "3", "max": "8"}),
-        (NAMES + ["Zoe"], "tournament_players", {"count": "9", "min": "3", "max": "8"}),
+        ([*NAMES, "Zoe"], "tournament_players", {"count": "9", "min": "3", "max": "8"}),
         (["Alex", "Sam", " alex "], "duplicate_player", {"name": "alex"}),
     ],
 )

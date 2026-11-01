@@ -108,10 +108,16 @@ async def test_socket_skips_binary_frames_and_reports_errors(hass):
         ]
     )
     frames = []
-    with patch.object(session, "ws_connect", new=AsyncMock(return_value=socket)):
-        with pytest.raises(AutodartsConnectionError, match="event connection failed"):
-            async for frame in REAL_EVENTS(client):
-                frames.append(frame)
+
+    async def read_frames() -> None:
+        async for frame in REAL_EVENTS(client):
+            frames.append(frame)
+
+    with (
+        patch.object(session, "ws_connect", new=AsyncMock(return_value=socket)),
+        pytest.raises(AutodartsConnectionError, match="event connection failed"),
+    ):
+        await read_frames()
     assert frames == [("connected", {}), ("state", STATE)]
     assert client.ignored_frames == 1
     assert socket.closed
@@ -143,18 +149,22 @@ async def test_socket_refused_by_the_board_is_an_access_error(hass, status):
     session = async_get_clientsession(hass)
     client = AutodartsLocalClient("192.0.2.10", 3180, session)
     refused = aiohttp.WSServerHandshakeError(Mock(), (), status=status)
-    with patch.object(session, "ws_connect", side_effect=refused):
-        with pytest.raises(AutodartsLocalAuthError, match=f"HTTP {status}"):
-            await anext(REAL_EVENTS(client))
+    with (
+        patch.object(session, "ws_connect", side_effect=refused),
+        pytest.raises(AutodartsLocalAuthError, match=f"HTTP {status}"),
+    ):
+        await anext(REAL_EVENTS(client))
 
 
 async def test_socket_handshake_rejected_otherwise_is_a_connection_error(hass):
     session = async_get_clientsession(hass)
     client = AutodartsLocalClient("192.0.2.10", 3180, session)
     refused = aiohttp.WSServerHandshakeError(Mock(), (), status=400)
-    with patch.object(session, "ws_connect", side_effect=refused):
-        with pytest.raises(AutodartsConnectionError, match="refused"):
-            await anext(REAL_EVENTS(client))
+    with (
+        patch.object(session, "ws_connect", side_effect=refused),
+        pytest.raises(AutodartsConnectionError, match="refused"),
+    ):
+        await anext(REAL_EVENTS(client))
 
 
 async def test_socket_after_home_assistant_closed_its_session_is_a_lost_connection():
@@ -232,9 +242,11 @@ async def test_a_camera_message_updates_only_whether_the_cameras_run(
 async def test_socket_handshake_failure_is_recoverable(hass):
     session = async_get_clientsession(hass)
     client = AutodartsLocalClient("192.0.2.10", 3180, session)
-    with patch.object(session, "ws_connect", side_effect=aiohttp.ClientConnectionError):
-        with pytest.raises(AutodartsConnectionError):
-            await anext(REAL_EVENTS(client))
+    with (
+        patch.object(session, "ws_connect", side_effect=aiohttp.ClientConnectionError),
+        pytest.raises(AutodartsConnectionError),
+    ):
+        await anext(REAL_EVENTS(client))
 
 
 def entity_events(hass, event_id: str, sensor_id: str) -> list[tuple[dict, str]]:

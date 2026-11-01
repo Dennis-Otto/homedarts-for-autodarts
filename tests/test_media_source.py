@@ -1,7 +1,12 @@
 """The highlight gallery of the media browser: photos by month, safe by design."""
 
+# The name of a photo holds the wall clock of the house without a zone, so a Highlight
+# is naive by design, and these tests compare with what it parsed.
+# ruff: noqa: DTZ001
+
 import io
 import os
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -51,10 +56,9 @@ def gallery(hass, tmp_path) -> Path:
     os.utime(other, (written.timestamp(), written.timestamp()))
     (tmp_path / "secret.jpg").write_bytes(b"secret")
     # A link that leads nowhere is no photo either.
-    try:
+    # Creating links needs rights Windows does not always grant.
+    with suppress(OSError):
         (folder / "broken.jpg").symlink_to(tmp_path / "gone.jpg")
-    except OSError:
-        pass  # Creating links needs rights Windows does not always grant.
     return folder
 
 
