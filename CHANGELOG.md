@@ -4,6 +4,28 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.1...v2.2.0) (2026-11-01)
+
+
+### Features
+
+* a rating per player and fair start scores from it ([#554](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/554)) ([aa0f1c4](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/aa0f1c41e6d166128e258c44d68f31bb65865d6c))
+* read Hand detected from the second socket of Board Manager 2.1 ([#542](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/542)) ([e274a73](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/e274a7329223c6fe32891fdb754102c2a0900294))
+* training plans that run several training games in a row, with a plan of the day ([#558](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/558)) ([04e189e](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/04e189ef22d02ebd1772e4ed5d23d998af5668ba))
+
+
+### Bug fixes
+
+* finish what Board Manager 2.1 left over ([#538](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/538)) ([65d30df](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/65d30df57083f3ade428be878d5a71616b013ee0))
+* keep a calendar event across the end of daylight saving time ([#549](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/549)) ([f46859c](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/f46859c0b035539495a070e4027f2d37aab23e3a))
+* notice a board that sees a hand all the time on Board Manager 2.1 ([#550](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/550)) ([64bf8a9](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/64bf8a94bada6179bcb9563aabfea80d9202b93f))
+* show the walk-on music form in the docs and repair two icons that never showed ([#544](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/544)) ([18bddff](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/18bddff812837fc63f59cbe2049a53cc5f928eef))
+
+
+### Performance
+
+* the longest screenshot group takes less time ([#540](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/540)) ([9746d53](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/9746d5371f86d6e4fe75f741f0e9074fb4be57f7))
+
 ## [2.1.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.1.0...v2.1.1) (2026-11-01)
 
 ### Fixed
