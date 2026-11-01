@@ -56,9 +56,14 @@ INPUTS = (
     "tests/fixtures/board_manager",
 )
 # The files below INPUTS that no render reads, as the paths of both workflows skip
-# them: the browser test, the end-to-end test and their notes.
+# them: what only the release of the integration carries, as Home Assistant reads its
+# texts from the translations and the quality scale from the manifest, the browser
+# test, the end-to-end test and their notes.
 SKIPPED = frozenset(
     {
+        "custom_components/homedarts/LICENSE",
+        "custom_components/homedarts/quality_scale.yaml",
+        "custom_components/homedarts/strings.json",
         "tests/e2e/README.md",
         "tests/e2e/accessibility-baseline.toml",
         "tests/e2e/browser.py",

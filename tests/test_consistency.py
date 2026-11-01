@@ -10,6 +10,7 @@ import re
 import shlex
 import tomllib
 from collections import Counter
+from fnmatch import fnmatchcase
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -603,14 +604,28 @@ def test_the_browser_test_mounts_only_the_repository_and_its_artifacts():
     ]
 
 
-def skipped_by(workflow: str) -> set[str]:
-    """The files of the end-to-end tests whose change alone does not start a workflow
-    of the screenshot tool."""
+def render_paths(workflow: str) -> list[str]:
+    """The paths of a workflow of the screenshot tool, in their order."""
     path = ROOT / ".github" / "workflows" / workflow
     # PyYAML reads the key "on" as True.
     trigger = yaml.safe_load(path.read_text(encoding="utf-8"))[True]
     (event,) = [event for event in ("push", "pull_request") if event in trigger]
-    return {path[1:] for path in trigger[event]["paths"] if path.startswith("!")}
+    return trigger[event]["paths"]
+
+
+def skipped_by(workflow: str) -> set[str]:
+    """The files whose change alone does not start a workflow of the screenshot tool."""
+    return {path[1:] for path in render_paths(workflow) if path.startswith("!")}
+
+
+def starts_a_render(workflow: str, path: str) -> bool:
+    """Whether a change of a file alone starts a workflow of the screenshot tool. As
+    on GitHub, the last of its paths that matches the file decides."""
+    started = False
+    for pattern in render_paths(workflow):
+        if fnmatchcase(path, pattern.removeprefix("!")):
+            started = not pattern.startswith("!")
+    return started
 
 
 def imports(script: Path) -> set[str]:
@@ -650,12 +665,9 @@ def test_the_pictures_are_taken_again_when_the_recorded_board_changes(workflow):
     # the pictures show what it answers, such as the board PC of the status card.
     recordings = "tests/fixtures/board_manager"
     assert recordings in mounted()
-    path = ROOT / ".github" / "workflows" / workflow
-    trigger = yaml.safe_load(path.read_text(encoding="utf-8"))[True]
-    (event,) = [event for event in ("push", "pull_request") if event in trigger]
-    assert f"{recordings}/**" in trigger[event]["paths"]
+    assert f"{recordings}/**" in render_paths(workflow)
     # Its README alone changes no picture.
-    assert f"!{recordings}/README.md" in trigger[event]["paths"]
+    assert f"!{recordings}/README.md" in render_paths(workflow)
 
 
 # The key of the rendered images (tests/e2e/render_key.py): a job of the visual check
@@ -685,20 +697,94 @@ def test_the_key_of_the_images_knows_every_file_that_the_demo_mounts():
         assert in_the_key(path), f"render_key.py must know {path}, which the demo reads"
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
-def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow):
+# The version that a release writes into the manifest is in the key, because the
+# demo shows its major version, and the screenshot bot renders it after the release.
+# The visual check leaves the manifest out: release-please writes it in its pull
+# request, which comes anew after every merge to main, and each of those would render
+# all the images, under a key that nothing else has, to report no difference.
+RELEASE_ONLY = "custom_components/homedarts/manifest.json"
+
+
+@pytest.mark.parametrize(
+    ("workflow", "apart"),
+    [("screenshots.yml", set()), ("visual.yml", {RELEASE_ONLY})],
+)
+def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow, apart):
     # A file whose change alone starts no render changes no image either.
-    assert skipped_by(workflow) == render_key.SKIPPED
+    assert skipped_by(workflow) == render_key.SKIPPED | apart
+
+
+# Asks Git for the files of the key, and mutmut's copy has no Git.
+@pytest.mark.mutation_unsafe
+@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+def test_every_file_of_the_key_starts_a_render(workflow):
+    # A file of the key that started no render would change the images unnoticed,
+    # until the next run renders them for another reason or the weekly run comes.
+    files = {path for path, _, _ in render_key.files()}
+    apart = {RELEASE_ONLY} if workflow == "visual.yml" else set()
+    silent = {path for path in files - apart if not starts_a_render(workflow, path)}
+    assert not silent, f"{workflow} must start for these files of the key"
+
+
+@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "blueprints/automation/homedarts/new.yaml",
+        "custom_components/homedarts/new.py",
+        "custom_components/homedarts/blueprints/new.yaml",
+        "custom_components/homedarts/translations/de.json",
+        "custom_components/homedarts/frontend/homedarts-card.js",
+    ],
+)
+def test_the_integration_and_the_blueprints_start_a_render(workflow, path):
+    # What the cards display comes from the Python of the integration as well, and the
+    # images of the blueprints from the folder that the demo mounts.
+    assert starts_a_render(workflow, path)
+
+
+@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("path", sorted(render_key.SKIPPED))
+def test_what_no_render_reads_starts_no_render(workflow, path):
+    assert not starts_a_render(workflow, path)
+
+
+# Reads the code as text, which holds every mutant in mutmut's copy.
+@pytest.mark.mutation_unsafe
+@pytest.mark.parametrize("name", ["LICENSE", "quality_scale.yaml", "strings.json"])
+def test_what_only_the_release_carries_is_outside_the_key(name):
+    # Home Assistant reads its texts from translations/ and the quality scale from
+    # the manifest, and no module of the integration opens these files: the comment
+    # of a module may name them.
+    assert f"custom_components/homedarts/{name}" in render_key.SKIPPED
+    assert (INTEGRATION / name).is_file()
+    for source in INTEGRATION.glob("*.py"):
+        for line in source.read_text(encoding="utf-8").splitlines():
+            assert name not in line.partition("#")[0], f"{source.name} reads {name}"
+
+
+def test_a_release_starts_the_screenshot_bot_and_not_the_visual_check():
+    # A new major version changes an image, which reaches docs/images by the bot.
+    config = json.loads(
+        (ROOT / "release-please-config.json").read_text(encoding="utf-8")
+    )
+    written = [file["path"] for file in config["packages"]["."]["extra-files"]]
+    assert written == [RELEASE_ONLY]
+    assert starts_a_render("screenshots.yml", RELEASE_ONLY)
+    for path in [
+        *written,
+        "CHANGELOG.md",
+        "version.txt",
+        ".release-please-manifest.json",
+    ]:
+        assert not starts_a_render("visual.yml", path)
 
 
 @pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
 def test_the_key_of_the_images_knows_every_file_that_starts_a_render(workflow):
-    path = ROOT / ".github" / "workflows" / workflow
-    trigger = yaml.safe_load(path.read_text(encoding="utf-8"))[True]
-    (event,) = [event for event in ("push", "pull_request") if event in trigger]
     started = [
         pattern.removesuffix("/**")
-        for pattern in trigger[event]["paths"]
+        for pattern in render_paths(workflow)
         if not pattern.startswith("!")
     ]
     # The workflow itself renders as the other one does (tests/test_render_key.py),
@@ -708,7 +794,7 @@ def test_the_key_of_the_images_knows_every_file_that_starts_a_render(workflow):
         "tests/demo_timeline.py",
         "scripts/record_demo.py",
     }
-    assert "custom_components/homedarts/frontend" in started
+    assert set(render_key.INPUTS) <= set(started)
     for pattern in started:
         if pattern not in apart:
             assert in_the_key(pattern), f"render_key.py must know {pattern}"
