@@ -47,12 +47,24 @@ it writes anything, wherever they appear, and writes nothing if one is left:
 
 | What | Placeholder |
 | --- | --- |
-| Board ID, `config.auth.board_id` | `board-1` |
-| Board API key, `config.auth.api_key` | `private-board-api-key` |
+| Board ID, `config.auth.board_id` or `boardId` | `board-1` |
+| Board API key, `config.auth.api_key` or `apiKey` | `private-board-api-key` |
 | TLS key and certificate of Board Manager 2, `config.host` | `private-tls-key`, `private-tls-cert` |
 | Name of the board PC, `host.hostname`, and the name it was reached by | `dartboard-pc` |
 | Addresses of the board PC and of the home network: `host.ip` and every private IPv4 address | `198.51.100.7`, an address for documentation |
-| Any other value of a key that ends in `key`, `token`, `secret`, `password` or `cert` | `private-<key>` |
+| Every IPv6 address other than a loopback, multicast or documentation address | `2001:db8::7`, an address for documentation |
+| Serial number of a camera, `serial=` in `config.cam.cams` | `SN0001` |
+| Every UUID | `private-uuid` |
+| Every e-mail address | `player@example.com` |
+| Every MAC address | `00:00:5e:00:53:07`, an address for documentation |
+| Any other value of a key that names a secret, such as one that ends in `key`, `token`, `secret`, `password` or `cert` | `private-<key>` |
+| Any other value of a key that names the ID or the name of a board, an account or a person, such as `accountId`, `userName` or the `name` of `linkServer` | `private-<key>` |
+
+A key counts in every spelling: `boardId`, `board_id` and `BOARD-ID` are one key, also
+for a key that a later Board Manager adds. The `id` of a camera and the `name` of a
+camera model say nothing about a board, and stay. So does `location=` in
+`config.cam.cams`: the USB port is the same on every PC of that model and keeps cameras
+of one model apart.
 
 The unit tests look for these placeholders in the states of the entities and in the
 diagnostics, so a secret of the board can't leak there unnoticed.

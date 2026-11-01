@@ -226,6 +226,21 @@ def test_a_recording_keeps_only_placeholders(version):
 
 
 @pytest.mark.parametrize("version", VERSIONS)
+def test_the_capture_script_writes_a_recording_byte_for_byte_again(version):
+    # A change of the redaction shows here before it changes a recording of a board.
+    _, content = capture_board.files(
+        answers(version), frames(version), [], PLACEHOLDERS["hostname"], None
+    )
+
+    assert set(content) == {
+        path.name for path in (RECORDINGS / version).iterdir() if path.is_file()
+    }
+    for name, text in content.items():
+        if name != capture_board.CAPTURE:
+            assert text == (RECORDINGS / version / name).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("version", VERSIONS)
 async def test_the_integration_reads_every_recording(version):
     recording = answers(version)
     async with serve(replay(version)) as (server, session):
