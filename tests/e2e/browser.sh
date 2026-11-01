@@ -218,10 +218,10 @@ cd "${SCRIPT_DIR}"
 # Both images at once, before the demo starts: Home Assistant's for the demo and its
 # board, and Playwright's, which would otherwise wait for the demo.
 started="${SECONDS}"
-compose_of 1 pull --quiet --policy missing &
+pull_images compose_of 1 pull --quiet --policy missing &
 pulling=$!
 if ! "${DOCKER_BIN}" image inspect "${PLAYWRIGHT_IMAGE}" >/dev/null 2>&1; then
-	in_background "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
+	in_background pull_images "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
 fi
 wait "${pulling}"
 echo "Images ready in $((SECONDS - started)) s"

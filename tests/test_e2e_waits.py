@@ -590,3 +590,77 @@ def test_the_browser_test_waits_for_the_summary_before_it_runs_the_clock_through
         f"shows: {found}; wait for f'{{card}} table.summary' first, as the step "
         "tournament does"
     )
+
+
+class Editing:
+    """A page that notes what is done to it, for the form of a card."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def evaluate(self, function: str) -> None:
+        self.calls.append(function)
+
+    def wait_for_function(self, function: str, timeout: int) -> None:
+        self.calls.append(function)
+
+    def locator(self, selector: str) -> "Editing":
+        self.calls.append(selector)
+        return self
+
+    @property
+    def first(self) -> "Editing":
+        return self
+
+    def wait_for(self, timeout: int) -> None:
+        self.calls.append("drawn")
+
+
+def test_the_form_of_a_card_opens_in_edit_mode_once_the_card_has_its_frame():
+    # ?edit=1 alone goes unnoticed when Home Assistant drops it (#249), and the frame
+    # that edit_card() needs exists only in edit mode.
+    pages = load_pages()
+    page = Editing()
+
+    pages.open_card_form(page, "cards")
+
+    assert page.calls == [
+        f"() => ({pages.find('hui-root')})()[0].lovelace.setEditMode(true)",
+        pages.card_frame("cards"),
+        pages.edit_card("cards"),
+        "hui-form-editor ha-form",
+        "drawn",
+    ]
+
+
+@pytest.mark.parametrize("script", ["browser.py", "screenshots.py"])
+def test_no_tool_enters_edit_mode_by_the_address(script):
+    assert "?edit=1" not in (E2E / script).read_text(encoding="utf-8")
+
+
+@pytest.mark.skipif(NODE is None, reason="the functions of the pages run in Node")
+@pytest.mark.parametrize(
+    ("chain", "framed"),
+    [
+        # A card without edit mode, up to the document, has no frame to wait for.
+        ("{localName: 'c', parentNode: {localName: 'd', parentNode: null}}", False),
+        # A card in a shadow root, whose frame lies past the host of the root.
+        (
+            "{localName: 'c', parentNode: {parentNode: null, host: "
+            "{localName: 'hui-card-edit-mode', path: [0, 1]}}}",
+            True,
+        ),
+    ],
+)
+def test_the_frame_of_a_card_is_found_across_shadow_roots_or_not_at_all(chain, framed):
+    script = f"console.log(({load_pages().card_frame(f'() => [{chain}]')})() !== null)"
+
+    result = subprocess.run(
+        [NODE, "-e", script],
+        capture_output=True,
+        encoding="utf-8",
+        check=True,
+        timeout=30,
+    )
+
+    assert result.stdout.strip() == str(framed).lower()

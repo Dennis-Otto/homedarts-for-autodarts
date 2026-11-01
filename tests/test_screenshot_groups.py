@@ -258,9 +258,14 @@ def test_the_comment_of_the_visual_check_finds_one_report_per_language():
 
 # screenshots.sh --------------------------------------------------------------------
 
-# Notes every call; the screenshot tool fails when a test sets $FAIL.
+# Notes every call; the screenshot tool fails when a test sets $FAIL, and the first
+# call whose words contain $FAIL_ONCE fails.
 DOCKER = """#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$CALLS"
+if [[ -n "${FAIL_ONCE:-}" && "$*" == *"$FAIL_ONCE"* && $(grep -cF -- "$FAIL_ONCE" "$CALLS") == 1 ]]; then
+  echo "unexpected EOF" >&2
+  exit 1
+fi
 if [[ -n "${FAIL:-}" && "$1" == run ]]; then
   exit 1
 fi
@@ -326,6 +331,23 @@ def test_every_group_renders_from_a_fresh_demo_in_turn(tmp_path):
         )
         == 1
     )
+
+
+def test_a_pull_that_the_registry_cuts_off_is_tried_again(tmp_path):
+    # demo.sh pulls nothing itself: inside its "up", the cut would end the job.
+    result, calls = render(
+        tmp_path,
+        LANGUAGES="en",
+        SCREENSHOT_GROUP="1/3",
+        E2E_PULL_PAUSE="0",
+        FAIL_ONCE=" pull --quiet --policy missing",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert sum(" pull --quiet --policy missing" in call for call in calls) == 2
+    assert "failed (attempt 1 of 3); trying again in 0 s" in result.stderr
+    pulled = max(i for i, call in enumerate(calls) if " pull --quiet --policy" in call)
+    assert pulled < next(i for i, call in enumerate(calls) if " up " in call)
 
 
 def test_a_group_that_fails_shows_its_containers_and_removes_its_browser(tmp_path):

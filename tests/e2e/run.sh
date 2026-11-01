@@ -42,29 +42,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# The image of Home Assistant before anything starts, three times at most: a pull
-# that the registry cuts off, such as "unexpected EOF" from ghcr.io, would otherwise
-# fail inside "up", and the scenario only with "service homeassistant is not running".
-PULL_ATTEMPTS=3
-PULL_PAUSE="${E2E_PULL_PAUSE:-10}"
-pull_images() {
-	local attempt
-	for ((attempt = 1; attempt <= PULL_ATTEMPTS; attempt++)); do
-		if "${COMPOSE[@]}" pull --quiet --policy missing; then
-			return 0
-		fi
-		if ((attempt < PULL_ATTEMPTS)); then
-			echo "Pulling the images failed (attempt ${attempt} of ${PULL_ATTEMPTS}); trying again in ${PULL_PAUSE} s" >&2
-			sleep "${PULL_PAUSE}"
-		fi
-	done
-	echo "Pulling the images failed ${PULL_ATTEMPTS} times; the scenario did not start" >&2
-	return 1
-}
-
 cd "${SCRIPT_DIR}"
 "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
-# In the background, so that a signal stops them at once.
-in_background pull_images
+# In the background, so that a signal stops them at once. The image of Home Assistant
+# before anything starts: inside "up", a failed pull would fail the scenario only with
+# "service homeassistant is not running".
+in_background pull_images "${COMPOSE[@]}" pull --quiet --policy missing
 in_background "${COMPOSE[@]}" up --detach --wait --wait-timeout 300
 in_background "${COMPOSE[@]}" exec -T homeassistant python3 /e2e/scenario.py

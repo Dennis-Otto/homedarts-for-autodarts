@@ -49,7 +49,7 @@ jobs:
       # The files of the pull request come from GitHub's API; no step needs sudo or
       # Docker.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -152,13 +152,29 @@ jobs:
       # GitHub's registry (ghcr.io, pkg-containers.githubusercontent.com). Home
       # Assistant itself reaches none (tests/e2e/offline/radio_browser).
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -238,7 +254,7 @@ jobs:
       # files.pythonhosted.org). Home Assistant itself reaches none
       # (tests/e2e/offline/radio_browser).
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -250,6 +266,22 @@ jobs:
             registry.npmjs.org:443
             pypi.org:443
             files.pythonhosted.org:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -297,7 +329,7 @@ jobs:
       E2E_ARTIFACTS: ${{ github.workspace }}/e2e-artifacts
     steps:
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -306,6 +338,22 @@ jobs:
             *.data.mcr.microsoft.com:443
             pypi.org:443
             files.pythonhosted.org:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -344,7 +392,7 @@ jobs:
       # The gate reads the results of the other jobs; it needs no sudo or Docker, and
       # github.com only for the explanations of the PR coach after a failure.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -417,7 +465,7 @@ jobs:
     steps:
       # The hosts of the scenario and the browser test, as in the jobs above.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -429,6 +477,22 @@ jobs:
             registry.npmjs.org:443
             pypi.org:443
             files.pythonhosted.org:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
