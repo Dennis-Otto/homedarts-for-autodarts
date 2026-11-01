@@ -17,7 +17,9 @@ the Board Manager becomes a change of a recording, and both test suites follow i
 
 No dart was thrown on the board of `2.1.0`. The frames of a real board of 2.1.0 with
 real darts and takeouts, from another board, are in
-[`board_manager_2.1.0_frames.jsonl`](../board_manager_2.1.0_frames.jsonl).
+[`board_manager_2.1.0_frames.jsonl`](../board_manager_2.1.0_frames.jsonl), and those of
+the same board with two darts in the surround, a bouncer and a dart placed in the wrong
+bed in [`board_manager_2.1.0_misses.jsonl`](../board_manager_2.1.0_misses.jsonl).
 
 `capture.json` of each folder says where it comes from: `captured` is the day of a
 capture of a real board, or `null` for a recording built from the documented shapes,
