@@ -29,11 +29,22 @@ second, those in which a flag of the motion changed, of which they keep those fl
 `numDarts` and `motionClass`. A frame without motion has `null` for each, and a test sends
 the frames in between itself.
 
-| File | What it holds |
-| --- | --- |
-| [`board_manager_2.1.0_hand.jsonl`](../board_manager_2.1.0_hand.jsonl) | Visits of one dart (S6), two (S5, S10) and three (S18, S5, S12), each with its takeout. A takeout sends `takeoutStarted` after one or two darts as well, 0.1 s after `isHand` rises on the second socket and up to 0.3 s on the first, and `isHand` falls with `takeoutFinished`. The takeouts lasted 1.1 to 2.5 s, one of them shorter than the read of 2 s. The first socket holds two frames that the second does not, `started` and `takeoutStarted`, each followed within 5 ms by a frame in which both agree |
-| [`board_manager_2.1.0_stuck_hand_start.jsonl`](../board_manager_2.1.0_stuck_hand_start.jsonl) | The first seconds of the same board after its light ring was switched on with the detection running: `takeoutStarted` on the empty board |
-| [`board_manager_2.1.0_stuck_hand.jsonl`](../board_manager_2.1.0_stuck_hand.jsonl) | Minutes later: `isHand`, `isTakeoutFull` and `isTakeoutPartial` on in every frame, with a picture that hardly moves, until an auto calibration moves the state to `throw` and leaves the flags. No dart was detected until a stop and a start of the detection, which this recording doesn't hold. That the light changed against the reference image is the best explanation so far, not proven |
+- [`board_manager_2.1.0_hand.jsonl`](../board_manager_2.1.0_hand.jsonl): visits of one dart
+  (S6), two (S5, S10) and three (S18, S5, S12), each with its takeout. A takeout sends
+  `takeoutStarted` after one or two darts as well, 0.1 s after `isHand` rises on the second
+  socket and up to 0.3 s on the first, and `isHand` falls with `takeoutFinished`. The
+  takeouts lasted 1.1 to 2.5 s, one of them shorter than the read of 2 s. The first socket
+  holds two frames that the second does not, `started` and `takeoutStarted`, each followed
+  within 5 ms by a frame in which both agree.
+- [`board_manager_2.1.0_stuck_hand_start.jsonl`](../board_manager_2.1.0_stuck_hand_start.jsonl):
+  the first seconds of the same board after its light ring was switched on with the
+  detection running: `takeoutStarted` on the empty board.
+- [`board_manager_2.1.0_stuck_hand.jsonl`](../board_manager_2.1.0_stuck_hand.jsonl): minutes
+  later, `isHand`, `isTakeoutFull` and `isTakeoutPartial` on in every frame, with a picture
+  that hardly moves, until an auto calibration moves the state to `throw` and leaves the
+  flags. No dart was detected until a stop and a start of the detection, which this
+  recording doesn't hold. That the light changed against the reference image is the best
+  explanation so far, not proven.
 
 `tests/test_stuck_hand.py` plays them, and `tests/test_second_socket.py` takes the flags of a
 hand from them.
