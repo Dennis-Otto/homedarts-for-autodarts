@@ -5,7 +5,7 @@
 # that two runs render the same images, byte for byte.
 #
 # The images come in fixed groups (GROUPS in screenshots.py), and every group starts
-# from a fresh demo. SCREENSHOT_GROUP=2/3 renders the second of three groups alone,
+# from a fresh demo. SCREENSHOT_GROUP=2/4 renders the second of four groups alone,
 # as one job of the visual check and of the screenshot bot does; without it, every
 # group renders in turn. LANGUAGES chooses the languages (en de), and IMAGES the
 # folder below the repository root that the images go to (docs/images).
@@ -21,7 +21,7 @@ PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright/python:v1.64.1-noble@sha256:330d4
 # A Tuesday evening, three days after the highlight photos of the demo.
 export DEMO_TIME="${DEMO_TIME:-2026-09-29T20:30:00+02:00}"
 # How many groups GROUPS in screenshots.py has.
-GROUP_COUNT=3
+GROUP_COUNT=4
 IMAGES="${IMAGES:-docs/images}"
 
 if [[ -n "${SCREENSHOT_GROUP:-}" ]]; then

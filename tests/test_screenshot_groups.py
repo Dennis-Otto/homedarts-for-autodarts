@@ -55,8 +55,29 @@ def assigned(name: str) -> ast.expr:
     raise AssertionError(f"screenshots.py assigns nothing to {name}")
 
 
+def function(name: str) -> ast.FunctionDef:
+    """The function of that name at the level of the module of screenshots.py."""
+    (found,) = [
+        node
+        for node in TOOL.body
+        if isinstance(node, ast.FunctionDef) and node.name == name
+    ]
+    return found
+
+
+def called(node: ast.FunctionDef) -> list[str]:
+    """The names of the functions that a function calls, in the order of its lines."""
+    calls = [
+        call
+        for call in ast.walk(node)
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+    ]
+    return [call.func.id for call in sorted(calls, key=lambda call: call.lineno)]
+
+
 GROUPS = ast.literal_eval(assigned("GROUPS"))
 SECONDS = ast.literal_eval(assigned("SECONDS"))
+STARTUP = ast.literal_eval(assigned("STARTUP"))
 BUDGETS = ast.literal_eval(assigned("BUDGETS"))
 SECTION_BUDGET = ast.literal_eval(assigned("SECTION_BUDGET"))
 SECTIONS = assigned("SECTIONS")
@@ -105,9 +126,6 @@ def test_the_steps_that_depend_on_each_other_share_a_group():
     assert GROUPS[group_of["games"]].index("cards") < GROUPS[group_of["games"]].index(
         "games"
     )
-    # The players card shows the five players of the tournament of "more games".
-    people = GROUPS[group_of["people"]]
-    assert people.index("more games") < people.index("people")
     # The darts of the bot follow the fixed random numbers of the demo: its first
     # match is that of the corrections, as before the groups, and then the formats.
     bot = GROUPS[group_of["corrections"]]
@@ -133,6 +151,53 @@ def test_no_group_takes_much_longer_than_the_shortest():
     assert group_times.slow(totals) == {}, totals
 
 
+def test_the_longest_group_takes_nine_minutes_at_most():
+    # A job of a group starts its demo and then renders its sections. On a runner of
+    # GitHub, the whole job of the longest group stays within nine minutes.
+    longest = max(sum(SECONDS[section] for section in group) for group in GROUPS)
+    assert longest + STARTUP <= 9 * 60
+
+
+def test_the_players_play_their_own_matches():
+    # The players card shows the five players of a tournament. The section plays it
+    # itself, before its first picture, so no other section has to come before it:
+    # "more games", which shows the bracket of that tournament, renders on a runner
+    # of its own.
+    calls = called(function("people"))
+    assert calls.index("players_matches") < calls.index("players_card")
+    assert "play_tournament" in called(function("players_matches"))
+    assert "start_tournament_of_five" in called(function("players_matches"))
+    assert "start_tournament_of_five" in called(
+        function("tournament_bracket_animation")
+    )
+    group_of = {
+        section: number for number, group in enumerate(GROUPS) for section in group
+    }
+    assert group_of["more games"] != group_of["people"]
+
+
+def test_a_match_before_a_picture_waits_for_home_assistant_not_for_a_fixed_time():
+    # Most of the seconds of the big tournaments were fixed waits between the darts
+    # of matches that no image shows.
+    for name in ("quick_visit", "play_tournament"):
+        assert "wait_for_timeout" not in {
+            node.func.attr
+            for node in ast.walk(function(name))
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        }, name
+    assert "quick_visit" in called(function("play_tournament"))
+    assert "checkout_101" not in called(function("play_tournament"))
+
+
+def test_the_weekly_report_waits_seconds_for_its_time_not_the_rest_of_a_minute():
+    # Home Assistant waits for the report time in real seconds from the moment it is
+    # set, so the frozen clock is just before that time by then.
+    report = ast.unparse(function("weekly_report_notification"))
+    assert report.index("seconds=1") < report.index("NEXT_MINUTE")
+    assert report.index("NEXT_MINUTE") < report.index("'weekly_report_time'")
+    assert report.index("'weekly_report_time'") < report.index("move_clock(due)")
+
+
 def test_every_section_may_take_twice_its_seconds_before_the_watchdog_fails_it():
     assert set(BUDGETS) <= set(SECONDS)
     for section, seconds in SECONDS.items():
@@ -142,14 +207,9 @@ def test_every_section_may_take_twice_its_seconds_before_the_watchdog_fails_it()
 def test_the_big_tournaments_stop_at_their_pictures():
     # No image shows a match after the picture; the tests of the tournament formats
     # play 32 players to their champion instead (tests/test_tournament_formats.py).
-    (big,) = [
-        node
-        for node in TOOL.body
-        if isinstance(node, ast.FunctionDef) and node.name == "big_tournament"
-    ]
     played = [
         node
-        for node in ast.walk(big)
+        for node in ast.walk(function("big_tournament"))
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Name)
         and node.func.id == "play_tournament"
@@ -338,7 +398,7 @@ def test_a_pull_that_the_registry_cuts_off_is_tried_again(tmp_path):
     result, calls = render(
         tmp_path,
         LANGUAGES="en",
-        SCREENSHOT_GROUP="1/3",
+        SCREENSHOT_GROUP="1/4",
         E2E_PULL_PAUSE="0",
         FAIL_ONCE=" pull --quiet --policy missing",
     )
@@ -351,7 +411,7 @@ def test_a_pull_that_the_registry_cuts_off_is_tried_again(tmp_path):
 
 
 def test_a_group_that_fails_shows_its_containers_and_removes_its_browser(tmp_path):
-    result, calls = render(tmp_path, LANGUAGES="en", SCREENSHOT_GROUP="1/3", FAIL="1")
+    result, calls = render(tmp_path, LANGUAGES="en", SCREENSHOT_GROUP="1/4", FAIL="1")
 
     assert result.returncode == 1
     (run,) = [call for call in calls if call.startswith("run ")]
@@ -387,10 +447,10 @@ def test_one_group_renders_into_the_folder_it_is_given(tmp_path):
 @pytest.mark.parametrize(
     ("setting", "message"),
     [
-        ({"SCREENSHOT_GROUP": "0/3"}, "choose one of the 3 groups"),
-        ({"SCREENSHOT_GROUP": "4/3"}, "choose one of the 3 groups"),
-        ({"SCREENSHOT_GROUP": "1/2"}, "choose one of the 3 groups"),
-        ({"SCREENSHOT_GROUP": "first"}, "choose one of the 3 groups"),
+        ({"SCREENSHOT_GROUP": "0/4"}, "choose one of the 4 groups"),
+        ({"SCREENSHOT_GROUP": "5/4"}, "choose one of the 4 groups"),
+        ({"SCREENSHOT_GROUP": "1/2"}, "choose one of the 4 groups"),
+        ({"SCREENSHOT_GROUP": "first"}, "choose one of the 4 groups"),
         ({"IMAGES": "/tmp/images"}, "below the repository root"),
         ({"IMAGES": "../images"}, "below the repository root"),
     ],
@@ -458,16 +518,18 @@ def test_collect_puts_the_groups_together_and_compares_them(repository):
     # The same pixels in another file.
     rendered(repository, 2, "same.png", level=9)
     rendered(repository, 3, "new.png")
+    rendered(repository, 4, "last.png")
 
     result = collect(repository)
 
     assert result.returncode == 0, result.stderr
-    assert f"Put together 3 images of {len(GROUPS)} groups in en." in result.stdout
+    assert f"Put together 4 images of {len(GROUPS)} groups in en." in result.stdout
     images = repository / "docs" / "images" / "en"
     assert sorted(path.name for path in images.iterdir()) == [
         "card.png",
         "flow-dark.png",
         "flow-light.png",
+        "last.png",
         "new.png",
         "same.png",
     ]
@@ -476,6 +538,7 @@ def test_collect_puts_the_groups_together_and_compares_them(repository):
     )
     assert {entry["path"]: entry["status"] for entry in report["images"]} == {
         "en/card.png": "changed",
+        "en/last.png": "added",
         "en/new.png": "added",
     }
     # The diagrams and the image with the same pixels.
@@ -485,6 +548,7 @@ def test_collect_puts_the_groups_together_and_compares_them(repository):
     collected = repository / "tests/e2e/artifacts/collected/en"
     assert sorted(path.name for path in collected.iterdir()) == [
         "card.png",
+        "last.png",
         "new.png",
         "same.png",
     ]
@@ -495,6 +559,7 @@ def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
     rendered(repository, 1, "card.png")
     rendered(repository, 2, "same.png", level=1)
     rendered(repository, 3, "new.png")
+    rendered(repository, 4, "last.png")
     picture(repository / "docs/images/en/gone.png")
 
     result = collect(repository)
@@ -515,7 +580,12 @@ def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
 
 def test_collect_restores_the_committed_file_of_an_unchanged_image(repository):
     committed = (repository / "docs/images/en/same.png").read_bytes()
-    for group, name in ((1, "card.png"), (2, "same.png"), (3, "other.png")):
+    for group, name in (
+        (1, "card.png"),
+        (2, "same.png"),
+        (3, "other.png"),
+        (4, "last.png"),
+    ):
         rendered(repository, group, name, level=9)
 
     result = collect(repository, RESTORE="1")
@@ -534,11 +604,12 @@ def test_collect_takes_the_groups_under_the_keys_of_their_artifacts(repository):
     picture(artifacts / f"rendered-en-1-{'ab' * 32}" / "en" / "card.png", (200, 30, 40))
     rendered(repository, 2, "same.png", level=1)
     picture(artifacts / f"rendered-en-3-{'cd' * 32}" / "en" / "new.png")
+    picture(artifacts / f"rendered-en-4-{'ef' * 32}" / "en" / "last.png")
 
     result = collect(repository)
 
     assert result.returncode == 0, result.stderr
-    assert f"Put together 3 images of {len(GROUPS)} groups in en." in result.stdout
+    assert f"Put together 4 images of {len(GROUPS)} groups in en." in result.stdout
     images = repository / "docs" / "images" / "en"
     assert Image.open(images / "card.png").getpixel((0, 0)) == (200, 30, 40)
     assert (images / "new.png").exists()
@@ -547,6 +618,7 @@ def test_collect_takes_the_groups_under_the_keys_of_their_artifacts(repository):
 def test_collect_fails_without_the_images_of_a_group(repository):
     rendered(repository, 1, "card.png")
     rendered(repository, 3, "new.png")
+    rendered(repository, 4, "last.png")
     # A group whose folder came without images counts as missing too.
     (repository / "tests/e2e/artifacts/rendered-en-2/en").mkdir(parents=True)
 
@@ -563,6 +635,7 @@ def test_collect_fails_on_an_image_that_two_groups_rendered(repository):
     rendered(repository, 1, "card.png")
     rendered(repository, 2, "card.png")
     rendered(repository, 3, "new.png")
+    rendered(repository, 4, "last.png")
 
     result = collect(repository)
 
