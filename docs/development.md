@@ -673,8 +673,11 @@ stays in the cache of `systemd-resolved` for up to a minute, and a step that get
 on a host that its job allows ([#488](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/488)).
 So every job, before any step that could need a host, runs *Wait until Harden-Runner lets
 the hosts through*: it asks each host of the job with `curl --head` every 3 seconds, for
-two minutes at most. Its `HOSTS` are the very words of `allowed-endpoints`, so that the two
-can't drift apart, and a wildcard names no host to ask. After two minutes it warns and goes
+two minutes at most. Its `HOSTS` are those of `allowed-endpoints`, and
+`tests/test_workflow_network.py` keeps them equal; a wildcard names no host to ask. Only
+`launchpad.net` is left out: it often doesn't answer a try within its 3 seconds for minutes,
+while Harden-Runner lets it through and logs no drop, and only the container of the images
+needs it, for pngquant, long after that minute. After two minutes the step warns and goes
 on, because a host that doesn't answer may be one that this run doesn't need, and a step
 that does need it fails with its own message. It sends only the question, no token. A job
 that hangs at its end can't be helped from inside, so the timeout of the job and the

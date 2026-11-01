@@ -442,12 +442,46 @@ def test_a_job_waits_for_its_hosts_before_any_step_that_could_need_them(key):
     assert JOBS[key]["steps"][place] == warm_up_step(key)
 
 
+# launchpad.net often doesn't answer within the 3 s of a try for minutes, while
+# Harden-Runner lets it through and logs no drop: in two runs of the visual check, it
+# kept 11 of the 16 jobs waiting, up to 125 s, and no other host kept any. Only
+# tests/e2e/pngquant.sh needs it, in the container of the images, with lookups that
+# Harden-Runner answers, long after the minute of the cache of systemd-resolved.
+NOT_ASKED = {"launchpad.net:443"}
+
+
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
 def test_a_job_waits_for_the_very_hosts_that_it_allows(key):
-    # By the same words, so that they can't drift apart, and nothing else from outside.
-    assert warm_up_step(key)["env"] == {
-        "HOSTS": harden_runner(JOBS[key])["allowed-endpoints"]
+    # In the order of the job, so that they can't drift apart, and nothing else from
+    # outside.
+    endpoints = harden_runner(JOBS[key])["allowed-endpoints"].split()
+    step = warm_up_step(key)
+    assert set(step["env"]) == {"HOSTS"}
+    assert step["env"]["HOSTS"].split() == [
+        endpoint for endpoint in endpoints if endpoint not in NOT_ASKED
+    ]
+
+
+def test_no_step_of_a_job_itself_needs_the_host_that_the_wait_leaves_out():
+    hosts = {endpoint.removesuffix(":443") for endpoint in NOT_ASKED}
+    for key, job in JOBS.items():
+        for step in job["steps"]:
+            assert not any(host in step.get("run", "") for host in hosts), (key, step)
+    # The one script that needs it asks with retries of its own.
+    pngquant = (WORKFLOWS.parents[1] / "tests/e2e/pngquant.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "--retry 3" in pngquant
+    assert all(f"https://{host}/" in pngquant for host in hosts)
+
+
+def test_a_host_that_the_wait_leaves_out_is_one_that_a_job_allows():
+    allowed_hosts = {
+        endpoint
+        for key in HOSTS
+        for endpoint in harden_runner(JOBS[key])["allowed-endpoints"].split()
     }
+    assert NOT_ASKED <= allowed_hosts
 
 
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
