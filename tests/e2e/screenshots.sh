@@ -9,6 +9,8 @@
 # as one job of the visual check and of the screenshot bot does; without it, every
 # group renders in turn. LANGUAGES chooses the languages (en de), and IMAGES the
 # folder below the repository root that the images go to (docs/images).
+# SCREENSHOT_SECTIONS=flapped,manual renders these sections instead of those of the
+# group, as twice.yml does.
 
 set -euo pipefail
 
@@ -93,6 +95,7 @@ for language in ${LANGUAGES:-en de}; do
 			--env "DEMO_TIME=${DEMO_TIME}" \
 			--env "DEMO_CLOCK=/ha-config/.demo_clock" \
 			--env "SCREENSHOT_GROUP=${group}/${GROUP_COUNT}" \
+			--env "SCREENSHOT_SECTIONS=${SCREENSHOT_SECTIONS:-}" \
 			--env "OUTPUT=/repo/${IMAGES}" \
 			--env "KEEP_RAW=${KEEP_RAW:-}" \
 			--volume "${ROOT_MOUNT}:/repo" \

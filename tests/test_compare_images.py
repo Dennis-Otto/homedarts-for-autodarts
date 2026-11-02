@@ -158,6 +158,81 @@ def test_shares_read_as_percentages(share, shown):
     assert compare.percent(share) == shown
 
 
+def test_two_renders_of_the_same_code_may_not_differ(folders, capsys):
+    first, second, output = folders
+    picture(first / "en" / "card.png")
+    picture(second / "en" / "card.png", dots=[(5, 5)])
+    picture(first / "en" / "same.png")
+    picture(second / "en" / "same.png")
+
+    arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
+    assert compare.main(arguments) == 1
+
+    printed = capsys.readouterr().out
+    assert "1 of 2 images came out differently" in printed
+    assert "| `en/card.png` | changed | 1.00 % |" in printed
+    # It explains itself: what it means and where to read on.
+    assert "**To fix it,**" in printed
+    # A relative link leads nowhere from the page of the run.
+    assert (
+        "(https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/HEAD/"
+        "docs/development.md#the-same-images-in-every-run)" in printed
+    )
+    # The annotation, which the bot-health bot quotes in its issue, names the images.
+    annotation = (
+        "::error title=Two renders differ::1 of 2 images came out differently: "
+        "en/card.png. See the summary of this run."
+    )
+    assert printed == f"{(output / 'summary.md').read_text()}\n{annotation}\n"
+    assert (output / "en" / "card.difference.png").is_file()
+
+
+def test_two_renders_may_not_differ_by_a_single_pixel(folders):
+    # A threshold would hide real changes along with the flapping ones.
+    first, second, output = folders
+    picture(first / "en" / "card.png", size=(1000, 1000))
+    picture(second / "en" / "card.png", size=(1000, 1000), dots=[(5, 5)])
+
+    arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
+    assert compare.main(arguments) == 1
+
+
+def test_an_image_that_one_render_lacks_counts_as_a_difference(folders):
+    first, second, output = folders
+    picture(first / "en" / "card.png")
+    picture(second / "en" / "card.png")
+    picture(first / "en" / "gone.png")
+
+    arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
+    assert compare.main(arguments) == 1
+
+
+def test_two_renders_that_look_the_same_pass(folders, capsys):
+    first, second, output = folders
+    picture(first / "en" / "card.png", level=1)
+    picture(second / "en" / "card.png", level=9)
+
+    arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
+    assert compare.main(arguments) == 0
+
+    printed = capsys.readouterr().out
+    assert "Both renders of all 1 images look the same." in printed
+    assert "::error" not in printed
+
+
+def test_two_renders_without_any_image_fail(folders, capsys):
+    # A step that renders nothing shows no difference, and so proves nothing.
+    first, second, output = folders
+
+    arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
+    assert compare.main(arguments) == 1
+
+    printed = capsys.readouterr().out
+    assert "Neither render left an image in these languages" in printed
+    assert "look the same" not in printed
+    assert "::error title=No images to compare::" in printed
+
+
 def test_the_command_line(folders, capsys):
     before, after, output = folders
     picture(before / "de" / "card.png")

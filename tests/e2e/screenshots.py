@@ -24,7 +24,13 @@ from time import monotonic
 
 from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, open_card_form, probe
 from PIL import Image, ImageDraw, ImageFont
-from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+from playwright.sync_api import (
+    Browser,
+    BrowserContext,
+    Locator,
+    Page,
+    sync_playwright,
+)
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from watchdog import GRACE, budget, deadline, wake_playwright
 
@@ -295,7 +301,12 @@ STEADY_CHROMIUM = [
 
 
 def settle(page: Page, wait: bool = True) -> None:
-    """Hold the page still for a picture; without waiting for a frame of a series."""
+    """Hold the page still for a picture; without waiting for a frame of a series.
+
+    The pointer leaves whatever it clicked last: a button that came to lie under it
+    only takes its hover colour when Chromium looks again, at a moment of its own,
+    so that a picture would show the colour in one run and not in the next."""
+    page.mouse.move(0, 0)
     page.evaluate(SETTLE, [800, wait])
 
 
@@ -3104,16 +3115,26 @@ def settings_texts(page: Page) -> None:
     # A load that overtook this update shows the same texts a moment later.
     page.wait_for_function(
         f"() => {app}.hass.localize('ui.panel.config.automation.caption') !== ''"
+        f" && {app}.hass.localize('ui.common.search') !== ''"
     )
+
+
+def settings_page(view: Page, path: str) -> None:
+    """Open a page of the settings within the app, once it has its texts.
+
+    A search field keeps the text that it first shows: one that shows before the texts
+    of Home Assistant have come says "Search" for good, in German as well, and whether
+    it does is a race between two requests."""
+    view.goto(f"{HA}/config/dashboard")
+    settings_texts(view)
+    view.evaluate(NAVIGATE, path)
 
 
 def blueprint_list(context: BrowserContext) -> Page:
     """A new page with the blueprints of Home Assistant, in the texts of the settings."""
     view = context.new_page()
-    view.goto(f"{HA}/config/blueprint/dashboard")
+    settings_page(view, "/config/blueprint/dashboard")
     view.get_by_text("HomeDarts: light show").first.wait_for(timeout=60000)
-    # The list shows before the texts of the settings, such as its tabs.
-    settings_texts(view)
     view.get_by_text(
         "Automations" if LANGUAGE == "en" else "Automationen", exact=True
     ).first.wait_for(timeout=30000)
@@ -3301,16 +3322,26 @@ def online_bridge_options(page: Page) -> None:
         page, viewport={"width": 1280, "height": 1100}, device_scale_factor=2
     )
     view = context.new_page()
-    view.goto(f"{HA}/config/integrations/integration/homedarts")
     # The label of the button is one of the texts of the settings.
-    settings_texts(view)
+    settings_page(view, "/config/integrations/integration/homedarts")
     label = "Configure" if LANGUAGE == "en" else "Konfigurieren"
     view.locator(f"button[aria-label='{label}']").first.click()
     dialog = view.locator("dialog-data-entry-flow")
+    # The editor of the own plans comes last and moves the box, which a click on its
+    # way may miss: the options would then save themselves instead of showing the
+    # address, the board would start anew and later pictures would lose its darts.
+    dialog.locator("ha-code-editor .cm-editor").wait_for(timeout=30000)
+    settle(view)
     dialog.locator("ha-checkbox").first.click()
+    view.wait_for_function(
+        "(form) => form.data.online_bridge === true",
+        arg=dialog.locator("ha-form").first.element_handle(),
+        timeout=5000,
+    )
     # The button with a text submits; the icon buttons have none.
     dialog.locator("ha-button").filter(has_text=re.compile(r"\w")).last.click()
-    dialog.locator("ha-markdown code, ha-markdown pre").first.wait_for(timeout=30000)
+    # A block of code: the form before it has words in code as well.
+    dialog.locator("ha-markdown pre").first.wait_for(timeout=30000)
     view.wait_for_timeout(1500)
     view.evaluate(MASK_SECRET)
     page_shot(view, "online-bridge")
@@ -3458,6 +3489,23 @@ ASSIST = "ha-voice-command-dialog"
 NO_SIDEBAR = "localStorage.setItem('dockedSidebar', JSON.stringify('always_hidden'))"
 
 
+def give_focus(page: Page, field: Locator) -> None:
+    """Give a field of a dialog that opens the focus, until it keeps it.
+
+    The dialog takes the focus for itself as it opens, seconds later on a busy runner,
+    and passes it on to its field in most runs only; the label of the field moves up
+    with the focus."""
+    kept = 0
+    for _ in range(30):
+        settle(page)
+        kept = kept + 1 if field.evaluate("(el) => el.matches(':focus')") else 0
+        if kept == 3:
+            return
+        if not kept:
+            field.focus()
+    raise AssertionError("The field doesn't keep its focus.")
+
+
 def manual_voice_animation(page: Page, entry: str) -> None:
     """Darts by voice: on the tablet at a dartboard without Autodarts, Alex's visit
     and two darts of Sam's go in through Assist, which answers in the words of the
@@ -3502,6 +3550,7 @@ def manual_voice_animation(page: Page, entry: str) -> None:
     dialog = board.locator(ASSIST)
     field = dialog.get_by_role("textbox")
     field.wait_for(timeout=15000)
+    give_focus(board, field)
     board.wait_for_timeout(800)
     recorder.shot(700)
     for sentence, answer in VOICE_SENTENCES[LANGUAGE]:
@@ -4154,7 +4203,7 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # one runner each, and a group renders the same images on its own as after the
 # others. The sections of a group run in their order: a later one sees what the
 # earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
-# visual.yml and screenshots.yml know how many there are.
+# visual.yml, screenshots.yml and twice.yml know how many there are.
 GROUPS = (
     # The cards before the games, whose legs would end the graphs of the week.
     ("cards", "live", "practice", "games"),
@@ -4206,6 +4255,42 @@ BUDGETS = {
 }
 
 
+def flapped(browser: Browser) -> None:
+    """The pictures that have come out differently from the same code, from a demo
+    that played no match before them, as none of them needs one. twice.yml renders
+    this section and that of the dartboard without Autodarts twice, and compares both
+    renders. In the order of their group: a board that starts anew in the options takes
+    its darts from the heatmap."""
+    context = new_context(
+        browser,
+        viewport={"width": 1280, "height": 1000},
+        device_scale_factor=2,
+        locale=LOCALE,
+        color_scheme="dark",
+    )
+    blueprints_page(context.new_page())
+    online_bridge_options(context.new_page())
+    heatmap_animation(context.new_page())
+    context.close()
+
+
+# Sections in no group, for SCREENSHOT_SECTIONS to name.
+BESIDE_THE_GROUPS: dict[str, Callable[[Browser], None]] = {"flapped": flapped}
+
+
+def chosen_sections(value: str, group: int) -> tuple[str, ...]:
+    """The sections that SCREENSHOT_SECTIONS names, such as flapped,manual, or else
+    those of the group."""
+    names = tuple(name for name in value.split(",") if name)
+    known = SECTIONS.keys() | BESIDE_THE_GROUPS.keys()
+    if unknown := sorted(set(names) - known):
+        raise SystemExit(
+            f"SCREENSHOT_SECTIONS={value}: no sections {unknown};"
+            f" choose from {sorted(known)}"
+        )
+    return names or GROUPS[group - 1]
+
+
 def chosen_group(value: str) -> int:
     """The group that SCREENSHOT_GROUP, such as 2/4, chooses, counted from 1."""
     match = re.fullmatch(r"([1-9][0-9]*)/([1-9][0-9]*)", value.strip())
@@ -4225,13 +4310,14 @@ def chosen_group(value: str) -> int:
 
 def main() -> None:
     group = chosen_group(os.environ.get("SCREENSHOT_GROUP", f"1/{len(GROUPS)}"))
+    names = chosen_sections(os.environ.get("SCREENSHOT_SECTIONS", ""), group)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     timings: list[tuple[str, float]] = []
     # The inner context saves the open pages while the browser still runs.
     with sync_playwright() as playwright, failure_screenshots() as browsers:
         browser = playwright.chromium.launch(args=STEADY_CHROMIUM)
         browsers.append(browser)
-        for name in GROUPS[group - 1]:
+        for name in names:
             began = monotonic()
             print(f"Screenshot section: {name}", flush=True)
             # A section that hangs fails after its budget with the line it waits at,
@@ -4241,7 +4327,7 @@ def main() -> None:
                 BUDGETS.get(name, SECTION_BUDGET),
                 wake=wake_playwright,
             ):
-                SECTIONS[name](browser)
+                {**SECTIONS, **BESIDE_THE_GROUPS}[name](browser)
             timings.append((name, monotonic() - began))
             print(f"Screenshot section: {name} ({timings[-1][1]:.1f} s)", flush=True)
         browser.close()

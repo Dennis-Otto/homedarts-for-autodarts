@@ -14,6 +14,9 @@ committed before the run against those rendered. It writes, into the output fold
 Animated WebP images compare frame by frame, with the time each frame shows.
 An image whose file changed but whose pixels did not counts as unchanged; with
 --restore, its committed file comes back, so that only real changes remain.
+
+With --twice, the folders hold two renders of the same code, as in twice.yml: it fails
+when an image differs between them, or when they hold no image at all.
 """
 
 from __future__ import annotations
@@ -180,6 +183,77 @@ def summary(report: dict) -> str:
     return "\n".join(lines)
 
 
+# What the summary of two renders that differ says: which images differ and what to do
+# about them, more than the explanation of the check can know. On the page of the run,
+# only an absolute link leads to the repository.
+TWICE_FIX = """Something in these pictures depends on the moment: a button that takes its \
+hover colour, a field that gets its focus, a text that comes late, a dialog that goes \
+one step further, or a step before them that changed the demo. An image that changes \
+without a reason brings a pull request of the screenshot bot after every change of \
+the integration, and each of them restarts the checks of the others.
+
+**To fix it,** look at the differences in the artifact of this run, find what they \
+show and let the screenshot tool wait for that state, not for a fixed time; never let \
+the comparison look away, which would hide real changes as well. `KEEP_RAW=1` keeps \
+the images before compression, whose palettes make a small difference look large. \
+See [the same images in every run](https://github.com/Dennis-Otto/\
+homedarts-for-autodarts/blob/HEAD/docs/development.md#the-same-images-in-every-run), \
+which also shows how to render them twice on your machine."""
+
+
+def twice_summary(report: dict) -> str:
+    """The report of two renders of the same code, as Markdown."""
+    languages = ", ".join(report["languages"])
+    entries = report["images"]
+    if not entries and not report["unchanged"]:
+        return (
+            f"### Two renders of the same code ({languages})\n\n"
+            "Neither render left an image in these languages, so the comparison proves "
+            "nothing. The steps before it rendered nothing or wrote to another folder: "
+            "look at the render steps and at `IMAGES` of this workflow.\n"
+        )
+    if not entries:
+        return (
+            f"### Two renders of the same code ({languages})\n\n"
+            f"Both renders of all {report['unchanged']} images look the same.\n"
+        )
+    lines = [
+        f"### Two renders of the same code ({languages})",
+        "",
+        f"{len(entries)} of {len(entries) + report['unchanged']} images came out "
+        "differently, though nothing changed between the renders:",
+        "",
+        "| Image | Change | Pixels changed |",
+        "| --- | --- | ---: |",
+    ]
+    for entry in entries:
+        lines.append(
+            f"| `{entry['path']}` | {entry['status']} | {percent(entry['share'])} |"
+        )
+    lines += ["", TWICE_FIX, ""]
+    return "\n".join(lines)
+
+
+def twice_annotation(report: dict) -> str | None:
+    """The annotation of two renders that fail, which the bot-health bot quotes in its
+    issue, or None when they look the same."""
+    entries = report["images"]
+    if entries:
+        paths = ", ".join(entry["path"] for entry in entries)
+        total = len(entries) + report["unchanged"]
+        return (
+            "::error title=Two renders differ::"
+            f"{len(entries)} of {total} images came out differently: {paths}. "
+            "See the summary of this run."
+        )
+    if report["unchanged"]:
+        return None
+    return (
+        "::error title=No images to compare::"
+        "Neither render left an image in these languages. Look at the render steps."
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("before", type=Path, help="the committed images")
@@ -191,6 +265,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="put back the committed file of an image whose pixels did not change",
     )
+    parser.add_argument(
+        "--twice",
+        action="store_true",
+        help="the folders hold two renders of the same code: fail when they differ",
+    )
     arguments = parser.parse_args(argv)
     report = run(
         arguments.before,
@@ -199,6 +278,15 @@ def main(argv: list[str] | None = None) -> int:
         [language for language in arguments.languages.split(",") if language],
         arguments.restore,
     )
+    if arguments.twice:
+        text = twice_summary(report)
+        (arguments.output / "summary.md").write_text(text)
+        print(text)
+        annotation = twice_annotation(report)
+        if annotation is None:
+            return 0
+        print(annotation)
+        return 1
     print(summary(report))
     return 0
 

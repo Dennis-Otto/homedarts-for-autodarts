@@ -408,7 +408,7 @@ watchdog = importlib.util.module_from_spec(WATCHDOG_SPEC)
 WATCHDOG_SPEC.loader.exec_module(watchdog)
 # The workflows that run the scripts of tests/e2e, and the scripts that print the
 # state of their containers when a signal stops them (tests/e2e/diagnose.sh).
-TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "screenshots.yml")
+TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "screenshots.yml", "twice.yml")
 DIAGNOSED = ("run.sh", "browser.sh", "screenshots.sh")
 
 

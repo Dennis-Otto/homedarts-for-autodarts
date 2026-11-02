@@ -26,6 +26,7 @@ PROJECT_WORKFLOWS = (
     "e2e.yml",
     "screenshots.yml",
     "translations.yml",
+    "twice.yml",
     "visual-comment.yml",
     "visual.yml",
 )
@@ -73,6 +74,8 @@ HOSTS = {
     # the tests, whose packages it installs.
     ("screenshots.yml", "timeline"): {"github.com", *PYTHON_PACKAGES},
     ("translations.yml", "issues"): GITHUB,
+    # As the images of the visual check, without those of an earlier run.
+    ("twice.yml", "twice"): IMAGES - {"api.github.com"},
     ("visual-comment.yml", "comment"): {"api.github.com"},
     ("visual.yml", "render"): IMAGES,
     ("visual.yml", "compare"): COMPARISON,

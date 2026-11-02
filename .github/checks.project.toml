@@ -223,6 +223,29 @@ autofix = """An image that can't be rendered needs a person, who finds why the
 integration, the card or the demo didn't come up. An image that only looks different is no failure: the
 screenshot bot renders it anew after the merge."""
 
+[check."render twice (*)"]
+title = "The same images in every run"
+problem = """The workflow *Same images* rendered the images that have come out differently
+before twice, each time from a fresh demo. Either both renders differ in at least one
+pixel, and the annotation and the summary name the images, or a render failed or left no
+images, and the log of that step names the image. The artifact `twice-*` keeps both
+images with their differences, `twice-failure-*` a screenshot of the page."""
+why = """An image that changes without a reason brings a pull request of the screenshot
+bot after every change of the integration, and each of them restarts the checks of the
+others."""
+fix = """Find what the differences show and let `tests/e2e/screenshots.py` wait for that
+state, not for a fixed time; a threshold would hide real changes as well. Render them
+twice on your machine:"""
+commands = [
+  "export LANGUAGES=en SCREENSHOT_GROUP=1/4 SCREENSHOT_SECTIONS=flapped,manual",
+  "IMAGES=tests/e2e/artifacts/twice/first bash tests/e2e/screenshots.sh",
+  "IMAGES=tests/e2e/artifacts/twice/second bash tests/e2e/screenshots.sh",
+  "python3 tests/e2e/compare.py tests/e2e/artifacts/twice/first tests/e2e/artifacts/twice/second /tmp/twice --languages en --twice",
+]
+docs = "docs/development.md#the-same-images-in-every-run"
+autofix = """A race in the screenshot tool needs a person, who sees in the differences what
+the page does at that moment; no command can tell what it should wait for."""
+
 [check."compare (*)"]
 title = "The comparison of the images"
 problem = """The images of a language couldn't be put together and compared with those
