@@ -2,8 +2,10 @@
 
 tests/fixtures/board_manager_2.1.0_frames.jsonl holds the frames of the socket of a
 real board with Board Manager 2.1.0, captured with scripts/capture_board.py while
-four visits were thrown and taken out. tests/fixtures/board_manager/2.1.0 holds what
-another real board answers on every route, with its detection running.
+four visits were thrown and taken out. tests/fixtures/board_manager_2.1.0_misses.jsonl
+holds those of the same board for four more visits: with two darts in the surround,
+a bouncer and a dart the board placed in the wrong bed. tests/fixtures/board_manager/2.1.0
+holds what another real board answers on every route, with its detection running.
 """
 
 import json
@@ -23,6 +25,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homedarts.diagnostics import async_get_config_entry_diagnostics
 from custom_components.homedarts.errors import AutodartsConnectionError
+from custom_components.homedarts.games import _throw_positions
 from custom_components.homedarts.local_api import (
     AutodartsEndpointMissing,
     AutodartsLocalClient,
@@ -30,6 +33,7 @@ from custom_components.homedarts.local_api import (
     board_state,
     board_system,
 )
+from custom_components.homedarts.sensor import _dart
 
 from .local_helpers import (
     BASE,
@@ -50,11 +54,12 @@ from .test_realtime import REAL_EVENTS, Socket, entity_events
 from .test_stuck_takeout import pass_time
 
 FRAMES = Path(__file__).parent / "fixtures" / "board_manager_2.1.0_frames.jsonl"
+MISSES = Path(__file__).parent / "fixtures" / "board_manager_2.1.0_misses.jsonl"
 
 
-def frames() -> list[dict]:
+def frames(path: Path = FRAMES) -> list[dict]:
     """The states the board sent, in order."""
-    lines = FRAMES.read_text(encoding="utf-8").splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     return [json.loads(line)["data"] for line in lines]
 
 
@@ -249,6 +254,93 @@ async def test_the_darts_and_takeouts_of_a_real_board_manager_2_1(hass, aioclien
     assert state(hass, "sensor", "training_darts") == "9"
     assert state(hass, "sensor", "local_status") == "throw"
     assert state(hass, "sensor", "local_visit_score") == "0"
+
+
+def bouncer_visit() -> dict:
+    """The full board of the third visit: S7, the bull and a bouncer."""
+    return next(
+        frame
+        for frame in frames(MISSES)
+        if frame["status"] == "takeout" and frame["throws"][-1]["bouncer"]
+    )
+
+
+def test_a_dart_board_manager_2_1_could_not_place_has_no_position():
+    darts = board_state(bouncer_visit())["throws"]
+    assert darts[2] == {
+        "segment": {"name": "Miss", "number": 0, "bed": "Outside", "multiplier": 0}
+    }
+    seven, bull = (dart["coords"] for dart in darts[:2])
+    assert _throw_positions(board_state(bouncer_visit())) == [
+        (seven["x"], seven["y"]),
+        (bull["x"], bull["y"]),
+        None,
+    ]
+    # Last dart shows it without a position, not at the centre of the bull.
+    assert "x" not in _dart(darts[2])
+    assert "x" in _dart(darts[1])
+
+
+def test_a_dart_in_the_surround_keeps_its_position():
+    surround = frames(MISSES)[6]["throws"][0]
+    assert (surround["segmentName"], surround["bed"]) == ("M14", "Outside")
+    dart = board_state({"throws": [surround]})["throws"][0]
+    assert dart["coords"] == {"x": surround["coordsX"], "y": surround["coordsY"]}
+
+
+async def test_misses_and_a_bouncer_of_a_real_board_manager_2_1(hass, aioclient_mock):
+    empty = {**frames(MISSES)[-1], "event": "takeoutFinished"}
+    entry = await setup_local(hass, aioclient_mock, state=empty)
+    coordinator = entry.runtime_data.local
+    fired = entity_events(
+        hass,
+        entity_id(hass, "event", "board_events"),
+        entity_id(hass, "sensor", "local_visit_score"),
+    )
+    socket = Socket(
+        [json.dumps({"type": "state", "data": frame}) for frame in frames(MISSES)]
+    )
+    session = async_get_clientsession(hass)
+    with patch.object(session, "ws_connect", new=AsyncMock(return_value=socket)):
+        async for kind, data in REAL_EVENTS(coordinator.client):
+            if kind == "state":
+                coordinator.async_receive(kind, data)
+                await hass.async_block_till_done()
+    visits = [
+        ["S19", "S1", "S1"],
+        ["M14", "M5", "S9"],
+        ["S7", "Bull", "Miss"],
+        ["S11", "D11", "M11"],
+    ]
+    expected = []
+    for visit in visits:
+        expected += [("dart_detected", segment) for segment in visit]
+        expected += [
+            ("visit_thrown", visit),
+            ("status_changed", "Takeout"),
+            ("status_changed", "Takeout in progress"),
+            ("takeout_started", None),
+            ("visit_completed", visit),
+            # The 57 of the third visit beats the 21 of the first.
+            *([("personal_best", None)] if "Bull" in visit else []),
+            ("status_changed", "Throw"),
+            ("takeout_finished", None),
+        ]
+    assert [
+        (
+            attributes["event_type"],
+            attributes.get("segment")
+            or attributes.get("segments")
+            or attributes.get("status"),
+        )
+        for attributes, _ in fired
+    ] == expected
+    assert [
+        attributes["score"]
+        for attributes, _ in fired
+        if attributes["event_type"] == "visit_completed"
+    ] == [21, 9, 57, 33]
+    assert state(hass, "sensor", "training_darts") == "12"
 
 
 # -- the whole local interface, from the recording of a real board ---------------
