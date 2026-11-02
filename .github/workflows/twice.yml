@@ -1,0 +1,177 @@
+name: Same images
+
+# The same code renders the same images, or the screenshot bot opens pull requests for
+# images that nothing changed, and each of them restarts the checks of the others. This
+# holds the screenshot tool to that: it renders the images that have come out differently
+# before (flapped and manual in tests/e2e/screenshots.py) twice, each time from a
+# fresh demo, and compares both renders pixel by pixel, with no threshold
+# (docs/development.md#the-same-images-in-every-run). A second render is what shows a
+# race: the comparison with the committed images can't tell it from a change of the
+# code. Every week, so that a race that a new card or a new text brings comes up as an
+# issue of the bot-health bot within days; on demand; and after a change of the tool
+# itself reaches main. No check of pull requests: it would take twenty minutes of the
+# runners from each of them for a race that a week later is just as easy to find. The
+# summary says what to do, and the artifact holds both images with their differences.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tests/e2e/compare.py
+      - tests/e2e/pages.py
+      - tests/e2e/screenshots.py
+      - tests/e2e/screenshots.sh
+      - .github/workflows/twice.yml
+  schedule:
+    - cron: "41 2 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  twice:
+    name: render twice (${{ matrix.language }})
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    # A demo takes about two minutes and a half, the images about two.
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    strategy:
+      # A language that fails leaves the other running.
+      fail-fast: false
+      matrix:
+        language: [en, de]
+    steps:
+      # Only the hosts of the steps: the code from github.com, Home Assistant from
+      # GitHub's registry (ghcr.io, pkg-containers.githubusercontent.com), Playwright
+      # from Microsoft's (mcr.microsoft.com, *.data.mcr.microsoft.com), pngquant from
+      # Launchpad (launchpad.net, launchpadlibrarian.net) and the Python packages of
+      # the tool (pypi.org, files.pythonhosted.org). Home Assistant itself reaches only
+      # the icons of its other integrations, which the images show
+      # (brands.home-assistant.io).
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
+            launchpad.net:443
+            launchpadlibrarian.net:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            brands.home-assistant.io:443
+      # GitHub's DNS experiment on some of its runners hides the lookups from
+      # Harden-Runner, which then blocks the hosts of the job and of the runner, until
+      # the timeout of the job. Harden-Runner undoes it itself only when its feature
+      # flags come within 3 s (docs/development.md#network-of-the-jobs).
+      - name: Let Harden-Runner see the DNS lookups
+        run: |
+          dropins=(/etc/systemd/resolved.conf.d/90-egress-proxy.conf /run/systemd/resolved.conf.d/90-egress-proxy.conf)
+          if [[ ! -e ${dropins[0]} && ! -e ${dropins[1]} ]] && ! grep -qs 127.0.0.100 /etc/resolv.conf; then
+            exit 0
+          fi
+          echo "::notice::GitHub's DNS experiment is on this runner; taking it out of the way of Harden-Runner."
+          sudo rm -f "${dropins[@]}"
+          sudo systemctl restart systemd-resolved
+          sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+          sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
+          sudo resolvectl flush-caches || true
+      - name: Wait until Harden-Runner lets the hosts through
+        # The runner may have asked for an address past Harden-Runner, which then blocks
+        # that address for as long as systemd-resolved keeps it, up to a minute. All
+        # but launchpad.net, which often keeps a runner waiting for minutes while
+        # Harden-Runner lets it through; only the container of the images needs it, long
+        # after that minute (docs/development.md#network-of-the-jobs).
+        timeout-minutes: 4
+        env:
+          HOSTS: >
+            github.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
+            launchpadlibrarian.net:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            brands.home-assistant.io:443
+        run: |
+          deadline=$(($(date +%s) + 120))
+          for endpoint in $HOSTS; do
+            host="${endpoint%:*}"
+            # A wildcard names no host to ask.
+            [[ "$host" == '*.'* ]] && continue
+            until curl --silent --head --connect-timeout 3 --max-time 5 --output /dev/null "https://$host/"; do
+              if (($(date +%s) >= deadline)); then
+                echo "::warning::Harden-Runner still blocks $host after two minutes; a step that needs it will fail, and the job can run again."
+                break
+              fi
+              echo "Harden-Runner still blocks $host, waiting 3 s."
+              sleep 3
+            done
+          done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Pillow for the comparison
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet --disable-pip-version-check \
+            --require-hashes -r tests/e2e/requirements-browser.txt
+      # With exec, the signal with which GitHub stops a step reaches the script itself
+      # (docs/development.md#when-a-step-hangs).
+      - name: Render the images a first time
+        timeout-minutes: 14
+        env:
+          LANGUAGES: ${{ matrix.language }}
+          SCREENSHOT_GROUP: 1/4
+          SCREENSHOT_SECTIONS: flapped,manual
+          IMAGES: tests/e2e/artifacts/twice/first
+        run: exec bash tests/e2e/screenshots.sh
+      - name: Render the images a second time, from a fresh demo
+        timeout-minutes: 14
+        env:
+          LANGUAGES: ${{ matrix.language }}
+          SCREENSHOT_GROUP: 1/4
+          SCREENSHOT_SECTIONS: flapped,manual
+          IMAGES: tests/e2e/artifacts/twice/second
+        run: exec bash tests/e2e/screenshots.sh
+      # In the folder of the job: the one of the images belongs to the container that
+      # rendered them.
+      - name: Compare both renders
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          "$RUNNER_TEMP/venv/bin/python" tests/e2e/compare.py \
+            tests/e2e/artifacts/twice/first tests/e2e/artifacts/twice/second \
+            "$RUNNER_TEMP/twice" --languages "$LANGUAGE" --twice
+      - name: List the images that came out differently
+        if: ${{ !cancelled() }}
+        run: |
+          if [[ -f "$RUNNER_TEMP/twice/summary.md" ]]; then
+            cat "$RUNNER_TEMP/twice/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Keep both images with their differences
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twice-${{ matrix.language }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/twice/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Keep the screenshots of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twice-failure-${{ matrix.language }}-${{ github.run_attempt }}
+          path: tests/e2e/artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 14

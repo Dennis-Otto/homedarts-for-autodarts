@@ -326,6 +326,148 @@ def test_the_comment_of_the_visual_check_finds_one_report_per_language():
     assert "--pattern 'visual-??'" in comment
 
 
+# The same images from the same code ---------------------------------------------------
+
+
+def source(name: str) -> str:
+    """A function of the tool as text, without its comments."""
+    return ast.unparse(function(name))
+
+
+def in_order(text: str, *parts: str) -> None:
+    """Every part stands in the text, each after the one before it."""
+    place = 0
+    for part in parts:
+        found = text.find(part, place)
+        assert found >= 0, f"{part!r} after {text[max(place - 60, 0) : place]!r}"
+        place = found + len(part)
+
+
+def test_the_pointer_leaves_what_it_clicked_before_every_picture():
+    # A button that comes to lie under the pointer takes its hover colour at a moment
+    # of Chrome's own, as Submit in online-bridge.png did in some of the runs, and
+    # pngquant then chooses other colours for the whole picture.
+    in_order(source("settle"), "page.mouse.move(0, 0)", "page.evaluate(SETTLE")
+
+
+@pytest.mark.parametrize("name", ["blueprint_list", "online_bridge_options"])
+def test_a_page_of_the_settings_opens_once_it_has_its_texts(name):
+    # A search field that shows before the texts have come says "Search" for good, as
+    # de/blueprints.png did in some of the runs.
+    assert "settings_page" in called(function(name))
+    assert ".goto(" not in source(name)
+
+
+def test_the_texts_of_a_page_of_the_settings_come_before_the_page():
+    in_order(
+        source("settings_page"),
+        "view.goto(",
+        "settings_texts(view)",
+        "view.evaluate(NAVIGATE, path)",
+    )
+    assert "ui.common.search" in source("settings_texts")
+
+
+def test_the_options_of_the_bridge_show_the_address_and_never_save_themselves():
+    # Their editor comes last and moves the box. A click that missed it saved the
+    # options, online-bridge.png showed "Success" instead of the address, and the board
+    # that started anew took the darts of the current visit from heatmap-modes.webp.
+    text = source("online_bridge_options")
+    in_order(
+        text,
+        ".cm-editor",
+        "settle(view)",
+        "ha-checkbox",
+        "form.data.online_bridge === true",
+        "ha-button",
+        "ha-markdown pre",
+        "'online-bridge'",
+    )
+    # The form before the address has words in code too: waiting for one waits for
+    # nothing.
+    assert "ha-markdown code" not in text
+
+
+def test_the_field_of_assist_has_its_focus_before_its_first_picture():
+    # The dialog gives it the focus seconds after it shows on a busy runner, in some
+    # runs not at all, and its label moves up with that: the first frames of
+    # manual-voice.webp differed from run to run.
+    in_order(
+        source("manual_voice_animation"),
+        "field.wait_for(",
+        "give_focus(board, field)",
+        "recorder.shot(700)",
+    )
+    # It looks again after the focus has come: the dialog may still take it away.
+    in_order(
+        source("give_focus"),
+        "settle(page)",
+        "matches(':focus')",
+        "kept == 3",
+        "field.focus()",
+    )
+
+
+def test_the_pictures_that_flapped_render_twice_from_fresh_demos():
+    assert {"blueprints_page", "online_bridge_options", "heatmap_animation"} <= set(
+        called(function("flapped"))
+    )
+    assert "manual_voice_animation" in called(function("manual_board"))
+
+    tool = workflow("twice.yml")
+    assert tool[True]["schedule"]
+    assert "workflow_dispatch" in tool[True]
+    assert "tests/e2e/screenshots.py" in tool[True]["push"]["paths"]
+    job = tool["jobs"]["twice"]
+    assert job["strategy"]["matrix"]["language"] == ["en", "de"]
+    renders = [
+        step
+        for step in job["steps"]
+        if "tests/e2e/screenshots.sh" in step.get("run", "")
+    ]
+    assert len(renders) == 2
+    for step in renders:
+        assert step["env"]["SCREENSHOT_SECTIONS"] == "flapped,manual"
+        assert step["env"]["LANGUAGES"] == "${{ matrix.language }}"
+    folders = [step["env"]["IMAGES"] for step in renders]
+    assert len(set(folders)) == 2
+    (compared,) = [
+        step for step in job["steps"] if "tests/e2e/compare.py" in step.get("run", "")
+    ]
+    in_order(compared["run"], folders[0], folders[1], "--twice")
+
+
+def test_the_sections_beside_the_groups_are_functions_of_the_tool():
+    beside = assigned("BESIDE_THE_GROUPS")
+    assert isinstance(beside, ast.Dict)
+    functions = {node.name for node in TOOL.body if isinstance(node, ast.FunctionDef)}
+    assert {value.id for value in beside.values} <= functions
+    assert not {ast.literal_eval(key) for key in beside.keys} & set(SECTION_FUNCTIONS)
+
+
+def chosen_sections(value: str) -> tuple[str, ...]:
+    """What the tool renders for SCREENSHOT_SECTIONS in its second group."""
+    namespace = {
+        "SECTIONS": SECTION_FUNCTIONS,
+        "BESIDE_THE_GROUPS": {"flapped": "flapped"},
+        "GROUPS": GROUPS,
+    }
+    code = ast.Module([function("chosen_sections")], [])
+    # Only the function of the tool, which can't be imported without Playwright.
+    exec(compile(code, "screenshots.py", "exec"), namespace)
+    return namespace["chosen_sections"](value, 2)
+
+
+def test_the_sections_of_a_render_are_those_of_its_group_or_those_it_names():
+    assert chosen_sections("") == GROUPS[1]
+    assert chosen_sections("flapped,manual") == ("flapped", "manual")
+
+
+def test_a_section_that_the_tool_does_not_have_stops_the_render():
+    with pytest.raises(SystemExit, match=r"no sections \['nothing'\]"):
+        chosen_sections("flapped,nothing")
+
+
 # screenshots.sh --------------------------------------------------------------------
 
 # Notes every call; the screenshot tool fails when a test sets $FAIL, and the first
@@ -452,6 +594,19 @@ def test_one_group_renders_into_the_folder_it_is_given(tmp_path):
     assert result.returncode == 0, result.stderr
     assert runs(calls) == [("de", f"2/{count}", "/repo/tests/e2e/artifacts/rendered")]
     assert f"Group 2 of {count} in de, from a fresh demo" in result.stdout
+
+
+def test_the_sections_that_a_render_names_reach_the_tool(tmp_path):
+    result, calls = render(
+        tmp_path,
+        LANGUAGES="de",
+        SCREENSHOT_GROUP=f"1/{len(GROUPS)}",
+        SCREENSHOT_SECTIONS="flapped,manual",
+    )
+
+    assert result.returncode == 0, result.stderr
+    (tool,) = [call for call in calls if call.startswith("run ")]
+    assert "--env SCREENSHOT_SECTIONS=flapped,manual " in tool
 
 
 @pytest.mark.parametrize(
