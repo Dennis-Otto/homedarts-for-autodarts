@@ -4,6 +4,12 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.3](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.2...v2.2.3) (2026-11-02)
+
+### Bug fixes
+
+- The pictures of the documentation stay as they are until the screen they show changes. The options of the online bridge no longer show a step that saved them or a button in the colour of a hover, and the blueprints page in German no longer has an English search field.
+
 ## [2.2.2](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.1...v2.2.2) (2026-11-02)
 
 ### Bug fixes
