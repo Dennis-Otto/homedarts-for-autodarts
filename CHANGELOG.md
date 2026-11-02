@@ -6,10 +6,9 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## [2.2.2](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.1...v2.2.2) (2026-11-02)
 
-
 ### Bug fixes
 
-* give a dart Board Manager 2.1 could not place no position ([#541](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/541)) ([45b9c5d](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/45b9c5d6f76aa29a024859ee2de59434d68c24c9))
+- **Board Manager 2.1:** a bouncer no longer counts as a dart in the centre of the bull. Board Manager 2.1 sends a dart it couldn't place at the position (0, 0), which went into the heatmap, the grouping and the aim map, and into the position of *Last dart*. Such a dart now has no position.
 
 ## [2.2.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.0...v2.2.1) (2026-11-01)
 
