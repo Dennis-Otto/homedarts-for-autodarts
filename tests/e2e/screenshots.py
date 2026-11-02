@@ -4203,7 +4203,7 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # one runner each, and a group renders the same images on its own as after the
 # others. The sections of a group run in their order: a later one sees what the
 # earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
-# visual.yml and screenshots.yml know how many there are.
+# visual.yml, screenshots.yml and twice.yml know how many there are.
 GROUPS = (
     # The cards before the games, whose legs would end the graphs of the week.
     ("cards", "live", "practice", "games"),

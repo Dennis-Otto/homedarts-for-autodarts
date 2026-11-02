@@ -103,8 +103,20 @@ def test_every_job_ends_with_the_step_of_the_coach(key):
     )
 
 
+def test_the_workflow_that_runs_after_the_merge_explains_itself_as_well():
+    # Same images checks no pull request, but the bot-health bot quotes its annotation.
+    job = load("twice.yml")["jobs"]["twice"]
+    assert explanation(sample(job["name"]))
+    last = job["steps"][-1]
+    assert last["name"] == STEP
+    assert last["if"] == "failure()"
+    assert last["env"] == {"CHECK": job["name"]}
+    assert last["run"] == COMMAND
+
+
 def test_every_explanation_belongs_to_a_job():
     names = [sample(job["name"]) for job in JOBS.values()]
+    names.append(sample(load("twice.yml")["jobs"]["twice"]["name"]))
     for key in EXPLANATIONS:
         assert any(fnmatch.fnmatchcase(name, key) for name in names), key
 

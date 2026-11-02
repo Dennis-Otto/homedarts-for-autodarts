@@ -428,6 +428,7 @@ def test_the_pictures_that_flapped_render_twice_from_fresh_demos():
     assert len(renders) == 2
     for step in renders:
         assert step["env"]["SCREENSHOT_SECTIONS"] == "flapped,manual"
+        assert step["env"]["SCREENSHOT_GROUP"] == f"1/{len(GROUPS)}"
         assert step["env"]["LANGUAGES"] == "${{ matrix.language }}"
     folders = [step["env"]["IMAGES"] for step in renders]
     assert len(set(folders)) == 2

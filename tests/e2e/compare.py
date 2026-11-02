@@ -183,8 +183,9 @@ def summary(report: dict) -> str:
     return "\n".join(lines)
 
 
-# What the summary of two renders that differ says, as the jobs of the workflows of
-# this project alone have no other explanation of a check that runs after the merge.
+# What the summary of two renders that differ says: which images differ and what to do
+# about them, more than the explanation of the check can know. On the page of the run,
+# only an absolute link leads to the repository.
 TWICE_FIX = """Something in these pictures depends on the moment: a button that takes its \
 hover colour, a field that gets its focus, a text that comes late, a dialog that goes \
 one step further, or a step before them that changed the demo. An image that changes \
@@ -195,7 +196,8 @@ the integration, and each of them restarts the checks of the others.
 show and let the screenshot tool wait for that state, not for a fixed time; never let \
 the comparison look away, which would hide real changes as well. `KEEP_RAW=1` keeps \
 the images before compression, whose palettes make a small difference look large. \
-See [the same images in every run](docs/development.md#the-same-images-in-every-run), \
+See [the same images in every run](https://github.com/Dennis-Otto/\
+homedarts-for-autodarts/blob/HEAD/docs/development.md#the-same-images-in-every-run), \
 which also shows how to render them twice on your machine."""
 
 
@@ -203,6 +205,13 @@ def twice_summary(report: dict) -> str:
     """The report of two renders of the same code, as Markdown."""
     languages = ", ".join(report["languages"])
     entries = report["images"]
+    if not entries and not report["unchanged"]:
+        return (
+            f"### Two renders of the same code ({languages})\n\n"
+            "Neither render left an image in these languages, so the comparison proves "
+            "nothing. The steps before it rendered nothing or wrote to another folder: "
+            "look at the render steps and at `IMAGES` of this workflow.\n"
+        )
     if not entries:
         return (
             f"### Two renders of the same code ({languages})\n\n"
@@ -223,6 +232,26 @@ def twice_summary(report: dict) -> str:
         )
     lines += ["", TWICE_FIX, ""]
     return "\n".join(lines)
+
+
+def twice_annotation(report: dict) -> str | None:
+    """The annotation of two renders that fail, which the bot-health bot quotes in its
+    issue, or None when they look the same."""
+    entries = report["images"]
+    if entries:
+        paths = ", ".join(entry["path"] for entry in entries)
+        total = len(entries) + report["unchanged"]
+        return (
+            "::error title=Two renders differ::"
+            f"{len(entries)} of {total} images came out differently: {paths}. "
+            "See the summary of this run."
+        )
+    if report["unchanged"]:
+        return None
+    return (
+        "::error title=No images to compare::"
+        "Neither render left an image in these languages. Look at the render steps."
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -253,7 +282,11 @@ def main(argv: list[str] | None = None) -> int:
         text = twice_summary(report)
         (arguments.output / "summary.md").write_text(text)
         print(text)
-        return 1 if report["images"] or not report["unchanged"] else 0
+        annotation = twice_annotation(report)
+        if annotation is None:
+            return 0
+        print(annotation)
+        return 1
     print(summary(report))
     return 0
 

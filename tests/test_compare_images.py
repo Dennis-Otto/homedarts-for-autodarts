@@ -173,8 +173,17 @@ def test_two_renders_of_the_same_code_may_not_differ(folders, capsys):
     assert "| `en/card.png` | changed | 1.00 % |" in printed
     # It explains itself: what it means and where to read on.
     assert "**To fix it,**" in printed
-    assert "docs/development.md#the-same-images-in-every-run" in printed
-    assert (output / "summary.md").read_text() == printed.removesuffix("\n")
+    # A relative link leads nowhere from the page of the run.
+    assert (
+        "(https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/HEAD/"
+        "docs/development.md#the-same-images-in-every-run)" in printed
+    )
+    # The annotation, which the bot-health bot quotes in its issue, names the images.
+    annotation = (
+        "::error title=Two renders differ::1 of 2 images came out differently: "
+        "en/card.png. See the summary of this run."
+    )
+    assert printed == f"{(output / 'summary.md').read_text()}\n{annotation}\n"
     assert (output / "en" / "card.difference.png").is_file()
 
 
@@ -206,7 +215,9 @@ def test_two_renders_that_look_the_same_pass(folders, capsys):
     arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
     assert compare.main(arguments) == 0
 
-    assert "Both renders of all 1 images look the same." in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    assert "Both renders of all 1 images look the same." in printed
+    assert "::error" not in printed
 
 
 def test_two_renders_without_any_image_fail(folders, capsys):
@@ -215,6 +226,11 @@ def test_two_renders_without_any_image_fail(folders, capsys):
 
     arguments = [str(first), str(second), str(output), "--languages", "en", "--twice"]
     assert compare.main(arguments) == 1
+
+    printed = capsys.readouterr().out
+    assert "Neither render left an image in these languages" in printed
+    assert "look the same" not in printed
+    assert "::error title=No images to compare::" in printed
 
 
 def test_the_command_line(folders, capsys):

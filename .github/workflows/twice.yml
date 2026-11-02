@@ -11,7 +11,8 @@ name: Same images
 # issue of the bot-health bot within days; on demand; and after a change of the tool
 # itself reaches main. No check of pull requests: it would take twenty minutes of the
 # runners from each of them for a race that a week later is just as easy to find. The
-# summary says what to do, and the artifact holds both images with their differences.
+# annotation names the images, the summary says what to do, and the artifact holds both
+# images with their differences.
 
 on:
   push:
@@ -175,3 +176,11 @@ jobs:
           path: tests/e2e/artifacts/*.png
           if-no-files-found: ignore
           retention-days: 14
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml. Also when
+      # a render fails, which reaches no comparison.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: render twice (${{ matrix.language }})
+        run: python3 .github/blueprint.py coach explain "$CHECK"
