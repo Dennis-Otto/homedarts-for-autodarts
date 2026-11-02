@@ -4,6 +4,13 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.2](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.1...v2.2.2) (2026-11-02)
+
+
+### Bug fixes
+
+* give a dart Board Manager 2.1 could not place no position ([#541](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/541)) ([45b9c5d](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/45b9c5d6f76aa29a024859ee2de59434d68c24c9))
+
 ## [2.2.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.0...v2.2.1) (2026-11-01)
 
 ### Fixed
