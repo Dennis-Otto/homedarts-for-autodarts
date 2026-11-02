@@ -25,7 +25,7 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/Dennis-Otto/homedarts-for-autodarts/issues",
   "requirements": [],
-  "version": "2.2.2",
+  "version": "2.2.3",
   "zeroconf": [
     "_autodarts-board._tcp.local."
   ]
