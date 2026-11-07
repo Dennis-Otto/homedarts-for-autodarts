@@ -50,6 +50,7 @@ class HandWatch:
 
     def hand(self, motion: dict[str, Any], now: float) -> float:
         """A reading with a hand; the seconds left until it counts as stuck."""
+        self._gone_for_a_minute(now)
         self.gone_since = None
         if self.still_since is None:
             self.still_since = now
@@ -73,7 +74,13 @@ class HandWatch:
         self.nothing_known()
         if self.gone_since is None:
             self.gone_since = now
-        if now - self.gone_since >= STUCK_HAND_SECONDS:
-            self.restarted = False
+        self._gone_for_a_minute(now)
         ended, self.reported = self.reported, False
         return ended
+
+    def _gone_for_a_minute(self, now: float) -> None:
+        """A hand gone for a minute is over, and the next one may get a restart of its
+        own. Its return tells that as well as a reading without it: while the frames
+        repeat themselves, only a read every ten seconds brings such a reading."""
+        if self.gone_since is not None and now - self.gone_since >= STUCK_HAND_SECONDS:
+            self.restarted = False
