@@ -1555,12 +1555,20 @@ def tablet_screen(browser: Browser) -> None:
     # browser that can't keep the screen on over plain HTTP in the header, and the button
     # brings the configured height back.
     toggle = page.locator(f"{card} .fullscreen-toggle")
+
+    def pressed(value: str, message: str) -> None:
+        """The browser sets document.fullscreenElement before it tells the card with
+        fullscreenchange, which it fires with a later frame, so the button follows the
+        full screen a moment after it."""
+        button = page.locator(f"{card} .fullscreen-toggle[aria-pressed='{value}']")
+        try:
+            button.wait_for(timeout=5000)
+        except PlaywrightTimeout:
+            check(False, f"{message}: {toggle.get_attribute('aria-pressed')}")
+
     toggle.click()
     page.wait_for_function("() => !!document.fullscreenElement", timeout=15000)
-    check(
-        toggle.get_attribute("aria-pressed") == "true",
-        "The full-screen button is not pressed in full screen",
-    )
+    pressed("true", "The full-screen button is not pressed in full screen")
     page.locator(f"{card} header .awake-hint").wait_for(timeout=15000)
     fits("The keypad in full screen")
     fills("The keypad in full screen")
@@ -1570,10 +1578,7 @@ def tablet_screen(browser: Browser) -> None:
     )
     toggle.click()
     page.wait_for_function("() => !document.fullscreenElement", timeout=15000)
-    check(
-        toggle.get_attribute("aria-pressed") == "false",
-        "The full-screen button stays pressed after full screen",
-    )
+    pressed("false", "The full-screen button stays pressed after full screen")
     fills("The keypad after full screen")
     page.evaluate(CALL_SERVICE, ["switch", "turn_off", "practice_manual_entry"])
     game_off()

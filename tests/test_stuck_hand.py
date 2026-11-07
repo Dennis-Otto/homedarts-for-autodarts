@@ -475,6 +475,21 @@ async def test_a_hand_that_comes_back_within_a_minute_gets_no_second_restart(
     assert board.commands == ["stop", "start", "stop", "start"]
 
 
+async def test_a_hand_back_after_a_minute_gets_a_restart_without_a_read_between(
+    hass, at_board
+):
+    """While the frames repeat themselves, only the read every ten seconds reports the
+    board without the hand. A hand back after a minute is a new occurrence also when no
+    read came between, as when it comes back just before the next one."""
+    _, _, board = at_board
+    await stuck_at(board)
+    assert board.commands == ["stop", "start"]
+    # The restart cleared the hand; the minute passes with no frame and no read at all.
+    board.freezer.tick(timedelta(seconds=STUCK_HAND_SECONDS))
+    await stuck_at(board)
+    assert board.commands == ["stop", "start", "stop", "start"]
+
+
 async def test_a_hand_that_moves_is_no_stuck_hand(hass, at_board):
     entry, _, board = at_board
     fired = events_of(hass)

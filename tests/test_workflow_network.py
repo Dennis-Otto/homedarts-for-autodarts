@@ -266,11 +266,13 @@ def test_the_job_waits_until_apt_get_has_removed_docker(
 # that its steps fail, and those of the runner, so that the job hangs until its timeout.
 # That was the cause of at least 33 of the 46 flaky jobs of #463. Harden-Runner undoes it
 # since v2.22.3, when a single request for its feature flags answers within 3 s, and a
-# job with sudo undoes it itself when that request didn't. A job without sudo can't: it
-# has only the release of Harden-Runner, and the timeout of the job as the last resort.
+# job with sudo undoes it itself when that request didn't. A job without sudo can't, so
+# it hung when StepSecurity's API answered that request with 429 (#586). Since v2.22.4,
+# Harden-Runner undoes the experiment also when its flags don't come.
 SEE_LOOKUPS = "Let Harden-Runner see the DNS lookups"
 WITH_SUDO = sorted(set(JOBS) - set(WITHOUT_DOCKER))
 PINNED = re.compile(r"step-security/harden-runner@[0-9a-f]{40} # v(\d+)\.(\d+)\.(\d+)")
+UNDOES_THE_EXPERIMENT = (2, 22, 4)
 
 
 def see_lookups_step(key: tuple[str, str]) -> dict:
@@ -283,7 +285,9 @@ def see_lookups_step(key: tuple[str, str]) -> dict:
 def test_harden_runner_is_a_release_that_undoes_the_dns_experiment(name):
     pinned = PINNED.findall((WORKFLOWS / name).read_text(encoding="utf-8"))
     assert pinned
-    assert all(tuple(map(int, version)) >= (2, 22, 3) for version in pinned), pinned
+    assert all(
+        tuple(map(int, version)) >= UNDOES_THE_EXPERIMENT for version in pinned
+    ), pinned
 
 
 def test_the_jobs_that_keep_sudo_are_those_with_containers():
