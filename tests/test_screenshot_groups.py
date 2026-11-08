@@ -340,6 +340,39 @@ def test_the_screenshot_bot_renders_every_group_of_every_language_as_a_shard():
     assert list(taken.shards) == settings["shards"]
     assert list(taken.files) == settings["files"]
     assert list(taken.hosts) == settings["hosts"]
+    assert list(taken.skip_wait) == settings["skip_wait"]
+    assert taken.timeout_minutes == settings["timeout_minutes"]
+    assert taken.failure_folder == settings["failure_folder"]
+
+
+def test_the_step_that_renders_a_shard_has_the_time_of_the_step_of_the_visual_check():
+    # The same group of the same tool, on the same runner.
+    (render,) = [
+        step
+        for step in workflow("visual.yml")["jobs"]["render"]["steps"]
+        if step.get("run") == "exec bash tests/e2e/screenshots.sh"
+    ]
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    assert settings["timeout_minutes"] == render["timeout-minutes"]
+
+
+def test_a_shard_that_failed_keeps_what_the_screenshot_tool_left():
+    # The pages that a failed capture saved, the seconds of the sections and the
+    # images of the group so far: the folder that Git ignores, in which the tool and
+    # scripts/screenshots.sh leave them.
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    folder = settings["failure_folder"]
+    assert folder == "tests/e2e/artifacts"
+    ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert f"/{folder}/" in ignored
+    script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
+    assert f'local folder="{folder}/rendered-${{language}}-${{group}}"' in script
+    tool = (ROOT / "tests" / "e2e" / "screenshots.py").read_text(encoding="utf-8")
+    assert 'ARTIFACTS = Path(__file__).resolve().parent / "artifacts"' in tool
 
 
 def test_the_comment_of_the_visual_check_finds_one_report_per_language():
@@ -876,17 +909,27 @@ if [[ "$1" == venv ]]; then
   chmod +x "$venv/bin/python"
 fi
 """
+# GNU timeout: notes the limit that the script gives a group, and keeps it, or takes
+# SHORT_LIMIT instead, so that a group that hangs runs out of time in a second.
+TIMEOUT_STAND_IN = """#!/usr/bin/env bash
+printf '%s\\n' "$3" >> "$LIMITS"
+exec timeout "$1" "$2" "${SHORT_LIMIT:-$3}" "${@:4}"
+"""
 
 
 @pytest.fixture
 def project(tmp_path):
-    """A copy of scripts/screenshots.sh in a repository of its own, with an image of
-    each language that no group renders, and stand-ins for the screenshot tool, the
-    recorder and uv."""
+    """A copy of scripts/screenshots.sh and of the settings of the bot in a
+    repository of its own, with an image of each language that no group renders, and
+    stand-ins for the screenshot tool, the recorder, uv and GNU timeout."""
     root = tmp_path / "repository"
     (root / "scripts").mkdir(parents=True)
     shutil.copy(
         ROOT / "scripts" / "screenshots.sh", root / "scripts" / "screenshots.sh"
+    )
+    (root / ".github").mkdir()
+    shutil.copy(
+        ROOT / ".github" / "screenshots.toml", root / ".github" / "screenshots.toml"
     )
     (root / ".python-version").write_text("3.14\n", encoding="utf-8")
     (root / "requirements-test.txt").touch()
@@ -899,10 +942,12 @@ def project(tmp_path):
         ("screenshots.sh", TOOL_STAND_IN),
         ("record_demo.py", RECORDER_STAND_IN),
         ("uv", UV_STAND_IN),
+        ("timeout", TIMEOUT_STAND_IN),
     ):
         (stand_ins / name).write_text(text, encoding="utf-8", newline="\n")
         (stand_ins / name).chmod(0o755)
     (tmp_path / "calls").touch()
+    (tmp_path / "limits").touch()
     (tmp_path / "runner").mkdir()
     env = {
         **os.environ,
@@ -912,10 +957,12 @@ def project(tmp_path):
         "SCREENSHOTS_RECORD": str(stand_ins / "record_demo.py"),
         "PYTHON": sys.executable,
         "UV": str(stand_ins / "uv"),
+        "SCREENSHOTS_TIMEOUT": str(stand_ins / "timeout"),
+        "LIMITS": str(tmp_path / "limits"),
         "RUNNER_TEMP": str(tmp_path / "runner"),
         "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
     }
-    for name in ("SCREENSHOTS_SHARD", "SCREENSHOTS_LIMIT", "FAIL", "HANG", "NAMES"):
+    for name in ("SCREENSHOTS_SHARD", "SHORT_LIMIT", "FAIL", "HANG", "NAMES"):
         env.pop(name, None)
     return root, env
 
@@ -1041,22 +1088,84 @@ def test_a_group_that_fails_to_render_fails_its_shard(project):
     assert sorted(path.name for path in folder.iterdir()) == ["diagram-light.png"]
 
 
+def limits(project: tuple[Path, dict[str, str]]) -> list[str]:
+    """The time limits that the script gave its groups, in turn."""
+    return Path(project[1]["LIMITS"]).read_text(encoding="utf-8").splitlines()
+
+
 def test_a_group_that_hangs_gets_a_sigint_and_fails_its_shard(project):
     # The screenshot tool gets the signal itself, ends its demo and prints the state
-    # of its containers, long before the job's limit of an hour.
-    result, calls = shard(
-        project, SCREENSHOTS_SHARD="de-1", HANG="1", SCREENSHOTS_LIMIT="1s"
-    )
+    # of its containers, before the step of the bot runs out of time.
+    result, calls = shard(project, SCREENSHOTS_SHARD="de-1", HANG="1", SHORT_LIMIT="1s")
 
     assert result.returncode == 124
     assert calls == ["render de 1/4 tests/e2e/artifacts/rendered-de-1", "interrupted"]
-    assert "Group 1 in de took longer than 1s" in result.stderr
+    assert "Group 1 in de took longer than 18m" in result.stderr
+    assert limits(project) == ["18m"]
 
 
-def test_a_group_has_the_time_limit_of_the_old_render_step():
+def test_a_group_ends_three_minutes_before_the_step_that_renders_its_shard(project):
+    # GitHub's SIGINT at the end of the step would reach the script alone, and the
+    # runner kills what still runs ten seconds later. The group gets its own SIGINT
+    # and two minutes more to clean up, and still fails before the step does.
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    step = settings["timeout_minutes"]
+
+    result, _ = shard(project, SCREENSHOTS_SHARD="en-2")
+
+    assert result.returncode == 0, result.stderr
+    assert limits(project) == [f"{step - 3}m"]
     script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
-    assert 'LIMIT="${SCREENSHOTS_LIMIT:-21m}"' in script
-    assert 'timeout --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}"' in script
+    assert 'TIMEOUT="${SCREENSHOTS_TIMEOUT:-timeout}"' in script
+    command = '"${TIMEOUT}" --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}"'
+    assert command in script
+    # The bot takes the same limit for the step.
+    assert blueprint_screenshots().settings(ROOT).timeout_minutes == step
+
+
+def test_without_a_time_limit_of_the_step_a_group_ends_before_its_45_minutes(project):
+    # The bot gives the step the most that it may set, and so does the script.
+    root, _ = project
+    toml = root / ".github" / "screenshots.toml"
+    toml.write_text(
+        "".join(
+            line
+            for line in toml.read_text(encoding="utf-8").splitlines(keepends=True)
+            if not line.startswith("timeout_minutes")
+        ),
+        encoding="utf-8",
+    )
+    assert blueprint_screenshots().settings(root).timeout_minutes is None
+
+    result, _ = shard(project, SCREENSHOTS_SHARD="de-4")
+
+    assert result.returncode == 0, result.stderr
+    assert limits(project) == [f"{blueprint_screenshots().MOST_MINUTES - 3}m"]
+
+
+@pytest.mark.parametrize("minutes", [1, 3])
+def test_a_time_limit_of_the_step_that_leaves_a_group_no_time_fails_at_once(
+    project, minutes
+):
+    root, _ = project
+    toml = root / ".github" / "screenshots.toml"
+    toml.write_text(
+        re.sub(
+            r"^timeout_minutes = \d+$",
+            f"timeout_minutes = {minutes}",
+            toml.read_text(encoding="utf-8"),
+            flags=re.MULTILINE,
+        ),
+        encoding="utf-8",
+    )
+
+    result, calls = shard(project, SCREENSHOTS_SHARD="en-1")
+
+    assert result.returncode == 2
+    assert calls == []
+    assert f"timeout_minutes = {minutes} in .github/screenshots.toml" in result.stderr
 
 
 def test_a_group_that_rendered_no_image_fails_its_shard(project):

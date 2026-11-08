@@ -35,3 +35,22 @@ hosts = [
   "launchpadlibrarian.net:443",
   "brands.home-assistant.io:443",
 ]
+
+# launchpad.net often keeps a runner waiting for minutes before it answers, while
+# Harden-Runner lets it through: the render jobs don't wait for it before the script
+# runs, as the jobs of the visual check don't. Only tests/e2e/pngquant.sh needs it,
+# in the container of the images, a few minutes later and with retries of its own
+# (docs/development.md#network-of-the-jobs). The jobs still allow it.
+skip_wait = ["launchpad.net:443"]
+
+# The time limit of the step that renders a shard, in minutes, as the step of the
+# visual check that renders a group has it: a group takes about eight. Each group of
+# scripts/screenshots.sh ends three minutes before it, so that the screenshot tool
+# can end its demo and print the state of its containers before the step runs out
+# of time (docs/development.md#when-a-step-hangs).
+timeout_minutes = 21
+
+# What a shard that failed leaves, kept as an artifact for seven days: the pages
+# that a failed capture saved, the seconds of the sections and the images of the
+# group so far.
+failure_folder = "tests/e2e/artifacts"
