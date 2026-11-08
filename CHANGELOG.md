@@ -4,6 +4,13 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.3.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.4...v2.3.0) (2026-11-08)
+
+
+### Features
+
+* **entities:** show whether the board is calibrated and how exact each camera's calibration is ([#621](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/621)) ([b283d8b](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/b283d8b5e940349905566481b27b1a409fb37529))
+
 ## [2.2.4](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.3...v2.2.4) (2026-11-08)
 
 ### Bug fixes
