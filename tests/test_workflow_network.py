@@ -131,7 +131,8 @@ def test_the_screenshot_bot_reaches_the_hosts_that_the_images_need():
     assert all(host.endswith(":443") for host in settings["hosts"])
     named = {host.removesuffix(":443") for host in settings["hosts"]}
     assert named == IMAGES - shared
-    assert "api.github.com" in shared
+    # A set of hosts, not a text: GitHub and its API come with the shared job.
+    assert shared.issuperset(GITHUB)
 
 
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
