@@ -4,6 +4,12 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.4](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.3...v2.2.4) (2026-11-08)
+
+### Bug fixes
+
+- A board on Board Manager 2.1 that sees a hand all the time again, after the hand was gone for more than a minute, gets a restart of its detection of its own, also when the hand comes back before the next read of the board.
+
 ## [2.2.3](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.2...v2.2.3) (2026-11-02)
 
 ### Bug fixes
