@@ -1,7 +1,6 @@
-"""A job of the visual check or of the screenshot bot takes the images of an earlier
-run when they were rendered from the same files, and only from a run of this
-repository's own workflows on one of its own branches, never of a fork
-(tests/e2e/render_key.py)."""
+"""A job of the visual check takes the images of an earlier run when they were
+rendered from the same files, and only from a run of this repository's own visual
+check on one of its own branches, never of a fork (tests/e2e/render_key.py)."""
 
 import http.client
 import importlib.util
@@ -253,11 +252,10 @@ def test_the_newest_candidate_comes_first():
     "path",
     [
         ".github/workflows/visual.yml",
-        ".github/workflows/screenshots.yml",
-        ".github/workflows/screenshots.yml@refs/heads/main",
+        ".github/workflows/visual.yml@refs/heads/main",
     ],
 )
-def test_a_run_of_the_visual_check_or_the_bot_on_an_own_branch_is_trusted(path):
+def test_a_run_of_the_visual_check_on_an_own_branch_is_trusted(path):
     assert render_key.trusted(workflow_run(1, path=path), OWN)
 
 
@@ -268,6 +266,10 @@ def test_a_run_of_the_visual_check_or_the_bot_on_an_own_branch_is_trusted(path):
         workflow_run(1, head=None),
         workflow_run(1, repository=FORK),
         workflow_run(1, path=".github/workflows/e2e.yml"),
+        # The screenshot bot of the blueprint keeps no images under a key, and the
+        # old one of this project is gone.
+        workflow_run(1, path=".github/workflows/screenshot-bot.yml"),
+        workflow_run(1, path=".github/workflows/screenshots.yml"),
         workflow_run(1, path=".github/workflows/visual.yml.evil"),
         {**workflow_run(1), "path": None},
     ],
@@ -276,6 +278,8 @@ def test_a_run_of_the_visual_check_or_the_bot_on_an_own_branch_is_trusted(path):
         "deleted fork",
         "other repository",
         "other workflow",
+        "screenshot bot",
+        "old screenshot bot",
         "lookalike",
         "none",
     ],
@@ -326,9 +330,11 @@ def test_a_run_that_is_not_trusted_gives_nothing(answers):
         "artifacts": [artifact(2, created="2026-10-25T08:00:00Z"), artifact(1)]
     }
     known[run_path(2)] = workflow_run(2, head=FORK)
-    known[run_path(1)] = workflow_run(1, path=".github/workflows/screenshots.yml")
+    known[run_path(1)] = workflow_run(
+        1, path=".github/workflows/visual.yml@refs/heads/main"
+    )
     assert render_key.earlier(NAME, REPOSITORY, OWN) == workflow_run(
-        1, path=".github/workflows/screenshots.yml"
+        1, path=".github/workflows/visual.yml@refs/heads/main"
     )
 
 
@@ -446,9 +452,7 @@ def test_the_step_never_takes_the_images_of_a_fork(step, answers):
 
 
 @pytest.mark.parametrize("reuse", [None, "false", ""])
-def test_a_run_on_a_schedule_or_on_demand_renders_anew(
-    step, answers, monkeypatch, reuse
-):
+def test_a_run_on_demand_renders_anew(step, answers, monkeypatch, reuse):
     outputs, summary = step
     if reuse is None:
         monkeypatch.delenv("REUSE")
@@ -458,7 +462,7 @@ def test_a_run_on_a_schedule_or_on_demand_renders_anew(
     render_key.find("en", "2")
 
     assert outputs_of(outputs) == {"name": NAME}
-    assert "Rendered anew, as every run on a schedule or on demand does" in (
+    assert "Rendered anew, as every run on demand does" in (
         summary.read_text(encoding="utf-8")
     )
     assert answers[1] == []
@@ -586,9 +590,9 @@ def test_the_script_runs_as_the_step_runs_it(tmp_path, monkeypatch, capsys):
 
 # The workflows ---------------------------------------------------------------------
 
-# Each workflow takes earlier images for its own event: the visual check for a pull
-# request, the screenshot bot for a push to main.
-REUSED_FOR = {"visual.yml": "pull_request", "screenshots.yml": "push"}
+# The visual check takes earlier images for a pull request; a run on demand renders
+# anew.
+REUSED_FOR = {"visual.yml": "pull_request"}
 
 
 def steps_of(name: str) -> dict[str, dict]:
@@ -659,29 +663,8 @@ def test_the_key_knows_everything_that_the_render_step_gets(name):
     assert ".github/workflows/" + name in render_key.WORKFLOWS
 
 
-def test_both_workflows_render_alike():
-    # So the images of either one are those that the other would render.
-    visual, bot = steps_of("visual.yml"), steps_of("screenshots.yml")
-    for step in (
-        "Look for the same images in an earlier run",
-        "Take the images of the earlier run",
-        "Render the images of the group with the frozen clock",
-        "Keep the images of the group",
-    ):
-        if step == "Look for the same images in an earlier run":
-            assert {**visual[step]["env"], "REUSE": ""} == {
-                **bot[step]["env"],
-                "REUSE": "",
-            }
-        else:
-            assert visual[step] == bot[step], step
-
-
-@pytest.mark.parametrize(
-    ("name", "job"), [("visual.yml", "compare"), ("screenshots.yml", "collect")]
-)
-def test_the_job_of_a_language_takes_the_images_of_every_key(name, job):
-    steps = workflow(name)["jobs"][job]["steps"]
+def test_the_job_of_a_language_takes_the_images_of_every_key():
+    steps = workflow("visual.yml")["jobs"]["compare"]["steps"]
     (take,) = [
         step for step in steps if step.get("name") == "Take the images of every group"
     ]

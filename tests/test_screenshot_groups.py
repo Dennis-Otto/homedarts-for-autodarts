@@ -2,9 +2,11 @@
 from a fresh demo, so that the visual check and the screenshot bot render the groups
 side by side on runners of their own and put them together afterwards.
 
-The scripts run here as the workflows run them: screenshots.sh with a stand-in for
-docker, collect.sh with compare.py, and the steps of the screenshot bot in bash with
-stand-ins for gh and a repository of their own."""
+The scripts run here as the workflows run them: tests/e2e/screenshots.sh with a
+stand-in for docker, collect.sh with compare.py, scripts/screenshots.sh, whose shards
+the screenshot bot of the blueprint renders, with stand-ins for the screenshot tool,
+the recorder and uv, and the comment of the visual check in bash with a stand-in for
+gh."""
 
 import ast
 import importlib.util
@@ -14,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -31,9 +34,9 @@ SPEC.loader.exec_module(group_times)
 pytestmark = pytest.mark.skipif(
     shutil.which("bash") is None, reason="the scripts run in bash"
 )
-# The runners of GitHub have jq, which the bot reads its reports with.
+# The runners of GitHub have jq, which the comment reads its artifacts with.
 needs_jq = pytest.mark.skipif(
-    shutil.which("jq") is None, reason="the bot reads with jq"
+    shutil.which("jq") is None, reason="the comment reads with jq"
 )
 
 
@@ -95,7 +98,7 @@ def workflow(name: str) -> dict:
 
 def group_count(script: str) -> int:
     counts = re.findall(
-        r"^GROUP_COUNT=(\d+)$", (E2E / script).read_text(encoding="utf-8"), re.M
+        r"^GROUP_COUNT=(\d+)$", (ROOT / script).read_text(encoding="utf-8"), re.M
     )
     assert len(counts) == 1, (script, counts)
     return int(counts[0])
@@ -229,18 +232,17 @@ def test_the_big_tournaments_stop_at_their_pictures():
     ]
 
 
-@pytest.mark.parametrize("script", ["screenshots.sh", "collect.sh"])
+@pytest.mark.parametrize(
+    "script",
+    ["tests/e2e/screenshots.sh", "tests/e2e/collect.sh", "scripts/screenshots.sh"],
+)
 def test_the_scripts_know_how_many_groups_there_are(script):
     assert group_count(script) == len(GROUPS)
 
 
-@pytest.mark.parametrize(
-    ("name", "jobs"),
-    [("visual.yml", ("compare",)), ("screenshots.yml", ("collect", "pull-request"))],
-)
-def test_the_workflows_render_every_group_on_a_runner_of_its_own(name, jobs):
+def test_the_visual_check_renders_every_group_on_a_runner_of_its_own():
     count = len(GROUPS)
-    render = workflow(name)["jobs"]["render"]
+    render = workflow("visual.yml")["jobs"]["render"]
     matrix = render["strategy"]["matrix"]
     assert matrix["group"] == list(range(1, count + 1))
     assert matrix["language"] == ["en", "de"]
@@ -262,15 +264,11 @@ def test_the_workflows_render_every_group_on_a_runner_of_its_own(name, jobs):
     assert upload["with"]["name"] == "${{ steps.earlier.outputs.name }}"
     # One group that fails cancels neither the other groups nor what comes after.
     assert render["strategy"]["fail-fast"] is False
-    for job in jobs:
-        assert "!cancelled()" in workflow(name)["jobs"][job]["if"]
+    assert "!cancelled()" in workflow("visual.yml")["jobs"]["compare"]["if"]
 
 
-@pytest.mark.parametrize(
-    ("name", "job"), [("visual.yml", "compare"), ("screenshots.yml", "collect")]
-)
-def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
-    render = workflow(name)["jobs"]["render"]["steps"]
+def test_the_job_of_a_language_lists_how_long_its_groups_took():
+    render = workflow("visual.yml")["jobs"]["render"]["steps"]
     # An artifact of their own: the folder of the images belongs to root, the user of
     # the container that rendered them, so no step of the runner writes into it.
     assert not any("artifacts/rendered/" in step.get("run", "") for step in render)
@@ -286,7 +284,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
         "if-no-files-found": "ignore",
         "retention-days": 1,
     }
-    steps = workflow(name)["jobs"][job]["steps"]
+    steps = workflow("visual.yml")["jobs"]["compare"]["steps"]
     names = [step.get("name") for step in steps]
     taken = steps[names.index("Take the seconds of every group")]
     assert taken["if"] == "${{ !cancelled() }}"
@@ -308,9 +306,40 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took(name, job):
     )
 
 
-def test_the_bot_runs_nothing_in_a_fork():
-    for job in workflow("screenshots.yml")["jobs"].values():
-        assert "!github.event.repository.fork" in job["if"]
+def blueprint_screenshots():
+    """The module of the screenshot bot of the blueprint, which reads its settings."""
+    spec = importlib.util.spec_from_file_location(
+        "blueprint_screenshots", ROOT / ".github" / "blueprint" / "screenshots.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    # Its dataclasses look their module up by name.
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_screenshot_bot_renders_every_group_of_every_language_as_a_shard():
+    # Each group of each language on a runner of its own, as in the visual check, and
+    # the recording of the live demo beside them.
+    languages = workflow("visual.yml")["jobs"]["render"]["strategy"]["matrix"][
+        "language"
+    ]
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    assert settings["shards"] == [
+        f"{language}-{group}"
+        for language in languages
+        for group in range(1, len(GROUPS) + 1)
+    ] + ["timeline"]
+    assert settings["files"] == ["docs/demo/timeline.json"]
+    script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
+    assert f"LANGUAGES=({' '.join(languages)})" in script
+    # The bot takes the settings as they are: a value it can't take fails its run.
+    taken = blueprint_screenshots().settings(ROOT)
+    assert list(taken.shards) == settings["shards"]
+    assert list(taken.files) == settings["files"]
+    assert list(taken.hosts) == settings["hosts"]
 
 
 def test_the_comment_of_the_visual_check_finds_one_report_per_language():
@@ -710,15 +739,6 @@ def test_collect_puts_the_groups_together_and_compares_them(repository):
     # The diagrams and the image with the same pixels.
     assert report["unchanged"] == 3
     assert Image.open(images / "card.png").getpixel((0, 0)) == (200, 30, 40)
-    # The bot takes the rendered images alone: main may have newer diagrams.
-    collected = repository / "tests/e2e/artifacts/collected/en"
-    assert sorted(path.name for path in collected.iterdir()) == [
-        "card.png",
-        "last.png",
-        "new.png",
-        "same.png",
-    ]
-    assert (collected / "card.png").read_bytes() == (images / "card.png").read_bytes()
 
 
 def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
@@ -742,24 +762,6 @@ def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
         "images"
     ]
     assert (repository / "docs/images/en/flow-light.png").exists()
-
-
-def test_collect_restores_the_committed_file_of_an_unchanged_image(repository):
-    committed = (repository / "docs/images/en/same.png").read_bytes()
-    for group, name in (
-        (1, "card.png"),
-        (2, "same.png"),
-        (3, "other.png"),
-        (4, "last.png"),
-    ):
-        rendered(repository, group, name, level=9)
-
-    result = collect(repository, RESTORE="1")
-
-    assert result.returncode == 0, result.stderr
-    assert (repository / "docs/images/en/same.png").read_bytes() == committed
-    collected = repository / "tests/e2e/artifacts/collected/en/same.png"
-    assert collected.read_bytes() == committed
 
 
 def test_collect_takes_the_groups_under_the_keys_of_their_artifacts(repository):
@@ -809,431 +811,259 @@ def test_collect_fails_on_an_image_that_two_groups_rendered(repository):
     assert "en/card.png comes from group 1 and group 2" in result.stderr
 
 
-# The pull request of the screenshot bot ----------------------------------------------
+# scripts/screenshots.sh ------------------------------------------------------------
 
-BOT = workflow("screenshots.yml")["jobs"]["pull-request"]["steps"]
+# The screenshot tool: notes its settings, and leaves an image for each name of
+# $NAMES in the folder of its language, unless the test sets $FAIL; with $HANG, it
+# waits until a SIGINT ends it, and notes that.
+TOOL_STAND_IN = """#!/usr/bin/env bash
+printf 'render %s %s %s\\n' "$LANGUAGES" "$SCREENSHOT_GROUP" "$IMAGES" >> "$CALLS"
+if [[ -n "${HANG:-}" ]]; then
+  trap 'kill "$sleeper"; echo interrupted >> "$CALLS"; exit 130' INT
+  sleep 30 >/dev/null 2>&1 &
+  sleeper=$!
+  wait
+fi
+if [[ -n "${FAIL:-}" ]]; then
+  exit 3
+fi
+mkdir -p "$REPOSITORY/$IMAGES/$LANGUAGES" "$REPOSITORY/tests/e2e/artifacts"
+for name in ${NAMES-card.png}; do
+  printf '%s %s' "$SCREENSHOT_GROUP" "$name" > "$REPOSITORY/$IMAGES/$LANGUAGES/$name"
+done
+group="${SCREENSHOT_GROUP%/*}"
+printf '| section | 1.0 |\\n' > "$REPOSITORY/tests/e2e/artifacts/screenshots-$LANGUAGES-$group.md"
+"""
+# The recorder of the live demo, run by the Python that the script chose.
+RECORDER_STAND_IN = """import os
+import sys
+from pathlib import Path
 
-GH = """#!/usr/bin/env bash
-printf '%s\\n' "$*" >> "$CALLS"
-case "$*" in
-  "pr list "*) echo "${PR_LIST:-[]}" ;;
-  "api --paginate repos/"*"/files "*) cat "$PR_FILES" ;;
-  "api users/"*) echo 4242 ;;
-  "api graphql "*)
-    cp "${*: -3:1}" "$COMMITS/commit-$(ls "$COMMITS" | wc -l).json"
-    echo "c0ffee"
-    ;;
-esac
+with open(os.environ["CALLS"], "a", encoding="utf-8") as calls:
+    calls.write("record\\n")
+target = Path(os.environ["REPOSITORY"], "docs", "demo", "timeline.json")
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text("{}\\n", encoding="utf-8")
+"""
+# uv: notes its calls, and makes a Python in a new environment that notes its runs.
+UV_STAND_IN = """#!/usr/bin/env bash
+printf 'uv %s\\n' "$*" >> "$CALLS"
+if [[ "$1" == venv ]]; then
+  venv="${*: -1}"
+  mkdir -p "$venv/bin"
+  printf '#!/usr/bin/env bash\\nprintf "venv python %%s\\\\n" "$*" >> "$CALLS"\\n' > "$venv/bin/python"
+  chmod +x "$venv/bin/python"
+fi
 """
 
 
-# The open pull request of the bot, as gh pr list shows it.
-OWN = {
-    "isCrossRepository": False,
-    "author": {"login": "app/release-app", "is_bot": True},
-}
-
-
-def pulls(*numbers: int, **more: dict) -> str:
-    """The open pull requests of the bot's branch: the bot's own ones by number,
-    and others as given."""
-    return json.dumps([*more.values(), *({"number": n, **OWN} for n in numbers)])
-
-
-def step(name: str) -> str:
-    (run,) = [item["run"] for item in BOT if item.get("name") == name]
-    return run
-
-
-def git(cwd: Path, *arguments: str) -> str:
-    return subprocess.run(
-        ["git", *arguments], cwd=cwd, capture_output=True, encoding="utf-8", check=True
-    ).stdout
-
-
 @pytest.fixture
-def own_repositories(monkeypatch):
-    """Git's variables that point it at another repository, such as GIT_DIR, which
-    Git sets for its hooks in a worktree, are gone: the commits of the bot's tests
-    land in their own repositories, never in the one that runs the tests."""
-    for name in git(Path.cwd(), "rev-parse", "--local-env-vars").split():
-        monkeypatch.delenv(name, raising=False)
-
-
-@pytest.fixture
-def bot(tmp_path, own_repositories):
-    """main with images in both languages and the recording of the live demo, an
-    open pull request of the bot that changed a German image, and the rendered
-    English images of a run."""
-    origin, clone = tmp_path / "origin.git", tmp_path / "clone"
-    git(tmp_path, "init", "--quiet", "--bare", "--initial-branch=main", str(origin))
-    git(tmp_path, "clone", "--quiet", str(origin), str(clone))
-    for command in (
-        ("config", "user.name", "Test"),
-        ("config", "user.email", "test@example.com"),
+def project(tmp_path):
+    """A copy of scripts/screenshots.sh in a repository of its own, with an image of
+    each language that no group renders, and stand-ins for the screenshot tool, the
+    recorder and uv."""
+    root = tmp_path / "repository"
+    (root / "scripts").mkdir(parents=True)
+    shutil.copy(
+        ROOT / "scripts" / "screenshots.sh", root / "scripts" / "screenshots.sh"
+    )
+    (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+    (root / "requirements-test.txt").touch()
+    for language in ("en", "de"):
+        (root / "docs" / "images" / language).mkdir(parents=True)
+        (root / "docs" / "images" / language / "diagram-light.png").write_text("kept")
+    stand_ins = tmp_path / "stand-ins"
+    stand_ins.mkdir()
+    for name, text in (
+        ("screenshots.sh", TOOL_STAND_IN),
+        ("record_demo.py", RECORDER_STAND_IN),
+        ("uv", UV_STAND_IN),
     ):
-        git(clone, *command)
-    picture(clone / "docs/images/en/card.png")
-    picture(clone / "docs/images/de/card.png")
-    picture(clone / "docs/images/de/other.png")
-    (clone / "docs/demo").mkdir(parents=True)
-    (clone / "docs/demo/timeline.json").write_text('{"steps":[]}\n')
-    git(clone, "add", "--all")
-    git(clone, "commit", "--quiet", "-m", "main")
-    git(clone, "push", "--quiet", "origin", "main")
-    # The earlier run of the bot changed a German image in its pull request.
-    git(clone, "switch", "--quiet", "-c", "bot")
-    picture(clone / "docs/images/de/card.png", colour=(1, 2, 3))
-    git(clone, "commit", "--quiet", "-am", "earlier images")
-    git(clone, "push", "--quiet", "origin", "bot:refs/heads/bot/screenshots")
-    git(clone, "push", "--quiet", "origin", "bot:refs/pull/7/head")
-    git(clone, "switch", "--quiet", "main")
-
-    temp = tmp_path / "runner"
-    picture(temp / "rendered/images-en/card.png", colour=(9, 9, 9))
-    (temp / "rendered/report-en").mkdir(parents=True)
-    (temp / "rendered/report-en/report.json").write_text(
-        json.dumps(
-            {"images": [{"path": "en/card.png", "status": "changed", "share": 1.0}]}
-        )
-    )
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    gh = bin_dir / "gh"
-    gh.write_text(GH, encoding="utf-8", newline="\n")
-    gh.chmod(0o755)
-    # The runners call Python 3 as python3.
-    python3 = bin_dir / "python3"
-    python3.write_text(
-        f'#!/usr/bin/env bash\nexec "{Path(sys.executable).as_posix()}" "$@"\n',
-        encoding="utf-8",
-        newline="\n",
-    )
-    python3.chmod(0o755)
-    (tmp_path / "commits").mkdir()
-    files = tmp_path / "files"
-    files.write_text("docs/images/de/card.png\n")
-    for name in ("output", "calls"):
-        (tmp_path / name).touch()
+        (stand_ins / name).write_text(text, encoding="utf-8", newline="\n")
+        (stand_ins / name).chmod(0o755)
+    (tmp_path / "calls").touch()
+    (tmp_path / "runner").mkdir()
     env = {
         **os.environ,
-        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
-        "RUNNER_TEMP": str(temp),
-        "GITHUB_OUTPUT": str(tmp_path / "output"),
-        "GITHUB_REPOSITORY": "owner/repo",
-        "GITHUB_SERVER_URL": "https://github.com",
-        "GITHUB_RUN_ID": "99",
-        "SHA": "abc1234",
-        "APP_SLUG": "release-app",
+        "REPOSITORY": str(root),
         "CALLS": str(tmp_path / "calls"),
-        "COMMITS": str(tmp_path / "commits"),
-        "PR_FILES": str(files),
+        "SCREENSHOTS_RENDER": str(stand_ins / "screenshots.sh"),
+        "SCREENSHOTS_RECORD": str(stand_ins / "record_demo.py"),
+        "PYTHON": sys.executable,
+        "UV": str(stand_ins / "uv"),
+        "RUNNER_TEMP": str(tmp_path / "runner"),
+        "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
     }
-    return clone, env
+    for name in ("SCREENSHOTS_SHARD", "SCREENSHOTS_LIMIT", "FAIL", "HANG", "NAMES"):
+        env.pop(name, None)
+    return root, env
 
 
-def run(
-    clone: Path, script: str, env: dict[str, str]
-) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["bash", "-e", "-c", script],
-        cwd=clone,
-        env=env,
+def shard(
+    project: tuple[Path, dict[str, str]], **env: str
+) -> tuple[subprocess.CompletedProcess[str], list[str]]:
+    """Run the copy of scripts/screenshots.sh; the result and the calls of the
+    stand-ins."""
+    root, base = project
+    result = subprocess.run(
+        ["bash", str(root / "scripts" / "screenshots.sh")],
+        env={**base, **env},
         capture_output=True,
         encoding="utf-8",
         check=False,
         timeout=60,
     )
+    calls = Path(base["CALLS"]).read_text(encoding="utf-8").splitlines()
+    return result, calls
 
 
-def place(
-    clone: Path, env: dict[str, str]
-) -> tuple[subprocess.CompletedProcess[str], str]:
-    result = run(clone, step("Put the rendered images in place"), env)
-    outputs = Path(env["GITHUB_OUTPUT"]).read_text(encoding="utf-8")
-    return result, outputs
+def test_a_shard_renders_its_group_into_a_folder_and_over_its_language(project):
+    root, env = project
+    (root / "docs" / "images" / "de" / "card.png").write_text("committed")
 
+    result, calls = shard(project, SCREENSHOTS_SHARD="de-3", NAMES="card.png new.webp")
 
-def publish(
-    clone: Path, env: dict[str, str], **more: str
-) -> tuple[subprocess.CompletedProcess[str], str]:
-    result = run(
-        clone, step("Open or update the pull request of the images"), {**env, **more}
-    )
-    return result, Path(env["CALLS"]).read_text(encoding="utf-8")
-
-
-def commits(env: dict[str, str]) -> list[dict]:
-    return [
-        json.loads(path.read_text())["variables"]["input"]
-        for path in sorted(Path(env["COMMITS"]).iterdir())
+    assert result.returncode == 0, result.stderr
+    assert calls == ["render de 3/4 tests/e2e/artifacts/rendered-de-3"]
+    images = root / "docs" / "images"
+    assert (images / "de" / "card.png").read_text() == "3/4 card.png"
+    assert (images / "de" / "new.webp").read_text() == "3/4 new.webp"
+    # Only its own images: the bot deletes none, and the other language stays.
+    assert (images / "de" / "diagram-light.png").read_text() == "kept"
+    assert sorted(path.name for path in (images / "en").iterdir()) == [
+        "diagram-light.png"
     ]
+    assert "Group 3 of 4 in de: 2 images in docs/images/de." in result.stdout
+    # The seconds of its sections in the summary of the job.
+    assert Path(env["GITHUB_STEP_SUMMARY"]).read_text() == "| section | 1.0 |\n"
 
 
-@needs_jq
-def test_the_bot_puts_every_language_that_rendered_in_place(bot):
-    clone, env = bot
-    temp = Path(env["RUNNER_TEMP"]) / "rendered"
-    picture(temp / "images-de/card.png", colour=(5, 5, 5))
-    (temp / "report-de").mkdir()
-    removed = [
-        {"path": "de/other.png", "status": "removed", "share": 1.0},
-        # Nothing but an image of its own language goes.
-        {"path": "de/../../README.md", "status": "removed", "share": 1.0},
-        {"path": "en/card.png", "status": "removed", "share": 1.0},
+def test_a_shard_renders_its_group_anew_into_an_empty_folder(project):
+    root, _ = project
+    old = root / "tests" / "e2e" / "artifacts" / "rendered-en-1" / "en" / "old.png"
+    old.parent.mkdir(parents=True)
+    old.write_text("an earlier render")
+
+    result, _ = shard(project, SCREENSHOTS_SHARD="en-1")
+
+    assert result.returncode == 0, result.stderr
+    assert not old.exists()
+    assert not (root / "docs" / "images" / "en" / "old.png").exists()
+
+
+def test_without_a_shard_every_group_and_the_recording_render_in_turn(project):
+    root, env = project
+    del env["GITHUB_STEP_SUMMARY"]
+
+    result, calls = shard(project)
+
+    assert result.returncode == 0, result.stderr
+    count = len(GROUPS)
+    assert calls == [
+        f"render {language} {group}/{count} "
+        f"tests/e2e/artifacts/rendered-{language}-{group}"
+        for language in ("en", "de")
+        for group in range(1, count + 1)
+    ] + ["record"]
+    assert (root / "docs" / "demo" / "timeline.json").read_text() == "{}\n"
+
+
+def test_the_shard_timeline_records_the_live_demo_alone(project):
+    root, _ = project
+
+    result, calls = shard(project, SCREENSHOTS_SHARD="timeline")
+
+    assert result.returncode == 0, result.stderr
+    assert calls == ["record"]
+    assert (root / "docs" / "demo" / "timeline.json").read_text() == "{}\n"
+
+
+def test_the_recording_takes_a_python_that_uv_makes_for_the_project(project):
+    root, env = project
+    del env["PYTHON"]
+    venv = Path(env["RUNNER_TEMP"]) / "homedarts-recording"
+    (venv / "left").mkdir(parents=True)
+
+    result, calls = shard(project, SCREENSHOTS_SHARD="timeline")
+
+    assert result.returncode == 0, result.stderr
+    # A fresh environment outside the repository, with the Python of
+    # .python-version and the locked packages of the tests.
+    assert calls == [
+        f"uv venv --quiet --python 3.14 {venv}",
+        f"uv pip install --quiet --python {venv} --require-hashes"
+        f" -r {root}/requirements-test.txt",
+        f"venv python {env['SCREENSHOTS_RECORD']}",
     ]
-    (temp / "report-de/report.json").write_text(json.dumps({"images": removed}))
-    # A diagram that main got after the images were rendered stays as it is.
-    picture(clone / "docs/images/de/flow-dark.png")
-    (clone / "README.md").write_text("Read me")
-
-    result, outputs = place(clone, env)
-
-    assert result.returncode == 0, result.stderr
-    assert outputs == "missing=\n"
-    assert Image.open(clone / "docs/images/de/card.png").getpixel((0, 0)) == (5, 5, 5)
-    assert Image.open(clone / "docs/images/en/card.png").getpixel((0, 0)) == (9, 9, 9)
-    assert not (clone / "docs/images/de/other.png").exists()
-    assert (clone / "docs/images/de/flow-dark.png").exists()
-    assert (clone / "README.md").exists()
+    assert not (venv / "left").exists()
 
 
-@needs_jq
-def test_a_language_that_did_not_render_stays_as_it_is(bot):
-    clone, env = bot
+def test_the_recording_without_python_or_uv_says_what_it_needs(project):
+    _, env = project
+    del env["PYTHON"]
 
-    result, outputs = place(clone, env)
-
-    assert result.returncode == 0, result.stderr
-    assert outputs == "missing=de\n"
-    assert "::warning::The images in de did not render" in result.stdout
-    assert Image.open(clone / "docs/images/en/card.png").getpixel((0, 0)) == (9, 9, 9)
-    assert git(clone, "status", "--short", "--", "docs/images/de") == ""
-
-
-@needs_jq
-def test_the_bot_brings_a_new_recording_of_the_live_demo(bot):
-    clone, env = bot
-    recording = Path(env["RUNNER_TEMP"]) / "rendered/timeline/timeline.json"
-    recording.parent.mkdir(parents=True)
-    recording.write_text('{"steps":[1]}\n')
-
-    result, _ = place(clone, env)
-
-    assert result.returncode == 0, result.stderr
-    assert (clone / "docs/demo/timeline.json").read_text() == '{"steps":[1]}\n'
-    result, _ = publish(clone, env, MISSING="de", PR_LIST=pulls(7))
-    assert result.returncode == 0, result.stderr
-    (commit,) = commits(env)
-    added = {item["path"] for item in commit["fileChanges"]["additions"]}
-    assert "docs/demo/timeline.json" in added
-    body = (Path(env["RUNNER_TEMP"]) / "body.md").read_text(encoding="utf-8")
-    assert "The games of the live demo were recorded anew, too" in body
-    assert "The German images did not render in this run" in body
-
-
-@needs_jq
-def test_a_new_recording_alone_has_no_table_of_images(bot):
-    clone, env = bot
-    temp = Path(env["RUNNER_TEMP"])
-    # The English images look as before, only the recording changed.
-    picture(temp / "rendered/images-en/card.png")
-    (temp / "rendered/report-en/report.json").write_text(json.dumps({"images": []}))
-    recording = temp / "rendered/timeline/timeline.json"
-    recording.parent.mkdir(parents=True)
-    recording.write_text('{"steps":[1]}\n')
-
-    result, _ = place(clone, env)
-    assert result.returncode == 0, result.stderr
-    result, _ = publish(clone, env, MISSING="de", PR_LIST=pulls(7))
-
-    assert result.returncode == 0, result.stderr
-    body = (temp / "body.md").read_text(encoding="utf-8")
-    assert "No image changed." in body
-    assert "These look different" not in body
-    assert "| Image |" not in body
-    assert "The games of the live demo were recorded anew, too" in body
-
-
-@needs_jq
-def test_the_live_demo_keeps_its_recording_when_none_was_made(bot):
-    clone, env = bot
-
-    result, _ = place(clone, env)
-
-    assert result.returncode == 0, result.stderr
-    assert "::warning::The games of the live demo were not recorded" in result.stdout
-    assert git(clone, "status", "--short", "--", "docs/demo") == ""
-
-
-def test_the_bot_stops_when_no_language_rendered(bot):
-    clone, env = bot
-    shutil.rmtree(Path(env["RUNNER_TEMP"]) / "rendered")
-
-    result, outputs = place(clone, env)
+    result, calls = shard(project, SCREENSHOTS_SHARD="timeline", UV="no-such-uv")
 
     assert result.returncode == 1
-    assert "::error::No language rendered" in result.stdout
-    assert outputs == ""
+    assert "set PYTHON to a Python that has them, or install uv" in result.stderr
+    assert calls == []
 
 
-@needs_jq
-def test_the_pull_request_keeps_its_images_of_a_language_that_did_not_render(bot):
-    clone, env = bot
-    place(clone, env)
+def test_a_group_that_fails_to_render_fails_its_shard(project):
+    root, _ = project
 
-    result, calls = publish(clone, env, MISSING="de", PR_LIST=pulls(7))
+    result, calls = shard(project, SCREENSHOTS_SHARD="en-2", FAIL="1")
 
-    assert result.returncode == 0, result.stderr
-    (commit,) = commits(env)
-    changes = {item["path"] for item in commit["fileChanges"]["additions"]}
-    assert changes == {"docs/images/en/card.png", "docs/images/de/card.png"}
-    # The German image as the pull request had it, not as main has it.
-    assert git(clone, "rev-parse", ":docs/images/de/card.png") == git(
-        clone, "rev-parse", "FETCH_HEAD:docs/images/de/card.png"
+    assert result.returncode == 3
+    assert calls == ["render en 2/4 tests/e2e/artifacts/rendered-en-2"]
+    folder = root / "docs" / "images" / "en"
+    assert sorted(path.name for path in folder.iterdir()) == ["diagram-light.png"]
+
+
+def test_a_group_that_hangs_gets_a_sigint_and_fails_its_shard(project):
+    # The screenshot tool gets the signal itself, ends its demo and prints the state
+    # of its containers, long before the job's limit of an hour.
+    result, calls = shard(
+        project, SCREENSHOTS_SHARD="de-1", HANG="1", SCREENSHOTS_LIMIT="1s"
     )
-    assert git(clone, "rev-parse", ":docs/images/de/card.png") != git(
-        clone, "rev-parse", "main:docs/images/de/card.png"
+
+    assert result.returncode == 124
+    assert calls == ["render de 1/4 tests/e2e/artifacts/rendered-de-1", "interrupted"]
+    assert "Group 1 in de took longer than 1s" in result.stderr
+
+
+def test_a_group_has_the_time_limit_of_the_old_render_step():
+    script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
+    assert 'LIMIT="${SCREENSHOTS_LIMIT:-21m}"' in script
+    assert 'timeout --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}"' in script
+
+
+def test_a_group_that_rendered_no_image_fails_its_shard(project):
+    result, _ = shard(project, SCREENSHOTS_SHARD="en-4", NAMES="")
+
+    assert result.returncode == 1
+    assert "Group 4 in en rendered no image" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "name", ["fr-1", "en-0", "en-5", "en", "EN-1", "en-1 ", "timelines", "all"]
+)
+def test_scripts_screenshots_sh_refuses_a_shard_it_does_not_have(project, name):
+    result, calls = shard(project, SCREENSHOTS_SHARD=name)
+
+    assert result.returncode == 2
+    assert "choose timeline or a language of en de and a group of 1 to 4" in (
+        result.stderr
     )
-    body = (Path(env["RUNNER_TEMP"]) / "body.md").read_text()
-    assert "| `docs/images/en/card.png` | changed | 100 % |" in body
-    assert "The German images did not render in this run" in body
-    assert "pr edit 7 " in calls
-    assert "pr close" not in calls
+    assert calls == []
 
 
-def fork(clone: Path, number: int) -> dict:
-    """A pull request from a fork's branch of the same name, which changed every
-    German image and added a page of its own to the website."""
-    git(clone, "switch", "--quiet", "-c", "fork", "main")
-    picture(clone / "docs/images/de/card.png", colour=(66, 66, 66))
-    picture(clone / "docs/images/de/other.png", colour=(66, 66, 66))
-    (clone / "docs/images/de/page.svg").write_text("<svg/>")
-    git(clone, "add", "--all")
-    git(clone, "commit", "--quiet", "-m", "a stranger's images")
-    git(clone, "push", "--quiet", "origin", f"fork:refs/pull/{number}/head")
-    git(clone, "switch", "--quiet", "main")
-    return {
-        "number": number,
-        "isCrossRepository": True,
-        "author": {"login": "stranger", "is_bot": False},
-    }
-
-
-@needs_jq
-def test_the_pull_request_of_a_fork_gives_the_bot_nothing(bot):
-    clone, env = bot
-    stranger = fork(clone, 8)
-    Path(env["PR_FILES"]).write_text(
-        "docs/images/de/card.png\ndocs/images/de/other.png\ndocs/images/de/page.svg\n"
-    )
-    place(clone, env)
-
-    # The fork's pull request is the newest; the bot has none of its own.
-    result, calls = publish(clone, env, MISSING="de", PR_LIST=pulls(fork=stranger))
-
-    assert result.returncode == 0, result.stderr
-    (commit,) = commits(env)
-    assert {item["path"] for item in commit["fileChanges"]["additions"]} == {
-        "docs/images/en/card.png"
-    }
-    assert "/pulls/8/files" not in calls
-    assert "pr edit" not in calls
-    assert "pr create " in calls
-    assert git(clone, "status", "--short", "--", "docs/images/de") == ""
-
-
-@needs_jq
-def test_the_bot_keeps_the_images_of_its_own_pull_request_not_of_a_fork(bot):
-    clone, env = bot
-    stranger = fork(clone, 8)
-    place(clone, env)
-
-    result, calls = publish(clone, env, MISSING="de", PR_LIST=pulls(7, fork=stranger))
-
-    assert result.returncode == 0, result.stderr
-    assert "api --paginate repos/owner/repo/pulls/7/files " in calls
-    assert "pr edit 7 " in calls
-    # The German image of the bot's own branch, not the fork's.
-    assert Image.open(clone / "docs/images/de/card.png").getpixel((0, 0)) == (1, 2, 3)
-    assert not (clone / "docs/images/de/page.svg").exists()
-
-
-@needs_jq
-def test_the_bot_keeps_only_rendered_images_of_its_pull_request(bot):
-    clone, env = bot
-    # main has a newer diagram than the pull request of the bot, which replaced
-    # whole folders before it took only the rendered images.
-    (clone / "docs/diagrams").mkdir(parents=True)
-    (clone / "docs/diagrams/flow.de.mmd").write_text("flowchart TB\n")
-    picture(clone / "docs/images/de/flow-dark.png", colour=(7, 7, 7))
-    git(clone, "add", "--all")
-    git(clone, "commit", "--quiet", "-m", "a newer diagram")
-    git(clone, "switch", "--quiet", "bot")
-    picture(clone / "docs/images/de/flow-dark.png", colour=(3, 3, 3))
-    (clone / "docs/images/de/notes.html").write_text("<p>notes</p>")
-    git(clone, "add", "--all")
-    git(clone, "commit", "--quiet", "-m", "an older diagram and a page")
-    git(clone, "push", "--quiet", "--force", "origin", "bot:refs/heads/bot/screenshots")
-    git(clone, "switch", "--quiet", "main")
-    Path(env["PR_FILES"]).write_text(
-        "docs/images/de/card.png\ndocs/images/de/flow-dark.png\n"
-        "docs/images/de/notes.html\ndocs/images/de/../../README.md\n"
-    )
-    place(clone, env)
-
-    result, _ = publish(clone, env, MISSING="de", PR_LIST=pulls(7))
-
-    assert result.returncode == 0, result.stderr
-    (commit,) = commits(env)
-    assert {item["path"] for item in commit["fileChanges"]["additions"]} == {
-        "docs/images/en/card.png",
-        "docs/images/de/card.png",
-    }
-    diagram = Image.open(clone / "docs/images/de/flow-dark.png")
-    assert diagram.getpixel((0, 0)) == (7, 7, 7)
-    assert not (clone / "docs/images/de/notes.html").exists()
-    message = commit["message"]["body"]
-    assert "in groups (tests/e2e/screenshots.sh, tests/e2e/collect.sh)" in message
-
-
-@needs_jq
-def test_a_pull_request_stays_open_while_a_language_did_not_render(bot):
-    clone, env = bot
-    shutil.rmtree(Path(env["RUNNER_TEMP"]) / "rendered/images-en")
-    shutil.copytree(
-        clone / "docs/images/en", Path(env["RUNNER_TEMP"]) / "rendered/images-en"
-    )
-    place(clone, env)
-    Path(env["PR_FILES"]).write_text("")
-
-    result, calls = publish(clone, env, MISSING="de", PR_LIST=pulls(7))
-
-    assert result.returncode == 0, result.stderr
-    assert (
-        "did not render, so the pull request of the images stays as it is"
-        in result.stdout
-    )
-    assert "pr close" not in calls
-    assert commits(env) == []
-
-
-@needs_jq
-def test_a_pull_request_closes_when_every_language_looks_as_committed(bot):
-    clone, env = bot
-    temp = Path(env["RUNNER_TEMP"]) / "rendered"
-    shutil.rmtree(temp / "images-en")
-    for language in ("en", "de"):
-        shutil.copytree(clone / "docs/images" / language, temp / f"images-{language}")
-    (temp / "report-de").mkdir()
-    (temp / "report-de/report.json").write_text('{"images": []}')
-    place(clone, env)
-
-    result, calls = publish(clone, env, MISSING="", PR_LIST=pulls(7))
-
-    assert result.returncode == 0, result.stderr
-    assert "pr close 7 " in calls
-    assert commits(env) == []
+def test_scripts_screenshots_sh_runs_the_screenshot_tool_and_the_recorder():
+    script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
+    assert "${REPOSITORY_ROOT}/tests/e2e/screenshots.sh}" in script
+    assert "${REPOSITORY_ROOT}/scripts/record_demo.py}" in script
+    assert (E2E / "screenshots.sh").is_file()
+    assert (ROOT / "scripts" / "record_demo.py").is_file()
 
 
 # The comment of the visual check ---------------------------------------------------
@@ -1339,6 +1169,40 @@ def test_the_comment_lists_the_language_that_rendered_when_the_other_failed(comm
     )
     assert "The English images could not be rendered for 0123456" in text
     assert "api --method POST repos/owner/repo/issues/7/comments " in calls
+
+
+@needs_jq
+def test_the_comment_asks_to_delete_an_image_that_no_group_renders_any_more(comment):
+    # Each shard of the screenshot bot renders one group and deletes nothing, so the
+    # pull request that drops an image deletes it.
+    root, env = comment
+    removed = {"path": "en/old-card.png", "status": "removed", "share": 1.0}
+    changed = {"path": "en/card.png", "status": "changed", "share": 0.5}
+    report_of(root, "en", [removed, changed], unchanged=10)
+    report_of(root, "de", [], unchanged=12)
+
+    result, text, _ = write_comment(root, env, "success")
+
+    assert result.returncode == 0, result.stderr
+    assert "| `docs/images/en/old-card.png` | removed | 100 % |" in text
+    assert (
+        "No group renders `docs/images/en/old-card.png` any more, and the screenshot"
+        " bot deletes no image: delete it in this pull request"
+    ) in text
+    assert "`docs/images/en/card.png` any more" not in text
+
+
+@needs_jq
+def test_a_comment_without_a_removed_image_asks_for_no_deletion(comment):
+    root, env = comment
+    report_of(root, "en", [{"path": "en/card.png", "status": "added", "share": 1.0}], 3)
+    report_of(root, "de", [], unchanged=4)
+
+    result, text, _ = write_comment(root, env, "success")
+
+    assert result.returncode == 0, result.stderr
+    assert "| `docs/images/en/card.png` | added | 100 % |" in text
+    assert "deletes no image" not in text
 
 
 @needs_jq

@@ -16,15 +16,16 @@ import os
 import re
 import shutil
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
 import yaml
 
-WORKFLOWS = Path(__file__).parents[1] / ".github" / "workflows"
+ROOT = Path(__file__).parents[1]
+WORKFLOWS = ROOT / ".github" / "workflows"
 PROJECT_WORKFLOWS = (
     "e2e.yml",
-    "screenshots.yml",
     "translations.yml",
     "twice.yml",
     "visual-comment.yml",
@@ -67,12 +68,6 @@ HOSTS = {
     ("e2e.yml", "gate"): {"github.com"},
     ("e2e.yml", "live-demo"): {"github.com", *PLAYWRIGHT, *PYTHON_PACKAGES},
     ("e2e.yml", "beta"): BROWSER_TEST,
-    ("screenshots.yml", "render"): IMAGES,
-    ("screenshots.yml", "collect"): COMPARISON,
-    ("screenshots.yml", "pull-request"): GITHUB,
-    # The recording of the live demo, by the integration in the Home Assistant of
-    # the tests, whose packages it installs.
-    ("screenshots.yml", "timeline"): {"github.com", *PYTHON_PACKAGES},
     ("translations.yml", "issues"): GITHUB,
     # As the images of the visual check, without those of an earlier run.
     ("twice.yml", "twice"): IMAGES - {"api.github.com"},
@@ -117,6 +112,29 @@ def test_every_job_has_its_hosts_here():
     assert set(JOBS) == set(HOSTS)
 
 
+def test_the_screenshot_bot_reaches_the_hosts_that_the_images_need():
+    # The render jobs of the screenshot bot of the blueprint (screenshot-bot.yml)
+    # allow the hosts of their own steps and those of .github/screenshots.toml, and
+    # block every other one: the settings name what the images need besides, as
+    # the jobs of the visual check reach it, and nothing that the shared job allows
+    # already. The API is one of those hosts, for the steps of the bot.
+    bot = yaml.safe_load((WORKFLOWS / "screenshot-bot.yml").read_text(encoding="utf-8"))
+    endpoints = harden_runner(bot["jobs"]["render"])["allowed-endpoints"].split()
+    shared = {
+        endpoint.removesuffix(":443")
+        for endpoint in endpoints
+        if endpoint.endswith(":443")
+    }
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    assert all(host.endswith(":443") for host in settings["hosts"])
+    named = {host.removesuffix(":443") for host in settings["hosts"]}
+    assert named == IMAGES - shared
+    # A set of hosts, not a text: GitHub and its API come with the shared job.
+    assert shared.issuperset(GITHUB)
+
+
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
 def test_harden_runner_blocks_every_host_that_the_job_does_not_need(key):
     settings = harden_runner(JOBS[key])
@@ -146,7 +164,6 @@ WRITING = sorted(key for key, job in JOBS.items() if may_write(job))
 
 def test_the_bots_are_the_jobs_that_may_write():
     assert WRITING == [
-        ("screenshots.yml", "pull-request"),
         ("translations.yml", "issues"),
         ("visual-comment.yml", "comment"),
     ]

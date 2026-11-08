@@ -6,9 +6,10 @@
 # summary.md and every changed image before and after, with its difference. With
 # RESTORE=1, an image whose pixels did not change keeps its committed file.
 # LANGUAGES chooses the languages and SCREENSHOT_GROUP one group of the images, as
-# for screenshots.sh. The visual check of pull requests (visual.yml) and the
-# screenshot bot (screenshots.yml) do the same with one runner per group and
-# language: screenshots.sh renders each group, and collect.sh puts them together.
+# for screenshots.sh. The visual check of pull requests (visual.yml) does the same
+# with one runner per group and language: screenshots.sh renders each group, and
+# collect.sh puts them together. The screenshot bot renders each group as a shard of
+# scripts/screenshots.sh.
 
 set -euo pipefail
 

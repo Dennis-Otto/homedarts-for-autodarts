@@ -1,0 +1,37 @@
+# The files whose change can change the pictures of scripts/screenshots.sh, as the
+# paths of a workflow; a line that starts with ! leaves files out. After a push to
+# main that touches one of them, the screenshot bot of the blueprint
+# (screenshot-bot.yml) renders the pictures anew; it always counts the script, this
+# list and .github/screenshots.toml as well. tests/test_consistency.py keeps the list
+# in step with the key of the rendered images (tests/e2e/render_key.py) and with the
+# visual check.
+
+# The integration with its cards, the blueprints that the demo shows, the screenshot
+# tool with the demo, and the recorded answers of the simulated Board Manager.
+blueprints/automation/homedarts/**
+custom_components/homedarts/**
+# What only the release of the integration carries: Home Assistant reads its texts
+# from the translations and the quality scale from the manifest.
+!custom_components/homedarts/LICENSE
+!custom_components/homedarts/quality_scale.yaml
+!custom_components/homedarts/strings.json
+# The version that a release writes into the manifest: the bot renders after every
+# release anyway, on the workflow Release, so the push of the release renders no
+# second time.
+!custom_components/homedarts/manifest.json
+tests/e2e/**
+# The browser test and the end-to-end test, and their notes.
+!tests/e2e/browser.py
+!tests/e2e/shards.py
+!tests/e2e/browser.sh
+!tests/e2e/run.sh
+!tests/e2e/configuration.yaml
+!tests/e2e/README.md
+!tests/e2e/accessibility-baseline.toml
+tests/fixtures/board_manager/**
+!tests/fixtures/board_manager/README.md
+
+# The games of the live demo, which the shard timeline records.
+tests/demo_timeline.py
+tests/test_demo_timeline.py
+scripts/record_demo.py

@@ -38,3 +38,4 @@ Copy [the template](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/
 | [0026](0026-a-name-of-its-own.md) | A name of its own: HomeDarts for Autodarts, with the domain homedarts | accepted |
 | [0027](0027-the-start-pages-in-dutch-french-and-spanish.md) | The start pages of the website in Dutch, French and Spanish, the rest in English with a note | accepted |
 | [0028](0028-the-cards-load-on-first-use.md) | Load the cards on their first use, with stand-ins that become the cards | accepted |
+| [0029](0029-the-images-render-with-the-screenshot-bot-of-the-blueprint.md) | Render the images with the screenshot bot of the blueprint, in shards | accepted |

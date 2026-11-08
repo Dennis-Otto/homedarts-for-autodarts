@@ -25,9 +25,9 @@ print("LICENSE and the copy in the integration carry the MIT terms.")
 PYTHON
 
 printf '\n== %s\n' "The key of the rendered images, with every line and branch tested"
-# tests/e2e/render_key.py decides whether the visual check and the screenshot bot
-# take the images of an earlier run instead of rendering them; the coverage of the
-# integration leaves tests/e2e out.
+# tests/e2e/render_key.py decides whether the visual check takes the images of an
+# earlier run instead of rendering them; the coverage of the integration leaves
+# tests/e2e out.
 coverage_data="$(mktemp)"
 python3 -m coverage run --rcfile=/dev/null --data-file="${coverage_data}" --branch \
 	--include=tests/e2e/render_key.py -m pytest --quiet -p no:cacheprovider tests/test_render_key.py

@@ -6,9 +6,10 @@
 #
 # The images come in fixed groups (GROUPS in screenshots.py), and every group starts
 # from a fresh demo. SCREENSHOT_GROUP=2/4 renders the second of four groups alone,
-# as one job of the visual check and of the screenshot bot does; without it, every
-# group renders in turn. LANGUAGES chooses the languages (en de), and IMAGES the
-# folder below the repository root that the images go to (docs/images).
+# as one job of the visual check and one shard of the screenshot bot
+# (scripts/screenshots.sh) do; without it, every group renders in turn. LANGUAGES
+# chooses the languages (en de), and IMAGES the folder below the repository root
+# that the images go to (docs/images).
 # SCREENSHOT_SECTIONS=flapped,manual renders these sections instead of those of the
 # group, as twice.yml does.
 

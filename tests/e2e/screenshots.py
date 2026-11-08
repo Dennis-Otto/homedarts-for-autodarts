@@ -4203,7 +4203,8 @@ SECTIONS: dict[str, Callable[[Browser], None]] = {
 # one runner each, and a group renders the same images on its own as after the
 # others. The sections of a group run in their order: a later one sees what the
 # earlier ones played. The groups take about the same time (SECONDS); screenshots.sh,
-# visual.yml, screenshots.yml and twice.yml know how many there are.
+# collect.sh, visual.yml, twice.yml, scripts/screenshots.sh and the shards of the
+# screenshot bot in .github/screenshots.toml know how many there are.
 GROUPS = (
     # The cards before the games, whose legs would end the graphs of the week.
     ("cards", "live", "practice", "games"),
@@ -4244,7 +4245,7 @@ SECONDS = {
 STARTUP = 160.0
 # The seconds after which the watchdog fails a section (watchdog.py): about twice
 # its longest run in CI (SECONDS) and at least two minutes, and with GRACE less than
-# the time limit of its step in visual.yml and screenshots.yml.
+# the time limit of its step in visual.yml.
 SECTION_BUDGET = 120.0
 BUDGETS = {
     "games": 510.0,
