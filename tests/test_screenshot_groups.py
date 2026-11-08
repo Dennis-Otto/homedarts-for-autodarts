@@ -379,6 +379,27 @@ def test_the_pointer_leaves_what_it_clicked_before_every_picture():
     in_order(source("settle"), "page.mouse.move(0, 0)", "page.evaluate(SETTLE")
 
 
+def test_no_page_of_a_step_stays_open_behind_the_next_step():
+    # A page handed to a step as context.new_page() can't be closed by its section: it
+    # goes on drawing behind the steps after it. With sixteen of them open, seven of
+    # them blinking boards, the heatmap of the section people drew fewer than two
+    # frames in 30 s and its screenshot timed out (#586).
+    handed = [
+        f"{ast.unparse(call.func)}() on line {call.lineno}"
+        for call in ast.walk(TOOL)
+        if isinstance(call, ast.Call)
+        for argument in call.args
+        if isinstance(argument, ast.Call)
+        and isinstance(argument.func, ast.Attribute)
+        and argument.func.attr == "new_page"
+    ]
+    assert not handed, f"pages that never close: {handed}"
+    # The sections with a page for each step open each one alone.
+    for name in ("people", "flapped"):
+        assert ".new_page(" not in source(name)
+        assert "alone" in called(function(name))
+
+
 @pytest.mark.parametrize("name", ["blueprint_list", "online_bridge_options"])
 def test_a_page_of_the_settings_opens_once_it_has_its_texts(name):
     # A search field that shows before the texts have come says "Search" for good, as

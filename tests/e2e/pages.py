@@ -220,6 +220,21 @@ def probe(target: Page | BrowserContext) -> None:
     target.add_init_script(WS_PROBE)
 
 
+def alone(context: BrowserContext) -> Page:
+    """A new page for the next step of the screenshot tool, once the pages of the steps
+    before have closed. A page left open goes on drawing behind the next one: a board
+    keeps its beds blinking and its halo pulsing at 60 frames a second, on the main
+    thread, as the screenshot tool has Chromium animate. All of them share the
+    processors and the compositor of the browser with the page of the next picture,
+    which gets its frames late: the heatmap of the section people, with seven boards
+    and nine more pages open behind it, drew fewer than two frames in 30 s, and its
+    screenshot timed out (#586). The page of a step that fails stays open, so that the
+    screenshot of the failure still shows it."""
+    for page in context.pages:
+        page.close()
+    return context.new_page()
+
+
 def where(page: Page) -> str:
     """The address of a page, the size of its screen and its language: the screens of a
     step show the same address, so a wait that runs out names its screen too."""

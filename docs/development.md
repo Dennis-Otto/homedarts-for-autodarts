@@ -310,6 +310,8 @@ artifact for 14 days.
 
 When a capture fails, the tool saves every open page in `tests/e2e/artifacts/`. Keep your own debug screenshots there as well: Git ignores that folder and PNG files directly in `tests/e2e/`.
 
+Every step of a section takes its page with `alone()` of `tests/e2e/pages.py`, which first closes the pages of the steps before. A page left open goes on drawing behind the next one: a board keeps its beds blinking and its halo pulsing, at 60 frames a second, and the browser shares its processors and its compositor with all of them. The section *people* once had sixteen pages open behind its heatmap, seven of them boards, and the heatmap drew fewer than two frames in 30 seconds, so its screenshot timed out. A step that fails keeps its page open, and its screenshot still comes. `tests/test_screenshot_groups.py` fails on a step that gets a page that nothing closes, such as `players_card(context.new_page())`.
+
 ### The same images in every run
 
 Two runs of the tool render the same images, byte for byte. So an image that changed always shows a card or a screen that changed, and the [screenshot bot](#screenshot-bot) and the [visual check](#visual-check) can tell:

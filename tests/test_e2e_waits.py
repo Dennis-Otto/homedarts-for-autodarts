@@ -293,6 +293,48 @@ def test_show_opens_a_view_within_the_app_only_from_a_plain_one(current, url, wi
     assert load_pages().within_app(current, url) is within
 
 
+class Tab:
+    """A page of the browser as alone() sees it: one that can close."""
+
+    def __init__(self, context: "Context") -> None:
+        self.context = context
+
+    def close(self) -> None:
+        self.context.open.remove(self)
+
+
+class Context:
+    """A context of the browser: its pages, a copy each time as Playwright gives them."""
+
+    def __init__(self) -> None:
+        self.open: list[Tab] = []
+
+    @property
+    def pages(self) -> list[Tab]:
+        return list(self.open)
+
+    def new_page(self) -> Tab:
+        page = Tab(self)
+        self.open.append(page)
+        return page
+
+
+def test_the_page_of_the_next_step_opens_once_the_pages_before_have_closed():
+    # A board left open blinks behind the next page, so that its frames come late: the
+    # heatmap of the screenshot tool timed out after sixteen of them (#586).
+    context = Context()
+    for _ in range(3):
+        context.new_page()
+    page = load_pages().alone(context)
+    assert context.pages == [page]
+
+
+def test_the_first_page_of_a_context_opens_alone_as_well():
+    context = Context()
+    page = load_pages().alone(context)
+    assert context.pages == [page]
+
+
 NODE = shutil.which("node")
 TOURNAMENT = {
     "entity_id": "sensor.autodarts_board_tournament",
