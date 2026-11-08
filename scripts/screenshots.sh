@@ -17,7 +17,8 @@
 # whose pixels stayed the same its committed file back. A shard deletes no image,
 # since none knows what the other groups render: the visual check of the pull request
 # that drops an image names it as removed, and that pull request deletes it. A group
-# that outlasts SCREENSHOTS_LIMIT (21m) gets SIGINT, and its shard fails.
+# gets SIGINT three minutes before the time limit of the step that renders a shard
+# (timeout_minutes of .github/screenshots.toml), and its shard fails.
 #
 # The recording needs a Python with the packages of requirements-test.txt: PYTHON,
 # or else one that uv makes for .python-version, outside the repository.
@@ -33,15 +34,28 @@ REPOSITORY_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 # The languages of the images, and how many groups GROUPS in screenshots.py has.
 LANGUAGES=(en de)
 GROUP_COUNT=4
-# The screenshot tool, the recorder and uv; tests run stand-ins of their own.
+# The screenshot tool, the recorder, uv and GNU timeout; tests run stand-ins of
+# their own.
 RENDER="${SCREENSHOTS_RENDER:-${REPOSITORY_ROOT}/tests/e2e/screenshots.sh}"
 RECORD="${SCREENSHOTS_RECORD:-${REPOSITORY_ROOT}/scripts/record_demo.py}"
 UV="${UV:-uv}"
-# The time limit of a group, as the old render step had it: well within the hour of
-# the job, and GNU timeout ends the screenshot tool with SIGINT, so that it ends its
-# demo and prints the state of its containers before the shard fails. A tool that
-# outlasts the signal by two minutes gets killed.
-LIMIT="${SCREENSHOTS_LIMIT:-21m}"
+TIMEOUT="${SCREENSHOTS_TIMEOUT:-timeout}"
+# The time limit of a group: three minutes before that of the step of the bot that
+# renders a shard, timeout_minutes of .github/screenshots.toml, or the 45 minutes
+# that the step has without it. The SIGINT with which GitHub ends that step reaches
+# this script alone, and the runner kills what still runs about ten seconds later.
+# So GNU timeout ends the screenshot tool with SIGINT itself and gives it two
+# minutes to end its demo and print the state of its containers; a tool that
+# outlasts the signal by those two minutes gets killed. Either way the shard fails
+# before its step runs out of time, and the step after it keeps the folder of the
+# failure.
+STEP_MINUTES="$(sed -n -E 's/^timeout_minutes = ([0-9]+)$/\1/p' "${REPOSITORY_ROOT}/.github/screenshots.toml")"
+STEP_MINUTES="${STEP_MINUTES:-45}"
+if ((STEP_MINUTES <= 3)); then
+	echo "timeout_minutes = ${STEP_MINUTES} in .github/screenshots.toml leaves a group no time: it ends three minutes before the step, so give the step more than 3 minutes." >&2
+	exit 2
+fi
+LIMIT="$((STEP_MINUTES - 3))m"
 
 # One group of one language: rendered into a folder of its own, then over the
 # images of that language. The seconds of its sections go into the summary of the
@@ -52,7 +66,7 @@ render_group() {
 	rm -rf "${REPOSITORY_ROOT:?}/${folder}"
 	local status=0
 	LANGUAGES="${language}" SCREENSHOT_GROUP="${group}/${GROUP_COUNT}" IMAGES="${folder}" \
-		timeout --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}" || status=$?
+		"${TIMEOUT}" --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}" || status=$?
 	if ((status == 124 || status == 137)); then
 		echo "Group ${group} in ${language} took longer than ${LIMIT}; its log above shows where it waits." >&2
 	fi

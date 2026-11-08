@@ -500,6 +500,15 @@ def test_no_step_of_a_job_itself_needs_the_host_that_the_wait_leaves_out():
     assert all(f"https://{host}/" in pngquant for host in hosts)
 
 
+def test_the_screenshot_bot_leaves_out_of_its_wait_what_the_jobs_here_leave_out():
+    # Its render jobs still allow it: only the screenshot tool needs it, as here.
+    settings = tomllib.loads(
+        (ROOT / ".github" / "screenshots.toml").read_text(encoding="utf-8")
+    )
+    assert settings["skip_wait"] == sorted(NOT_ASKED)
+    assert set(settings["hosts"]) >= NOT_ASKED
+
+
 def test_a_host_that_the_wait_leaves_out_is_one_that_a_job_allows():
     allowed_hosts = {
         endpoint
