@@ -4,6 +4,13 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.2.4](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.3...v2.2.4) (2026-11-08)
+
+
+### Bug fixes
+
+* a stuck hand back after a minute away gets its own restart, and the E2E no longer flakes ([#614](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/614)) ([89e3944](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/89e3944c664703bb9da243f1b9a9ff6c781f465c))
+
 ## [2.2.3](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.2...v2.2.3) (2026-11-02)
 
 ### Bug fixes
