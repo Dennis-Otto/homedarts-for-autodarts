@@ -6,10 +6,9 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## [2.3.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.4...v2.3.0) (2026-11-08)
 
-
 ### Features
 
-* **entities:** show whether the board is calibrated and how exact each camera's calibration is ([#621](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/621)) ([b283d8b](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/b283d8b5e940349905566481b27b1a409fb37529))
+- A board with Board Manager 2 shows whether it is calibrated: *Calibration problem* turns on when the board reports that it isn't calibrated or that the calibration of a camera failed, and the repair **Calibrate the Autodarts board** opens with it, before any dart counts wrong. On Board Manager 2.1, *Calibration error* shows in pixels how exact the least exact camera is, with each camera in its attributes, so that its history shows a calibration that drifts over the weeks. The board view of the automatic dashboard shows both, and the board problem alert can alert you of a lost calibration.
 
 ## [2.2.4](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.3...v2.2.4) (2026-11-08)
 
