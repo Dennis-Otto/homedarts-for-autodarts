@@ -1,3 +1,0 @@
-### Features
-
-- A board with Board Manager 2 shows whether it is calibrated: *Calibration problem* turns on when the board reports that it isn't calibrated or that the calibration of a camera failed, and the repair **Calibrate the Autodarts board** opens with it, before any dart counts wrong. On Board Manager 2.1, *Calibration error* shows in pixels how exact the least exact camera is, with each camera in its attributes, so that its history shows a calibration that drifts over the weeks. The board view of the automatic dashboard shows both, and the board problem alert can alert you of a lost calibration.
