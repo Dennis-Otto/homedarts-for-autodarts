@@ -2,15 +2,15 @@
 
 # Put together the images that the groups of the screenshot tool rendered on runners
 # of their own, and compare them with the committed ones, as visual.sh does after it
-# rendered every group itself. The visual check (visual.yml) and the screenshot bot
-# (screenshots.yml) run it for each language after the jobs of its groups, which
-# leave the images of group k in tests/e2e/artifacts/rendered-<language>-<k>-<key>/,
-# with the key of what the images are rendered from (tests/e2e/render_key.py);
-# visual.sh leaves them in tests/e2e/artifacts/rendered-<language>-<k>/.
+# rendered every group itself. The visual check (visual.yml) runs it for each
+# language after the jobs of its groups, which leave the images of group k in
+# tests/e2e/artifacts/rendered-<language>-<k>-<key>/, with the key of what the images
+# are rendered from (tests/e2e/render_key.py); scripts/screenshots.sh, whose shards
+# the screenshot bot renders, leaves them in tests/e2e/artifacts/rendered-<language>-<k>/.
 #
 # Afterwards docs/images holds the new images, tests/e2e/artifacts/visual/ the report
 # of compare.py, as after visual.sh, and tests/e2e/artifacts/collected/ the rendered
-# images alone, for the pull request of the screenshot bot. Every image in
+# images alone. Every image in
 # docs/images comes from the screenshot tool or, as a diagram, from
 # scripts/render_diagrams.sh; one that neither makes any more goes, and the report
 # lists it as removed. With RESTORE=1, an image whose pixels did not change keeps its

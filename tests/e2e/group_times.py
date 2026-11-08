@@ -3,7 +3,7 @@ job that puts the groups of a language together.
 
 Every run of screenshots.py writes the seconds of its sections to
 screenshots-<language>-<group>.json among the artifacts, and the render jobs of
-visual.yml and screenshots.yml keep it as the artifact times-<language>-<group>.
+visual.yml keep it as the artifact times-<language>-<group>.
 The table lists every group with its sections and seconds, and flags a group that took more
 than SLOWER times as long as the shortest one: the runs of a language wait for their
 slowest group, so a section of it moves to a shorter one (GROUPS in screenshots.py).

@@ -1,5 +1,5 @@
-"""The key of the images that a job of the visual check or of the screenshot bot
-renders, and the images of an earlier run with the same key that it takes instead.
+"""The key of the images that a job of the visual check renders, and the images of
+an earlier run with the same key that it takes instead.
 
 Two renders of the same files make the same images, byte for byte
 (docs/development.md#the-same-images-in-every-run). So the key of a group of a
@@ -7,24 +7,23 @@ language is a SHA-256 over the Git objects of every file that the render reads, 
 files below INPUTS other than SKIPPED, with the language and the group, and the job
 keeps its images as the artifact rendered-<language>-<group>-<key>. Before it
 renders, the job looks for that artifact among the earlier runs of this repository.
-It takes the images of the newest one that a run of the visual check or of the
-screenshot bot kept, from a branch of this repository: never one of a fork, whose
-pull request runs the visual check with workflows and images of its own making.
-So a pull request that "Update branches" brings up to date with main without a
-change of what its images are rendered from renders nothing anew, and neither does
-the screenshot bot after its merge: main takes only pull requests that are up to
-date, so the merge has the files that the last visual check of the pull request
-rendered.
+It takes the images of the newest one that a run of the visual check kept, from a
+branch of this repository: never one of a fork, whose pull request runs the visual
+check with workflows and images of its own making. So a pull request that "Update
+branches" brings up to date with main without a change of what its images are
+rendered from renders nothing anew. The screenshot bot of the blueprint
+(screenshot-bot.yml) renders every group itself, as a shard of
+scripts/screenshots.sh.
 
     python3 tests/e2e/render_key.py key en 2    the key of the second group in English
     python3 tests/e2e/render_key.py find en 2   the name of the artifact and the run
                                                whose images the job takes, for the
                                                step outputs
 
-find looks only with REUSE=true, which the workflows set for pull requests and
-pushes: the weekly run and a run on demand render anew, and catch what changed
-outside the repository, such as the icons from brands.home-assistant.io. When the
-artifacts can't be looked up, the job renders anew as well.
+find looks only with REUSE=true, which the visual check sets for pull requests: a run
+on demand renders anew, and catches what changed outside the repository, such as
+the icons from brands.home-assistant.io. When the artifacts can't be looked up, the
+job renders anew as well.
 """
 
 from __future__ import annotations
@@ -43,7 +42,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
 # Raise it when the same files render other images, such as when the step that
-# renders them in the workflows changes (tests/test_render_key.py pins that step).
+# renders them in the visual check changes (tests/test_render_key.py pins that step).
 FORMAT = 1
 # What the render reads: the integration with its cards and its manifest, the
 # blueprints that the demo shows, the screenshot tool with the demo, the compose
@@ -55,8 +54,8 @@ INPUTS = (
     "tests/e2e",
     "tests/fixtures/board_manager",
 )
-# The files below INPUTS that no render reads, as the paths of both workflows skip
-# them: what only the release of the integration carries, as Home Assistant reads its
+# The files below INPUTS that no render reads, as the paths of the visual check and
+# of the screenshot bot (.github/screenshots-paths.txt) skip them: what only the release of the integration carries, as Home Assistant reads its
 # texts from the translations and the quality scale from the manifest, the browser
 # test, the end-to-end test and their notes.
 SKIPPED = frozenset(
@@ -75,9 +74,7 @@ SKIPPED = frozenset(
     }
 )
 # The workflows whose images a job takes.
-WORKFLOWS = frozenset(
-    {".github/workflows/screenshots.yml", ".github/workflows/visual.yml"}
-)
+WORKFLOWS = frozenset({".github/workflows/visual.yml"})
 # How many artifacts with the key the job looks at, newest first, before it renders.
 CANDIDATES = 5
 # The seconds that one answer of the API may take.
@@ -144,8 +141,8 @@ def candidates(artifacts: list[dict], name: str, repository_id: int) -> list[dic
 
 
 def trusted(run: dict, repository_id: int) -> bool:
-    """Whether a run is one of the visual check or of the screenshot bot of this
-    repository, for a branch of this repository and not of a fork."""
+    """Whether a run is one of the visual check of this repository, for a branch of
+    this repository and not of a fork."""
     # GitHub may add the ref that the workflow came from: path@ref.
     return (
         (run.get("path") or "").partition("@")[0] in WORKFLOWS
@@ -186,9 +183,9 @@ def find(language: str, group: str) -> None:
     outputs = f"name={name}\n"
     if os.environ.get("REUSE") != "true":
         note = (
-            "Rendered anew, as every run on a schedule or on demand does: it also"
-            " catches what changed outside the repository, such as the icons of"
-            " Home Assistant's other integrations."
+            "Rendered anew, as every run on demand does: it also catches what"
+            " changed outside the repository, such as the icons of Home"
+            " Assistant's other integrations."
         )
     else:
         repository = os.environ["GITHUB_REPOSITORY"]
@@ -212,9 +209,9 @@ def find(language: str, group: str) -> None:
         else:
             if run is None:
                 note = (
-                    "Rendered anew: no earlier run of the visual check or of the"
-                    " screenshot bot from a branch of this repository kept images"
-                    " rendered from the same files."
+                    "Rendered anew: no earlier run of the visual check from a"
+                    " branch of this repository kept images rendered from the same"
+                    " files."
                 )
             else:
                 outputs += f"run-id={run['id']}\n"

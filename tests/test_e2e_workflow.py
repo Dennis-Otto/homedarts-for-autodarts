@@ -408,7 +408,7 @@ watchdog = importlib.util.module_from_spec(WATCHDOG_SPEC)
 WATCHDOG_SPEC.loader.exec_module(watchdog)
 # The workflows that run the scripts of tests/e2e, and the scripts that print the
 # state of their containers when a signal stops them (tests/e2e/diagnose.sh).
-TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "screenshots.yml", "twice.yml")
+TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "twice.yml")
 DIAGNOSED = ("run.sh", "browser.sh", "screenshots.sh")
 
 
@@ -497,6 +497,5 @@ def test_every_section_of_the_screenshots_runs_out_of_time_before_its_step():
     sections = {section for group in assigned(source, "GROUPS") for section in group}
     assert set(budgets) <= sections
     assert default >= 120 and min(budgets.values()) > default
-    for workflow in ("visual.yml", "screenshots.yml"):
-        limit = step_limit(workflow, "screenshots.sh")
-        assert max(budgets.values()) + watchdog.GRACE < limit, workflow
+    limit = step_limit("visual.yml", "screenshots.sh")
+    assert max(budgets.values()) + watchdog.GRACE < limit

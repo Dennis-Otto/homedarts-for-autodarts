@@ -605,8 +605,19 @@ def test_the_browser_test_mounts_only_the_repository_and_its_artifacts():
     ]
 
 
+# The list of the files whose change starts the screenshot bot of the blueprint
+# (screenshot-bot.yml), as the paths of a workflow, besides the paths of the visual
+# check: the two that render the images of the screenshot tool.
+BOT_PATHS = "screenshots-paths.txt"
+
+
 def render_paths(workflow: str) -> list[str]:
-    """The paths of a workflow of the screenshot tool, in their order."""
+    """The paths that start a render of the screenshot tool, in their order: those of
+    the visual check, or the lines of the list of the screenshot bot without its
+    comments."""
+    if workflow == BOT_PATHS:
+        lines = (ROOT / ".github" / BOT_PATHS).read_text(encoding="utf-8").splitlines()
+        return [line.strip() for line in lines if line.strip()[:1] not in ("", "#")]
     path = ROOT / ".github" / "workflows" / workflow
     # PyYAML reads the key "on" as True.
     trigger = yaml.safe_load(path.read_text(encoding="utf-8"))[True]
@@ -615,15 +626,24 @@ def render_paths(workflow: str) -> list[str]:
 
 
 def skipped_by(workflow: str) -> set[str]:
-    """The files whose change alone does not start a workflow of the screenshot tool."""
+    """The files whose change alone does not start a render of the screenshot tool."""
     return {path[1:] for path in render_paths(workflow) if path.startswith("!")}
 
 
 def starts_a_render(workflow: str, path: str) -> bool:
-    """Whether a change of a file alone starts a workflow of the screenshot tool. As
-    on GitHub, the last of its paths that matches the file decides."""
+    """Whether a change of a file alone starts a render of the screenshot tool. In a
+    workflow, as on GitHub, the last of its paths that matches the file decides; the
+    screenshot bot asks git, whose pathspecs take a file of a path that no path with
+    ! leaves out."""
+    patterns = render_paths(workflow)
+    if workflow == BOT_PATHS:
+        named = [pattern for pattern in patterns if not pattern.startswith("!")]
+        left_out = [pattern[1:] for pattern in patterns if pattern.startswith("!")]
+        return any(fnmatchcase(path, pattern) for pattern in named) and not any(
+            fnmatchcase(path, pattern) for pattern in left_out
+        )
     started = False
-    for pattern in render_paths(workflow):
+    for pattern in patterns:
         if fnmatchcase(path, pattern.removeprefix("!")):
             started = not pattern.startswith("!")
     return started
@@ -645,7 +665,7 @@ def imports(script: Path) -> set[str]:
     return {name.partition(".")[0] for name in names}
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 def test_the_screenshot_tool_runs_again_for_every_script_it_uses(workflow):
     # The screenshot bot and the visual check skip the browser test, but a module
     # of the browser test that the screenshot tool imports counts for it, such as
@@ -660,7 +680,7 @@ def test_the_screenshot_tool_runs_again_for_every_script_it_uses(workflow):
         assert not used, f"{script.name} imports {sorted(used)}, which {workflow} skips"
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 def test_the_pictures_are_taken_again_when_the_recorded_board_changes(workflow):
     # The double of the Board Manager in the demo answers like its recordings, and
     # the pictures show what it answers, such as the board PC of the status card.
@@ -672,8 +692,8 @@ def test_the_pictures_are_taken_again_when_the_recorded_board_changes(workflow):
 
 
 # The key of the rendered images (tests/e2e/render_key.py): a job of the visual check
-# or of the screenshot bot takes the images of an earlier run with the same key, so
-# the key has to change with every file that changes an image.
+# takes the images of an earlier run with the same key, so the key has to change with
+# every file that changes an image.
 RENDER_KEY_SPEC = importlib.util.spec_from_file_location(
     "render_key", E2E / "render_key.py"
 )
@@ -708,7 +728,7 @@ RELEASE_ONLY = "custom_components/homedarts/manifest.json"
 
 @pytest.mark.parametrize(
     ("workflow", "apart"),
-    [("screenshots.yml", set()), ("visual.yml", {RELEASE_ONLY})],
+    [(BOT_PATHS, set()), ("visual.yml", {RELEASE_ONLY})],
 )
 def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow, apart):
     # A file whose change alone starts no render changes no image either.
@@ -717,7 +737,7 @@ def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow, apart):
 
 # Asks Git for the files of the key, and mutmut's copy has no Git.
 @pytest.mark.mutation_unsafe
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 def test_every_file_of_the_key_starts_a_render(workflow):
     # A file of the key that started no render would change the images unnoticed,
     # until the next run renders them for another reason or the weekly run comes.
@@ -727,7 +747,7 @@ def test_every_file_of_the_key_starts_a_render(workflow):
     assert not silent, f"{workflow} must start for these files of the key"
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 @pytest.mark.parametrize(
     "path",
     [
@@ -744,7 +764,7 @@ def test_the_integration_and_the_blueprints_start_a_render(workflow, path):
     assert starts_a_render(workflow, path)
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 @pytest.mark.parametrize("path", sorted(render_key.SKIPPED))
 def test_what_no_render_reads_starts_no_render(workflow, path):
     assert not starts_a_render(workflow, path)
@@ -771,7 +791,7 @@ def test_a_release_starts_the_screenshot_bot_and_not_the_visual_check():
     )
     written = [file["path"] for file in config["packages"]["."]["extra-files"]]
     assert written == [RELEASE_ONLY]
-    assert starts_a_render("screenshots.yml", RELEASE_ONLY)
+    assert starts_a_render(BOT_PATHS, RELEASE_ONLY)
     for path in [
         *written,
         "CHANGELOG.md",
@@ -781,18 +801,19 @@ def test_a_release_starts_the_screenshot_bot_and_not_the_visual_check():
         assert not starts_a_render("visual.yml", path)
 
 
-@pytest.mark.parametrize("workflow", ["screenshots.yml", "visual.yml"])
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
 def test_the_key_of_the_images_knows_every_file_that_starts_a_render(workflow):
     started = [
         pattern.removesuffix("/**")
         for pattern in render_paths(workflow)
         if not pattern.startswith("!")
     ]
-    # The workflow itself renders as the other one does (tests/test_render_key.py),
-    # and the screenshot bot records the live demo apart from the images.
+    # The visual check itself renders as it did (tests/test_render_key.py), and the
+    # screenshot bot records the live demo apart from the images.
     apart = {
         f".github/workflows/{workflow}",
         "tests/demo_timeline.py",
+        "tests/test_demo_timeline.py",
         "scripts/record_demo.py",
     }
     assert set(render_key.INPUTS) <= set(started)
