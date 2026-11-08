@@ -1,13 +1,14 @@
 blueprint:
   name: "HomeDarts: board problem alert"
   description: >-
-    Alerts you when the board stops answering or a camera fails, and
-    optionally when everything works again. A problem the board has when Home
-    Assistant starts alerts after the grace period, too.
+    Alerts you when the board stops answering or a camera fails, optionally
+    when the board loses its calibration, and optionally when everything works
+    again. A problem the board has when Home Assistant starts alerts after the
+    grace period, too.
 
 
-    Your actions can use the variables `problem` (`offline` or `cameras`)
-    and `recovered` (`true` when the problem is gone).
+    Your actions can use the variables `problem` (`offline`, `cameras` or
+    `calibration`) and `recovered` (`true` when the problem is gone).
 
 
     [Settings and examples in the guide](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#board-problem-alert)
@@ -39,6 +40,20 @@ blueprint:
                 - integration: homedarts
                   domain: binary_sensor
                   device_class: problem
+        calibration_problem:
+          name: Calibration problem
+          description: >-
+            Optional. The "Calibration problem" sensor of a board with Board
+            Manager 2, which turns on when the board reports that it isn't
+            calibrated or that the calibration of a camera failed. Needs
+            version 2.3.0 or later of the integration.
+          default: []
+          selector:
+            entity:
+              filter:
+                - integration: homedarts
+                  domain: binary_sensor
+                  device_class: problem
         grace_period:
           name: Grace period
           description: >-
@@ -55,8 +70,8 @@ blueprint:
         alert_actions:
           name: Alert actions
           description: >-
-            For example a notification to your phone. `problem` is `offline`
-            or `cameras`.
+            For example a notification to your phone. `problem` is `offline`,
+            `cameras` or `calibration`.
           selector:
             action: {}
         recovery_actions:
@@ -85,6 +100,12 @@ triggers:
     entity_id: !input camera_problem
     to: "on"
     for: !input grace_period
+  # Without a calibration sensor, this trigger watches nothing.
+  - trigger: state
+    id: calibration
+    entity_id: !input calibration_problem
+    to: "on"
+    for: !input grace_period
   # A problem that ends while the board is offline is not reported as solved:
   # only a sensor that goes straight back shows how long the problem lasted.
   - trigger: state
@@ -95,6 +116,11 @@ triggers:
   - trigger: state
     id: cameras_recovered
     entity_id: !input camera_problem
+    from: "on"
+    to: "off"
+  - trigger: state
+    id: calibration_recovered
+    entity_id: !input calibration_problem
     from: "on"
     to: "off"
   # A restart of Home Assistant, or saving this automation, forgets the grace
@@ -110,6 +136,7 @@ triggers:
 variables:
   connection: !input connection
   camera_problem: !input camera_problem
+  calibration_problem: !input calibration_problem
   grace_period: !input grace_period
   grace_seconds: >-
     {{ (grace_period.days | default(0)) * 86400 + (grace_period.hours | default(0)) * 3600
@@ -127,7 +154,9 @@ variables:
     {%- if trigger.id == 'startup' %}
       {%- set setup = as_timestamp(this.last_changed) %}
       {%- set ran = this.attributes.get('last_triggered') %}
-      {%- for name, entity, state in [('offline', connection, 'off'), ('cameras', camera_problem, 'on')] %}
+      {%- set watched = [('offline', connection, 'off'), ('cameras', camera_problem, 'on')]
+            + ([('calibration', calibration_problem, 'on')] if calibration_problem else []) %}
+      {%- for name, entity, state in watched %}
         {%- set sensor = states[entity] %}
         {%- if sensor is not none and sensor.state == state
               and (trigger.platform == 'homeassistant'
@@ -156,12 +185,14 @@ actions:
             id:
               - offline
               - cameras
+              - calibration
         sequence: !input alert_actions
       - conditions:
           - condition: trigger
             id:
               - offline_recovered
               - cameras_recovered
+              - calibration_recovered
           # Only a problem that lasted long enough to alert is reported as solved.
           - condition: template
             value_template: >-

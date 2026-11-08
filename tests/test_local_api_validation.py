@@ -124,6 +124,8 @@ async def test_texts_of_the_board_are_checked(client, aioclient_mock):
         "link": "c" * 256,
         "stats": {"fps": True, "cpuPercent": "12", "memoryBytes": 5},
         "camState": {"isRunning": True, "device": "/dev/video0"},
+        "calibrated": "yes",
+        "blocker": "b" * 256,
     }
     aioclient_mock.get(f"{BASE}/api/system", json=system)
     aioclient_mock.get(
@@ -139,6 +141,9 @@ async def test_texts_of_the_board_are_checked(client, aioclient_mock):
         "update_available": None,
         "cloud_link": None,
         "calibrating_cameras": None,
+        "calibrated": None,
+        "blocker": None,
+        "calibration": [],
     }
     host = await client.get_host()
     assert host["os"] is None

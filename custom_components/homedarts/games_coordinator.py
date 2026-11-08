@@ -55,6 +55,9 @@ _LOGGER = logging.getLogger(__name__)
 # A tournament match that is due waits this long before it looks again whether
 # the board is clear and no other game is played.
 FIXTURE_RETRY = timedelta(seconds=5)
+# The calibration repair when the board itself reports no calibration; when many darts
+# need corrections it is calibration_recommended.
+CALIBRATION_MISSING = "calibration_missing"
 
 
 def _work_out(jobs: list[Callable[[], Aim]]) -> list[Aim]:
@@ -178,6 +181,9 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._idle_unsub: CALLBACK_TYPE | None = None
         self._bot_unsub: CALLBACK_TYPE | None = None
         self._game_error_logged = False
+        # Whether the board itself reports a missing or failed calibration, which only
+        # a Board Manager 2 can (AutodartsLocalCoordinator).
+        self.board_uncalibrated = False
 
     # -- loading, starting and stopping ------------------------------------------
 
@@ -391,23 +397,40 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     @callback
     def _report_quality(self) -> None:
-        """Suggest a calibration while many darts need corrections."""
+        """Suggest a calibration while the board reports none, or while many darts
+        need corrections. Both are one repair, with the same fix."""
         issue = self._issue_id("calibration")
         quality = self.games.quality
         rate = quality.rate
-        if quality.enough and rate is not None and rate >= RECALIBRATE_RATE:
-            ir.async_create_issue(
-                self.hass,
-                DOMAIN,
-                issue,
-                is_fixable=True,
-                severity=ir.IssueSeverity.WARNING,
-                translation_key="calibration_recommended",
-                translation_placeholders={"rate": f"{rate:.0f}"},
-                data={"entry_id": self._entry.entry_id},
+        if self.board_uncalibrated:
+            self._suggest_calibration(issue, CALIBRATION_MISSING, None)
+        elif quality.enough and rate is not None and rate >= RECALIBRATE_RATE:
+            self._suggest_calibration(
+                issue, "calibration_recommended", {"rate": f"{rate:.0f}"}
             )
-        elif rate is None or rate < RECOVERED_RATE:
+        # A missing calibration is over once the board reports one; a high correction
+        # rate only once the rate is low again.
+        elif rate is None or rate < RECOVERED_RATE or self._suggests_missing(issue):
             ir.async_delete_issue(self.hass, DOMAIN, issue)
+
+    def _suggests_missing(self, issue: str) -> bool:
+        """Whether the open repair says that the board reports no calibration."""
+        shown = ir.async_get(self.hass).async_get_issue(DOMAIN, issue)
+        return shown is not None and shown.translation_key == CALIBRATION_MISSING
+
+    def _suggest_calibration(
+        self, issue: str, reason: str, placeholders: dict[str, str] | None
+    ) -> None:
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue,
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=reason,
+            translation_placeholders=placeholders,
+            data={"entry_id": self._entry.entry_id},
+        )
 
     # -- the training session ----------------------------------------------------
 

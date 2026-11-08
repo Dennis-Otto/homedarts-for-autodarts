@@ -1696,6 +1696,72 @@ async def test_board_alert_for_a_problem_at_startup(hass, freezer):
     assert [call.data for call in recoveries] == [{"problem": "offline"}]
 
 
+async def test_board_alert_for_a_lost_calibration(hass, freezer):
+    """The calibration sensor is optional; given, a lost calibration alerts after
+    the grace period, and its all-clear follows."""
+    alerts = async_mock_service(hass, "test", "alert")
+    recoveries = async_mock_service(hass, "test", "recovered")
+    hass.states.async_set("binary_sensor.board_connection", "on")
+    hass.states.async_set("binary_sensor.camera_problem", "off")
+    hass.states.async_set("binary_sensor.calibration_problem", "off")
+    await automate(
+        hass,
+        "board_alert",
+        {**ALERT, "calibration_problem": "binary_sensor.calibration_problem"},
+    )
+    # A calibration that fails once and holds the next time alerts nobody.
+    hass.states.async_set("binary_sensor.calibration_problem", "on")
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 30)
+    hass.states.async_set("binary_sensor.calibration_problem", "off")
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 180)
+    assert not alerts and not recoveries
+
+    hass.states.async_set("binary_sensor.calibration_problem", "on")
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 180)
+    assert [call.data for call in alerts] == [{"problem": "calibration"}]
+    hass.states.async_set("binary_sensor.calibration_problem", "off")
+    await hass.async_block_till_done()
+    assert [call.data for call in recoveries] == [{"problem": "calibration"}]
+
+
+async def test_board_alert_for_a_lost_calibration_at_startup(hass, freezer):
+    alerts = async_mock_service(hass, "test", "alert")
+    hass.set_state(CoreState.not_running)
+    hass.states.async_set("binary_sensor.board_connection", "on")
+    hass.states.async_set("binary_sensor.camera_problem", "off")
+    hass.states.async_set("binary_sensor.calibration_problem", "on")
+    await saved(
+        hass,
+        "board_alert",
+        {**ALERT, "calibration_problem": "binary_sensor.calibration_problem"},
+    )
+    await hass.async_start()
+    await until_waiting(hass, 120)
+    await pass_time(hass, freezer, 120)
+    assert [call.data for call in alerts] == [{"problem": "calibration"}]
+
+
+async def test_board_alert_without_a_calibration_sensor_watches_none(hass, freezer):
+    """Set up before the calibration sensor, the alert stays as it was."""
+    alerts = async_mock_service(hass, "test", "alert")
+    hass.set_state(CoreState.not_running)
+    hass.states.async_set("binary_sensor.board_connection", "on")
+    hass.states.async_set("binary_sensor.camera_problem", "off")
+    hass.states.async_set("binary_sensor.calibration_problem", "on")
+    await saved(hass, "board_alert", ALERT)
+    await hass.async_start()
+    await pass_time(hass, freezer, 180)
+    hass.states.async_set("binary_sensor.calibration_problem", "off")
+    await hass.async_block_till_done()
+    hass.states.async_set("binary_sensor.calibration_problem", "on")
+    await hass.async_block_till_done()
+    await pass_time(hass, freezer, 180)
+    assert not alerts
+
+
 async def test_board_alert_at_startup_stays_quiet_for_a_short_problem(hass, freezer):
     alerts = async_mock_service(hass, "test", "alert")
     recoveries = async_mock_service(hass, "test", "recovered")

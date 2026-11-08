@@ -563,6 +563,8 @@ Auf Board Manager 2.1 kann ein Board ständig eine Hand sehen, die gar nicht da 
 | Cloud-Verbindung | Binärsensor, **BM 2**, *Diagnose* | Die Verbindung des Boards zu Autodarts. |
 | Kameras aktiv | Binärsensor | Die Kameras laufen. |
 | Kalibrierung läuft | Binärsensor | Eine Kalibrierung läuft. |
+| Kalibrierungsproblem | Binärsensor, **BM 2**, *Diagnose* | An, wenn das Board meldet, dass es nicht kalibriert ist, oder auf Board Manager 2.1, dass die Kalibrierung einer Kamera fehlt oder ihr Fit fehlgeschlagen ist. Eine laufende Kalibrierung zählt erst, wenn sie fertig ist. Eine [Reparatur](troubleshooting.de.md#reparaturen) schlägt vor zu kalibrieren, siehe [ein Kalibrierungsproblem](troubleshooting.de.md#das-board-meldet-ein-kalibrierungsproblem). Attribute: `blocker`, was das Board als seinen Blocker nennt, etwa `none`, in seinen eigenen Worten; `failed_cameras`, die Nummern der Kameras, deren Kalibrierung fehlt oder fehlgeschlagen ist. |
+| Kalibrierungsabweichung | Sensor, px, **BM 2**, *Diagnose* | Um wie viele Pixel der Fit der ungenauesten Kamera danebenliegt, unter den Kameras mit gültiger Kalibrierung; kleiner ist besser. Nur Board Manager 2.1 meldet sie; auf 2.0 *unbekannt*. Ihr Verlauf zeigt, ob die Kalibrierung über die Wochen abdriftet. Attribute: `worst_camera` und `cameras` mit `camera`, `calibrated`, `error_px` und `fit_failed` jeder Kamera. |
 | Kamerastörung | Binärsensor, *Diagnose* | An, wenn eine Kamera bei laufender Erkennung 15 Sekunden lang keine Bilder liefert. Normales Stoppen, Kalibrieren und Standby zählen nicht. |
 | Störung Kamera *N* | Binärsensor, *Diagnose* | Dasselbe für eine einzelne Kamera. |
 | Erkennungsbildrate | Sensor, fps, *Diagnose*, *Deaktiviert* | Bilder pro Sekunde der Erkennung. |

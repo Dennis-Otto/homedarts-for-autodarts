@@ -5864,6 +5864,10 @@ function boardSettings(board) {
   return SETTING_KEYS.filter((key) => !connected || board.state(key)?.state !== "unavailable");
 }
 
+// The quality of the detection: the share of corrected darts, and on Board Manager 2 the
+// calibration the board reports.
+const QUALITY_KEYS = ["sensor.correction_rate", "binary_sensor.calibration_problem", "sensor.calibration_error"];
+
 // The status card, the board settings, the software update and the detection quality;
 // a dartboard without Autodarts has none of them.
 function boardDashboardView(board) {
@@ -5871,7 +5875,7 @@ function boardDashboardView(board) {
   const settings = board.rows(boardSettings(board));
   const maintenance = [{ type: "heading", heading: board.t("board_settings") }];
   if (settings.length) maintenance.push({ type: "entities", entities: settings });
-  maintenance.push(...board.rows(["update.board_software", "sensor.correction_rate"]).map(tile));
+  maintenance.push(...board.rows(["update.board_software", ...QUALITY_KEYS]).map(tile));
   return {
     title: `${board.t("view_board")}${board.suffix}`,
     path: `board${board.slug}`,

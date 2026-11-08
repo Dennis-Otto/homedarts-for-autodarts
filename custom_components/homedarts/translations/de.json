@@ -237,6 +237,9 @@
       "vision_version": {
         "name": "Version der Erkennungssoftware"
       },
+      "calibration_error": {
+        "name": "Kalibrierungsabweichung"
+      },
       "practice_remaining": {
         "name": "Übungsspiel Restpunkte"
       },
@@ -657,6 +660,9 @@
       },
       "cloud_link": {
         "name": "Cloud-Verbindung"
+      },
+      "calibration_problem": {
+        "name": "Kalibrierungsproblem"
       }
     },
     "camera": {
@@ -1253,6 +1259,21 @@
           "confirm": {
             "title": "Jetzt kalibrieren",
             "description": "Das Board hat {rate} % der letzten Darts korrigiert. Eine neue Kalibrierung senkt das meist.\n\nZiehe vorher alle Darts aus dem Board. Die Kalibrierung dauert ein paar Sekunden."
+          }
+        },
+        "abort": {
+          "calibration_failed": "Das Board hat die Kalibrierung nicht angenommen. Versuche es erneut oder kalibriere über die Board-Status-Karte.",
+          "board_unavailable": "Das Board ist nicht geladen. Prüfe die Verbindung und versuche es erneut."
+        }
+      }
+    },
+    "calibration_missing": {
+      "title": "Autodarts-Board kalibrieren",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Jetzt kalibrieren",
+            "description": "Das Board meldet, dass es nicht kalibriert ist oder die Kalibrierung einer Kamera fehlgeschlagen ist. Bis es kalibriert ist, können Darts falsch zählen.\n\nZiehe vorher alle Darts aus dem Board. Die Kalibrierung dauert ein paar Sekunden."
           }
         },
         "abort": {

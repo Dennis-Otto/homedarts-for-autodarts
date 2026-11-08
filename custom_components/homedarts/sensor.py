@@ -411,6 +411,37 @@ def _operating_system(data: dict[str, Any]) -> str | None:
     return f"{name} {version}" if isinstance(version, str) else name
 
 
+def _calibrations(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """The calibration of each camera that Board Manager 2.1 reports."""
+    calibration = (data.get("system") or {}).get("calibration")
+    return calibration if isinstance(calibration, list) else []
+
+
+def _worst_calibration(data: dict[str, Any]) -> dict[str, Any] | None:
+    """The camera whose calibration is least exact, of those that hold one."""
+    held = [
+        camera
+        for camera in _calibrations(data)
+        if camera["error_px"] is not None
+        and camera["calibrated"] is not False
+        and camera["fit_failed"] is not True
+    ]
+    return max(held, key=lambda camera: camera["error_px"], default=None)
+
+
+def _calibration_error(data: dict[str, Any]) -> float | None:
+    worst = _worst_calibration(data)
+    return None if worst is None else worst["error_px"]
+
+
+def _calibration_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    worst = _worst_calibration(data)
+    return {
+        "worst_camera": None if worst is None else worst["camera"],
+        "cameras": _calibrations(data),
+    }
+
+
 SYSTEM_SENSORS = (
     AutodartsSensorEntityDescription(
         key="cpu_usage",
@@ -461,6 +492,18 @@ SYSTEM_SENSORS = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: _host(data).get("vision_version"),
         attr_fn=lambda data: {"opencv_version": _host(data).get("opencv_version")},
+    ),
+    # How far, in pixels, the fit of the least exact camera is off; Board Manager
+    # 2.0 doesn't say.
+    AutodartsSensorEntityDescription(
+        key="calibration_error",
+        translation_key="calibration_error",
+        native_unit_of_measurement="px",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_calibration_error,
+        attr_fn=_calibration_attributes,
     ),
 )
 

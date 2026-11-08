@@ -337,7 +337,7 @@ Die Buttons weiter unten importieren einen Blueprint von GitHub, etwa einen, den
 
   [![Blueprint „Training report“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_report.yaml)
 
-- **Board problem alert**, wenn das Board offline geht oder eine Kamera ausfällt, mit optionaler Entwarnung.
+- **Board problem alert**, wenn das Board offline geht, eine Kamera ausfällt oder das Board seine Kalibrierung verliert, mit optionaler Entwarnung.
 
   [![Blueprint „Board problem alert“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fboard_alert.yaml)
 

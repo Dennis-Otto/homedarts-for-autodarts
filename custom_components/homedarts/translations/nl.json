@@ -237,6 +237,9 @@
       "vision_version": {
         "name": "Versie detectiesoftware"
       },
+      "calibration_error": {
+        "name": "Kalibratieafwijking"
+      },
       "practice_remaining": {
         "name": "Oefenspel resterende score"
       },
@@ -657,6 +660,9 @@
       },
       "cloud_link": {
         "name": "Cloudverbinding"
+      },
+      "calibration_problem": {
+        "name": "Kalibratieprobleem"
       }
     },
     "camera": {
@@ -1253,6 +1259,21 @@
           "confirm": {
             "title": "Nu kalibreren",
             "description": "Het bord heeft {rate} % van de laatste darts gecorrigeerd. Een nieuwe kalibratie brengt dat meestal omlaag.\n\nHaal eerst alle darts uit het bord. De kalibratie duurt een paar seconden."
+          }
+        },
+        "abort": {
+          "calibration_failed": "Het bord heeft de kalibratie niet geaccepteerd. Probeer het opnieuw of kalibreer via de bordstatuskaart.",
+          "board_unavailable": "Het bord is niet geladen. Controleer de verbinding en probeer het opnieuw."
+        }
+      }
+    },
+    "calibration_missing": {
+      "title": "Kalibreer het Autodarts-bord",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Nu kalibreren",
+            "description": "Het bord meldt dat het niet gekalibreerd is, of dat de kalibratie van een camera is mislukt. Tot het gekalibreerd is, kunnen darts verkeerd tellen.\n\nHaal eerst alle darts uit het bord. De kalibratie duurt een paar seconden."
           }
         },
         "abort": {
