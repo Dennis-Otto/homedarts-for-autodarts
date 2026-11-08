@@ -12,6 +12,7 @@
 [![Documentation](https://img.shields.io/badge/docs-website-526CFE.svg?logo=materialformkdocs&logoColor=white)](https://dennis-otto.github.io/homedarts-for-autodarts/)
 [![CI](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/ci.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/ci.yml)
 [![Coverage 100 %](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://dennis-otto.github.io/homedarts-for-autodarts/development.html#tests)
+[![issues: triaged by issue assistant](https://img.shields.io/badge/issues-triaged%20by%20issue%20assistant-blue)](https://dennis-otto.github.io/issue-assistant/)
 
 [**Documentation**](https://dennis-otto.github.io/homedarts-for-autodarts/) · [**Try it live**](https://dennis-otto.github.io/homedarts-for-autodarts/demo/index.html) · [**Deutsche Anleitung**](https://dennis-otto.github.io/homedarts-for-autodarts/de/) · [Nederlands](https://dennis-otto.github.io/homedarts-for-autodarts/nl/) · [Français](https://dennis-otto.github.io/homedarts-for-autodarts/fr/) · [Español](https://dennis-otto.github.io/homedarts-for-autodarts/es/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
 
