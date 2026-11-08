@@ -374,7 +374,11 @@
         'standby_minutes': 15,
       }),
       'system': dict({
+        'blocker': 'none',
+        'calibrated': True,
         'calibrating_cameras': None,
+        'calibration': list([
+        ]),
         'cloud_link': 'connected',
         'update_available': '2.0.2',
       }),

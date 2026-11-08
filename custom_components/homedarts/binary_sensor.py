@@ -1,7 +1,9 @@
 """Connectivity to the local manager, distinct from its cloud connection, and
 to the Granboard of a dartboard without Autodarts."""
 
+from collections.abc import Mapping
 from functools import partial
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -13,7 +15,11 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import LIFECYCLE_STATUSES
 from .entity import AutodartsBoardEntity, AutodartsLocalEntity, async_track_cameras
-from .local_coordinator import AutodartsLocalCoordinator
+from .local_coordinator import (
+    AutodartsLocalCoordinator,
+    calibration_problem,
+    failed_calibrations,
+)
 from .manual_coordinator import AutodartsManualCoordinator
 from .runtime import AutodartsConfigEntry
 from .topics import Topic
@@ -51,7 +57,11 @@ async def async_setup_entry(
                     "calibrating",
                     "realtime_connected",
                     "camera_problem",
-                    *(("cloud_link",) if coordinator.board_manager_2 else ()),
+                    *(
+                        ("cloud_link", "calibration_problem")
+                        if coordinator.board_manager_2
+                        else ()
+                    ),
                 )
             ]
         )
@@ -117,7 +127,7 @@ class AutodartsLocalState(AutodartsBoardEntity, BinarySensorEntity):
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
             self._attr_entity_registry_enabled_default = key not in MOTION_DISABLED
             self._topic = Topic.MOTION
-        elif key == "camera_problem":
+        elif key in ("camera_problem", "calibration_problem"):
             self._attr_device_class = BinarySensorDeviceClass.PROBLEM
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
         elif key in ("cameras_active", "calibrating"):
@@ -165,6 +175,8 @@ class AutodartsLocalState(AutodartsBoardEntity, BinarySensorEntity):
         if self._key == "cloud_link":
             link = (data.get("system") or {}).get("cloud_link")
             return link == "connected" if isinstance(link, str) else None
+        if self._key == "calibration_problem":
+            return calibration_problem(data)
         problems = data.get("camera_problems", [])
         if self._index is not None:
             return problems[self._index] if self._index < len(problems) else None
@@ -175,3 +187,14 @@ class AutodartsLocalState(AutodartsBoardEntity, BinarySensorEntity):
             if problems and all(problem is False for problem in problems)
             else None
         )
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        if self._key != "calibration_problem":
+            # Such as the camera number of a camera's problem.
+            return super().extra_state_attributes
+        data = self.coordinator.data or {}
+        return {
+            "blocker": (data.get("system") or {}).get("blocker"),
+            "failed_cameras": failed_calibrations(data),
+        }

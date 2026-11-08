@@ -299,6 +299,20 @@ async def test_the_integration_reads_every_recording(version):
                 "update_available": raw["updateAvailable"] or None,
                 "cloud_link": raw["link"],
                 "calibrating_cameras": raw.get("calibratingCams"),
+                "calibrated": raw["calibrated"],
+                "blocker": raw["blocker"],
+                # The fit of each camera, which only Board Manager 2.1 reports.
+                "calibration": [
+                    {
+                        "camera": index + 1,
+                        "calibrated": camera["calibrated"],
+                        "error_px": round(camera["errorPx"], 2),
+                        "fit_failed": camera["fitFailed"],
+                    }
+                    for index, camera in enumerate(
+                        raw.get("calibration", {}).get("cams", [])
+                    )
+                ],
             }
             # Every detail of the board PC that the integration keeps is understood.
             host = await client.get_host()

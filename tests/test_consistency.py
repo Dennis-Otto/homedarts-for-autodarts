@@ -224,7 +224,7 @@ def test_every_repair_issue_is_translated():
     # Issue names are those of the translation, except the calibration.
     translated = set(STRINGS["issues"])
     assert set(ISSUES) - {"calibration"} <= translated
-    assert "calibration_recommended" in translated
+    assert {"calibration_recommended", "calibration_missing"} <= translated
     repairs = (INTEGRATION / "repairs.py").read_text(encoding="utf-8")
     for issue, spec in STRINGS["issues"].items():
         if "fix_flow" in spec:

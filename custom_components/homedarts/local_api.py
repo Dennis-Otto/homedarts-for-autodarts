@@ -144,6 +144,29 @@ def quick_motion_flags(text: str) -> dict[str, bool] | None:
     return {key: value == "true" for key, value in match.groupdict().items()}
 
 
+def calibration_summary(raw: object) -> list[dict[str, Any]]:
+    """The calibration of each camera, in camera order, as Board Manager 2.1 reports it:
+    whether it holds, whether its fit failed and its error in pixels. Never its
+    homography, k or d; Board Manager 2.0 reports none of it."""
+    cameras = _dict(raw).get("cams")
+    if not isinstance(cameras, list):
+        return []
+    summary = []
+    for index, camera in enumerate(cameras[:MAX_CAMERAS]):
+        fit = _dict(camera)
+        error = number(fit.get("errorPx"))
+        summary.append(
+            {
+                "camera": index + 1,
+                "calibrated": _flag(fit.get("calibrated")),
+                # Hundredths of a pixel say all there is to say of a fit.
+                "error_px": None if error is None else round(error, 2),
+                "fit_failed": _flag(fit.get("fitFailed")),
+            }
+        )
+    return summary
+
+
 def camera_state_summary(raw: object) -> dict[str, bool]:
     """Whether the cameras are opened and running; nothing else is kept."""
     state = _dict(raw)
@@ -267,6 +290,11 @@ def _text(value: Any) -> str | None:
     return value if isinstance(value, str) and 0 < len(value) <= MAX_TEXT else None
 
 
+def _flag(value: Any) -> bool | None:
+    """A yes or no of the board; anything else reads as unknown."""
+    return value if isinstance(value, bool) else None
+
+
 class AutodartsLocalClient:
     """Control one local board, using the Board Manager's own HTTP protocol."""
 
@@ -385,6 +413,11 @@ class AutodartsLocalClient:
                 "update_available": version_text(raw.get("updateAvailable")),
                 "cloud_link": _text(raw.get("link")),
                 "calibrating_cameras": number(raw.get("calibratingCams")),
+                # Whether the board holds a calibration, and what it names as its
+                # blocker, such as "none", in its own words.
+                "calibrated": _flag(raw.get("calibrated")),
+                "blocker": _text(raw.get("blocker")),
+                "calibration": calibration_summary(raw.get("calibration")),
             },
         }
 

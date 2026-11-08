@@ -36,6 +36,12 @@
         "state": {
           "on": "mdi:cloud-check-outline"
         }
+      },
+      "calibration_problem": {
+        "default": "mdi:crosshairs-gps",
+        "state": {
+          "on": "mdi:crosshairs-question"
+        }
       }
     },
     "button": {
@@ -261,6 +267,9 @@
       },
       "vision_version": {
         "default": "mdi:eye-outline"
+      },
+      "calibration_error": {
+        "default": "mdi:crosshairs"
       },
       "practice_remaining": {
         "default": "mdi:counter"

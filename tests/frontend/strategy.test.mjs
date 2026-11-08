@@ -190,6 +190,22 @@ test("the training view adds the training settings, the board view the detection
   ]);
 });
 
+test("the board view shows the calibration that a Board Manager 2 reports", () => {
+  const config = dashboardStrategy(
+    hass([
+      ...board("dev1", "b"),
+      entity("sensor.b_corrected", "correction_rate", "dev1"),
+      entity("binary_sensor.b_calibration", "calibration_problem", "dev1"),
+      entity("sensor.b_calibration_error", "calibration_error", "dev1"),
+    ])
+  );
+  const maintenance = config.views.find((view) => view.path === "board").sections[1].cards;
+  assert.deepEqual(
+    maintenance.slice(-4).map((card) => card.entity),
+    ["update.b_software", "sensor.b_corrected", "binary_sensor.b_calibration", "sensor.b_calibration_error"]
+  );
+});
+
 test("the training view offers the daily goal, the streak and personal bests", () => {
   const config = dashboardStrategy(
     hass([

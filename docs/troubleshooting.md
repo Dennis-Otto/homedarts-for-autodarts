@@ -36,7 +36,7 @@ Home Assistant shows these notices under **Settings → Repairs**:
 | Notice | Meaning and solution |
 | --- | --- |
 | **Autodarts board address points to a different board** | The configured address answers with a different board ID, for example because IP addresses were swapped. The entities stay unavailable so that they never show another board's data. Open the integration, choose **Reconfigure** and select the correct board. The notice disappears by itself. |
-| **Calibrate the Autodarts board** | At least 20 % of the last 100 darts, and at least 50 darts in all, needed a correction, by the board, on the scoreboard or with `homedarts.correct_dart`, see *Detection correction rate*. Remove all darts, open the notice and confirm: the integration calibrates all cameras and counts again from zero. The notice also disappears once the rate falls below 10 %. |
+| **Calibrate the Autodarts board** | At least 20 % of the last 100 darts, and at least 50 darts in all, needed a correction, by the board, on the scoreboard or with `homedarts.correct_dart`, see *Detection correction rate*. Remove all darts, open the notice and confirm: the integration calibrates all cameras and counts again from zero. The notice also disappears once the rate falls below 10 %. A board with Board Manager 2 gets the same notice when it reports that it isn't calibrated or that the calibration of a camera failed, see [below](#the-board-reports-a-calibration-problem); it disappears once the board reports a calibration again. |
 | **Update the board to the new Autodarts Board Manager** | The board still runs the classic Board Manager 1, which Autodarts will switch off. Install Board Manager 2 on the board PC. The integration switches over by itself and the notice disappears. |
 | **Autodarts board sees a hand all the time** | The board reports a hand that doesn't move and detects no darts, see [below](#darts-are-not-counted-while-the-board-sees-a-hand). Confirm the notice to restart the detection. |
 | **Autodarts board found at a new address** | The board no longer answers with its board ID at its configured address, but it answers at another one, where Board Manager 2 announced it (mDNS), for example after a DHCP change. Open the notice and confirm only if it is your board: the integration checks the address once more, switches to it and reloads. Entities, training and settings are kept. See [address changes](how-it-works.md#address-changes). |
@@ -160,6 +160,10 @@ The status stays *Takeout in progress* although the board is empty, and new dart
 ### A camera is reported as a problem
 
 *Camera problem* turns on when a camera delivers no frames for 15 seconds during active detection. Check the camera's cable and USB port, and whether the camera appears in the Board Manager. Calibrating once more often helps as well.
+
+### The board reports a calibration problem
+
+*Calibration problem* turns on when a board with Board Manager 2 reports that it isn't calibrated, or on Board Manager 2.1 that the calibration of a camera is missing or its fit failed; its attribute `failed_cameras` names those cameras. Until the board is calibrated, darts can count wrong or not at all, so the notice **Calibrate the Autodarts board** comes too. Remove all darts and confirm the notice, or press *Start automatic calibration*. A fit that fails again usually has a reason at the board: a camera that moved or is out of focus, a dart or a hand in the picture, or light that changed since the last calibration. *Calibration error* shows how exact the fits are that hold: a value that climbs over the weeks says that a camera is drifting, long before darts count wrong. The optional *Calibration problem* of the [board problem alert](automations.md#board-problem-alert) sends you a message when it happens.
 
 ### The card is missing or outdated
 

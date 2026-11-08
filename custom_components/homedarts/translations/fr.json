@@ -237,6 +237,9 @@
       "vision_version": {
         "name": "Version du logiciel de détection"
       },
+      "calibration_error": {
+        "name": "Écart de calibrage"
+      },
       "practice_remaining": {
         "name": "Points restants de la partie"
       },
@@ -657,6 +660,9 @@
       },
       "cloud_link": {
         "name": "Liaison cloud"
+      },
+      "calibration_problem": {
+        "name": "Problème de calibrage"
       }
     },
     "camera": {
@@ -1253,6 +1259,21 @@
           "confirm": {
             "title": "Calibrer maintenant",
             "description": "La cible a corrigé {rate} % des dernières fléchettes. Un nouveau calibrage réduit généralement ce taux.\n\nRetirez d'abord toutes les fléchettes de la cible. Le calibrage prend quelques secondes."
+          }
+        },
+        "abort": {
+          "calibration_failed": "La cible n'a pas accepté le calibrage. Réessayez, ou lancez le calibrage depuis la carte État de la cible Autodarts.",
+          "board_unavailable": "La cible n'est pas chargée. Vérifiez la connexion et réessayez."
+        }
+      }
+    },
+    "calibration_missing": {
+      "title": "Calibrer la cible Autodarts",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Calibrer maintenant",
+            "description": "La cible indique qu'elle n'est pas calibrée, ou que le calibrage d'une caméra a échoué. Tant qu'elle n'est pas calibrée, des fléchettes peuvent être mal comptées.\n\nRetirez d'abord toutes les fléchettes de la cible. Le calibrage prend quelques secondes."
           }
         },
         "abort": {

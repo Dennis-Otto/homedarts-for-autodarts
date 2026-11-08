@@ -237,6 +237,9 @@
       "vision_version": {
         "name": "Versión del software de detección"
       },
+      "calibration_error": {
+        "name": "Desviación de la calibración"
+      },
       "practice_remaining": {
         "name": "Puntos restantes de la partida"
       },
@@ -657,6 +660,9 @@
       },
       "cloud_link": {
         "name": "Conexión a la nube"
+      },
+      "calibration_problem": {
+        "name": "Problema de calibración"
       }
     },
     "camera": {
@@ -1253,6 +1259,21 @@
           "confirm": {
             "title": "Calibrar ahora",
             "description": "La diana ha corregido el {rate} % de los últimos dardos. Una nueva calibración suele reducir esta cifra.\n\nRetira antes todos los dardos de la diana. La calibración tarda unos segundos."
+          }
+        },
+        "abort": {
+          "calibration_failed": "La diana no ha aceptado la calibración. Inténtalo de nuevo o calibra desde la tarjeta de estado de la diana Autodarts.",
+          "board_unavailable": "La diana no está cargada. Comprueba la conexión e inténtalo de nuevo."
+        }
+      }
+    },
+    "calibration_missing": {
+      "title": "Calibra la diana Autodarts",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Calibrar ahora",
+            "description": "La diana indica que no está calibrada o que ha fallado la calibración de una cámara. Mientras no esté calibrada, los dardos pueden contarse mal.\n\nRetira antes todos los dardos de la diana. La calibración tarda unos segundos."
           }
         },
         "abort": {

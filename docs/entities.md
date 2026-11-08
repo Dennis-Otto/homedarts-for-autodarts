@@ -563,6 +563,8 @@ A change is written to the Board Manager configuration; only the changed setting
 | Cloud link | Binary sensor, **BM 2**, *Diagnostic* | The board's connection to Autodarts. |
 | Cameras active | Binary sensor | The cameras are running. |
 | Calibration in progress | Binary sensor | A calibration is running. |
+| Calibration problem | Binary sensor, **BM 2**, *Diagnostic* | On when the board reports that it isn't calibrated, or on Board Manager 2.1 that the calibration of a camera is missing or its fit failed. A running calibration counts once it is done. A [repair](troubleshooting.md#repairs) suggests to calibrate, see [a calibration problem](troubleshooting.md#the-board-reports-a-calibration-problem). Attributes: `blocker`, what the board names as its blocker, such as `none`, in its own words; `failed_cameras`, the numbers of the cameras whose calibration is missing or failed. |
+| Calibration error | Sensor, px, **BM 2**, *Diagnostic* | How far, in pixels, the fit of the least exact camera is off, of the cameras whose calibration holds; lower is better. Only Board Manager 2.1 reports it; *unknown* on 2.0. Its history shows whether the calibration drifts over the weeks. Attributes: `worst_camera`, and `cameras` with `camera`, `calibrated`, `error_px` and `fit_failed` of each camera. |
 | Camera problem | Binary sensor, *Diagnostic* | On when any camera delivers no frames for 15 seconds during active detection. Normal stops, calibration and standby are ignored. |
 | Camera *N* problem | Binary sensor, *Diagnostic* | The same for one camera. |
 | Detection frame rate | Sensor, fps, *Diagnostic*, *Disabled* | Frames per second of the detection. |

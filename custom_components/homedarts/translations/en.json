@@ -237,6 +237,9 @@
       "vision_version": {
         "name": "Detection software version"
       },
+      "calibration_error": {
+        "name": "Calibration error"
+      },
       "practice_remaining": {
         "name": "Practice remaining score"
       },
@@ -657,6 +660,9 @@
       },
       "cloud_link": {
         "name": "Cloud link"
+      },
+      "calibration_problem": {
+        "name": "Calibration problem"
       }
     },
     "camera": {
@@ -1253,6 +1259,21 @@
           "confirm": {
             "title": "Calibrate now",
             "description": "The board corrected {rate} % of the last darts. A fresh calibration usually brings this down.\n\nRemove all darts from the board first. The calibration takes a few seconds."
+          }
+        },
+        "abort": {
+          "calibration_failed": "The board did not accept the calibration. Try again, or calibrate from the board status card.",
+          "board_unavailable": "The board is not loaded. Check the connection and try again."
+        }
+      }
+    },
+    "calibration_missing": {
+      "title": "Calibrate the Autodarts board",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Calibrate now",
+            "description": "The board reports that it isn't calibrated, or that the calibration of a camera failed. Until it is calibrated, darts can count wrong.\n\nRemove all darts from the board first. The calibration takes a few seconds."
           }
         },
         "abort": {

@@ -204,19 +204,29 @@ ENTITIES = {
     "achievements_enabled": "switch",
 }
 if GENERATION >= 2:
-    # Board Manager 2 reports its cloud link, load and updates, and has no toggle.
+    # Board Manager 2 reports its cloud link, load, updates and calibration, and has
+    # no toggle.
     ENTITIES |= {
         "cloud_link": "binary_sensor",
         "cpu_usage": "sensor",
         "memory_usage": "sensor",
         "board_software": "update",
+        "calibration_problem": "binary_sensor",
+        "calibration_error": "sensor",
     }
     DISABLED_BY_DEFAULT = {"detection_fps", "cpu_usage", "memory_usage"}
     ABSENT = {"upstream", "connect", "disconnect"}
 else:
     ENTITIES |= {"connect": "button", "upstream": "switch"}
     DISABLED_BY_DEFAULT = {"connect", "detection_fps"}
-    ABSENT = {"cloud_link", "cpu_usage", "memory_usage", "board_software"}
+    ABSENT = {
+        "cloud_link",
+        "cpu_usage",
+        "memory_usage",
+        "board_software",
+        "calibration_problem",
+        "calibration_error",
+    }
 
 
 class E2EFailure(AssertionError):
@@ -547,7 +557,14 @@ class Scenario:
             "training_darts": "0",
         }
         if GENERATION >= 2:
-            expected |= {"cloud_link": "on", "board_software": "on"}
+            # The calibration of the recording holds; only 2.1 says how exact it is,
+            # and its least exact camera is 2.31 pixels off.
+            expected |= {
+                "cloud_link": "on",
+                "board_software": "on",
+                "calibration_problem": "off",
+                "calibration_error": "2.31" if INTERFACE_2_1 else "unknown",
+            }
         else:
             expected |= {"upstream": "on"}
         if INTERFACE_2_1:

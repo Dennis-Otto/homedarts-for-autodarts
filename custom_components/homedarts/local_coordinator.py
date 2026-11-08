@@ -161,6 +161,32 @@ def _error_name(error: BaseException) -> str:
     return type(error.__cause__ or error).__name__
 
 
+def failed_calibrations(data: dict[str, Any]) -> list[int]:
+    """The numbers of the cameras whose calibration Board Manager 2.1 reports as
+    missing or failed."""
+    return [
+        camera["camera"]
+        for camera in (data.get("system") or {}).get("calibration") or []
+        if camera["calibrated"] is False or camera["fit_failed"] is True
+    ]
+
+
+def calibration_problem(data: dict[str, Any]) -> bool | None:
+    """Whether a Board Manager 2 reports that it isn't calibrated, or that the fit of a
+    camera failed; unknown while it reports nothing of it. A running calibration is no
+    problem yet: its result counts."""
+    system = data.get("system") or {}
+    calibrated = system.get("calibrated")
+    if calibrated is None and not system.get("calibration"):
+        return None
+    status = (data.get("local") or {}).get("status")
+    if system.get("calibrating_cameras") or (
+        isinstance(status, str) and status.lower() == "calibrating"
+    ):
+        return False
+    return calibrated is False or bool(failed_calibrations(data))
+
+
 @dataclass
 class ConnectionStats:
     """Connection history for diagnostics; no addresses, messages or payloads."""
@@ -596,9 +622,18 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
             self._observe_motion(self.readings.get("motion", {}), state, source)
         self._watch_takeout(data)
         self._watch_hand(data)
+        self._watch_calibration(data)
         data["camera_problems"] = self._health.update(
             data, self.readings, time.monotonic()
         )
+
+    def _watch_calibration(self, data: dict[str, Any]) -> None:
+        """Suggest a calibration once the board reports none, and take the suggestion
+        back once it reports one again."""
+        uncalibrated = calibration_problem(data) is True
+        if uncalibrated != self.board_uncalibrated:
+            self.board_uncalibrated = uncalibrated
+            self._report_quality()
 
     def _observe_status(
         self, previous: dict[str, Any], state: dict[str, Any], source: str
@@ -1196,6 +1231,8 @@ class AutodartsLocalCoordinator(AutodartsGamesCoordinator):
         await self.async_action(lambda: self.client.command("calibrate"))
         self.games.quality.reset()
         ir.async_delete_issue(self.hass, DOMAIN, self._issue_id("calibration"))
+        # The calibration counts until a read says it failed, which suggests one anew.
+        self.board_uncalibrated = False
         # The correction rate starts over now, not with the next read.
         self.async_update_listeners()
 
