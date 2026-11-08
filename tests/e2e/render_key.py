@@ -55,9 +55,10 @@ INPUTS = (
     "tests/fixtures/board_manager",
 )
 # The files below INPUTS that no render reads, as the paths of the visual check and
-# of the screenshot bot (.github/screenshots-paths.txt) skip them: what only the release of the integration carries, as Home Assistant reads its
-# texts from the translations and the quality scale from the manifest, the browser
-# test, the end-to-end test and their notes.
+# of the screenshot bot (.github/screenshots-paths.txt) skip them: what only the
+# release of the integration carries, as Home Assistant reads its texts from the
+# translations and the quality scale from the manifest, the browser test, the
+# end-to-end test and their notes.
 SKIPPED = frozenset(
     {
         "custom_components/homedarts/LICENSE",

@@ -739,15 +739,6 @@ def test_collect_puts_the_groups_together_and_compares_them(repository):
     # The diagrams and the image with the same pixels.
     assert report["unchanged"] == 3
     assert Image.open(images / "card.png").getpixel((0, 0)) == (200, 30, 40)
-    # The bot takes the rendered images alone: main may have newer diagrams.
-    collected = repository / "tests/e2e/artifacts/collected/en"
-    assert sorted(path.name for path in collected.iterdir()) == [
-        "card.png",
-        "last.png",
-        "new.png",
-        "same.png",
-    ]
-    assert (collected / "card.png").read_bytes() == (images / "card.png").read_bytes()
 
 
 def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
@@ -771,24 +762,6 @@ def test_collect_removes_an_image_that_nothing_makes_any_more(repository):
         "images"
     ]
     assert (repository / "docs/images/en/flow-light.png").exists()
-
-
-def test_collect_restores_the_committed_file_of_an_unchanged_image(repository):
-    committed = (repository / "docs/images/en/same.png").read_bytes()
-    for group, name in (
-        (1, "card.png"),
-        (2, "same.png"),
-        (3, "other.png"),
-        (4, "last.png"),
-    ):
-        rendered(repository, group, name, level=9)
-
-    result = collect(repository, RESTORE="1")
-
-    assert result.returncode == 0, result.stderr
-    assert (repository / "docs/images/en/same.png").read_bytes() == committed
-    collected = repository / "tests/e2e/artifacts/collected/en/same.png"
-    assert collected.read_bytes() == committed
 
 
 def test_collect_takes_the_groups_under_the_keys_of_their_artifacts(repository):
@@ -841,9 +814,16 @@ def test_collect_fails_on_an_image_that_two_groups_rendered(repository):
 # scripts/screenshots.sh ------------------------------------------------------------
 
 # The screenshot tool: notes its settings, and leaves an image for each name of
-# $NAMES in the folder of its language, unless the test sets $FAIL.
+# $NAMES in the folder of its language, unless the test sets $FAIL; with $HANG, it
+# waits until a SIGINT ends it, and notes that.
 TOOL_STAND_IN = """#!/usr/bin/env bash
 printf 'render %s %s %s\\n' "$LANGUAGES" "$SCREENSHOT_GROUP" "$IMAGES" >> "$CALLS"
+if [[ -n "${HANG:-}" ]]; then
+  trap 'kill "$sleeper"; echo interrupted >> "$CALLS"; exit 130' INT
+  sleep 30 >/dev/null 2>&1 &
+  sleeper=$!
+  wait
+fi
 if [[ -n "${FAIL:-}" ]]; then
   exit 3
 fi
@@ -914,7 +894,7 @@ def project(tmp_path):
         "RUNNER_TEMP": str(tmp_path / "runner"),
         "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
     }
-    for name in ("SCREENSHOTS_SHARD", "FAIL", "NAMES"):
+    for name in ("SCREENSHOTS_SHARD", "SCREENSHOTS_LIMIT", "FAIL", "HANG", "NAMES"):
         env.pop(name, None)
     return root, env
 
@@ -1038,6 +1018,24 @@ def test_a_group_that_fails_to_render_fails_its_shard(project):
     assert calls == ["render en 2/4 tests/e2e/artifacts/rendered-en-2"]
     folder = root / "docs" / "images" / "en"
     assert sorted(path.name for path in folder.iterdir()) == ["diagram-light.png"]
+
+
+def test_a_group_that_hangs_gets_a_sigint_and_fails_its_shard(project):
+    # The screenshot tool gets the signal itself, ends its demo and prints the state
+    # of its containers, long before the job's limit of an hour.
+    result, calls = shard(
+        project, SCREENSHOTS_SHARD="de-1", HANG="1", SCREENSHOTS_LIMIT="1s"
+    )
+
+    assert result.returncode == 124
+    assert calls == ["render de 1/4 tests/e2e/artifacts/rendered-de-1", "interrupted"]
+    assert "Group 1 in de took longer than 1s" in result.stderr
+
+
+def test_a_group_has_the_time_limit_of_the_old_render_step():
+    script = (ROOT / "scripts" / "screenshots.sh").read_text(encoding="utf-8")
+    assert 'LIMIT="${SCREENSHOTS_LIMIT:-21m}"' in script
+    assert 'timeout --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}"' in script
 
 
 def test_a_group_that_rendered_no_image_fails_its_shard(project):

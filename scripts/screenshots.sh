@@ -16,7 +16,8 @@
 # container of the browser owns the files it writes, and the bot gives each image
 # whose pixels stayed the same its committed file back. A shard deletes no image,
 # since none knows what the other groups render: the visual check of the pull request
-# that drops an image names it as removed, and that pull request deletes it.
+# that drops an image names it as removed, and that pull request deletes it. A group
+# that outlasts SCREENSHOTS_LIMIT (21m) gets SIGINT, and its shard fails.
 #
 # The recording needs a Python with the packages of requirements-test.txt: PYTHON,
 # or else one that uv makes for .python-version, outside the repository.
@@ -36,6 +37,11 @@ GROUP_COUNT=4
 RENDER="${SCREENSHOTS_RENDER:-${REPOSITORY_ROOT}/tests/e2e/screenshots.sh}"
 RECORD="${SCREENSHOTS_RECORD:-${REPOSITORY_ROOT}/scripts/record_demo.py}"
 UV="${UV:-uv}"
+# The time limit of a group, as the old render step had it: well within the hour of
+# the job, and GNU timeout ends the screenshot tool with SIGINT, so that it ends its
+# demo and prints the state of its containers before the shard fails. A tool that
+# outlasts the signal by two minutes gets killed.
+LIMIT="${SCREENSHOTS_LIMIT:-21m}"
 
 # One group of one language: rendered into a folder of its own, then over the
 # images of that language. The seconds of its sections go into the summary of the
@@ -44,8 +50,15 @@ render_group() {
 	local language="$1" group="$2"
 	local folder="tests/e2e/artifacts/rendered-${language}-${group}"
 	rm -rf "${REPOSITORY_ROOT:?}/${folder}"
+	local status=0
 	LANGUAGES="${language}" SCREENSHOT_GROUP="${group}/${GROUP_COUNT}" IMAGES="${folder}" \
-		bash "${RENDER}"
+		timeout --signal=INT --kill-after=2m "${LIMIT}" bash "${RENDER}" || status=$?
+	if ((status == 124 || status == 137)); then
+		echo "Group ${group} in ${language} took longer than ${LIMIT}; its log above shows where it waits." >&2
+	fi
+	if ((status)); then
+		exit "${status}"
+	fi
 	local images=()
 	shopt -s nullglob
 	images=("${REPOSITORY_ROOT}/${folder}/${language}"/*.png "${REPOSITORY_ROOT}/${folder}/${language}"/*.webp)

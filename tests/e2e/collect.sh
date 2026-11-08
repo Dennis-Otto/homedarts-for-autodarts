@@ -8,14 +8,11 @@
 # are rendered from (tests/e2e/render_key.py); scripts/screenshots.sh, whose shards
 # the screenshot bot renders, leaves them in tests/e2e/artifacts/rendered-<language>-<k>/.
 #
-# Afterwards docs/images holds the new images, tests/e2e/artifacts/visual/ the report
-# of compare.py, as after visual.sh, and tests/e2e/artifacts/collected/ the rendered
-# images alone. Every image in
-# docs/images comes from the screenshot tool or, as a diagram, from
-# scripts/render_diagrams.sh; one that neither makes any more goes, and the report
-# lists it as removed. With RESTORE=1, an image whose pixels did not change keeps its
-# committed file. A group without images, or an image that two groups rendered,
-# fails it. LANGUAGES chooses the languages (en de), and PYTHON a Python with the
+# Afterwards docs/images holds the new images and tests/e2e/artifacts/visual/ the
+# report of compare.py, as after visual.sh. Every image in docs/images comes from the
+# screenshot tool or, as a diagram, from scripts/render_diagrams.sh; one that neither
+# makes any more goes, and the report lists it as removed. A group without images, or
+# an image that two groups rendered, fails it. LANGUAGES chooses the languages (en de), and PYTHON a Python with the
 # packages of requirements-browser.txt (python3).
 
 set -euo pipefail
@@ -25,7 +22,6 @@ REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 ARTIFACTS="${SCRIPT_DIR}/artifacts"
 REFERENCE="${ARTIFACTS}/visual-reference"
 OUTPUT="${ARTIFACTS}/visual"
-COLLECTED="${ARTIFACTS}/collected"
 IMAGES="${REPOSITORY_ROOT}/docs/images"
 DIAGRAMS="${REPOSITORY_ROOT}/docs/diagrams"
 # How many groups GROUPS in screenshots.py has.
@@ -47,14 +43,13 @@ if ((${#missing[@]})); then
 	exit 1
 fi
 
-rm -rf "${REFERENCE}" "${OUTPUT}" "${COLLECTED}"
+rm -rf "${REFERENCE}" "${OUTPUT}"
 mkdir -p "${REFERENCE}" "${OUTPUT}"
 cp -R "${IMAGES}/." "${REFERENCE}/"
 
 # The group of every image, and its file.
 declare -A from file
 for language in ${LANGUAGES}; do
-	mkdir -p "${COLLECTED}/${language}"
 	for ((group = 1; group <= GROUP_COUNT; group++)); do
 		for image in "${ARTIFACTS}/rendered-${language}-${group}"{,-*}"/${language}"/*; do
 			name="${language}/$(basename -- "${image}")"
@@ -86,14 +81,5 @@ for name in "${!from[@]}"; do
 done
 echo "Put together ${#from[@]} images of ${GROUP_COUNT} groups in ${LANGUAGES}."
 
-options=(--languages "$(tr ' ' ',' <<<"${LANGUAGES}")")
-if [[ -n "${RESTORE:-}" ]]; then
-	options+=(--restore)
-fi
-"${PYTHON:-python3}" "${SCRIPT_DIR}/compare.py" "${REFERENCE}" "${IMAGES}" "${OUTPUT}" "${options[@]}"
-
-# The images as they go into docs/images, with the committed file of every image
-# whose pixels did not change.
-for name in "${!from[@]}"; do
-	cp "${IMAGES}/${name}" "${COLLECTED}/${name}"
-done
+"${PYTHON:-python3}" "${SCRIPT_DIR}/compare.py" "${REFERENCE}" "${IMAGES}" "${OUTPUT}" \
+	--languages "$(tr ' ' ',' <<<"${LANGUAGES}")"

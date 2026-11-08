@@ -719,20 +719,19 @@ def test_the_key_of_the_images_knows_every_file_that_the_demo_mounts():
 
 
 # The version that a release writes into the manifest is in the key, because the
-# demo shows its major version, and the screenshot bot renders it after the release.
-# The visual check leaves the manifest out: release-please writes it in its pull
-# request, which comes anew after every merge to main, and each of those would render
-# all the images, under a key that nothing else has, to report no difference.
+# demo shows its major version, and the screenshot bot renders it after the release,
+# on the workflow Release. The visual check leaves the manifest out: release-please
+# writes it in its pull request, which comes anew after every merge to main, and each
+# of those would render all the images, under a key that nothing else has, to report
+# no difference. The paths of the screenshot bot leave it out as well, or the push of
+# a release would render everything a second time.
 RELEASE_ONLY = "custom_components/homedarts/manifest.json"
 
 
-@pytest.mark.parametrize(
-    ("workflow", "apart"),
-    [(BOT_PATHS, set()), ("visual.yml", {RELEASE_ONLY})],
-)
-def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow, apart):
+@pytest.mark.parametrize("workflow", [BOT_PATHS, "visual.yml"])
+def test_the_key_of_the_images_skips_what_the_workflow_skips(workflow):
     # A file whose change alone starts no render changes no image either.
-    assert skipped_by(workflow) == render_key.SKIPPED | apart
+    assert skipped_by(workflow) == render_key.SKIPPED | {RELEASE_ONLY}
 
 
 # Asks Git for the files of the key, and mutmut's copy has no Git.
@@ -742,8 +741,9 @@ def test_every_file_of_the_key_starts_a_render(workflow):
     # A file of the key that started no render would change the images unnoticed,
     # until the next run renders them for another reason or the weekly run comes.
     files = {path for path, _, _ in render_key.files()}
-    apart = {RELEASE_ONLY} if workflow == "visual.yml" else set()
-    silent = {path for path in files - apart if not starts_a_render(workflow, path)}
+    silent = {
+        path for path in files - {RELEASE_ONLY} if not starts_a_render(workflow, path)
+    }
     assert not silent, f"{workflow} must start for these files of the key"
 
 
@@ -784,20 +784,26 @@ def test_what_only_the_release_carries_is_outside_the_key(name):
             assert name not in line.partition("#")[0], f"{source.name} reads {name}"
 
 
-def test_a_release_starts_the_screenshot_bot_and_not_the_visual_check():
-    # A new major version changes an image, which reaches docs/images by the bot.
+def test_a_release_starts_the_screenshot_bot_once_and_not_the_visual_check():
+    # A new major version changes an image, which reaches docs/images by the bot: it
+    # renders when the workflow Release of the release passed, and not on the push
+    # of the release as well, which would render every image a second time.
     config = json.loads(
         (ROOT / "release-please-config.json").read_text(encoding="utf-8")
     )
     written = [file["path"] for file in config["packages"]["."]["extra-files"]]
     assert written == [RELEASE_ONLY]
-    assert starts_a_render(BOT_PATHS, RELEASE_ONLY)
+    bot = ROOT / ".github" / "workflows" / "screenshot-bot.yml"
+    # PyYAML reads the key "on" as True.
+    trigger = yaml.safe_load(bot.read_text(encoding="utf-8"))[True]
+    assert trigger["workflow_run"]["workflows"] == ["Release"]
     for path in [
         *written,
         "CHANGELOG.md",
         "version.txt",
         ".release-please-manifest.json",
     ]:
+        assert not starts_a_render(BOT_PATHS, path)
         assert not starts_a_render("visual.yml", path)
 
 

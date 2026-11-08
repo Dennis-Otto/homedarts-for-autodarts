@@ -15,6 +15,10 @@ custom_components/homedarts/**
 !custom_components/homedarts/LICENSE
 !custom_components/homedarts/quality_scale.yaml
 !custom_components/homedarts/strings.json
+# The version that a release writes into the manifest: the bot renders after every
+# release anyway, on the workflow Release, so the push of the release renders no
+# second time.
+!custom_components/homedarts/manifest.json
 tests/e2e/**
 # The browser test and the end-to-end test, and their notes.
 !tests/e2e/browser.py
