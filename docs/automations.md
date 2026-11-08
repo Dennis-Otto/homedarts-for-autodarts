@@ -132,7 +132,7 @@ A detection you start by hand while the presence is off keeps running. A restart
 | --- | --- | --- |
 | Board connection | | The *Local connection* sensor of your board. |
 | Camera problem | | The *Camera problem* sensor of your board. |
-| Calibration problem | none | Optional. The *Calibration problem* sensor of a board with Board Manager 2: it turns on when the board reports that it isn't calibrated or that the calibration of a camera failed. |
+| Calibration problem | none | Optional. The *Calibration problem* sensor of a board with Board Manager 2: it turns on when the board reports that it isn't calibrated or that the calibration of a camera failed. Needs version 2.3.0 or later of the integration. |
 | Grace period | 2 minutes | How long a problem has to last before the alert, so that a Board Manager restart or a short calibration stays quiet. |
 | Alert actions | | For example a notification to your phone. `problem` is `offline`, `cameras` or `calibration`. |
 | Recovery actions | none | Run when a problem you were alerted about is gone, with `recovered` set to `true`. |
@@ -145,7 +145,7 @@ What this blueprint and the [automatic detection](#start-and-stop-detection-auto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/restart-waits-dark.png">
-  <img src="images/en/restart-waits-light.png" alt="What the automatic detection and the board problem alert do when Home Assistant starts: if the detection runs while nobody is there, the automatic detection waits for Stop after and stops the detection if still nobody is there; someone who arrives meanwhile keeps it running. If the board is offline or has a camera problem, the board problem alert waits for the Grace period and runs the Alert actions if the problem is still the same; a problem that ended or came back meanwhile is left to the usual triggers" width="640">
+  <img src="images/en/restart-waits-light.png" alt="What the automatic detection and the board problem alert do when Home Assistant starts: if the detection runs while nobody is there, the automatic detection waits for Stop after and stops the detection if still nobody is there; someone who arrives meanwhile keeps it running. If the board is offline, has a camera problem or, if chosen, a calibration problem, the board problem alert waits for the Grace period and runs the Alert actions if the problem is still the same; a problem that ended or came back meanwhile is left to the usual triggers" width="640">
 </picture>
 
 ### Training report

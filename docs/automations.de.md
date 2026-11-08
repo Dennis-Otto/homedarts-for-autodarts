@@ -134,7 +134,7 @@ Eine Erkennung, die du von Hand startest, während die Präsenz aus ist, läuft 
 | --- | --- | --- |
 | Board connection | | Der Sensor *Lokale Verbindung* deines Boards. |
 | Camera problem | | Der Sensor *Kamerastörung* deines Boards. |
-| Calibration problem | keiner | Optional. Der Sensor *Kalibrierungsproblem* eines Boards mit Board Manager 2: Er geht an, wenn das Board meldet, dass es nicht kalibriert ist oder die Kalibrierung einer Kamera fehlgeschlagen ist. |
+| Calibration problem | keiner | Optional. Der Sensor *Kalibrierungsproblem* eines Boards mit Board Manager 2: Er geht an, wenn das Board meldet, dass es nicht kalibriert ist oder die Kalibrierung einer Kamera fehlgeschlagen ist. Braucht Version 2.3.0 oder neuer der Integration. |
 | Grace period | 2 Minuten | Wie lange ein Problem dauern muss, bevor gewarnt wird, damit ein Neustart des Board Managers oder eine kurze Kalibrierung ruhig bleibt. |
 | Alert actions | | Zum Beispiel eine Benachrichtigung aufs Handy. `problem` ist `offline`, `cameras` oder `calibration`. |
 | Recovery actions | keine | Laufen, wenn ein Problem vorbei ist, vor dem gewarnt wurde; `recovered` ist dann `true`. |
@@ -147,7 +147,7 @@ Was dieser Blueprint und die [automatische Erkennung](#start-and-stop-detection-
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/de/restart-waits-dark.png">
-  <img src="images/de/restart-waits-light.png" alt="Was die automatische Erkennung und der Board problem alert tun, wenn Home Assistant startet: Läuft die Erkennung, während niemand da ist, wartet die automatische Erkennung Stop after ab und stoppt die Erkennung, wenn immer noch niemand da ist; wer währenddessen kommt, lässt sie laufen. Ist das Board offline oder hat eine Kamerastörung, wartet der Board problem alert die Grace period ab und führt die Alert actions aus, wenn es noch dasselbe Problem ist; ein Problem, das währenddessen endet oder wiederkommt, übernehmen die gewohnten Auslöser" width="640">
+  <img src="images/de/restart-waits-light.png" alt="Was die automatische Erkennung und der Board problem alert tun, wenn Home Assistant startet: Läuft die Erkennung, während niemand da ist, wartet die automatische Erkennung Stop after ab und stoppt die Erkennung, wenn immer noch niemand da ist; wer währenddessen kommt, lässt sie laufen. Ist das Board offline oder hat es eine Kamerastörung oder, falls gewählt, ein Kalibrierungsproblem, wartet der Board problem alert die Grace period ab und führt die Alert actions aus, wenn es noch dasselbe Problem ist; ein Problem, das währenddessen endet oder wiederkommt, übernehmen die gewohnten Auslöser" width="640">
 </picture>
 
 ### Training report

@@ -15,11 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import LIFECYCLE_STATUSES
 from .entity import AutodartsBoardEntity, AutodartsLocalEntity, async_track_cameras
-from .local_coordinator import (
-    AutodartsLocalCoordinator,
-    calibration_problem,
-    failed_calibrations,
-)
+from .local_coordinator import AutodartsLocalCoordinator, failed_calibrations
 from .manual_coordinator import AutodartsManualCoordinator
 from .runtime import AutodartsConfigEntry
 from .topics import Topic
@@ -176,7 +172,7 @@ class AutodartsLocalState(AutodartsBoardEntity, BinarySensorEntity):
             link = (data.get("system") or {}).get("cloud_link")
             return link == "connected" if isinstance(link, str) else None
         if self._key == "calibration_problem":
-            return calibration_problem(data)
+            return self.coordinator.calibration_problem
         problems = data.get("camera_problems", [])
         if self._index is not None:
             return problems[self._index] if self._index < len(problems) else None

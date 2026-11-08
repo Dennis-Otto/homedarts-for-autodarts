@@ -45,7 +45,8 @@ blueprint:
           description: >-
             Optional. The "Calibration problem" sensor of a board with Board
             Manager 2, which turns on when the board reports that it isn't
-            calibrated or that the calibration of a camera failed.
+            calibrated or that the calibration of a camera failed. Needs
+            version 2.3.0 or later of the integration.
           default: []
           selector:
             entity:

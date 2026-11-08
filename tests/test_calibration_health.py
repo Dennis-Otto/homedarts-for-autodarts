@@ -267,6 +267,39 @@ async def test_a_running_calibration_is_no_problem_yet(
     assert issue(hass, entry) is None
 
 
+async def test_a_running_calibration_keeps_the_last_result_until_it_is_done(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(
+        hass,
+        aioclient_mock,
+        recording="2.1.0",
+        state=running_2_1(),
+        system=failed_fit(2),
+    )
+    coordinator = entry.runtime_data.local
+    assert state(hass, "binary_sensor", "calibration_problem") == "on"
+    # The board calibrates its cameras: no all-clear in between.
+    calibrating_now = failed_fit(2)
+    calibrating_now["status"]["calibratingCams"] = 3
+    answer(aioclient_mock, "/api/system", json=calibrating_now)
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "calibration_problem") == "on"
+    assert issue(hass, entry).translation_key == "calibration_missing"
+    # The fit fails again: the problem simply stays.
+    answer(aioclient_mock, "/api/system", json=failed_fit(2))
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "calibration_problem") == "on"
+    # Another calibration, and this one holds.
+    answer(aioclient_mock, "/api/system", json=calibrating_now)
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "calibration_problem") == "on"
+    answer(aioclient_mock, "/api/system", json=system_2_1())
+    await reread(hass, coordinator)
+    assert state(hass, "binary_sensor", "calibration_problem") == "off"
+    assert issue(hass, entry) is None
+
+
 async def test_a_board_that_says_nothing_of_its_calibration_shows_no_problem(
     hass, aioclient_mock
 ):

@@ -64,7 +64,7 @@ Jede Nachricht und jeder Lesevorgang aktualisiert nur die Entitäten, die zeigen
 | --- | --- | --- |
 | Erkennung | Version beginnt mit `1.` | Version beginnt mit `2.` und `/api/system` existiert |
 | Lesen | Einzelne Aufrufe für Zustand, Statistik, Kameras, Bewegung, Einstellungen und Version | Ein gemeinsamer Aufruf von `/api/system` |
-| Extras | Schalter und Tasten für die Cloud-Verbindung | Cloud-Verbindung, CPU, Speicher, Betriebssystem, Prozessor und Erkennungssoftware des Board-PCs, Update-Hinweis, Kamera-Livestreams, mDNS-Erkennung |
+| Extras | Schalter und Tasten für die Cloud-Verbindung | Cloud-Verbindung, CPU, Speicher, Betriebssystem, Prozessor und Erkennungssoftware des Board-PCs, Update-Hinweis, Kamera-Livestreams, mDNS-Erkennung, Kalibrierungsstatus und auf 2.1 die Kalibrierungsabweichung jeder Kamera |
 
 Die Generation wird bei jedem Lesen geprüft. Nach einem Update des Boards lädt sich die Integration neu und ergänzt oder entfernt die generationsspezifischen Entitäten; sonst ändert sich nichts. Solange ein Board noch Board Manager 1 nutzt, empfiehlt ein Reparaturhinweis das Update. Solange die Generation noch unbekannt ist, etwa weil das Board beim ersten Start aus ist, werden keine Entitäten entfernt.
 

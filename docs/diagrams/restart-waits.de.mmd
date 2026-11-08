@@ -1,8 +1,8 @@
 flowchart TB
   accTitle: Was die automatische Erkennung und der Board problem alert tun, wenn Home Assistant startet
-  accDescr: Wenn Home Assistant startet, prüft die automatische Erkennung, ob die Erkennung läuft, während niemand da ist. Dann wartet sie Stop after ab und stoppt die Erkennung, wenn immer noch niemand da ist; wer währenddessen kommt, lässt sie laufen. Der Board problem alert prüft, ob das Board offline ist oder eine Kamerastörung hat. Dann wartet er die Grace period ab und führt die Alert actions aus, wenn es noch dasselbe Problem ist; ein Problem, das währenddessen endet oder wiederkommt, übernehmen die gewohnten Auslöser.
+  accDescr: Wenn Home Assistant startet, prüft die automatische Erkennung, ob die Erkennung läuft, während niemand da ist. Dann wartet sie Stop after ab und stoppt die Erkennung, wenn immer noch niemand da ist; wer währenddessen kommt, lässt sie laufen. Der Board problem alert prüft, ob das Board offline ist, eine Kamerastörung oder, falls gewählt, ein Kalibrierungsproblem hat. Dann wartet er die Grace period ab und führt die Alert actions aus, wenn es noch dasselbe Problem ist; ein Problem, das währenddessen endet oder wiederkommt, übernehmen die gewohnten Auslöser.
   START["Home Assistant startet"] --> NOBODY{"Erkennung läuft,<br/>während niemand da ist?"}
-  START --> PROBLEM{"Board offline oder<br/>Kamerastörung?"}
+  START --> PROBLEM{"Board offline, Kamerastörung oder,<br/>falls gewählt, Kalibrierungsproblem?"}
   NOBODY -- "ja" --> WAIT["<i>Stop after</i> abwarten"]
   WAIT --> GONE{"Immer noch niemand da?"}
   GONE -- "ja" --> STOP["Erkennung stoppen"]
