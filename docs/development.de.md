@@ -16,6 +16,8 @@ Die vollständige Entwickler-Dokumentation ist auf Englisch: [Development](devel
 
 Schlägt eine Aufnahme fehl, speichert das Werkzeug jede offene Seite in `tests/e2e/artifacts/`. Git ignoriert diesen Ordner.
 
+Jeder Schritt eines Abschnitts holt seine Seite mit `alone()` aus `tests/e2e/pages.py`, das zuerst die Seiten der Schritte davor schließt. Eine offene Seite zeichnet hinter der nächsten weiter: Ein Board lässt seine Felder blinken und seinen Ring pulsieren, 60 Bilder in der Sekunde, und der Browser teilt seine Prozessoren und seinen Compositor mit allen. Im Abschnitt *people* waren einmal sechzehn Seiten hinter der Heatmap offen, sieben davon Boards, und die Heatmap zeichnete in 30 Sekunden keine zwei Bilder, sodass ihr Screenshot abbrach. Ein Schritt, der fehlschlägt, behält seine Seite, und ihr Screenshot kommt trotzdem. `tests/test_screenshot_groups.py` schlägt fehl, wenn ein Schritt eine Seite bekommt, die nichts schließt, etwa `players_card(context.new_page())`.
+
 ## In jedem Lauf dieselben Bilder
 
 Zwei Läufe des Werkzeugs erzeugen dieselben Bilder, Byte für Byte. Ein Bild, das sich ändert, zeigt also immer eine Karte oder eine Seite, die sich geändert hat, und [Screenshot-Bot](#screenshot-bot) und [Bildvergleich](#bildvergleich) erkennen das:

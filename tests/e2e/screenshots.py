@@ -22,7 +22,16 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import monotonic
 
-from pages import FRAMES, POLL, QUIET, WEBSOCKET_QUIET, loaded, open_card_form, probe
+from pages import (
+    FRAMES,
+    POLL,
+    QUIET,
+    WEBSOCKET_QUIET,
+    alone,
+    loaded,
+    open_card_form,
+    probe,
+)
 from PIL import Image, ImageDraw, ImageFont
 from playwright.sync_api import (
     Browser,
@@ -4097,32 +4106,33 @@ def people(browser: Browser) -> None:
 
     def on_board() -> Page:
         """A new page on the board's dashboard, for steps that call actions."""
-        page = context.new_page()
+        page = alone(context)
         open_dashboard(page, "board")
         return page
 
+    # Every step on a page of its own, which closes when the next step begins: the
+    # boards of the lobby and the tournaments would go on blinking behind the heatmap.
     players_matches(on_board())
-    players_card(context.new_page())
-    doubles_card(context.new_page())
+    players_card(alone(context))
+    doubles_card(alone(context))
     lobby_screen(on_board())
     lobby_bot(on_board())
     lobby_fair(on_board())
     tournament_lobby(on_board())
     tournament_table(on_board())
     idle_screen(on_board())
-    media_gallery(context.new_page())
+    media_gallery(alone(context))
     # After the doubles training, so the training view shows its doubles.
-    strategy_dashboard(context.new_page())
-    strategy_views(context.new_page())
-    blueprints_page(context.new_page())
-    board_events_dialog(context.new_page())
-    online_bridge_options(context.new_page())
-    progress_cards(context.new_page())
+    strategy_dashboard(alone(context))
+    strategy_views(alone(context))
+    blueprints_page(alone(context))
+    board_events_dialog(alone(context))
+    online_bridge_options(alone(context))
+    progress_cards(alone(context))
     # Recorded sharp at twice the size, shown at the size of the card.
-    heatmap_animation(context.new_page())
+    heatmap_animation(alone(context))
     # Last: the match adds to the players and doubles of the cards above.
-    page = context.new_page()
-    open_dashboard(page, "board")
+    page = on_board()
     match_summary(page)
     # After every other picture of its group: its darts count for the players.
     stream_overlay(page)
@@ -4166,7 +4176,7 @@ def manual(browser: Browser) -> None:
         locale=LOCALE,
         color_scheme="dark",
     )
-    manual_board(context.new_page())
+    manual_board(alone(context))
     context.close()
 
 
@@ -4180,7 +4190,7 @@ def setup(browser: Browser) -> None:
         locale=LOCALE,
         color_scheme="dark",
     )
-    setup_animation(context.new_page())
+    setup_animation(alone(context))
     context.close()
 
 
@@ -4269,9 +4279,9 @@ def flapped(browser: Browser) -> None:
         locale=LOCALE,
         color_scheme="dark",
     )
-    blueprints_page(context.new_page())
-    online_bridge_options(context.new_page())
-    heatmap_animation(context.new_page())
+    blueprints_page(alone(context))
+    online_bridge_options(alone(context))
+    heatmap_animation(alone(context))
     context.close()
 
 
