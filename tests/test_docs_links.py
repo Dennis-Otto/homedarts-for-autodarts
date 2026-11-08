@@ -88,6 +88,7 @@ OPTIONAL = (
     "scripts/check-site.sh",
     "scripts/release-assets.sh",
     ".github/screenshots-paths.txt",
+    ".github/screenshots.toml",
 )
 # The number words of each language, which its text uses for counts. Each text
 # reads only its own: the Spanish "once" (11) is an English word, the French

@@ -8,8 +8,8 @@ name: Visual check
 # runner of its own from a fresh demo, all side by side, and then the compare job of
 # a language puts its groups together and compares them (tests/e2e/collect.sh), as
 # tests/e2e/visual.sh does on one machine. A group whose files an earlier run of
-# this check or of the screenshot bot already rendered, on a branch of this
-# repository, takes the images of that run instead (tests/e2e/render_key.py): so a
+# this check already rendered, on a branch of this repository, takes the images of
+# that run instead (tests/e2e/render_key.py): so a
 # pull request that "Update branches" brought up to date without a change of those
 # files renders nothing anew. It only reports: the summary lists every
 # image that looks different with the share of its pixels that changed, the artifact
@@ -77,7 +77,7 @@ jobs:
       # reaches only the icons of its other integrations, which the images show
       # (brands.home-assistant.io).
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -146,8 +146,8 @@ jobs:
         with:
           persist-credentials: false
       # The key of the files that the images are rendered from, and the newest run
-      # of the visual check or of the screenshot bot from a branch of this repository,
-      # never of a fork, that kept images with it: those are the images that a render
+      # of the visual check from a branch of this repository, never of a fork, that
+      # kept images with it: those are the images that a render
       # would make, byte for byte. A pull request takes them, a run on demand renders
       # anew (docs/development.md#images-rendered-once).
       - name: Look for the same images in an earlier run
@@ -247,7 +247,7 @@ jobs:
       # The code and Pillow for the comparison; Harden-Runner itself allows the
       # storage of the artifacts. No step needs sudo or Docker.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >

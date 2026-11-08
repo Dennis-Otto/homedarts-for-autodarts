@@ -34,7 +34,7 @@ jobs:
       # allows the storage of the reports, which the artifacts of the check keep.
       # Without sudo and Docker no step can lift the block.
       - name: Block every host that the job doesn't need
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -121,7 +121,7 @@ jobs:
               return "< 0.01 %" if share < 0.0001 else f"{share * 100:.2f} %"
 
           lines = ["<!-- visual-check -->", "### Visual check", ""]
-          rows, unchanged, read, missing = [], 0, [], []
+          rows, unchanged, read, missing, removed = [], 0, [], [], []
           for code in languages:
               try:
                   with open(f"{folder}/visual-{code}/report.json") as file:
@@ -144,6 +144,8 @@ jobs:
                       and isinstance(share, (int, float)) and 0 <= share <= 1
                   ):
                       rows.append(f"| `docs/images/{path}` | {status} | {percent(share)} |")
+                      if status == "removed":
+                          removed.append(f"`docs/images/{path}`")
           # A language whose report is missing failed to render; the other one still
           # gets its report, named by its language.
           which = f"{languages[read[0]]} " if read and missing else ""
@@ -174,6 +176,16 @@ jobs:
                   "This check only reports. When the change is intended, the screenshot bot "
                   "updates `docs/images` after the merge."
               )
+              # Each shard of the screenshot bot renders one group, and none knows what
+              # the others render, so the bot deletes no image: an image that no group
+              # renders any more goes with the pull request that drops it.
+              if removed:
+                  lines += [
+                      "",
+                      "No group renders " + ", ".join(removed) + " any more, and the "
+                      "screenshot bot deletes no image: delete it in this pull request, "
+                      "and take it off the pages that show it.",
+                  ]
           if read and missing:
               names = " and ".join(languages[code] for code in missing)
               lines += ["", f"The {names} images could not be rendered for {sha}; the [run]({run}) shows why."]
