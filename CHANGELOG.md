@@ -4,6 +4,13 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.3.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.0...v2.3.1) (2026-11-09)
+
+
+### Bug fixes
+
+* **ci:** the project's own jobs stop when Harden-Runner doesn't block ([#651](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/651)) ([0ed9b07](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/0ed9b07c9a129a1ace94aaef539fae29b188b823))
+
 ## [2.3.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.4...v2.3.0) (2026-11-08)
 
 ### Features
