@@ -140,7 +140,7 @@ Home Assistant runs on Linux and macOS, not on Windows, and so do the tests of t
 
 - **Docker:** [the checks in Docker](#the-checks-in-docker), in Git Bash with Docker Desktop, in a clone and in a worktree alike.
 - **WSL 2:** a clone in the Linux file system of the distribution, such as `~/homedarts-for-autodarts`, with Python 3.14 and Node.js 24 installed there, takes the commands of [the tests](#tests) as they are, and the end-to-end and browser tests with Docker. Stay out of `/mnt/c/` and the other drives of Windows there: git and the tests are slow on them, and a worktree that Git for Windows made names its main checkout by a path of Windows, which git on Linux can't follow.
-- **The dev container:** in VS Code with Docker Desktop, *Dev Containers: Clone Repository in Container Volume* clones the repository into a volume of Linux and sets up Python, Node.js and Docker, and `bash scripts/check.sh` runs every check there, as in GitHub Codespaces.
+- **The dev container:** in VS Code with Docker Desktop, *Dev Containers: Clone Repository in Container Volume* clones the repository into a volume of Linux and sets up Python, Node.js and Docker, and `bash scripts/check.sh` runs the checks there, as in GitHub Codespaces, and leaves ShellCheck to the CI.
 - **Windows itself:** the tests of the cards with Node.js 24, `npm ci && npm test`, and the website with the tools of `.venv-docs`, as [CONTRIBUTING.md](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#website) sets them up.
 
 ### Home Assistant's warnings about the integration
