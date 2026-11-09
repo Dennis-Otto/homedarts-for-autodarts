@@ -47,7 +47,7 @@ Avec Board Manager 2, Home Assistant trouve en général la cible tout seul : *
 
 Sinon, sélectionnez le bouton ci-dessus, puis choisissez **Rechercher des cibles sur ce réseau**, ou **Saisir l'adresse de la cible** avec l'adresse IP du PC de la cible. Aucun compte Autodarts n'est nécessaire.
 
-<img src="images/en/setup-menu.png" alt="Le menu de configuration de HomeDarts : rechercher des cibles sur ce réseau, saisir l'adresse d'une cible, ou une cible sans Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="Le menu de configuration de HomeDarts : rechercher des cibles sur ce réseau, saisir l'adresse d'une cible, ou une cible sans Autodarts" width="580">
 
 Le [guide d'installation](installation.fr.md#ajouter-votre-cible) explique chacune de ces façons en détail. Sans Autodarts, choisissez **Cible sans Autodarts : saisir soi-même chaque fléchette** et donnez un nom à la cible ; [Play without Autodarts](without-autodarts.md) montre la suite.
 

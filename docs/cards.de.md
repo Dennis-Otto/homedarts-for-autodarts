@@ -519,7 +519,7 @@ strategy:
 
 Um später Board, Titel oder die Optionen der Anzeigetafel zu wählen, öffnest du im Dashboard das Menü (⋮) → **Dashboard bearbeiten**. Home Assistant zeigt dann den eigenen Editor des Dashboards, die Optionen der Anzeigetafel im Abschnitt *Ansicht Anzeigetafel* und die des Stream-Overlays in *Ansicht Stream-Overlay*:
 
-<img src="images/de/strategy-editor.png" alt="Der Editor des automatischen Dashboards mit Board und Titel" width="760">
+<img src="images/de/strategy-editor.png" alt="Der Editor des automatischen Dashboards mit Board und Titel" width="608">
 
 Wird das gewählte Board aus Home Assistant entfernt, sagt das Dashboard das, statt leere Ansichten zu zeigen; wähle ein anderes Board oder leere die Auswahl, um jedes Board zu zeigen. Um die Ansichten selbst anzupassen, wählst du im Menü (⋮) dieses Editors **Kontrolle übernehmen**. Home Assistant macht aus den erzeugten Ansichten dann ein normales, frei bearbeitbares Dashboard; es bekommt die Ansichten späterer Versionen nicht mehr, also nutze lieber die Einstellungen des Dashboards, wo sie reichen.
 
@@ -556,7 +556,7 @@ Alle Optionen lassen sich im visuellen Editor einstellen. Er ist ein Formular vo
 - Caller-Optionen, Spielauswahl, Ruhemodus sowie Darts korrigieren und eingeben der Anzeigetafel stehen in eingeklappten Abschnitten; die Doubles-Karte bietet die benannten Spieler an.
 - Eine Option, die das Formular nicht darstellen kann, etwa ein vertipptes `layout`, schickt den Editor in die Code-Ansicht, mit einer Meldung, die sie nennt.
 
-<img src="images/de/card-editor.png" alt="Der visuelle Editor der Live-Karte" width="760">
+<img src="images/de/card-editor.png" alt="Der visuelle Editor der Live-Karte" width="608">
 
 ### Farben
 

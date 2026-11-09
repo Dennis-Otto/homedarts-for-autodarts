@@ -47,7 +47,7 @@ With Board Manager 2, Home Assistant usually finds the board by itself: **Settin
 
 Otherwise, select the button above and choose **Search for boards on this network**, or **Enter board address** with the IP address of the board PC. You need no Autodarts account.
 
-<img src="images/en/setup-menu.png" alt="The setup menu of HomeDarts: search for boards on this network, enter a board address, or a dartboard without Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="The setup menu of HomeDarts: search for boards on this network, enter a board address, or a dartboard without Autodarts" width="580">
 
 The [installation guide](installation.md#add-your-board) explains the ways in detail. Without Autodarts, choose **Dartboard without Autodarts: enter every dart yourself** and give the board a name; [Play without Autodarts](without-autodarts.md) shows the rest.
 

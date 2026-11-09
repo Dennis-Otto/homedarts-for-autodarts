@@ -56,7 +56,7 @@ Qué forma encaja con tu diana:
   <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
-<img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="580">
 
 ### 1. Descubrimiento automático (Board Manager 2)
 
@@ -74,7 +74,7 @@ Elige **Buscar dianas en esta red**. La integración pregunta al servicio públi
 
 Elige **Introducir la dirección de la diana** e introduce la dirección IP o el nombre de host del PC de la diana, por ejemplo `192.0.2.10` o `autodarts.local`, sin `http://` y sin puerto. El puerto es normalmente **3180**.
 
-<img src="images/en/setup-local.png" alt="El formulario para introducir la dirección y el puerto del Board Manager" width="520">
+<img src="images/en/setup-local.png" alt="El formulario para introducir la dirección y el puerto del Board Manager" width="580">
 
 La integración lee el ID de la diana del Board Manager. Rechaza las direcciones a las que no llega o que aún no tienen una diana configurada.
 
@@ -84,7 +84,7 @@ La integración lee el ID de la diana del Board Manager. Rechaza las direcciones
 
 Elige **Diana sin Autodarts: introduce tú cada dardo** y dale un nombre a la diana, como *Garaje*. Introduces sus dardos en el teclado numérico de la tarjeta en directo y del marcador, y los juegos, el entrenamiento y las estadísticas funcionan como con Autodarts; [Play without Autodarts](without-autodarts.md) lo explica todo. Puedes tener varias, junto a dianas Autodarts, y cada una puede [recibir más tarde su diana Autodarts](without-autodarts.md#autodarts-later).
 
-<img src="images/en/setup-manual.png" alt="El formulario de una diana sin Autodarts, con el nombre Dartboard rellenado" width="520">
+<img src="images/en/setup-manual.png" alt="El formulario de una diana sin Autodarts, con el nombre Dartboard rellenado" width="580">
 
 ### Después de la configuración
 
