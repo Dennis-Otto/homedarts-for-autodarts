@@ -548,6 +548,11 @@ def mounted() -> set[str]:
 
 # The live demo has a job of its own, which runs for what it plays.
 LIVE_DEMO = "live_demo.py"
+# The script of tests/e2e that no end-to-end test runs: compare.py, of the visual check
+# and the workflow Same images, which takes the picture of a difference from the
+# blueprint's screenshot tool in .github/blueprint. The tests of every pull request run
+# it with that tool (tests/test_compare_images.py).
+NOT_END_TO_END = {"compare.py"}
 
 
 def read_from_the_root(live_demo: bool = False) -> set[str]:
@@ -556,7 +561,7 @@ def read_from_the_root(live_demo: bool = False) -> set[str]:
     Assistant tests, or with live_demo those of the live demo."""
     paths = set()
     for script in sorted(E2E.glob("*.py")):
-        if (script.name == LIVE_DEMO) != live_demo:
+        if (script.name == LIVE_DEMO) != live_demo or script.name in NOT_END_TO_END:
             continue
         text = script.read_text(encoding="utf-8")
         for parts in re.findall(r'parents\[2\]((?:\s*/\s*"[^"]+")+)', text):

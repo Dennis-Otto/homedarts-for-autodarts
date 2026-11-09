@@ -723,12 +723,18 @@ def picture(path: Path, colour=(20, 30, 40), level: int = 6) -> Path:
 
 @pytest.fixture
 def repository(tmp_path):
-    """A repository with collect.sh and compare.py, committed images in English, and
-    a diagram that no group of the screenshot tool renders."""
+    """A repository with collect.sh and compare.py, with the blueprint's screenshot tool
+    that draws the differences, committed images in English, and a diagram that no
+    group of the screenshot tool renders."""
     for script in ("collect.sh", "compare.py"):
         target = tmp_path / "tests" / "e2e" / script
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(E2E / script, target)
+    shutil.copytree(
+        ROOT / ".github" / "blueprint",
+        tmp_path / ".github" / "blueprint",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
     (tmp_path / "docs" / "diagrams").mkdir(parents=True)
     (tmp_path / "docs" / "diagrams" / "flow.en.mmd").write_text("flowchart TB\n")
     images = tmp_path / "docs" / "images" / "en"
