@@ -392,23 +392,72 @@ def page_shot(page: Page, name: str) -> None:
     saved(OUTPUT / f"{name}.png")
 
 
+# Where the surface of a dialog stands in the page, in CSS pixels, with the radius of
+# its corners and the pixels of the screen per CSS pixel.
+SURFACE = """
+(surface) => {
+  const box = surface.getBoundingClientRect();
+  return {
+    x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height,
+    radius: parseFloat(getComputedStyle(surface).borderTopLeftRadius),
+    ratio: devicePixelRatio,
+  };
+}
+"""
+
+
 def dialog_shot(page: Page, dialog: Locator, name: str) -> None:
     """A dialog of Home Assistant alone, without the page behind it.
 
     The page behind a dialog changes with what has nothing to do with the dialog: the
     page of the integration behind the options of the bridge counts its entities, so
     a new entity changed online-bridge.png, and pngquant then chose other colours for
-    the whole picture. The round corners show the page of the documentation."""
+    the whole picture. The round corners show the page of the documentation.
+
+    A dialog in the middle of the window stands at a fraction of a CSS pixel when its
+    height has one, as the form of the board's address does. A screenshot of the
+    element takes the whole CSS pixels around it, and with them a strip of the page
+    behind at its edges; so the picture of the clip is cut to the box of the dialog."""
     surface = dialog.locator("[part='dialog']")
     settle(page)
     path = OUTPUT / f"{name}.png"
-    surface.screenshot(path=str(path))
-    radius = surface.evaluate(
-        "(surface) => parseFloat(getComputedStyle(surface).borderTopLeftRadius)"
-        " * devicePixelRatio"
-    )
-    round_corners(path, radius)
+    box = surface.evaluate(SURFACE)
+    clip = whole_pixels(box)
+    page.screenshot(path=str(path), clip=clip)
+    cut_to_box(path, box, clip)
+    round_corners(path, box["radius"] * box["ratio"])
     saved(path)
+
+
+def whole_pixels(box: dict[str, float]) -> dict[str, int]:
+    """The smallest clip of whole CSS pixels around a box."""
+    left, top = math.floor(box["x"]), math.floor(box["y"])
+    return {
+        "x": left,
+        "y": top,
+        "width": math.ceil(box["x"] + box["width"]) - left,
+        "height": math.ceil(box["y"] + box["height"]) - top,
+    }
+
+
+def cut_to_box(path: Path, box: dict[str, float], clip: dict[str, int]) -> None:
+    """Cut the picture of a clip to the pixels that lie wholly within the box.
+
+    Chromium draws an edge of a box at a fraction of a pixel on the pixel nearest to
+    it or on the one outside it: the form of the board's address left two rows of the
+    page above it and two below, the options of the bridge left none. A pixel at the
+    edge of the dialog that the cut leaves out has the colour of the dialog."""
+    ratio = box["ratio"]
+    with Image.open(path) as image:
+        cut = image.crop(
+            (
+                math.ceil((box["x"] - clip["x"]) * ratio),
+                math.ceil((box["y"] - clip["y"]) * ratio),
+                math.floor((box["x"] + box["width"] - clip["x"]) * ratio),
+                math.floor((box["y"] + box["height"] - clip["y"]) * ratio),
+            )
+        )
+    cut.save(path)
 
 
 def round_corners(path: Path, radius: float) -> None:
@@ -2351,17 +2400,20 @@ def config_flow(page: Page) -> None:
         exact=True,
     )
     menu.wait_for(timeout=30000)
+    # The page of the integrations behind the dialog counts the devices and entities
+    # of each of them.
+    dialog = page.locator("dialog-data-entry-flow")
     # The question before may or may not have come, and its button left the
     # pointer over the menu.
     rest_pointer(page)
     page.wait_for_timeout(800)
-    page_shot(page, "setup-menu")
+    dialog_shot(page, dialog, "setup-menu")
     menu.click()
     title = "Connect local board" if LANGUAGE == "en" else "Lokales Board verbinden"
     page.get_by_text(title, exact=True).wait_for(timeout=15000)
     rest_pointer(page)
     page.wait_for_timeout(800)
-    page_shot(page, "setup-local")
+    dialog_shot(page, dialog, "setup-local")
     # Leave the unfinished flow; the demo instance is discarded afterwards.
     page.goto(f"{HA}/homedarts-demo/board")
 
@@ -3348,7 +3400,8 @@ def board_events_dialog(page: Page) -> None:
     dialog.locator("state-history-chart-timeline canvas").first.wait_for(timeout=30000)
     # The chart draws its timeline a moment after it has its data.
     view.wait_for_timeout(1500)
-    page_shot(view, "board-events")
+    # Without the cards of the board on the dashboard behind it.
+    dialog_shot(view, dialog, "board-events")
     context.close()
 
 
@@ -3446,10 +3499,11 @@ def manual_setup(page: Page) -> None:
     menu = page.get_by_text(MANUAL_MENU[LANGUAGE], exact=True)
     menu.wait_for(timeout=30000)
     menu.click()
-    page.get_by_text(MANUAL_TITLE[LANGUAGE], exact=True).wait_for(timeout=15000)
+    dialog = page.locator("dialog-data-entry-flow")
+    dialog.get_by_text(MANUAL_TITLE[LANGUAGE], exact=True).wait_for(timeout=15000)
     rest_pointer(page)
     page.wait_for_timeout(800)
-    page_shot(page, "setup-manual")
+    dialog_shot(page, dialog, "setup-manual")
     # The board itself is added below, the same way in every run, once the frontend
     # is connected again.
     open_dashboard(page, "board")

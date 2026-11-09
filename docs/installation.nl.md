@@ -56,7 +56,7 @@ Welke manier bij je bord past:
   <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
-<img src="images/en/setup-menu.png" alt="Het menu voor het instellen van HomeDarts: borden zoeken in dit netwerk, een bordadres invoeren of een dartbord zonder Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="Het menu voor het instellen van HomeDarts: borden zoeken in dit netwerk, een bordadres invoeren of een dartbord zonder Autodarts" width="580">
 
 ### 1. Automatisch gevonden (Board Manager 2)
 
@@ -74,7 +74,7 @@ Kies **Borden zoeken in dit netwerk**. De integratie vraagt de openbare zoekdien
 
 Kies **Bordadres invoeren** en voer het IP-adres of de hostnaam van de bord-pc in, bijvoorbeeld `192.0.2.10` of `autodarts.local`, zonder `http://` en zonder poort. De poort is normaal **3180**.
 
-<img src="images/en/setup-local.png" alt="Het formulier om het adres en de poort van de Board Manager in te voeren" width="520">
+<img src="images/en/setup-local.png" alt="Het formulier om het adres en de poort van de Board Manager in te voeren" width="580">
 
 De integratie leest het ID van het bord uit de Board Manager. Ze weigert adressen die niet bereikbaar zijn of waar nog geen bord is ingesteld.
 
@@ -84,7 +84,7 @@ De integratie leest het ID van het bord uit de Board Manager. Ze weigert adresse
 
 Kies **Dartbord zonder Autodarts: elke dart zelf invoeren** en geef het bord een naam, zoals *Garage*. Je voert de darts in op het toetsenblok van de livekaart en het scorebord, en de spellen, de training en de statistieken werken zoals met Autodarts; [Play without Autodarts](without-autodarts.md) legt alles uit. Je kunt er meerdere hebben, naast Autodarts-borden, en elk kan later [zijn Autodarts-bord krijgen](without-autodarts.md#autodarts-later).
 
-<img src="images/en/setup-manual.png" alt="Het formulier voor een dartbord zonder Autodarts, met de naam Dartboard ingevuld" width="520">
+<img src="images/en/setup-manual.png" alt="Het formulier voor een dartbord zonder Autodarts, met de naam Dartboard ingevuld" width="580">
 
 ### Na het instellen
 

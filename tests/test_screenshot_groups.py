@@ -11,13 +11,16 @@ gh."""
 import ast
 import importlib.util
 import json
+import math
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -485,20 +488,172 @@ def test_the_picture_of_the_bridge_shows_its_dialog_without_the_page_behind_it()
         source("dialog_shot"),
         "dialog.locator(\"[part='dialog']\")",
         "settle(page)",
-        "surface.screenshot(path=str(path))",
-        "devicePixelRatio",
-        "round_corners(path, radius)",
+        "surface.evaluate(SURFACE)",
+        "clip = whole_pixels(box)",
+        "page.screenshot(path=str(path), clip=clip)",
+        "cut_to_box(path, box, clip)",
+        "round_corners(path, box['radius'] * box['ratio'])",
         "saved(path)",
     )
+    surface = ast.literal_eval(assigned("SURFACE"))
+    in_order(surface, "getBoundingClientRect()", "scrollY", "borderTopLeftRadius")
+    assert "devicePixelRatio" in surface
+
+
+# Every picture of a dialog of Home Assistant, by the step that takes it.
+DIALOG_PICTURES = {
+    "config_flow": ("setup-menu", "setup-local"),
+    "board_events_dialog": ("board-events",),
+    "online_bridge_options": ("online-bridge",),
+    "manual_setup": ("setup-manual",),
+}
+# A dialog that a step opens or waits for: the tag of a dialog of Home Assistant,
+# such as dialog-data-entry-flow or ha-more-info-dialog, or the event that opens
+# the dialog of an entity.
+DIALOG = re.compile(r"\bdialog-[a-z-]+|\bha-[a-z-]*dialog\b|\bhass-more-info\b")
+
+
+@pytest.mark.parametrize(("step", "pictures"), DIALOG_PICTURES.items())
+def test_every_picture_of_a_dialog_shows_the_dialog_without_the_page_behind_it(
+    step, pictures
+):
+    # The page behind a dialog changes with what has nothing to do with the dialog:
+    # the page of the integrations behind the setup counts the devices and entities of
+    # each integration, and the dashboard behind the events of the board shows the
+    # cards of the board. Each of them would change the picture, and pngquant would
+    # then choose other colours for all of it.
+    assert "page_shot" not in called(function(step))
+    text = source(step)
+    for picture in pictures:
+        assert re.search(rf"dialog_shot\(\w+, dialog, '{picture}'\)", text), picture
+    assert DIALOG.search(text)
+
+
+def test_a_step_that_takes_a_picture_of_the_page_opens_no_dialog():
+    # A new picture of a dialog takes dialog_shot as well.
+    opened = {
+        node.name: texts
+        for node in TOOL.body
+        if isinstance(node, ast.FunctionDef) and "page_shot" in called(node)
+        if (
+            texts := [
+                constant.value
+                for constant in ast.walk(node)
+                if isinstance(constant, ast.Constant)
+                and isinstance(constant.value, str)
+                and DIALOG.search(constant.value)
+            ]
+        )
+    }
+    assert opened == {}
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "dialog-data-entry-flow",
+        "ha-more-info-dialog",
+        "ha-dialog-new-dashboard input",
+        "new CustomEvent('hass-more-info', {bubbles: true})",
+    ],
+)
+def test_the_tags_of_the_dialogs_are_found(text):
+    assert DIALOG.search(text)
+
+
+@pytest.mark.parametrize("text", ["[part='dialog']", "ha-card", "dialogs"])
+def test_what_is_no_dialog_is_not_found(text):
+    assert not DIALOG.search(text)
+
+
+def tool(name: str) -> Callable[..., Any]:
+    """A function of the tool that needs neither Playwright nor a page."""
+    namespace = {"Image": Image, "ImageDraw": ImageDraw, "Path": Path, "math": math}
+    code = ast.Module([function(name)], [])
+    # Only the function of the tool, which can't be imported without Playwright.
+    exec(compile(code, "screenshots.py", "exec"), namespace)
+    return namespace[name]
+
+
+# The boxes of the surfaces of three dialogs in a render of the demo, in CSS pixels.
+MENU = {"x": 350.0, "y": 222.0, "width": 580.0, "height": 376.0}
+# The form of the board's address and the options of the bridge stand at a fraction
+# of a pixel, in the middle of the window and with a height that has one.
+ADDRESS = {"x": 350.0, "y": 189.921875, "width": 580.0, "height": 440.15625}
+BRIDGE = {"x": 350.0, "y": 228.453125, "width": 580.0, "height": 643.078125}
+
+
+def test_a_dialog_at_whole_pixels_is_taken_as_it_stands():
+    assert tool("whole_pixels")(MENU) == {
+        "x": 350,
+        "y": 222,
+        "width": 580,
+        "height": 376,
+    }
+
+
+def test_a_dialog_at_a_fraction_of_a_pixel_is_taken_with_the_whole_pixels_around_it():
+    assert tool("whole_pixels")(ADDRESS) == {
+        "x": 350,
+        "y": 189,
+        "width": 580,
+        "height": 442,
+    }
+
+
+def cut(tmp_path: Path, box: dict[str, float], above: int, below: int) -> Image.Image:
+    """The picture of the clip around the box, cut: the dialog with the rows of the
+    page above and below it that Chromium drew at twice the size."""
+    clip = tool("whole_pixels")(box)
+    width, height = clip["width"] * 2, clip["height"] * 2
+    path = tmp_path / "dialog.png"
+    image = Image.new("RGB", (width, height), (28, 28, 28))
+    image.paste((17, 17, 17), (0, 0, width, above))
+    image.paste((5, 5, 5), (0, height - below, width, height))
+    image.save(path)
+    tool("cut_to_box")(path, {**box, "ratio": 2}, clip)
+    with Image.open(path) as picture:
+        picture.load()
+        return picture
+
+
+def colours(image: Image.Image) -> list[tuple[int, int, int]]:
+    return [colour for _, colour in image.getcolors()]
+
+
+def test_a_dialog_at_whole_pixels_keeps_every_pixel(tmp_path):
+    image = cut(tmp_path, MENU, 0, 0)
+    assert image.size == (1160, 752)
+
+
+def test_a_dialog_at_a_fraction_of_a_pixel_shows_none_of_the_page_behind_it(tmp_path):
+    # In a render, Chromium drew the form of the address from the third row of the
+    # clip to the last but two: the page above it and its shadow below.
+    image = cut(tmp_path, ADDRESS, 2, 2)
+    assert image.size == (1160, 880)
+    assert colours(image) == [(28, 28, 28)]
+
+
+def test_a_dialog_drawn_beyond_its_box_loses_only_its_own_colour(tmp_path):
+    # Chromium drew the options of the bridge on every row of the clip, also on the
+    # first and the last, which their box covers only a tenth of.
+    image = cut(tmp_path, BRIDGE, 0, 0)
+    assert image.size == (1160, 1286)
+    assert colours(image) == [(28, 28, 28)]
+
+
+def test_a_pixel_that_a_dialog_covers_only_in_part_is_left_out(tmp_path):
+    # An edge in the middle of a pixel of the screen, which Chromium may draw on the
+    # pixel inside or outside it.
+    box = {"x": 350.25, "y": 100.25, "width": 580.0, "height": 400.0}
+    image = cut(tmp_path, box, 1, 1)
+    assert image.size == (1159, 799)
+    assert colours(image) == [(28, 28, 28)]
 
 
 def round_corners(path: Path, radius: float) -> None:
     """round_corners() of the tool."""
-    namespace = {"Image": Image, "ImageDraw": ImageDraw, "Path": Path}
-    code = ast.Module([function("round_corners")], [])
-    # Only the function of the tool, which can't be imported without Playwright.
-    exec(compile(code, "screenshots.py", "exec"), namespace)
-    namespace["round_corners"](path, radius)
+    tool("round_corners")(path, radius)
 
 
 def test_a_picture_of_a_dialog_is_clear_outside_its_round_corners(tmp_path):

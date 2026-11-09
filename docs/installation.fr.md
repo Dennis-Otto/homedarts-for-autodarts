@@ -56,7 +56,7 @@ Quelle façon convient à votre cible :
   <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" lang="en" width="480">
 </picture>
 
-<img src="images/en/setup-menu.png" alt="Le menu de configuration de HomeDarts : rechercher des cibles sur ce réseau, saisir l'adresse d'une cible, ou une cible sans Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="Le menu de configuration de HomeDarts : rechercher des cibles sur ce réseau, saisir l'adresse d'une cible, ou une cible sans Autodarts" width="580">
 
 ### 1. Détection automatique (Board Manager 2)
 
@@ -74,7 +74,7 @@ Choisissez **Rechercher des cibles sur ce réseau**. L'intégration demande au s
 
 Choisissez **Saisir l'adresse de la cible** et saisissez l'adresse IP ou le nom d'hôte du PC de la cible, par exemple `192.0.2.10` ou `autodarts.local`, sans `http://` et sans port. Le port est normalement **3180**.
 
-<img src="images/en/setup-local.png" alt="Le formulaire pour saisir l'adresse et le port du Board Manager" width="520">
+<img src="images/en/setup-local.png" alt="Le formulaire pour saisir l'adresse et le port du Board Manager" width="580">
 
 L'intégration lit l'identifiant de la cible dans le Board Manager. Elle refuse les adresses injoignables ou sans cible configurée.
 
@@ -84,7 +84,7 @@ L'intégration lit l'identifiant de la cible dans le Board Manager. Elle refuse 
 
 Choisissez **Cible sans Autodarts : saisir soi-même chaque fléchette** et donnez un nom à la cible, comme *Garage*. Vous saisissez ses fléchettes sur le pavé numérique de la carte en direct et du tableau des scores, et les jeux, l'entraînement et les statistiques fonctionnent comme avec Autodarts ; [Play without Autodarts](without-autodarts.md) explique tout. Vous pouvez en avoir plusieurs, à côté de cibles Autodarts, et chacune peut [recevoir plus tard sa cible Autodarts](without-autodarts.md#autodarts-later).
 
-<img src="images/en/setup-manual.png" alt="Le formulaire d'une cible sans Autodarts, avec le nom Dartboard rempli" width="520">
+<img src="images/en/setup-manual.png" alt="Le formulaire d'une cible sans Autodarts, avec le nom Dartboard rempli" width="580">
 
 ### Après la configuration
 

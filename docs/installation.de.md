@@ -56,7 +56,7 @@ Welcher Weg zu deinem Board passt:
   <img src="images/de/add-board-light.png" alt="Welcher Weg zum Board passt: Eine Dartscheibe ohne Autodarts bekommt den vierten Weg, Dartscheibe ohne Autodarts, und ihre Darts gibst du auf dem Tastenfeld ein. Ein Autodarts-Board mit Board Manager 2 erscheint meist von selbst als Autodarts-Board gefunden unter Entdeckt: Wähle Hinzufügen und bestätige. Sonst gibst du die Adresse des Board-PCs ein, wenn du sie kennst, oder suchst Boards im Netzwerk; findet die Suche kein Board, öffnet sich das Adressformular. Jeder Weg mit Autodarts endet beim selben lokalen Board, einem Gerät mit all seinen Entitäten" width="480">
 </picture>
 
-<img src="images/de/setup-menu.png" alt="Das Einrichtungsmenü von HomeDarts: Boards im Netzwerk suchen, Board-Adresse eingeben oder eine Dartscheibe ohne Autodarts" width="520">
+<img src="images/de/setup-menu.png" alt="Das Einrichtungsmenü von HomeDarts: Boards im Netzwerk suchen, Board-Adresse eingeben oder eine Dartscheibe ohne Autodarts" width="580">
 
 ### 1. Automatische Erkennung (Board Manager 2)
 
@@ -74,7 +74,7 @@ Wähle **Boards im Netzwerk suchen**. Die Integration fragt den öffentlichen Au
 
 Wähle **Board-Adresse eingeben** und trage die IP-Adresse oder den Hostnamen des Board-PCs ein, zum Beispiel `192.0.2.10` oder `autodarts.local`. Lass `http://` und den Port weg. Der Port ist normalerweise **3180**.
 
-<img src="images/de/setup-local.png" alt="Das Formular für Adresse und Port des Board Managers" width="520">
+<img src="images/de/setup-local.png" alt="Das Formular für Adresse und Port des Board Managers" width="580">
 
 Die Board-ID liest die Integration selbst aus. Nicht erreichbare Adressen und Boards ohne abgeschlossene Einrichtung werden abgelehnt.
 
@@ -84,7 +84,7 @@ Die Board-ID liest die Integration selbst aus. Nicht erreichbare Adressen und Bo
 
 Wähle **Dartscheibe ohne Autodarts: jeden Dart selbst eingeben** und gib dem Board einen Namen, etwa *Keller*. Seine Darts gibst du auf dem Tastenfeld der Live-Karte und der Anzeigetafel ein, und die Spiele, das Training und die Statistiken funktionieren wie mit Autodarts; [Spielen ohne Autodarts](without-autodarts.de.md) erklärt alles. Ein Zuhause kann mehrere davon haben, neben Autodarts-Boards, und jede kann [später ihr Autodarts-Board bekommen](without-autodarts.de.md#autodarts-später).
 
-<img src="images/de/setup-manual.png" alt="Das Formular der Einrichtung für eine Dartscheibe ohne Autodarts, mit dem eingetragenen Namen Dartboard" width="520">
+<img src="images/de/setup-manual.png" alt="Das Formular der Einrichtung für eine Dartscheibe ohne Autodarts, mit dem eingetragenen Namen Dartboard" width="580">
 
 ### Nach der Einrichtung
 

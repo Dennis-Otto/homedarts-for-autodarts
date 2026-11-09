@@ -47,7 +47,7 @@ Con Board Manager 2, Home Assistant suele encontrar la diana por sí solo: **Con
 
 Si no, selecciona el botón de arriba y elige **Buscar dianas en esta red**, o **Introducir la dirección de la diana** con la dirección IP del PC de la diana. No necesitas una cuenta de Autodarts.
 
-<img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="El menú de configuración de HomeDarts: buscar dianas en esta red, introducir la dirección de una diana o una diana sin Autodarts" width="580">
 
 La [guía de instalación](installation.es.md#añadir-tu-diana) explica cada forma en detalle. Sin Autodarts, elige **Diana sin Autodarts: introduce tú cada dardo** y dale un nombre a la diana; [Play without Autodarts](without-autodarts.md) muestra el resto.
 

@@ -684,7 +684,7 @@ use_blueprint:
 
 All realtime moments arrive through the **Events** entity of the board. Each event carries an `event_type` and its details; see the [event reference](entities.md#board-events). The examples use `event.autodarts_board_events`, the entity ID of a board named *Autodarts Board* in a Home Assistant set to English. Home Assistant forms entity IDs from the names in its language, so in German, Dutch, French or Spanish the IDs read differently, for example `event.autodarts_board_ereignisse` in German. A board set up with an earlier version keeps the ID it got then, such as `event.autodarts_board_board_events`.
 
-<img src="images/en/board-events.png" alt="The Events entity of the board in Home Assistant: the last event Visit thrown, its history, and the activity with every dart detected, the visit and the takeout" width="760">
+<img src="images/en/board-events.png" alt="The Events entity of the board in Home Assistant: the last event Visit thrown, its history, and the activity with every dart detected, the visit and the takeout" width="580">
 
 Open the entity on the device page to watch the events arrive while you throw; its activity lists every event with the time it happened.
 
