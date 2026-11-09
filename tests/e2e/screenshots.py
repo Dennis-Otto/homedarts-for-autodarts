@@ -392,13 +392,15 @@ def page_shot(page: Page, name: str) -> None:
     saved(OUTPUT / f"{name}.png")
 
 
-# Where the surface of a dialog stands in the page, in CSS pixels, with the radius of
-# its corners and the pixels of the screen per CSS pixel.
+# Where the surface of a dialog stands in the window, in CSS pixels, with the radius of
+# its corners and the pixels of the screen per CSS pixel. A clip of page.screenshot()
+# without full_page counts from the corner of the window, as getBoundingClientRect()
+# does: Playwright adds the scroll of the page itself.
 SURFACE = """
 (surface) => {
   const box = surface.getBoundingClientRect();
   return {
-    x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height,
+    x: box.x, y: box.y, width: box.width, height: box.height,
     radius: parseFloat(getComputedStyle(surface).borderTopLeftRadius),
     ratio: devicePixelRatio,
   };
@@ -2467,7 +2469,9 @@ def editor(page: Page) -> None:
     open_card_form(page, FIND_CARDS)
     page.wait_for_timeout(2000)
     peak(page)
-    page_shot(page, "card-editor")
+    # Without the dashboard in edit mode behind it.
+    dialog = page.locator("hui-dialog-edit-card")
+    dialog_shot(page, dialog, "card-editor")
     page.keyboard.press("Escape")
 
 
@@ -2479,9 +2483,11 @@ def strategy_editor(page: Page) -> None:
         timeout=60000,
     )
     page.evaluate(f"() => ({find('hui-root')})()[0]._enableEditMode()")
-    page.locator("homedarts-strategy-editor > ha-form").wait_for(timeout=15000)
+    dialog = page.locator("dialog-dashboard-strategy-editor")
+    dialog.locator("homedarts-strategy-editor > ha-form").wait_for(timeout=15000)
     page.wait_for_timeout(2000)
-    page_shot(page, "strategy-editor")
+    # Without the generated dashboard behind it.
+    dialog_shot(page, dialog, "strategy-editor")
     page.keyboard.press("Escape")
 
 

@@ -519,7 +519,7 @@ strategy:
 
 To choose the board, the title or the scoreboard's options later, open the dashboard's menu (⋮) → **Edit dashboard**. Home Assistant shows the dashboard's own editor, with the scoreboard's options in the section *Scoreboard view* and those of the stream overlay in *Stream overlay view*:
 
-<img src="images/en/strategy-editor.png" alt="The editor of the automatic dashboard with the board and the title" width="760">
+<img src="images/en/strategy-editor.png" alt="The editor of the automatic dashboard with the board and the title" width="608">
 
 If the chosen board is removed from Home Assistant, the dashboard says so instead of showing empty views; choose another board or clear the choice to show every board. To customize the views themselves, choose **Take control** in the menu (⋮) of that editor. Home Assistant then turns the generated views into a normal dashboard that you can edit; it no longer gets the views of later releases, so prefer the dashboard's own settings where they are enough.
 
@@ -556,7 +556,7 @@ All options can be set in the visual editor. It is a form of Home Assistant, so 
 - The caller options, the new game screen and idle mode of the scoreboard wait in collapsed sections; the doubles card offers the named players.
 - An option the form cannot show, such as a mistyped `layout`, sends the editor to the code view with a message that names it.
 
-<img src="images/en/card-editor.png" alt="The visual editor of the live card" width="760">
+<img src="images/en/card-editor.png" alt="The visual editor of the live card" width="608">
 
 ### Colors
 

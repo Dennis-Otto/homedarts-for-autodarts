@@ -496,8 +496,10 @@ def test_the_picture_of_the_bridge_shows_its_dialog_without_the_page_behind_it()
         "saved(path)",
     )
     surface = ast.literal_eval(assigned("SURFACE"))
-    in_order(surface, "getBoundingClientRect()", "scrollY", "borderTopLeftRadius")
+    in_order(surface, "getBoundingClientRect()", "borderTopLeftRadius")
     assert "devicePixelRatio" in surface
+    # A clip without full_page counts from the corner of the window, as the box does.
+    assert "scroll" not in surface
 
 
 # Every picture of a dialog of Home Assistant, by the step that takes it.
@@ -506,11 +508,19 @@ DIALOG_PICTURES = {
     "board_events_dialog": ("board-events",),
     "online_bridge_options": ("online-bridge",),
     "manual_setup": ("setup-manual",),
+    "editor": ("card-editor",),
+    "strategy_editor": ("strategy-editor",),
 }
 # A dialog that a step opens or waits for: the tag of a dialog of Home Assistant,
 # such as dialog-data-entry-flow or ha-more-info-dialog, or the event that opens
 # the dialog of an entity.
-DIALOG = re.compile(r"\bdialog-[a-z-]+|\bha-[a-z-]*dialog\b|\bhass-more-info\b")
+DIALOG = re.compile(
+    r"\bdialog-[a-z-]+|\bha-[a-z-]*dialog\b|\bhui-dialog-[a-z-]+|\bhass-more-info\b"
+    # Edit mode of a dashboard of a strategy opens the dialog of its editor.
+    r"|\b_enableEditMode\b"
+)
+# The helpers of tests/e2e/pages.py that open a dialog.
+OPENERS = {"open_card_form"}
 
 
 @pytest.mark.parametrize(("step", "pictures"), DIALOG_PICTURES.items())
@@ -543,6 +553,7 @@ def test_a_step_that_takes_a_picture_of_the_page_opens_no_dialog():
                 and isinstance(constant.value, str)
                 and DIALOG.search(constant.value)
             ]
+            + sorted(OPENERS.intersection(called(node)))
         )
     }
     assert opened == {}
@@ -555,6 +566,8 @@ def test_a_step_that_takes_a_picture_of_the_page_opens_no_dialog():
         "ha-more-info-dialog",
         "ha-dialog-new-dashboard input",
         "new CustomEvent('hass-more-info', {bubbles: true})",
+        "hui-dialog-edit-card",
+        "() => (find)()[0]._enableEditMode()",
     ],
 )
 def test_the_tags_of_the_dialogs_are_found(text):
