@@ -82,7 +82,7 @@ The integration has building blocks of its own, which every module uses instead 
 
 ## Tests
 
-Python 3.14 and Node.js 24:
+Python 3.14 and Node.js 24, on Linux or macOS:
 
 ```sh
 python3.14 -m venv .venv
@@ -91,16 +91,11 @@ npm ci
 . .venv/bin/activate && bash scripts/check.sh
 ```
 
+On Windows these commands fail, because Home Assistant doesn't run there; [On Windows](#on-windows) says what works instead. Without Python 3.14, [the checks in Docker](#the-checks-in-docker) need one command.
+
 `scripts/check.sh` runs what the CI runs: the text checks, the version of every file, ShellCheck, Ruff, strict mypy and pytest, failing below 100 % line and branch coverage; then `scripts/check-project.sh` checks the MIT terms of both licenses, lints the JavaScript with ESLint's recommended rules (`eslint.config.mjs`) and runs `npm test`, the tests of the cards with fuzzing by fast-check and those of the [translation bot](#translation-bot), failing below 100 % lines, branches and functions. `git config core.hooksPath .githooks` runs it before every push. The [repository blueprint](https://github.com/Dennis-Otto/repo-blueprint) keeps `scripts/check.sh` and the workflows the same in every repository; what only this integration needs belongs in `scripts/check-project.sh`, `e2e.yml` and `translations.yml`.
 
 Ruff lints the Python with the rule sets that `pyproject.toml` selects: `E`, `F`, `W` and `I` (pycodestyle, Pyflakes and the order of the imports), `B` (likely bugs, such as a closure over a loop variable), `ASYNC` (blocking calls and busy waits in async code), `DTZ` (a date or time without a time zone), `LOG` (how the code calls `logging`), `PT` (the style of pytest), and `UP`, `SIM`, `C4`, `PIE` and `RUF` (shorter, more current code and the rules of Ruff itself). `E501`, `PT018` and `RUF001` stay off, each with its reason there. `ruff check --fix .` makes the fixes that Ruff can make, as the fix bot does in a pull request. A line that has to stay as it is gets a `# noqa` with the rule, and a comment beside it with the reason.
-
-Without a local Python, run the same in Docker:
-
-```sh
-docker run --rm -v "$PWD:/src:ro" python:3.14 sh -c \
-  "cp -r /src /work && cd /work && pip install -q -r requirements-test.txt && pytest --cov"
-```
 
 The test suite covers:
 
@@ -115,6 +110,38 @@ The test suite covers:
 Tests that freeze the clock with the `freezer` fixture start at the same moment in every run: noon on a Wednesday in the time zone of the test harness, `QUIET_MOMENT` in `tests/conftest.py`, unless a test names its own with `@pytest.mark.freeze_time`. The clock is frozen before every other fixture of the test, so `hass` and the integration of a board start at that moment too. A test that moves the clock on, such as by an hour to the next read of the board PC, so never crosses a midnight or the time of the weekly report by chance. The frozen clock used to start at the real time, and a test that ran in the last hour of a week heard the weekly report.
 
 The card logic is also fuzzed with [fast-check](https://fast-check.dev/): thousands of random and hostile inputs per run check that escaping, bed geometry, the heatmap and the history parser never break.
+
+### The checks in Docker
+
+Docker runs `scripts/check.sh` without Python 3.14 on the machine, in a copy of the working tree that holds every change not committed yet. Run it in the folder of the repository, in Bash or in Git Bash on Windows:
+
+```sh
+docker run --rm \
+  -v "$(git rev-parse --show-toplevel):/src:ro" \
+  -v "$(git rev-parse --path-format=absolute --git-common-dir):/git:ro" \
+  python:3.14 bash -c '
+    git config --global --add safe.directory "*"
+    mkdir /work && tar -C /src --exclude=./.venv --exclude=./.venv-docs --exclude=./node_modules -cf - . | tar -C /work -xf -
+    cd /work
+    if [ -f .git ]; then echo "gitdir: /git/worktrees/$(basename "$(sed -n "s/^gitdir: //p" .git)")" > .git; fi
+    python -m venv .venv && .venv/bin/pip install -q --require-hashes -r requirements-test.txt
+    . .venv/bin/activate && bash scripts/check.sh'
+```
+
+- **What it checks:** what `scripts/check.sh` checks in the CI, from the text files to pytest with every line and branch covered. The image has no Node.js, ShellCheck or MkDocs, so the script says that it leaves the tests of the cards, the shell scripts and the website to the CI; `npm ci && npm test` runs the tests of the cards on the machine itself, also on Windows.
+- **What it changes:** nothing. Both folders are read-only in the container, so a check that fails names its fix, which you make in the checkout, or the fix bot makes in the pull request.
+- **How long it takes:** about three minutes, a minute of it for the packages, and pytest runs on up to eight of the cores that Docker has.
+- **Why the paths come from git:** in Git Bash they are paths of Windows, such as `F:/IdeaProjects/…`, which Docker Desktop takes as they are. Git Bash turns `$PWD`, `/f/IdeaProjects/…` there, and the `/src` behind it into paths of its own folder, and the container then finds no `/src`.
+- **Why the line with `gitdir:`:** in a worktree of git, `.git` is a file that names the worktree's folder in the main checkout by a path of the machine, which the container doesn't have. The line points it to the same folder below `/git`, the main checkout's `.git`, so the tests that read the history of git pass in a worktree too. In a clone, `.git` is a folder and the line does nothing.
+
+### On Windows
+
+Home Assistant runs on Linux and macOS, not on Windows, and so do the tests of the integration: `homeassistant/runner.py` imports `fcntl`, a module of Python for Unix alone, and pytest-homeassistant-custom-component imports that runner as pytest starts. The setup of [the tests](#tests) stops even earlier there: `requirements-test.txt` comes from pip-compile on Linux and pins no `winrt-runtime`, which bleak needs on Windows alone, and `pip install --require-hashes` refuses every package without its pin and hash. An install with `--no-deps` or without the hashes doesn't help, since pytest still can't start. What works on Windows:
+
+- **Docker:** [the checks in Docker](#the-checks-in-docker), in Git Bash with Docker Desktop, in a clone and in a worktree alike.
+- **WSL 2:** a clone in the Linux file system of the distribution, such as `~/homedarts-for-autodarts`, with Python 3.14 and Node.js 24 installed there, takes the commands of [the tests](#tests) as they are, and the end-to-end and browser tests with Docker. Stay out of `/mnt/c/` and the other drives of Windows there: git and the tests are slow on them, and a worktree that Git for Windows made names its main checkout by a path of Windows, which git on Linux can't follow.
+- **The dev container:** in VS Code with Docker Desktop, *Dev Containers: Clone Repository in Container Volume* clones the repository into a volume of Linux and sets up Python, Node.js and Docker, and `bash scripts/check.sh` runs the checks there, as in GitHub Codespaces, and leaves ShellCheck to the CI.
+- **Windows itself:** the tests of the cards with Node.js 24, `npm ci && npm test`, and the website with the tools of `.venv-docs`, as [CONTRIBUTING.md](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#website) sets them up.
 
 ### Home Assistant's warnings about the integration
 
