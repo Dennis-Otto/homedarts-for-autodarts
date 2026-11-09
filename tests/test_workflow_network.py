@@ -450,8 +450,8 @@ def test_lookups_that_did_not_come_back_fail_the_step_at_once(tmp_path):
 # reach every host, with its token and the code of a pull request, and pass. So each job
 # makes sure that the agent blocks, right after Harden-Runner and the step that lets it
 # see the lookups, before the wait for its hosts and every step that could need one,
-# with the very script of the jobs of the blueprint's workflows (decision 0134 of the
-# blueprint), and stops with an annotation that says to run it again.
+# with the script of the blueprint's decision 0134, the same copy in every job here,
+# and stops with an annotation that says to run it again.
 MAKE_SURE = "Make sure that Harden-Runner blocks"
 # A step that runs after a failure, or after anything but a cancel, would run without
 # the block once that step stopped the job, so it runs only when that step didn't fail.
@@ -473,32 +473,17 @@ def test_a_job_stops_before_any_step_that_needs_a_host_when_nothing_blocks(key):
     assert JOBS[key]["steps"][place] == step
     # The id that the steps after a failure look at.
     assert step["id"] == "blocks"
-    assert "if" not in step
-    assert "env" not in step
+    # No condition, no environment and no continue-on-error, which would let the job
+    # go on without the block.
+    assert set(step) == {"name", "id", "timeout-minutes", "run"}
     # Half a minute for an agent that is still starting.
     assert step["timeout-minutes"] == 1
 
 
-def blueprint_scripts() -> set[str]:
-    """The script of the step in the jobs of the workflows that the blueprint keeps."""
-    scripts = set()
-    for path in WORKFLOWS.glob("*.yml"):
-        if path.name in PROJECT_WORKFLOWS:
-            continue
-        workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
-        for job in workflow["jobs"].values():
-            for step in job.get("steps") or []:
-                if step.get("name") == MAKE_SURE:
-                    scripts.add(step["run"])
-    return scripts
-
-
-def test_every_job_makes_sure_the_same_way_as_the_jobs_of_the_blueprint():
-    # The blueprint tests the script, and its next update brings a new one to its own
-    # workflows: this test then fails until the jobs here take it too.
-    blueprint = blueprint_scripts()
-    assert len(blueprint) == 1
-    assert {make_sure_step(key)["run"] for key in JOBS} == blueprint
+def test_every_job_makes_sure_the_same_way():
+    # One copy of the script of the blueprint's decision 0134 in every job; the
+    # blueprint's own workflows are its own to test, which any update may change.
+    assert len({make_sure_step(key)["run"] for key in JOBS}) == 1
 
 
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)

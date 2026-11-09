@@ -748,8 +748,8 @@ the change: the flaky-test bot runs the failed jobs of the end-to-end tests and 
 visual check once more by itself, and every other job runs again from the tab Actions.
 The step is the one of the jobs of the blueprint's workflows
 ([its decision 0134](https://github.com/Dennis-Otto/repo-blueprint/blob/main/docs/decisions/0134-a-job-stops-when-harden-runner-doesnt-block.md)),
-and `tests/test_workflow_network.py` keeps the script of every job here the same as
-theirs.
+and `tests/test_workflow_network.py` makes sure that every job here runs the same copy
+of its script.
 
 Harden-Runner lets through only the addresses of the lookups that it saw. One that the
 runner asked for past it, before its firewall stood or while the experiment was still on,
@@ -770,7 +770,7 @@ takes a moment when nothing is wrong. The jobs of the blueprint's workflows wait
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/job-behind-harden-runner-dark.png">
-  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then makes sure that the agent of Harden-Runner blocks, and stops when it doesn't, to run again. It asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
+  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then makes sure that the agent of Harden-Runner blocks, and stops when it doesn't, so that it can run again. It asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
 </picture>
 
 A host that a job doesn't list fails its step with an error such as a failed DNS lookup
