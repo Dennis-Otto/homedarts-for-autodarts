@@ -27,19 +27,14 @@ when an image differs between them, or when they hold no image at all.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageSequence
-
-# The blueprint's screenshot tool, which keeps the pictures of the screenshot bot of
-# every repository made from the blueprint, draws the picture of a difference; its
-# package is next to the settings tool in .github/, which the blueprint keeps current.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github"))
-from blueprint.screenshots import difference
+from PIL import Image, ImageChops, ImageDraw, ImageSequence
 
 SUFFIXES = (".png", ".webp")
 
@@ -52,8 +47,8 @@ class Picture:
     frames: list[tuple[Image.Image, int]]
 
     @classmethod
-    def open(cls, path: Path) -> Picture:
-        with Image.open(path) as image:
+    def open(cls, source: Path | io.BytesIO) -> Picture:
+        with Image.open(source) as image:
             frames = [
                 (frame.convert("RGBA"), int(frame.info.get("duration", 0)))
                 for frame in ImageSequence.Iterator(image)
@@ -68,6 +63,71 @@ def changed_mask(before: Image.Image, after: Image.Image) -> Image.Image:
     for channel in channels[1:]:
         mask = ImageChops.lighter(mask, channel)
     return mask.point(lambda value: 255 if value else 0)
+
+
+def difference(before: bytes, after: bytes) -> bytes | None:
+    """A picture of the difference: the image after in pale grey, every changed
+    pixel in red and a red frame around each place of change, which still shows
+    a single changed pixel when a phone shows the picture scaled down to about
+    1000 pixels wide. It is the picture that the blueprint's screenshot tool
+    draws (.github/blueprint/screenshots.py), so that the differences of every
+    repository look alike, in the artifact and in the pager."""
+    try:
+        before_pic = Picture.open(io.BytesIO(before))
+        after_pic = Picture.open(io.BytesIO(after))
+        if (
+            before_pic.size != after_pic.size
+            or len(before_pic.frames) != len(after_pic.frames)
+        ):
+            return None
+
+        diff_frame = None
+        for (b_img, _), (a_img, _) in zip(
+            before_pic.frames, after_pic.frames, strict=False
+        ):
+            mask = changed_mask(b_img, a_img)
+            if mask.getextrema()[1] > 0:
+                diff_frame = (b_img, a_img, mask)
+                break
+
+        if diff_frame is None:
+            return None
+
+        _, a_img, mask = diff_frame
+        after_rgba = a_img.convert("RGBA")
+        after_l = after_rgba.convert("L").convert("RGBA")
+        pale = Image.blend(
+            after_l, Image.new("RGBA", a_img.size, (255, 255, 255, 255)), 0.8
+        )
+
+        red = Image.new("RGBA", a_img.size, (255, 0, 0, 255))
+        result = Image.composite(red, pale, mask)
+
+        draw = ImageDraw.Draw(result)
+        grid = 32
+        for y in range(0, mask.height, grid):
+            for x in range(0, mask.width, grid):
+                box = (x, y, min(x + grid, mask.width), min(y + grid, mask.height))
+                region_mask = mask.crop(box)
+                if region_mask.getextrema()[1] > 0:
+                    r_bbox = region_mask.getbbox()
+                    if r_bbox:
+                        draw.rectangle(
+                            [
+                                x + r_bbox[0] - 1,
+                                y + r_bbox[1] - 1,
+                                x + r_bbox[2],
+                                y + r_bbox[3],
+                            ],
+                            outline=(255, 0, 0, 255),
+                            width=1,
+                        )
+
+        buffer = io.BytesIO()
+        result.save(buffer, format="PNG")
+        return buffer.getvalue()
+    except Exception:
+        return None
 
 
 def compare(before: Picture, after: Picture) -> float:
