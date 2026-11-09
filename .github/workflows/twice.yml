@@ -86,6 +86,39 @@ jobs:
           sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
           sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
           sudo resolvectl flush-caches || true
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint).
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
       - name: Wait until Harden-Runner lets the hosts through
         # The runner may have asked for an address past Harden-Runner, which then blocks
         # that address for as long as systemd-resolved keeps it, up to a minute. All
@@ -155,13 +188,13 @@ jobs:
             tests/e2e/artifacts/twice/first tests/e2e/artifacts/twice/second \
             "$RUNNER_TEMP/twice" --languages "$LANGUAGE" --twice
       - name: List the images that came out differently
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' }}
         run: |
           if [[ -f "$RUNNER_TEMP/twice/summary.md" ]]; then
             cat "$RUNNER_TEMP/twice/summary.md" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Keep both images with their differences
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twice-${{ matrix.language }}-${{ github.run_attempt }}
@@ -169,7 +202,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - name: Keep the screenshots of a failed run
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twice-failure-${{ matrix.language }}-${{ github.run_attempt }}
@@ -180,7 +213,7 @@ jobs:
       # of the check and as its annotation, from .github/checks.project.toml. Also when
       # a render fails, which reaches no comparison.
       - name: Explain the failure
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         env:
           CHECK: render twice (${{ matrix.language }})
         run: python3 .github/blueprint.py coach explain "$CHECK"

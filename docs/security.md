@@ -58,7 +58,7 @@ This page explains how the integration protects your data and your board, what i
 | A player name runs as a formula in a spreadsheet | CSV cells that start like a formula get a leading apostrophe | `tests/test_reports_setup.py` |
 | An action runs twice, for example a restart or a reset | Actions are sent once and never retried automatically | `tests/test_local_api.py` |
 | A compromised dependency or build | Hash-pinned dependencies, pinned Actions and images, Dependabot, dependency review, CodeQL, Gitleaks, OpenSSF Scorecard | [Development](development.md#continuous-integration) |
-| A compromised action, package or test of a pull request sends a token or data from a job of the CI elsewhere | Harden-Runner blocks every host that a job of the project's workflows doesn't need; the bots, which may write, reach GitHub alone and run without sudo and Docker; the Home Assistant of the tests calls nothing on the internet | `tests/test_workflow_network.py`, `tests/test_e2e_offline.py`, [Development](development.md#network-of-the-jobs) |
+| A compromised action, package or test of a pull request sends a token or data from a job of the CI elsewhere | Harden-Runner blocks every host that a job of the project's workflows doesn't need, and a job stops when Harden-Runner has no agent that blocks; the bots, which may write, reach GitHub alone and run without sudo and Docker; the Home Assistant of the tests calls nothing on the internet | `tests/test_workflow_network.py`, `tests/test_e2e_offline.py`, [Development](development.md#network-of-the-jobs) |
 | A tampered release | Release packages carry Sigstore-signed SLSA provenance | [Releases](releases.md#signed-release-packages) |
 
 ## Common weaknesses

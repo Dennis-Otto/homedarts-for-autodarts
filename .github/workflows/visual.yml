@@ -108,6 +108,39 @@ jobs:
           sudo ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
           sudo systemctl stop egress-dns-resolver.service egress-outbound-proxy.service || true
           sudo resolvectl flush-caches || true
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint).
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
       - name: Wait until Harden-Runner lets the hosts through
         # The runner may have asked for an address past Harden-Runner, which then blocks
         # that address for as long as systemd-resolved keeps it, up to a minute. All
@@ -184,7 +217,7 @@ jobs:
           IMAGES: tests/e2e/artifacts/rendered
         run: exec bash tests/e2e/screenshots.sh
       - name: List how long the sections took
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' }}
         run: |
           for table in tests/e2e/artifacts/screenshots-*.md; do
             if [[ -f "$table" ]]; then
@@ -195,7 +228,7 @@ jobs:
       # job that compares them (tests/e2e/group_times.py). An artifact of their own: the
       # folder of the images belongs to the container that rendered them.
       - name: Keep the seconds of the group
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' }}
         # Only informational: never keeps the images or the report from being kept.
         continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -215,7 +248,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Keep the screenshots of a failed run
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-failure-${{ matrix.language }}-${{ matrix.group }}-${{ github.run_attempt }}
@@ -225,7 +258,7 @@ jobs:
       # The PR coach: what failed, why it matters and how to fix it, in the summary
       # of the check and as its annotation, from .github/checks.project.toml.
       - name: Explain the failure
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         env:
           CHECK: render (${{ matrix.language }}, ${{ matrix.group }}/4)
         run: python3 .github/blueprint.py coach explain "$CHECK"
@@ -255,6 +288,39 @@ jobs:
             pypi.org:443
             files.pythonhosted.org:443
           disable-sudo-and-containers: true
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint).
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
       - name: Wait until Harden-Runner lets the hosts through
         # The runner may have asked for an address past Harden-Runner, which then blocks
         # that address for as long as systemd-resolved keeps it, up to a minute.
@@ -301,7 +367,7 @@ jobs:
       - name: List the images that look different
         run: cat tests/e2e/artifacts/visual/summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Take the seconds of every group
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' }}
         # Only informational: never keeps the images or the report from being kept.
         continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -312,7 +378,7 @@ jobs:
       # long as the shortest is marked, so that GROUPS of screenshots.py gets a new
       # balance (docs/development.md#groups-side-by-side).
       - name: List how long the groups took
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' }}
         # Only informational: never keeps the images or the report from being kept.
         continue-on-error: true
         env:
@@ -340,7 +406,7 @@ jobs:
       # The PR coach: what failed, why it matters and how to fix it, in the summary
       # of the check and as its annotation, from .github/checks.project.toml.
       - name: Explain the failure
-        if: failure()
+        if: failure() && steps.blocks.outcome != 'failure'
         env:
           CHECK: compare (${{ matrix.language }})
         run: python3 .github/blueprint.py coach explain "$CHECK"

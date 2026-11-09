@@ -6,9 +6,10 @@ requests. A job that starts no container also runs without sudo and Docker, so t
 no step can lift the block, and a job that may write reaches GitHub alone. Such a
 job ends only after Harden-Runner has removed Docker, or the runner hangs until the
 timeout of the job (#463), a job with sudo first takes GitHub's DNS experiment out of
-the way of Harden-Runner, and every job waits until Harden-Runner lets its hosts through
-before a step needs them (#488). A new job, a new host or a job back in audit mode fails
-here until this list and the comment of the job say why
+the way of Harden-Runner, every job stops when Harden-Runner has no agent that blocks, as
+in GitHub's outage of 8 November 2026, and every job waits until Harden-Runner lets its
+hosts through before a step needs them (#488). A new job, a new host or a job back in
+audit mode fails here until this list and the comment of the job say why
 (docs/development.md#network-of-the-jobs). The workflows that the blueprint keeps
 follow its own rules."""
 
@@ -206,8 +207,9 @@ def test_a_job_without_docker_ends_only_after_harden_runner_removed_it(key):
     # Also after a failure or a cancel, which end a job sooner still.
     assert step["if"] == "always()"
     # Only the explanation of the PR coach follows, after a failure, when apt-get
-    # is done.
-    assert all(later.get("if") == "failure()" for later in after), after
+    # is done, and not when the job stopped because Harden-Runner didn't block.
+    guarded = "failure() && steps.blocks.outcome != 'failure'"
+    assert all(later.get("if") == guarded for later in after), after
 
 
 def test_every_job_without_docker_waits_the_same_way():
@@ -443,6 +445,174 @@ def test_lookups_that_did_not_come_back_fail_the_step_at_once(tmp_path):
     assert calls == [RESTART]
 
 
+# Harden-Runner goes on without its agent when the agent can't be downloaded, as in
+# GitHub's outage of 8 November 2026, or doesn't start: a job that blocks would then
+# reach every host, with its token and the code of a pull request, and pass. So each job
+# makes sure that the agent blocks, right after Harden-Runner and the step that lets it
+# see the lookups, before the wait for its hosts and every step that could need one,
+# with the very script of the jobs of the blueprint's workflows (decision 0134 of the
+# blueprint), and stops with an annotation that says to run it again.
+MAKE_SURE = "Make sure that Harden-Runner blocks"
+# A step that runs after a failure, or after anything but a cancel, would run without
+# the block once that step stopped the job, so it runs only when that step didn't fail.
+UNLESS_STOPPED = "steps.blocks.outcome != 'failure'"
+AFTER_A_FAILURE = re.compile(r"\b(?:always|failure|cancelled)\(\)")
+
+
+def make_sure_step(key: tuple[str, str]) -> dict:
+    """The step that stops the job when Harden-Runner has no agent that blocks."""
+    (step,) = [s for s in JOBS[key]["steps"] if s.get("name") == MAKE_SURE]
+    return step
+
+
+@pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
+def test_a_job_stops_before_any_step_that_needs_a_host_when_nothing_blocks(key):
+    # A job with sudo takes the experiment away first, which needs no host.
+    place = 2 if key in WITH_SUDO else 1
+    step = make_sure_step(key)
+    assert JOBS[key]["steps"][place] == step
+    # The id that the steps after a failure look at.
+    assert step["id"] == "blocks"
+    assert "if" not in step
+    assert "env" not in step
+    # Half a minute for an agent that is still starting.
+    assert step["timeout-minutes"] == 1
+
+
+def blueprint_scripts() -> set[str]:
+    """The script of the step in the jobs of the workflows that the blueprint keeps."""
+    scripts = set()
+    for path in WORKFLOWS.glob("*.yml"):
+        if path.name in PROJECT_WORKFLOWS:
+            continue
+        workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+        for job in workflow["jobs"].values():
+            for step in job.get("steps") or []:
+                if step.get("name") == MAKE_SURE:
+                    scripts.add(step["run"])
+    return scripts
+
+
+def test_every_job_makes_sure_the_same_way_as_the_jobs_of_the_blueprint():
+    # The blueprint tests the script, and its next update brings a new one to its own
+    # workflows: this test then fails until the jobs here take it too.
+    blueprint = blueprint_scripts()
+    assert len(blueprint) == 1
+    assert {make_sure_step(key)["run"] for key in JOBS} == blueprint
+
+
+@pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
+def test_no_step_runs_without_the_block_after_the_job_stopped_for_it(key):
+    steps = JOBS[key]["steps"]
+    after = steps[steps.index(make_sure_step(key)) + 1 :]
+    guarded = [step for step in after if AFTER_A_FAILURE.search(step.get("if", ""))]
+    # The explanations of the PR coach, the artifacts of a failed run and the tables
+    # of the visual check, but not the wait for the removal of Docker, which needs no
+    # host and keeps the runner from hanging after the stop as well.
+    assert guarded
+    for step in guarded:
+        assert (UNLESS_STOPPED in step["if"]) is (step.get("name") != WAIT), step
+
+
+# The agent of Harden-Runner, which the step looks for in its folder; systemctl
+# answers for its service.
+AGENT = "/home/agent/"
+
+
+def run_make_sure(
+    tmp_path: Path, files: dict[str, str] | None, active: bool = True
+) -> tuple[subprocess.CompletedProcess[str], list[str], list[str]]:
+    """Run the step with these files in the folder of the agent, or without the
+    folder; the result, the calls of systemctl and the seconds of each sleep."""
+    home = tmp_path / "agent"
+    if files is not None:
+        home.mkdir()
+        for name, text in files.items():
+            (home / name).write_text(text, encoding="utf-8")
+    script = make_sure_step(("e2e.yml", "changes"))["run"]
+    (tmp_path / "step.sh").write_text(
+        script.replace(AGENT, f"{home.as_posix()}/"), encoding="utf-8", newline="\n"
+    )
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for name, stand_in in {"systemctl": NOTE, "sleep": SLEEP}.items():
+        (bin_dir / name).write_text(stand_in, encoding="utf-8", newline="\n")
+        (bin_dir / name).chmod(0o755)
+    calls, sleeps = tmp_path / "calls", tmp_path / "sleeps"
+    calls.touch()
+    sleeps.touch()
+
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "step.sh"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+            "CALLS": str(calls),
+            "SLEEPS": str(sleeps),
+            "FAILS": "" if active else "is-active",
+        },
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+        timeout=60,
+    )
+    return (
+        result,
+        calls.read_text(encoding="utf-8").splitlines(),
+        sleeps.read_text(encoding="utf-8").splitlines(),
+    )
+
+
+RUNNING = {"agent": "", "agent.status": "Initialized"}
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+def test_the_job_goes_on_when_the_agent_of_harden_runner_blocks(tmp_path):
+    result, calls, sleeps = run_make_sure(tmp_path, RUNNING)
+
+    assert result.returncode == 0, result.stdout
+    assert calls == ["systemctl is-active --quiet agent"]
+    assert sleeps == []
+    assert "Harden-Runner blocks every host that the job doesn't name." in result.stdout
+    assert "::error" not in result.stdout
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="the step runs in bash")
+@pytest.mark.parametrize(
+    ("files", "active", "waited", "why"),
+    [
+        # StepSecurity said that it is unavailable, so it made no folder for the agent.
+        (None, True, 0, "didn't install its agent"),
+        # GitHub's outage answered the download of the agent with 504.
+        ({}, True, 0, "couldn't download its agent"),
+        # The agent never wrote its status: half a minute, then the job stops.
+        ({"agent": ""}, True, 30, "has an agent that didn't start"),
+        (
+            {"agent": "", "agent.status": "Failed"},
+            True,
+            0,
+            "has an agent that didn't start",
+        ),
+        # It started, and its service ended since.
+        (RUNNING, False, 0, "has an agent that stopped"),
+    ],
+    ids=["not installed", "not downloaded", "no status", "failed", "stopped"],
+)
+def test_the_job_stops_when_harden_runner_does_not_block(
+    tmp_path, files, active, waited, why
+):
+    result, _, sleeps = run_make_sure(tmp_path, files, active)
+
+    assert result.returncode == 1
+    assert sleeps == ["1"] * waited
+    assert f"::error title=Harden-Runner doesn't block::Harden-Runner {why}" in (
+        result.stdout
+    )
+    assert "so this job would reach every host" in result.stdout
+    assert "run the job again." in result.stdout
+
+
 # Harden-Runner lets through only the addresses of lookups that it saw. An address that
 # the runner asked for past it, before its firewall stood or with GitHub's DNS experiment,
 # stays in the cache of systemd-resolved for up to a minute, and a step that gets it fails
@@ -461,8 +631,8 @@ def warm_up_step(key: tuple[str, str]) -> dict:
 @pytest.mark.parametrize("key", sorted(HOSTS), ids="/".join)
 def test_a_job_waits_for_its_hosts_before_any_step_that_could_need_them(key):
     # A job with sudo takes the experiment away first: until then, it would only wait
-    # for hosts that stay blocked.
-    place = 2 if key in WITH_SUDO else 1
+    # for hosts that stay blocked. Every job makes sure before that it blocks at all.
+    place = 3 if key in WITH_SUDO else 2
     assert JOBS[key]["steps"][place] == warm_up_step(key)
 
 

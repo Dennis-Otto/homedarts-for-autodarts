@@ -278,7 +278,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took():
     (kept,) = [
         step for step in render if step.get("name") == "Keep the seconds of the group"
     ]
-    assert kept["if"] == "${{ !cancelled() }}"
+    assert kept["if"] == "${{ !cancelled() && steps.blocks.outcome != 'failure' }}"
     # Only informational: a failed upload of the seconds never costs the images.
     assert kept["continue-on-error"] is True
     assert kept["with"] == {
@@ -290,7 +290,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took():
     steps = workflow("visual.yml")["jobs"]["compare"]["steps"]
     names = [step.get("name") for step in steps]
     taken = steps[names.index("Take the seconds of every group")]
-    assert taken["if"] == "${{ !cancelled() }}"
+    assert taken["if"] == "${{ !cancelled() && steps.blocks.outcome != 'failure' }}"
     assert taken["continue-on-error"] is True
     assert taken["with"] == {
         "pattern": "times-${{ matrix.language }}-*",
@@ -300,7 +300,7 @@ def test_the_job_of_a_language_lists_how_long_its_groups_took():
     assert names.index("Take the seconds of every group") < names.index(
         "List how long the groups took"
     )
-    assert table["if"] == "${{ !cancelled() }}"
+    assert table["if"] == "${{ !cancelled() && steps.blocks.outcome != 'failure' }}"
     assert table["continue-on-error"] is True
     assert table["env"]["LANGUAGE"] == "${{ matrix.language }}"
     assert table["run"] == (
