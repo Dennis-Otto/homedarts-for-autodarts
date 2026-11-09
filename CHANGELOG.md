@@ -6,10 +6,9 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## [2.3.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.0...v2.3.1) (2026-11-09)
 
-
 ### Bug fixes
 
-* **ci:** the project's own jobs stop when Harden-Runner doesn't block ([#651](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/651)) ([0ed9b07](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/0ed9b07c9a129a1ace94aaef539fae29b188b823))
+- The end-to-end tests, the visual check, *Same images*, the translation bot and the comment of the visual check stop when Harden-Runner can't block, as in GitHub's outage of 8 November 2026, instead of running without their block; such a job says so and passes when it runs again.
 
 ## [2.3.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.2.4...v2.3.0) (2026-11-08)
 
