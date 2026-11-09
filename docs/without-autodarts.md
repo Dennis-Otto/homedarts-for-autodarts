@@ -29,7 +29,7 @@ Install the integration first: steps 1 to 3 of [From zero to the scoreboard](get
 3. Give the board a name, such as *Garage*, and select **Submit**. The integration creates a device with this name and the entities of the games, the training and the statistics.
 4. Create the dashboard: **Settings → Dashboards → Add dashboard → HomeDarts**. Its *Live* and *Scoreboard* views have the keypad.
 
-<img src="images/en/setup-manual.png" alt="The setup form for a dartboard without Autodarts, with the name Dartboard filled in" width="520">
+<img src="images/en/setup-manual.png" alt="The setup form for a dartboard without Autodarts, with the name Dartboard filled in" width="580">
 
 ## Enter your darts
 

@@ -47,7 +47,7 @@ Met Board Manager 2 vindt Home Assistant het bord meestal vanzelf: **Instellinge
 
 Selecteer anders de knop hierboven en kies **Borden zoeken in dit netwerk**, of **Bordadres invoeren** met het IP-adres van de bord-pc. Je hebt geen Autodarts-account nodig.
 
-<img src="images/en/setup-menu.png" alt="Het menu voor het instellen van HomeDarts: borden zoeken in dit netwerk, een bordadres invoeren of een dartbord zonder Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="Het menu voor het instellen van HomeDarts: borden zoeken in dit netwerk, een bordadres invoeren of een dartbord zonder Autodarts" width="580">
 
 De [installatiehandleiding](installation.nl.md#je-bord-toevoegen) legt de manieren uitgebreid uit. Zonder Autodarts kies je **Dartbord zonder Autodarts: elke dart zelf invoeren** en geef je het bord een naam; [Play without Autodarts](without-autodarts.md) laat de rest zien.
 
