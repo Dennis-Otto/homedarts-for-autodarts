@@ -8,8 +8,13 @@ committed before the run against those rendered. It writes, into the output fold
   share of its pixels that changed, for the screenshot bot and the comment of the
   visual check;
 - summary.md: the same as a table, for the summary of the workflow run;
-- for every changed image, the image before and after and a picture of the
-  difference: the image after in grey, every changed pixel in red.
+- for every changed image, the image before and after and, when both have the same
+  size and frames, a picture of the difference as `difference` in the report: the
+  image after in pale grey, every changed pixel in red and a red frame around each
+  place of change, which still shows a single changed pixel when a phone shows the
+  picture scaled down to about 1000 pixels wide. It is the picture that the
+  blueprint's screenshot tool draws (.github/blueprint/screenshots.py), so that the
+  differences of every repository look alike, in the artifact and in the pager.
 
 Animated WebP images compare frame by frame, with the time each frame shows.
 An image whose file changed but whose pixels did not counts as unchanged; with
@@ -30,9 +35,13 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageSequence
 
+# The blueprint's screenshot tool, which keeps the pictures of the screenshot bot of
+# every repository made from the blueprint, draws the picture of a difference; its
+# package is next to the settings tool in .github/, which the blueprint keeps current.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github"))
+from blueprint.screenshots import difference
+
 SUFFIXES = (".png", ".webp")
-# The colour of a changed pixel in the picture of the difference.
-CHANGED = (255, 0, 85)
 
 
 @dataclass
@@ -61,31 +70,21 @@ def changed_mask(before: Image.Image, after: Image.Image) -> Image.Image:
     return mask.point(lambda value: 255 if value else 0)
 
 
-def difference_picture(after: Image.Image, mask: Image.Image) -> Image.Image:
-    """The frame after in faint grey, with every changed pixel in red."""
-    grey = after.convert("L").point(lambda value: 40 + value * 35 // 100)
-    base = Image.merge("RGB", (grey, grey, grey))
-    return Image.composite(Image.new("RGB", after.size, CHANGED), base, mask)
-
-
-def compare(before: Picture, after: Picture) -> tuple[float, Image.Image | None]:
-    """The share of pixels that changed, and a picture of the first difference."""
+def compare(before: Picture, after: Picture) -> float:
+    """The share of pixels that changed."""
     if before.size != after.size:
-        return 1.0, None
+        return 1.0
     area = after.size[0] * after.size[1]
-    changed, picture = 0, None
+    changed = 0
     for (old, old_duration), (new, duration) in zip(
         before.frames, after.frames, strict=False
     ):
-        mask = changed_mask(old, new)
-        count = mask.histogram()[255]
-        if count and picture is None:
-            picture = difference_picture(new, mask)
+        count = changed_mask(old, new).histogram()[255]
         # The same picture, shown for another time, counts as one changed pixel.
         changed += count or int(duration != old_duration)
     # Frames that one image has and the other has not changed as a whole.
     changed += abs(len(before.frames) - len(after.frames)) * area
-    return changed / (area * max(len(before.frames), len(after.frames))), picture
+    return changed / (area * max(len(before.frames), len(after.frames)))
 
 
 def images(folder: Path, languages: list[str]) -> dict[str, Path]:
@@ -126,12 +125,11 @@ def run(
             entry |= {"status": "added", "share": 1.0}
             entry["after"] = keep(after[name], output, name, "after")
         else:
-            if before[name].read_bytes() == after[name].read_bytes():
+            old, new = before[name].read_bytes(), after[name].read_bytes()
+            if old == new:
                 report["unchanged"] += 1
                 continue
-            share, picture = compare(
-                Picture.open(before[name]), Picture.open(after[name])
-            )
+            share = compare(Picture.open(before[name]), Picture.open(after[name]))
             if share == 0:
                 if restore:
                     shutil.copyfile(before[name], after[name])
@@ -140,9 +138,12 @@ def run(
             entry |= {"status": "changed", "share": share}
             entry["before"] = keep(before[name], output, name, "before")
             entry["after"] = keep(after[name], output, name, "after")
-            if picture is not None:
+            # None for another size or other frames, or when only the time that a
+            # frame shows changed: the pixels of each frame alone tell nothing then.
+            drawn = difference(old, new)
+            if drawn is not None:
                 entry["difference"] = f"{name.rsplit('.', 1)[0]}.difference.png"
-                picture.save(output / entry["difference"])
+                (output / entry["difference"]).write_bytes(drawn)
         report["images"].append(entry)
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     (output / "summary.md").write_text(summary(report))
