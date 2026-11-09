@@ -685,7 +685,7 @@ Mit dem Ziel eines Partyspiels neben den Punkten, etwa `12 D16`:
 
 Alle Echtzeitmomente kommen über die Entität **Ereignisse** des Boards. Jedes Ereignis hat einen `event_type` und seine Details, siehe [Ereignisse](entities.de.md#board-ereignisse). Die Beispiele nutzen `event.autodarts_board_ereignisse`, die Entitäts-ID eines Boards namens *Autodarts Board* in einem deutschsprachigen Home Assistant. Home Assistant bildet die Entitäts-IDs aus den Namen in seiner Sprache, auf Englisch heißt dieselbe Entität etwa `event.autodarts_board_events`. Ein mit einer früheren Version eingerichtetes Board behält die ID von damals, etwa `event.autodarts_board_board_ereignisse`.
 
-<img src="images/de/board-events.png" alt="Die Entität Ereignisse des Boards in Home Assistant: das letzte Ereignis Aufnahme geworfen, sein Verlauf und die Aktivität mit jedem erkannten Dart, der Aufnahme und der Entnahme" width="760">
+<img src="images/de/board-events.png" alt="Die Entität Ereignisse des Boards in Home Assistant: das letzte Ereignis Aufnahme geworfen, sein Verlauf und die Aktivität mit jedem erkannten Dart, der Aufnahme und der Entnahme" width="580">
 
 Öffne die Entität auf der Geräteseite, um die Ereignisse beim Werfen ankommen zu sehen; ihre Aktivität listet jedes Ereignis mit seiner Uhrzeit.
 

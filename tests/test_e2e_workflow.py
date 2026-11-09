@@ -34,6 +34,7 @@ needs_jq = pytest.mark.skipif(
 # The steps of the jobs that decide nothing.
 OTHER_STEPS = {
     "Explain the failure",
+    "Make sure that Harden-Runner blocks",
     "Wait until Harden-Runner has removed Docker",
     "Wait until Harden-Runner lets the hosts through",
 }
@@ -57,7 +58,8 @@ def run_step(
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, str], str, str]:
     """Run the step of a job; the result, its outputs, its summary and the calls of gh.
     The step of the PR coach after a failure only explains it (tests/test_pr_coach.py),
-    and two others wait for Harden-Runner (tests/test_workflow_network.py)."""
+    and three others make sure that Harden-Runner blocks and wait for it
+    (tests/test_workflow_network.py)."""
     (run,) = [
         step["run"]
         for step in JOBS[job]["steps"]

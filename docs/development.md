@@ -353,7 +353,7 @@ Two runs of the tool render the same images, byte for byte. So an image that cha
 - **The pointer out of the picture.** Playwright leaves the pointer where it clicked. A button that comes to lie under it, such as *Submit* in the next step of a dialog, takes its hover colour only when Chrome looks again, at a moment of its own, and pngquant then chooses other colours for the whole picture, up to the flights of a dart in a logo. So the pointer leaves before every picture and every frame (`settle`).
 - **States, not times.** A picture waits for what it shows, not for some time that is enough on a quiet machine. The dialog of Assist gives its field the focus seconds later on a busy runner, in some runs not at all, and the label of the field moves up with that; so the tool gives it the focus until it keeps it. The form of the online bridge's options gets its editor last, which moves the box under the click: a click that misses saves the options instead of showing the address, the board starts anew, and the heatmap after it loses the darts of the current visit.
 - **Fixed addresses.** The online bridge shows `homeassistant.local` as the address of Home Assistant (`internal_url` in `demo.configuration.yaml`), not the address Docker happens to give the container.
-- **The dialog alone.** The picture of the online bridge's options shows its dialog without the page behind it, with clear round corners (`dialog_shot` in `screenshots.py`), and a new picture of a dialog takes `dialog_shot` as well. `setup-menu.png`, `setup-local.png`, `setup-manual.png` and `board-events.png` still show the page behind their dialog. That page changes with what has nothing to do with the dialog: the page of the integration behind the options of the online bridge counts the entities of the integration, so a pull request that added two of them changed `online-bridge.png`, and pngquant then chose other colours for the whole picture. Three digits became 2 % of its pixels.
+- **The dialog alone.** Every picture of a dialog shows the dialog without the page behind it, with clear round corners (`dialog_shot` in `screenshots.py`): the setup in `setup-menu.png`, `setup-local.png` and `setup-manual.png`, the editors of the live card and of the generated dashboard in `card-editor.png` and `strategy-editor.png`, the events of the board in `board-events.png` and the options of the online bridge in `online-bridge.png`. The page behind a dialog changes with what has nothing to do with the dialog: the page of the integration behind the options of the online bridge counts the entities of the integration, so a pull request that added two of them changed `online-bridge.png`, and pngquant then chose other colours for the whole picture. Three digits became 2 % of its pixels. A dialog in the middle of the window stands at a fraction of a pixel when its height has one, as the form of the board's address does, and a screenshot of it would take a strip of the page above and below it as well. So the tool takes the whole pixels around the dialog and cuts the picture to the pixels within its box. `tests/test_screenshot_groups.py` fails on a step that opens a dialog and takes a picture of the whole page, also when a helper such as `open_card_form` or the edit mode of the generated dashboard opens it.
 - **A fixed version.** The page of the integration shows its version, which every release changes. In the frozen demo, `sitecustomize.py` lets Home Assistant read only the major version from the manifest: the page shows *Version 1* for every 1.x release. So a release changes no image that shows the page, and the visual check doesn't report such an image on every pull request after it. Everything else on the page is as Home Assistant draws it; outside the frozen demo, it shows the full version.
 - **Pinned compression.** pngquant 2.18.0 of Ubuntu 24.04 compresses every PNG image right after it is taken. `tests/e2e/pngquant.sh` installs it in the pinned Playwright image from Launchpad, where every published package keeps its address, and checks both packages against their SHA-256. The animations come from the pinned Pillow.
 
@@ -733,6 +733,24 @@ again.
   <img src="images/en/harden-runner-dns-light.png" alt="Why Harden-Runner has to see the DNS lookups of a job: A step or the runner looks up a host. When Harden-Runner answers, it notes the address of an allowed host and the connection passes. On a runner with GitHub's DNS experiment, so far in the region westus2, another resolver answers. Harden-Runner never sees the address and drops the connection, so the step fails and the runner hangs until the timeout of the job. Harden-Runner since v2.22.4, also when its feature flags don't come, and the step after it in every job with sudo take the experiment away." width="560">
 </picture>
 
+Harden-Runner goes on without its agent when it can't download it, as in GitHub's outage
+of 8 November 2026, which answered the download with `504`, or when the agent doesn't
+start: its step still passes, and a job that blocks would reach every host, with its
+token and the code of a pull request. So every job, right after Harden-Runner and the
+step that lets it see the lookups, runs *Make sure that Harden-Runner blocks*: it waits
+up to half a minute for the status of the agent, and goes on only when the agent is
+there, says `Initialized` and runs as the service `agent`. Otherwise it stops the job
+with the annotation *Harden-Runner doesn't block*, which names the reason. The steps
+that run after a failure, such as the explanation of the PR coach and the artifacts of
+a failed run, don't run then either, since they would run without the block; only the
+wait for the removal of Docker does, which needs no host. Such a stop is no problem of
+the change: the flaky-test bot runs the failed jobs of the end-to-end tests and the
+visual check once more by itself, and every other job runs again from the tab Actions.
+The step is the one of the jobs of the blueprint's workflows
+([its decision 0134](https://github.com/Dennis-Otto/repo-blueprint/blob/main/docs/decisions/0134-a-job-stops-when-harden-runner-doesnt-block.md)),
+and `tests/test_workflow_network.py` makes sure that every job here runs the same copy
+of its script.
+
 Harden-Runner lets through only the addresses of the lookups that it saw. One that the
 runner asked for past it, before its firewall stood or while the experiment was still on,
 stays in the cache of `systemd-resolved` for up to a minute, and a step that gets it fails
@@ -752,7 +770,7 @@ takes a moment when nothing is wrong. The jobs of the blueprint's workflows wait
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/job-behind-harden-runner-dark.png">
-  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
+  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then makes sure that the agent of Harden-Runner blocks, and stops when it doesn't, so that it can run again. It asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
 </picture>
 
 A host that a job doesn't list fails its step with an error such as a failed DNS lookup
@@ -763,9 +781,10 @@ that needs it, with a comment that says why, and into `tests/test_workflow_netwo
 That test fails for a job of these workflows that it doesn't know, a host that a job
 doesn't need, a job back in audit mode, a job without containers that keeps sudo, a job
 without sudo and Docker that doesn't wait for their removal, a job with sudo that doesn't
-let Harden-Runner see its lookups, a job that doesn't wait for its hosts or waits for others
-than it allows, a release of Harden-Runner before v2.22.4, and a job that may write and
-reaches more than GitHub. Harden-Runner filters the addresses of
+let Harden-Runner see its lookups, a job that doesn't stop when Harden-Runner doesn't block
+or whose steps after a failure run without the block, a job that doesn't wait for its
+hosts or waits for others than it allows, a release of Harden-Runner before v2.22.4, and
+a job that may write and reaches more than GitHub. Harden-Runner filters the addresses of
 the runner and of Docker's default network; the containers of the Compose networks get
 their addresses from its DNS, which resolves only the hosts of the job. The
 workflows that the blueprint keeps follow its own rules.

@@ -56,7 +56,7 @@ Which way fits your board:
   <img src="images/en/add-board-light.png" alt="Which way to add a board: a dartboard without Autodarts gets the fourth way, Dartboard without Autodarts, and its darts are entered on the keypad. An Autodarts board with Board Manager 2 usually appears by itself as Autodarts board found under Discovered: select Add and confirm. Otherwise, enter the address of the board PC if you know it, or search for boards on this network, which opens the address form when it finds no board. Every way with Autodarts ends with the same local board, one device with all its entities" width="480">
 </picture>
 
-<img src="images/en/setup-menu.png" alt="The setup menu of HomeDarts: search for boards on this network, enter a board address, or a dartboard without Autodarts" width="520">
+<img src="images/en/setup-menu.png" alt="The setup menu of HomeDarts: search for boards on this network, enter a board address, or a dartboard without Autodarts" width="580">
 
 ### 1. Automatic discovery (Board Manager 2)
 
@@ -74,7 +74,7 @@ Choose **Search for boards on this network**. The integration asks the public Au
 
 Choose **Enter board address** and enter the IP address or host name of the board PC, for example `192.0.2.10` or `autodarts.local`, without `http://` and without a port. The port is normally **3180**.
 
-<img src="images/en/setup-local.png" alt="The form to enter the Board Manager address and port" width="520">
+<img src="images/en/setup-local.png" alt="The form to enter the Board Manager address and port" width="580">
 
 The integration reads the board ID from the Board Manager. It rejects addresses that are not reachable or that have no board set up yet.
 
@@ -84,7 +84,7 @@ The integration reads the board ID from the Board Manager. It rejects addresses 
 
 Choose **Dartboard without Autodarts: enter every dart yourself** and give the board a name, such as *Garage*. You enter its darts on the keypad of the live card and the scoreboard, and the games, the training and the statistics work as with Autodarts; [Play without Autodarts](without-autodarts.md) explains it all. A home may have several of them, beside Autodarts boards, and each can [get its Autodarts board later](without-autodarts.md#autodarts-later).
 
-<img src="images/en/setup-manual.png" alt="The setup form for a dartboard without Autodarts, with the name Dartboard filled in" width="520">
+<img src="images/en/setup-manual.png" alt="The setup form for a dartboard without Autodarts, with the name Dartboard filled in" width="580">
 
 ### After setup
 

@@ -29,7 +29,7 @@ Installiere zuerst die Integration: Die Schritte 1 bis 3 von [Vom Start bis zur 
 3. Gib dem Board einen Namen, etwa *Keller*, und wähle **Übermitteln**. Die Integration legt ein Gerät mit diesem Namen an, mit den Entitäten der Spiele, des Trainings und der Statistiken.
 4. Lege das Dashboard an: **Einstellungen → Dashboards → Dashboard hinzufügen → HomeDarts**. Seine Ansichten *Live* und *Anzeigetafel* haben das Tastenfeld.
 
-<img src="images/de/setup-manual.png" alt="Das Formular der Einrichtung für eine Dartscheibe ohne Autodarts, mit dem eingetragenen Namen Dartboard" width="520">
+<img src="images/de/setup-manual.png" alt="Das Formular der Einrichtung für eine Dartscheibe ohne Autodarts, mit dem eingetragenen Namen Dartboard" width="580">
 
 ## Darts eingeben
 
