@@ -790,9 +790,9 @@ def test_what_only_the_release_carries_is_outside_the_key(name):
 
 
 def test_a_release_starts_the_screenshot_bot_once_and_not_the_visual_check():
-    # A new major version changes an image, which reaches docs/images by the bot: it
-    # renders when the workflow Release of the release passed, and not on the push
-    # of the release as well, which would render every image a second time.
+    # A new major version changes an image that shows it, which reaches docs/images by
+    # the bot: it renders when the workflow Release of the release passed, and not on
+    # the push of the release as well, which would render every image a second time.
     config = json.loads(
         (ROOT / "release-please-config.json").read_text(encoding="utf-8")
     )

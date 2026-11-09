@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).parents[1]
 E2E = ROOT / "tests" / "e2e"
@@ -469,6 +469,65 @@ def test_the_options_of_the_bridge_show_the_address_and_never_save_themselves():
     # The form before the address has words in code too: waiting for one waits for
     # nothing.
     assert "ha-markdown code" not in text
+
+
+def test_the_picture_of_the_bridge_shows_its_dialog_without_the_page_behind_it():
+    # The page of the integration behind the dialog counts its entities: two new ones
+    # changed 2.15 % of online-bridge.png in #621, three digits and the colours that
+    # pngquant chose for the rest of the picture.
+    assert "page_shot" not in called(function("online_bridge_options"))
+    in_order(
+        source("online_bridge_options"),
+        "view.evaluate(MASK_SECRET)",
+        "dialog_shot(view, dialog, 'online-bridge')",
+    )
+    in_order(
+        source("dialog_shot"),
+        "dialog.locator(\"[part='dialog']\")",
+        "settle(page)",
+        "surface.screenshot(path=str(path))",
+        "devicePixelRatio",
+        "round_corners(path, radius)",
+        "saved(path)",
+    )
+
+
+def round_corners(path: Path, radius: float) -> None:
+    """round_corners() of the tool."""
+    namespace = {"Image": Image, "ImageDraw": ImageDraw, "Path": Path}
+    code = ast.Module([function("round_corners")], [])
+    # Only the function of the tool, which can't be imported without Playwright.
+    exec(compile(code, "screenshots.py", "exec"), namespace)
+    namespace["round_corners"](path, radius)
+
+
+def test_a_picture_of_a_dialog_is_clear_outside_its_round_corners(tmp_path):
+    path = tmp_path / "dialog.png"
+    Image.new("RGB", (200, 100), (28, 28, 28)).save(path)
+    round_corners(path, 24)
+    with Image.open(path) as image:
+        assert image.size == (200, 100)
+        alpha = image.getchannel("A")
+        colours = image.convert("RGB")
+    for corner in [(0, 0), (199, 0), (0, 99), (199, 99), (3, 3), (196, 96)]:
+        assert alpha.getpixel(corner) == 0, corner
+    # The edges between the corners and everything inside stay as they were.
+    for inside in [(24, 24), (100, 0), (0, 50), (199, 50), (100, 99), (100, 50)]:
+        assert alpha.getpixel(inside) == 255, inside
+        assert colours.getpixel(inside) == (28, 28, 28)
+    # The arc of a corner fades instead of stepping.
+    arc = [alpha.getpixel((x, y)) for x in range(24) for y in range(24)]
+    assert len({value for value in arc if 0 < value < 255}) > 4
+
+
+def test_the_round_corners_of_a_dialog_come_out_the_same_every_time(tmp_path):
+    pictures = []
+    for name in ["first.png", "second.png"]:
+        path = tmp_path / name
+        Image.new("RGB", (120, 80), (28, 28, 28)).save(path)
+        round_corners(path, 13.5)
+        pictures.append(path.read_bytes())
+    assert pictures[0] == pictures[1]
 
 
 def test_the_field_of_assist_has_its_focus_before_its_first_picture():

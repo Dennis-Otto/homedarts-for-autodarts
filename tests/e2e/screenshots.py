@@ -392,6 +392,37 @@ def page_shot(page: Page, name: str) -> None:
     saved(OUTPUT / f"{name}.png")
 
 
+def dialog_shot(page: Page, dialog: Locator, name: str) -> None:
+    """A dialog of Home Assistant alone, without the page behind it.
+
+    The page behind a dialog changes with what has nothing to do with the dialog: the
+    page of the integration behind the options of the bridge counts its entities, so
+    a new entity changed online-bridge.png, and pngquant then chose other colours for
+    the whole picture. The round corners show the page of the documentation."""
+    surface = dialog.locator("[part='dialog']")
+    settle(page)
+    path = OUTPUT / f"{name}.png"
+    surface.screenshot(path=str(path))
+    radius = surface.evaluate(
+        "(surface) => parseFloat(getComputedStyle(surface).borderTopLeftRadius)"
+        " * devicePixelRatio"
+    )
+    round_corners(path, radius)
+    saved(path)
+
+
+def round_corners(path: Path, radius: float) -> None:
+    """Make the corners of a picture clear outside a circle of the radius, in pixels."""
+    image = Image.open(path).convert("RGBA")
+    # Drawn four times as large and averaged down, for an edge without steps.
+    large = Image.new("L", (image.width * 4, image.height * 4), 0)
+    ImageDraw.Draw(large).rounded_rectangle(
+        (0, 0, large.width - 1, large.height - 1), radius=round(radius * 4), fill=255
+    )
+    image.putalpha(large.resize(image.size, Image.Resampling.BOX))
+    image.save(path)
+
+
 @contextmanager
 def failure_screenshots() -> Iterator[list[Browser]]:
     """Save every page still open when a capture fails, in tests/e2e/artifacts."""
@@ -3353,7 +3384,7 @@ def online_bridge_options(page: Page) -> None:
     dialog.locator("ha-markdown pre").first.wait_for(timeout=30000)
     view.wait_for_timeout(1500)
     view.evaluate(MASK_SECRET)
-    page_shot(view, "online-bridge")
+    dialog_shot(view, dialog, "online-bridge")
     context.close()
 
 
