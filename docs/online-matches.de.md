@@ -28,7 +28,7 @@ Die optionale **Online-Brücke** bringt diese Momente mit der Browser-Erweiterun
 3. Öffne im Browser am Board die Einstellungen von Tools for Autodarts, schalte **WLED** ein, wähle **Import CSV**, füge die Zeilen ein und speichere. Jede Zeile ist ein Effekt vom Typ **URL** für einen Trigger; lösche die, die du nicht brauchst.
 4. Prüfe, ob die Momente ankommen: Öffne die Adresse mit angehängtem `?event=gameon` in einem Browser in deinem Heimnetz, oder spiele ein Match. Der Sensor **Letztes Ereignis der Online-Brücke** auf der Geräteseite unter *Diagnose* zeigt, wann der letzte Moment ankam, und seinen Trigger.
 
-<img src="images/de/online-bridge.png" alt="Die Optionen des Autodarts-Boards in Home Assistant: die geheime Adresse für Tools for Autodarts, hier verdeckt, und die Zeilen zum Import in dessen WLED-Einstellungen, eine für jeden Trigger" width="760">
+<img src="images/de/online-bridge.png" alt="Die Optionen des Autodarts-Boards in Home Assistant: die geheime Adresse für Tools for Autodarts, hier verdeckt, und die Zeilen zum Import in dessen WLED-Einstellungen, eine für jeden Trigger" width="580">
 
 Für einen Effekt von Hand gibst du ihm einen Trigger, den Typ **URL** und die Adresse mit `?event=` und demselben Trigger, zum Beispiel `…/api/webhook/<geheim>?event=busted`. Der Name eines Spielers kann als `&player=Lea` folgen. Ein Effekt vom Typ **JSON API** geht auch, mit einem Body wie `{"event": "busted", "player": "Lea"}`.
 

@@ -28,7 +28,7 @@ The optional **online bridge** brings these moments into Home Assistant with the
 3. In the browser at the board, open the settings of Tools for Autodarts, turn on **WLED**, choose **Import CSV**, paste the lines and save. Each line is an effect of the type **URL** for one trigger; delete the ones you don't need.
 4. Check that the moments arrive: open the address with `?event=gameon` added in a browser of your home network, or play a match. The **Online bridge last event** sensor on the device page, under *Diagnostic*, shows when the last moment arrived and its trigger.
 
-<img src="images/en/online-bridge.png" alt="The options of the Autodarts board in Home Assistant: the secret address for Tools for Autodarts, here masked, and the lines to import into its WLED settings, one for every trigger" width="760">
+<img src="images/en/online-bridge.png" alt="The options of the Autodarts board in Home Assistant: the secret address for Tools for Autodarts, here masked, and the lines to import into its WLED settings, one for every trigger" width="580">
 
 To add an effect by hand, give it one trigger, the type **URL** and the address followed by `?event=` and the same trigger, for example `…/api/webhook/<secret>?event=busted`. The name of a player can follow as `&player=Lea`. An effect of the type **JSON API** works too, with a body such as `{"event": "busted", "player": "Lea"}`.
 
