@@ -19,7 +19,7 @@ import pytest
 import yaml
 
 from .test_docs_links import slug
-from .test_workflow_network import PROJECT_WORKFLOWS
+from .test_workflow_network import MAKE_SURE, PROJECT_WORKFLOWS, UNLESS_STOPPED
 
 ROOT = Path(__file__).parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
@@ -28,6 +28,9 @@ CATALOG = tomllib.loads(
 )
 EXPLANATIONS = CATALOG.get("check", {})
 STEP = "Explain the failure"
+# After a failure, but not after the step that stopped the job because Harden-Runner
+# didn't block, without which the coach would run with no block at all.
+AFTER_A_FAILURE = f"failure() && {UNLESS_STOPPED}"
 COMMAND = 'python3 .github/blueprint.py coach explain "$CHECK"'
 EXPRESSION = re.compile(r"\$\{\{.*?\}\}")
 # The scripts of the repository that a command runs, such as tests/e2e/run.sh.
@@ -93,7 +96,7 @@ def test_every_job_ends_with_the_step_of_the_coach(key):
     steps = job["steps"]
     last = steps[-1]
     assert last["name"] == STEP
-    assert last["if"] == "failure()"
+    assert last["if"] == AFTER_A_FAILURE
     # The name that GitHub shows, which the report of the coach looks up as well.
     assert last["env"] == {"CHECK": job["name"]}
     assert last["run"] == COMMAND
@@ -109,9 +112,22 @@ def test_the_workflow_that_runs_after_the_merge_explains_itself_as_well():
     assert explanation(sample(job["name"]))
     last = job["steps"][-1]
     assert last["name"] == STEP
-    assert last["if"] == "failure()"
+    assert last["if"] == AFTER_A_FAILURE
     assert last["env"] == {"CHECK": job["name"]}
     assert last["run"] == COMMAND
+
+
+def test_every_explanation_says_what_a_stop_for_harden_runner_means():
+    # Every job here blocks and stops when Harden-Runner has no agent that blocks,
+    # mostly in an outage of GitHub. The coach shows the explanation of the check
+    # that failed, which would only speak of what the check looks at: each one also
+    # says that such a stop is no problem of the change, as those of the blueprint do.
+    jobs = [*JOBS.values(), load("twice.yml")["jobs"]["twice"]]
+    assert all(MAKE_SURE in [step.get("name") for step in job["steps"]] for job in jobs)
+    for key, entry in EXPLANATIONS.items():
+        assert f"*{MAKE_SURE}* stopped the job" in " ".join(entry["problem"].split()), (
+            key
+        )
 
 
 def test_every_explanation_belongs_to_a_job():

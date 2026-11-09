@@ -733,6 +733,24 @@ again.
   <img src="images/en/harden-runner-dns-light.png" alt="Why Harden-Runner has to see the DNS lookups of a job: A step or the runner looks up a host. When Harden-Runner answers, it notes the address of an allowed host and the connection passes. On a runner with GitHub's DNS experiment, so far in the region westus2, another resolver answers. Harden-Runner never sees the address and drops the connection, so the step fails and the runner hangs until the timeout of the job. Harden-Runner since v2.22.4, also when its feature flags don't come, and the step after it in every job with sudo take the experiment away." width="560">
 </picture>
 
+Harden-Runner goes on without its agent when it can't download it, as in GitHub's outage
+of 8 November 2026, which answered the download with `504`, or when the agent doesn't
+start: its step still passes, and a job that blocks would reach every host, with its
+token and the code of a pull request. So every job, right after Harden-Runner and the
+step that lets it see the lookups, runs *Make sure that Harden-Runner blocks*: it waits
+up to half a minute for the status of the agent, and goes on only when the agent is
+there, says `Initialized` and runs as the service `agent`. Otherwise it stops the job
+with the annotation *Harden-Runner doesn't block*, which names the reason. The steps
+that run after a failure, such as the explanation of the PR coach and the artifacts of
+a failed run, don't run then either, since they would run without the block; only the
+wait for the removal of Docker does, which needs no host. Such a stop is no problem of
+the change: the flaky-test bot runs the failed jobs of the end-to-end tests and the
+visual check once more by itself, and every other job runs again from the tab Actions.
+The step is the one of the jobs of the blueprint's workflows
+([its decision 0134](https://github.com/Dennis-Otto/repo-blueprint/blob/main/docs/decisions/0134-a-job-stops-when-harden-runner-doesnt-block.md)),
+and `tests/test_workflow_network.py` makes sure that every job here runs the same copy
+of its script.
+
 Harden-Runner lets through only the addresses of the lookups that it saw. One that the
 runner asked for past it, before its firewall stood or while the experiment was still on,
 stays in the cache of `systemd-resolved` for up to a minute, and a step that gets it fails
@@ -752,7 +770,7 @@ takes a moment when nothing is wrong. The jobs of the blueprint's workflows wait
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/job-behind-harden-runner-dark.png">
-  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
+  <img src="images/en/job-behind-harden-runner-light.png" alt="The steps of a job behind Harden-Runner: Harden-Runner blocks every host that the job doesn't list. A job that starts containers keeps sudo, and takes GitHub's DNS experiment away. Every job then makes sure that the agent of Harden-Runner blocks, and stops when it doesn't, so that it can run again. It asks its hosts every 3 seconds, for two minutes at most, until Harden-Runner lets them through, and runs its steps. A job without sudo and Docker ends only after Harden-Runner has removed Docker, also after a failure." width="560">
 </picture>
 
 A host that a job doesn't list fails its step with an error such as a failed DNS lookup
@@ -763,9 +781,10 @@ that needs it, with a comment that says why, and into `tests/test_workflow_netwo
 That test fails for a job of these workflows that it doesn't know, a host that a job
 doesn't need, a job back in audit mode, a job without containers that keeps sudo, a job
 without sudo and Docker that doesn't wait for their removal, a job with sudo that doesn't
-let Harden-Runner see its lookups, a job that doesn't wait for its hosts or waits for others
-than it allows, a release of Harden-Runner before v2.22.4, and a job that may write and
-reaches more than GitHub. Harden-Runner filters the addresses of
+let Harden-Runner see its lookups, a job that doesn't stop when Harden-Runner doesn't block
+or whose steps after a failure run without the block, a job that doesn't wait for its
+hosts or waits for others than it allows, a release of Harden-Runner before v2.22.4, and
+a job that may write and reaches more than GitHub. Harden-Runner filters the addresses of
 the runner and of Docker's default network; the containers of the Compose networks get
 their addresses from its DNS, which resolves only the hosts of the job. The
 workflows that the blueprint keeps follow its own rules.
