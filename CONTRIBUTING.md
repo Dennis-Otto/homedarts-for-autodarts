@@ -41,23 +41,11 @@ Every Friday the mutation tests change the code in thousands of small ways and s
 
 ## Workflow
 
-<<<<<<< before updating
-
-1. Open an issue or a discussion first for anything larger than a small fix, so we can agree on the approach.
-2. Fork the repository and create a branch from `main`, for example `feat/cricket-variants` or `fix/bull-off-tie`.
-3. Describe what changes for users, in the words of a user, in a new file in `changelog.d/` named after your branch without its type, such as `changelog.d/dark-mode.md` for the branch `feat/dark-mode`, below the heading of its kind of change, such as `### Features` or `### Bug fixes`. The check of the title, *conventional title*, asks for it in every `feat`, `fix` or `perf` pull request, and checks it as the release takes it in. A file of its own conflicts with no other pull request; a line under `## Unreleased` in `CHANGELOG.md` works as well, but conflicts with each pull request that adds one at the same place. A tester who helped is thanked in the entry by their GitHub name.
-4. Commit with [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`, `refactor:` or `perf:`, with an optional scope such as `feat(scoreboard): …`. Mark breaking changes with `!`.
-5. A change that makes or changes a decision that shapes the project, such as a supported platform or the way of releasing, records it in [`docs/decisions/`](docs/decisions/README.md).
-6. Open a pull request with a Conventional Commit title. A workflow checks the title and labels the pull request. Pull requests are squashed into one commit on `main`, and the title decides the next version: `fix` a patch, `feat` a minor, `!` a major version, or a minor one while the version is below 1.0.0.
-7. The maintainer reviews every pull request for correctness, tests, documentation in both languages, security and user impact.
-=======
-8. Open an issue first for anything larger than a small fix, so we can agree on the approach.
-9. Create a branch from `main`.
-10. Describe what changes for users, in the words of a user, in a new file in `changelog.d/` named after your branch without its type, such as `changelog.d/dark-mode.md` for the branch `feat/dark-mode`, below the heading of its kind of change, such as `### Features` or `### Bug fixes`. The check of the title, *conventional title*, asks for it in every `feat`, `fix` or `perf` pull request, and checks it as the release takes it in. A file of its own conflicts with no other pull request; a line under `## Unreleased` in `CHANGELOG.md` works as well, but conflicts with each pull request that adds one at the same place.
-11. A change that makes or changes a decision that shapes the project, such as a supported platform or the way of releasing, records it in [`docs/decisions/`](docs/decisions/README.md), with the next free number and a row in its index, as [the records of decisions](#records-of-decisions) describe.
-12. Open a pull request whose title is a [Conventional Commit](https://www.conventionalcommits.org/), such as `feat(settings): add a dark mode` or `fix: keep the token secret`. Mark a breaking change with `!`. Pull requests are squashed into one commit named after the title, and the title decides the next version: `fix` a patch, `feat` a minor, `!` a major version, or a minor one while the version is below 1.0.0.
-
->>>>>>> after updating
+1. Open an issue first for anything larger than a small fix, so we can agree on the approach.
+2. Create a branch from `main`.
+3. Describe what changes for users, in the words of a user, in a new file in `changelog.d/` named after your branch without its type, such as `changelog.d/dark-mode.md` for the branch `feat/dark-mode`, below the heading of its kind of change, such as `### Features` or `### Bug fixes`. The check of the title, *conventional title*, asks for it in every `feat`, `fix` or `perf` pull request, and checks it as the release takes it in. A file of its own conflicts with no other pull request; a line under `## Unreleased` in `CHANGELOG.md` works as well, but conflicts with each pull request that adds one at the same place.
+4. A change that makes or changes a decision that shapes the project, such as a supported platform or the way of releasing, records it in [`docs/decisions/`](docs/decisions/README.md), with the next free number and a row in its index, as [the records of decisions](#records-of-decisions) describe.
+5. Open a pull request whose title is a [Conventional Commit](https://www.conventionalcommits.org/), such as `feat(settings): add a dark mode` or `fix: keep the token secret`. Mark a breaking change with `!`. Pull requests are squashed into one commit named after the title, and the title decides the next version: `fix` a patch, `feat` a minor, `!` a major version, or a minor one while the version is below 1.0.0.
 
 ### The changelog
 
@@ -88,9 +76,7 @@ BOARD_MANAGER=2 bash tests/e2e/run.sh
 bash tests/e2e/browser.sh
 ```
 
-<<<<<<< before updating
-`scripts/check.sh` runs the text checks, Ruff, strict mypy, pytest with every line and branch covered, and in `scripts/check-project.sh` the tests of the cards with Node. To run it before every push on its own, turn on the hook of the repository once: `git config core.hooksPath .githooks`. The end-to-end and browser tests require Docker with Compose. The [development guide](docs/development.md) describes every tool, including the demo instance
-=======
+The end-to-end and browser tests require Docker with Compose. The [development guide](docs/development.md) describes every tool, including the demo instance.
 
 Home Assistant runs on Linux and macOS, but the commands above run on Linux alone, as in the CI: `requirements-test.txt`, compiled for Linux, pins neither the `winrt-runtime` that bleak needs on Windows nor the `pyobjc-core` that it needs on macOS, and `pip install --require-hashes` refuses every package without its pin and hash. On Windows, pytest couldn't start anyway: `homeassistant/runner.py` imports `fcntl`, a module of Python for Unix alone, and pytest-homeassistant-custom-component imports that runner as pytest starts. An install with `--no-deps` or without the hashes doesn't help, so leave the lock file as it is. On macOS, run the checks in the dev container of `.devcontainer/`, below, or in GitHub Codespaces. What works on Windows:
 
@@ -102,8 +88,6 @@ To run them before every push on its own, turn on the hook of the repository onc
 ```sh
 git config core.hooksPath .githooks
 ```
-
->>>>>>> after updating
 
 Git runs the hook only when its file is executable. Windows has no such mode and adds the file as a plain one, which `scripts/check.sh` reports; `git update-index --chmod=+x .githooks/pre-push` and a commit make it executable.
 
