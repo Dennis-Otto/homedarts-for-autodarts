@@ -93,7 +93,7 @@ Git runs the hook only when its file is executable. Windows has no such mode and
 
 Do not include real credentials, board IDs, API keys, private network addresses, or logs containing personal data. Use reserved documentation addresses such as `192.0.2.10` and clearly synthetic values in tests and documentation.
 
-The development container in `.devcontainer/` sets up Python 3.14, Node.js 24 and Docker in one step, for VS Code and GitHub Codespaces, and `bash scripts/check.sh` runs in it. Optional pre-commit hooks run Ruff and basic file checks before each commit: `pip install pre-commit && pre-commit install`.
+The development container in `.devcontainer/` sets up Python 3.14, Node.js 24 and Docker in one step, ShellCheck for the step *Shell scripts* as well, for VS Code and GitHub Codespaces, and `bash scripts/check.sh` runs in it. Optional pre-commit hooks run Ruff and basic file checks before each commit: `pip install pre-commit && pre-commit install`.
 
 ## Translations
 
