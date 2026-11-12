@@ -118,7 +118,7 @@ Mit den Standardwerten, automatischer Start an und keine Pausengrenze, zählt je
 | Training Punkte | Sensor, Summe | Summe aller Punkte. |
 | Training 3-Dart-Average | Sensor | Punkte pro drei Darts, der übliche Durchschnitt im Darts. Vor dem ersten Dart *unbekannt*. |
 | Training Aufnahmen | Sensor, Summe | Aufnahmen mit mindestens einem gezählten Dart. |
-| Training höchste Aufnahme | Sensor | Höchste Aufnahme der Session. |
+| Training höchste Aufnahme | Sensor | Höchste Aufnahme der Session. Darts, die eine verpasste Entnahme zu einer Aufnahme mit mehr als drei Darts zusammenfasst, setzen keine, wie bei den 100+, 140+ und 180er Aufnahmen, zählen aber für Darts, Punkte und Average. |
 | Training 100+ Aufnahmen | Sensor, Summe | Aufnahmen mit 100–139 Punkten. |
 | Training 140+ Aufnahmen | Sensor, Summe | Aufnahmen mit 140–179 Punkten. |
 | Training 180er | Sensor, Summe | Aufnahmen mit drei Triple 20. |
