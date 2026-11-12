@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { $, $$, DEVICE, READY, loadCards, makeHass, mount, text, update, withLanguage } from "./dom.mjs";
+import { $, $$, DEVICE, READY, loadCards, makeHass, mount, settle, text, update, withLanguage } from "./dom.mjs";
 
 const {
   aimBeds,
@@ -861,7 +861,7 @@ function withNames(hass, names) {
   return hass;
 }
 
-test("the bot's seat on the new game screen", () => {
+test("the bot's seat on the new game screen", async () => {
   const hass = withNames(
     makeHass({
       states: { ...READY, ...PEOPLE_BOARD, "number.practice_bot_level": "70" },
@@ -909,6 +909,7 @@ test("the bot's seat on the new game screen", () => {
       bot_level: 60,
     },
   ]);
+  await settle();
   // In German.
   card.hass = withLanguage(update(hass, { "number.practice_bot_level": "20" }), "de");
   $(card, ".lobby-toggle").click();

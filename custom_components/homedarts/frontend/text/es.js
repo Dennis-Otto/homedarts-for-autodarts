@@ -402,6 +402,7 @@ export default {
   "lobby_nobody": "No has elegido a nadie: lanza un jugador sin nombre.",
   "lobby_detection": "La detección está detenida: al empezar se activa.",
   "lobby_tournament_running": "Se está jugando un torneo: al empezar se detiene primero, tras un segundo toque.",
+  "lobby_start_failed": "La partida no ha empezado. Inténtalo de nuevo.",
   "lobby_start": "Empezar {game}",
   "lobby_close": "Cerrar",
   "lobby_end": "Terminar partida",

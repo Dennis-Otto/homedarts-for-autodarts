@@ -820,7 +820,7 @@ const lobbyPlayers = (card) => $$(card, ".lobby-player .who").map((name) => name
 const options = (card) => $$(card, ".option").map((button) => [button.dataset.value, button.getAttribute("aria-pressed")]);
 const started = (hass) => hass.calls.filter(([domain]) => domain === "homedarts");
 
-test("the new game screen starts a round robin of up to eight players, a knockout of more", () => {
+test("the new game screen starts a round robin of up to eight players, a knockout of more", async () => {
   const { hass, card } = setup({ "select.practice_game": { state: "shanghai", attributes: { options: PRACTICE } } });
   $(card, ".lobby-toggle").click();
   assert.deepEqual(
@@ -900,6 +900,10 @@ test("the new game screen starts a round robin of up to eight players, a knockou
       },
     ],
   ]);
+  // The screen waits for the answer of the integration, and closes once the tournament started.
+  assert.equal($(card, ".lobby .start").getAttribute("aria-busy"), "true");
+  assert.equal($(card, ".lobby .start").disabled, true);
+  await settle();
   assert.equal($(card, ".lobby"), null);
 });
 
@@ -1014,13 +1018,38 @@ test("the next test starts without the cards and the timers of the one before", 
   assert.equal(timers(), 0);
 });
 
-test("a new tournament stops the one being played first, after a second tap", async (context) => {
+// The answers of the integration to a start: it checks the new lineup before it says that a
+// tournament is being played, which it says until the one being played stopped. A failure
+// rejects as Home Assistant's connection does, with the key of the integration's message.
+const refusal = (key, message, placeholders) =>
+  Object.assign(new Error(message), {
+    code: "service_validation_error",
+    translation_domain: "homedarts",
+    translation_key: key,
+    translation_placeholders: placeholders,
+  });
+const RUNNING = refusal("tournament_running", "A tournament is being played. Stop it before you start a new one.");
+function answering(hass, answer) {
+  let playing = true;
+  hass.callService = (domain, service, data, target, notify) => {
+    hass.calls.push([domain, service, data]);
+    // The card shows a refusal in its screen, without Home Assistant's toast.
+    assert.equal(notify, false);
+    const failure = answer(service, playing);
+    if (failure) return Promise.reject(failure);
+    if (service === "stop_tournament") playing = false;
+    return Promise.resolve();
+  };
+}
+
+test("a new tournament stops the one being played once it would start, after a second tap", async (context) => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
   const { hass, card } = setup(
     { ...PLAYING, ...practice(["Alex", "Kim"]) },
     {},
     { device: { primary_config_entry: "entry-1" } }
   );
+  answering(hass, (service, playing) => (service === "start_tournament" && playing ? RUNNING : null));
   $(card, ".lobby-toggle").click();
   lobbyTap(card, "mode", "tournament");
   typeName(card, "Sam");
@@ -1037,41 +1066,82 @@ test("a new tournament stops the one being played first, after a second tap", as
   assert.equal(text(card, ".lobby .start"), "Start tournament");
   lobbyTap(card, "start");
   lobbyTap(card, "start");
-  assert.equal($(card, ".lobby"), null);
-  // The stop has to succeed before the new tournament starts.
-  assert.deepEqual(started(hass), [["homedarts", "stop_tournament", { config_entry_id: "entry-1" }]]);
+  // The integration checks the new tournament first; the one being played stops only then.
+  assert.deepEqual(started(hass).map(([, service]) => service), ["start_tournament"]);
+  assert.notEqual($(card, ".lobby"), null);
   await settle();
   assert.deepEqual(
-    started(hass).map(([, service, data]) => [service, data.players]),
+    started(hass).map(([, service, data]) => [service, data.players ?? data]),
     [
-      ["stop_tournament", undefined],
+      ["start_tournament", ["Alex", "Kim", "Sam"]],
+      ["stop_tournament", { config_entry_id: "entry-1" }],
       ["start_tournament", ["Alex", "Kim", "Sam"]],
     ]
   );
+  assert.equal($(card, ".lobby"), null);
 });
 
-test("a stop that fails leaves the tournament being played, and a match starts at once", async () => {
+test("a tournament that the integration refuses leaves the one being played and the screen with its players", async () => {
   const { hass, card } = setup({ ...PLAYING, ...practice(["Alex", "Kim"]) });
-  // Home Assistant shows the failure of an action as a toast of its own.
-  hass.callService = (domain, service, data) => {
-    hass.calls.push([domain, service, data]);
-    return service === "stop_tournament" ? Promise.reject(new Error("board unavailable")) : Promise.resolve();
-  };
+  const groups = refusal("tournament_groups", "3 players don't fit into 2 groups.", { count: "3" });
+  answering(hass, (service) => (service === "start_tournament" ? groups : null));
   $(card, ".lobby-toggle").click();
   lobbyTap(card, "mode", "tournament");
   typeName(card, "Sam");
   lobbyTap(card, "start");
   lobbyTap(card, "start");
   await settle();
-  assert.deepEqual(started(hass).map(([, service, data]) => [service, data]), [["stop_tournament", {}]]);
-  // A match during a tournament needs no second tap; nothing to stop for it.
+  // Nothing stopped: the tournament being played goes on.
+  assert.deepEqual(started(hass).map(([, service]) => service), ["start_tournament"]);
+  assert.deepEqual(lobbyPlayers(card), ["Alex", "Kim", "Sam"]);
+  assert.equal(text(card, ".lobby-error"), "3 players don't fit into 2 groups.");
+  assert.equal(
+    text(card, ".said"),
+    "3 players don't fit into 2 groups. A tournament is being played: the start stops it first, after a second tap."
+  );
+  assert.equal($(card, ".lobby .start").disabled, false);
+  // A change answers the message.
+  lobbyTap(card, "toggle", "random_draw");
+  assert.equal($(card, ".lobby-error"), null);
+  // A tournament that the card does not know of is not stopped without the second tap.
+  const idle = setup();
+  answering(idle.hass, (service) => (service === "start_tournament" ? RUNNING : null));
+  $(idle.card, ".lobby-toggle").click();
+  lobbyTap(idle.card, "mode", "tournament");
+  typeName(idle.card, "Sam");
+  lobbyTap(idle.card, "start");
+  await settle();
+  assert.deepEqual(started(idle.hass).map(([, service]) => service), ["start_tournament"]);
+  assert.equal(text(idle.card, ".lobby-error"), RUNNING.message);
+});
+
+test("a stop that fails leaves the tournament being played, and a match starts at once", async () => {
+  const { hass, card } = setup({ ...PLAYING, ...practice(["Alex", "Kim"]) });
+  answering(hass, (service) =>
+    service === "stop_tournament" ? new Error("board unavailable") : service === "start_tournament" ? RUNNING : null
+  );
   $(card, ".lobby-toggle").click();
+  lobbyTap(card, "mode", "tournament");
+  typeName(card, "Sam");
+  lobbyTap(card, "start");
   lobbyTap(card, "start");
   await settle();
   assert.deepEqual(
-    started(hass).map(([, service]) => service),
-    ["stop_tournament", "start_game"]
+    started(hass).map(([, service, data]) => [service, data.players ?? data]),
+    [
+      ["start_tournament", ["Alex", "Kim", "Sam"]],
+      ["stop_tournament", {}],
+    ]
   );
+  // The screen stays with its players and says why.
+  assert.deepEqual(lobbyPlayers(card), ["Alex", "Kim", "Sam"]);
+  assert.equal(text(card, ".lobby-error"), "board unavailable");
+  // A match during a tournament needs no second tap; nothing to stop for it.
+  lobbyTap(card, "mode", "match");
+  lobbyTap(card, "start");
+  await settle();
+  assert.deepEqual(started(hass).map(([, service]) => service), ["start_tournament", "stop_tournament", "start_game"]);
+  assert.equal($(card, ".lobby"), null);
   // Without a running tournament, the start of one needs no second tap either.
   const idle = setup();
   $(idle.card, ".lobby-toggle").click();

@@ -557,20 +557,33 @@ class BoardGames:
         """Draw a tournament, see TournamentDirector.start. With other boards,
         each with its key and name, a tournament on several boards that this
         board, called by `name`, holds: every board plays a match at once if
-        one is ready for it."""
-        if self.host is not None:
-            raise ActionRefused(
-                "board_in_tournament", board=self.host.tournament.name()
-            )
+        one is ready for it.
+
+        Everything that would refuse the new tournament is checked before the
+        refusal that a tournament is being played, on this board or on a board
+        it is a guest of: that refusal means that the new one starts once the
+        one being played is stopped."""
+        self.tournament.lineup(
+            players=options.get("players"),
+            start_scores=options.get("start_scores"),
+            groups=options.get("groups"),
+            advance=options.get("advance"),
+            chosen=options.get("format"),
+        )
+        # The boards of the tournament this board plays in are free once it stops.
+        playing = self.host or self
         others: list[tuple[str, str, BoardGames]] = []
         for key, called, games in boards or []:
             if games is self or any(key == other for other, _, _ in others):
                 continue
-            if games.host is not None or games.tournament.running:
+            ours = games is playing or games.host is playing
+            if not ours and (games.host is not None or games.tournament.running):
                 raise ActionRefused("board_in_tournament", board=called)
             others.append((key, called, games))
         if len(others) >= MAX_BOARDS:
             raise ActionRefused("tournament_boards", max=str(MAX_BOARDS))
+        if self.host is not None:
+            raise ActionRefused("tournament_running")
         seats = [(self.key, name), *((key, called) for key, called, _ in others)]
         director = self.tournament
         if not director.running:

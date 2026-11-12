@@ -402,6 +402,7 @@ export default {
   "lobby_nobody": "Niemand gekozen: één speler gooit zonder naam.",
   "lobby_detection": "De detectie staat uit: bij het starten gaat ze aan.",
   "lobby_tournament_running": "Er wordt een toernooi gespeeld: starten stopt het eerst, na een tweede tik.",
+  "lobby_start_failed": "Het spel is niet gestart. Probeer het opnieuw.",
   "lobby_start": "{game} starten",
   "lobby_close": "Sluiten",
   "lobby_end": "Spel beëindigen",
