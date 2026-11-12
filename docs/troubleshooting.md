@@ -25,7 +25,7 @@ description: "Fix common problems of HomeDarts: setup, repairs, a board that is 
 | *This Autodarts board is already configured* | The board is already set up. Use **Reconfigure** to change its address. |
 | *This address belongs to a different board* | **Reconfigure** found another board at the new address. Enter the address of the board this entry belongs to, or add the other board as a new entry. |
 | *The board announced on your network does not answer* | A discovered board did not answer at the address it announced, for example because the Board Manager stopped meanwhile. Start the Board Manager and add the board again, or enter its address. |
-| *Setup of this board is already in progress* | Another setup dialog for the same board is open, for example the discovered board. Finish or close it. |
+| *Setup of this board is already in progress* | Another setup of the same board is open, as when the board announces itself while you set it up. Finish or close that setup. A discovered board that waits for its confirmation stops neither **Search for boards on this network** nor **Enter board address**: once the board is set up, its discovered card goes away. |
 | *No board of the integration Autodarts is left to take over* | Every board set up under the former name of HomeDarts is taken over already. HomeDarts takes over only its own boards, not those of other integrations named Autodarts: add such a board as a new one ([coming from another tool](coming-from.md)). |
 | The board is not discovered automatically | Automatic discovery needs Board Manager 2 and mDNS in your network. Home Assistant in Docker needs `network_mode: host`, and mDNS does not cross VLANs without a repeater. Use the search or the address instead. |
 

@@ -385,6 +385,35 @@ async def test_search_lists_new_boards_and_connects_locally(hass, aioclient_mock
     assert device.name == "Living room"
 
 
+@pytest.mark.parametrize(
+    ("way", "answer"),
+    [
+        ("discover", {"board_id": "board-1"}),
+        ("local", {"host": "192.0.2.10", "port": 3180}),
+    ],
+)
+async def test_board_set_up_by_hand_while_its_announcement_waits(
+    hass, aioclient_mock, way, answer
+):
+    """Search and address lead to the board, though its discovered card waits."""
+    aioclient_mock.get(DISCOVERY_URL, json=LISTED)
+    mock_board_v2(aioclient_mock)
+    waiting = await hass.config_entries.flow.async_init(
+        "homedarts", context={"source": SOURCE_ZEROCONF}, data=zeroconf()
+    )
+    assert waiting["step_id"] == "zeroconf_confirm"
+    result = await start(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": way}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], answer)
+    await hass.async_block_till_done()
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == "board-1"
+    # Home Assistant ends the waiting discovery once the board has its entry.
+    assert hass.config_entries.flow.async_progress_by_handler("homedarts") == []
+
+
 async def test_search_lists_a_board_without_a_name_by_its_address(hass, aioclient_mock):
     nameless = {"boardId": "board-2", "name": " ", "ip": "192.0.2.40"}
     aioclient_mock.get(DISCOVERY_URL, json=[LISTED[0], nameless])
