@@ -129,6 +129,7 @@ highlight_color: "#00e5ff"
   - *Start session* and *End session* switch the [training session](entities.md#training-session) on and off. Ending needs a second tap to confirm.
   - *New session* ends the running session and starts the next one, also after a second tap.
   - The line next to the buttons tells whether a session is running or when the last one ended.
+- **Training plans:** for administrators, *Training plans* in the header opens the editor of the board's own [training plans](games.md#training-plans): names, the weekdays of the plan of the day, and steps of training games with their limits. It saves them to the options of the board, where YAML still finds them.
 
 ### Options
 

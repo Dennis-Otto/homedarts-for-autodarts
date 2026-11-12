@@ -1528,6 +1528,197 @@ function planOfferHtml(offer, ui) {
   );
 }
 
+// The editor of own plans ---------------------------------------------------------
+
+// The limits of own plans, until the integration tells them with the plans.
+const PLAN_LIMITS = { plans: 20, steps: 12, name: 40, darts: 1000, rounds: 300 };
+const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+// What ends a step: a number of darts or visits, or the end of its game, which these
+// two training games never reach.
+const PLAN_ENDS = ["darts", "rounds", "finished"];
+const ENDLESS_DRILLS = ["checkout", "checkout_121"];
+// A new step, and the number a limit starts with.
+const NEW_STEP = { drill: "around_the_clock", end: "darts", amount: "30" };
+const NEW_AMOUNT = { darts: "30", rounds: "10" };
+
+// The own plans as the options keep them, as the rows of the editor; the number of a
+// limit is the text of its field.
+function planRows(plans) {
+  return (Array.isArray(plans) ? plans : []).map((plan) => ({
+    name: plan.name,
+    weekdays: WEEKDAYS.filter((day) => (plan.weekdays ?? []).includes(day)),
+    steps: plan.steps.map((step) => {
+      const end = PLAN_ENDS.find((key) => key in step) ?? "finished";
+      const row = { drill: step.drill, end, amount: end === "finished" ? "" : String(step[end]) };
+      return step.options ? { ...row, options: step.options } : row;
+    }),
+  }));
+}
+
+// The rows of the editor as the options keep them. The finishes a checkout training
+// stays among, which the editor leaves alone, stay while it is one.
+function storedPlans(rows) {
+  return rows.map((row) => ({
+    name: row.name.trim(),
+    steps: row.steps.map((step) => ({
+      drill: step.drill,
+      ...(step.end === "finished" ? {} : { [step.end]: Number(step.amount) }),
+      ...(step.options && step.drill === "checkout" ? { options: step.options } : {}),
+    })),
+    ...(row.weekdays.length ? { weekdays: row.weekdays } : {}),
+  }));
+}
+
+// The first mistake the editor can tell before saving, as its text and values: a plan
+// without a name, a name twice, or a number that is not a limit. The integration checks
+// the rest.
+function planProblem(rows, limits) {
+  const names = new Set();
+  for (const [index, row] of rows.entries()) {
+    const number = index + 1;
+    const name = row.name.trim();
+    if (!name) return ["plans_error_name", { number }];
+    if (names.has(name.toLowerCase())) return ["plans_error_taken", { name }];
+    names.add(name.toLowerCase());
+    for (const [position, step] of row.steps.entries()) {
+      const max = limits[step.end];
+      const amount = Number(step.amount);
+      if (max && !(step.amount.trim() && Number.isInteger(amount) && amount >= 1 && amount <= max)) {
+        return ["plans_error_amount", { number, step: position + 1, max }];
+      }
+    }
+  }
+  return null;
+}
+
+// The short names of the weekdays in the card's language, from Monday.
+const weekdayNames = (hass) =>
+  WEEKDAYS.map((day, index) => [
+    day,
+    formatter("date", language(hass), { weekday: "short", timeZone: "UTC" }).format(Date.UTC(2024, 0, 1 + index)),
+  ]);
+
+// A step of a plan: its game, the number of its limit and what it counts.
+function planStepHtml(step, index, position, count, ui, limits) {
+  const t = (key, values = {}) => escapeHtml(fill(ui.t(key), values));
+  const at = `data-index="${index}" data-step="${position}"`;
+  const focus = (part) => `data-focus="plans:${index}:${position}:${part}"`;
+  const option = (value, label, chosen) => `<option value="${value}"${chosen ? " selected" : ""}>${escapeHtml(label)}</option>`;
+  const games = DRILLS.map((drill) => option(drill, ui.t(`drill_${drill}`), drill === step.drill)).join("");
+  const ends = PLAN_ENDS.filter((end) => end !== "finished" || !ENDLESS_DRILLS.includes(step.drill))
+    .map((end) => option(end, ui.t(`plans_end_${end}`), end === step.end))
+    .join("");
+  const amount =
+    step.end === "finished"
+      ? ""
+      : `<input type="number" class="plan-amount" data-edit="amount" ${at} ${focus("amount")} min="1"` +
+        ` max="${limits[step.end]}" step="1" inputmode="numeric" required value="${escapeHtml(step.amount)}"` +
+        ` aria-label="${t("plans_amount")}">`;
+  return (
+    `<li class="plan-step"><span class="plan-step-number" aria-hidden="true">${position + 1}</span>` +
+    `<select class="plan-game" data-edit="drill" ${at} ${focus("drill")} aria-label="${t("plans_game")}">${games}</select>` +
+    amount +
+    `<select class="plan-end" data-edit="end" ${at} ${focus("end")} aria-label="${t("plans_end")}">${ends}</select>` +
+    `<button type="button" class="step-remove" data-edit="remove-step" ${at} ${focus("remove")}` +
+    ` aria-label="${t("plans_remove_step", { number: position + 1 })}"${count > 1 ? "" : " disabled"}>` +
+    `<span aria-hidden="true">×</span></button></li>`
+  );
+}
+
+// A plan: its name, the weekdays on which it is the plan of the day, and its steps.
+function planEditHtml(row, index, ui, limits, days) {
+  const t = (key, values = {}) => escapeHtml(fill(ui.t(key), values));
+  const number = index + 1;
+  const at = `data-index="${index}"`;
+  const chips = days
+    .map(
+      ([day, label]) =>
+        `<button type="button" class="day" data-edit="day" ${at} data-day="${day}" data-focus="plans:${index}:${day}"` +
+        ` aria-pressed="${row.weekdays.includes(day)}">${escapeHtml(label)}</button>`
+    )
+    .join("");
+  const steps = row.steps.map((step, position) => planStepHtml(step, index, position, row.steps.length, ui, limits));
+  return (
+    `<li class="plan-edit"><fieldset><legend>${t("plans_plan", { number })}</legend>` +
+    `<label class="manage-field">${t("plans_name")}<input type="text" data-edit="name" ${at}` +
+    ` data-focus="plans:${index}:name" maxlength="${limits.name}" autocomplete="off" required` +
+    ` value="${escapeHtml(row.name)}"></label>` +
+    `<div class="plan-days" role="group" aria-labelledby="plan-days-${index}">` +
+    `<span class="plan-days-label" id="plan-days-${index}">${t("plans_days")}</span>${chips}</div>` +
+    `<ol class="plan-steps">${steps.join("")}</ol>` +
+    `<div class="plan-edit-actions">` +
+    `<button type="button" class="action" data-edit="add-step" ${at} data-focus="plans:${index}:add-step"` +
+    `${row.steps.length < limits.steps ? "" : " disabled"}>${t("plans_add_step")}</button>` +
+    `<button type="button" class="action plan-remove" data-edit="remove" ${at} data-focus="plans:${index}:remove">` +
+    `${t("plans_remove", { number })}</button></div></fieldset></li>`
+  );
+}
+
+// Every own plan of the board, or a word that there is none yet, and a button for one more.
+function plansEditorHtml(rows, ui, limits, days) {
+  const list = rows.length
+    ? `<ol class="plans-list">${rows.map((row, index) => planEditHtml(row, index, ui, limits, days)).join("")}</ol>`
+    : `<p class="muted plans-none">${escapeHtml(ui.t("plans_none"))}</p>`;
+  return (
+    list +
+    `<button type="button" class="action plans-add" data-edit="add" data-focus="plans:add"` +
+    `${rows.length < limits.plans ? "" : " disabled"}>${escapeHtml(ui.t("plans_add"))}</button>`
+  );
+}
+
+// What a change in the editor does to the rows, and the control that has the focus
+// afterwards; null for a change that only a field shows, which needs no new drawing.
+const PLAN_EDITS = {
+  name: (rows, { index }, value) => {
+    rows[index].name = value;
+    return null;
+  },
+  amount: (rows, { index, step }, value) => {
+    rows[index].steps[step].amount = value;
+    return null;
+  },
+  // A game that never ends by itself needs a limit.
+  drill: (rows, { index, step }, value) => {
+    const row = rows[index].steps[step];
+    row.drill = value;
+    if (row.end === "finished" && ENDLESS_DRILLS.includes(value)) Object.assign(row, { end: "rounds", amount: NEW_AMOUNT.rounds });
+    return `plans:${index}:${step}:drill`;
+  },
+  end: (rows, { index, step }, value) => {
+    const row = rows[index].steps[step];
+    row.end = value;
+    if (value !== "finished" && !row.amount) row.amount = NEW_AMOUNT[value];
+    return `plans:${index}:${step}:end`;
+  },
+  day: (rows, { index, day }) => {
+    const { weekdays } = rows[index];
+    rows[index].weekdays = WEEKDAYS.filter((key) => (key === day) !== weekdays.includes(key));
+    return `plans:${index}:${day}`;
+  },
+  "add-step": (rows, { index }) => {
+    rows[index].steps.push({ ...NEW_STEP });
+    return `plans:${index}:${rows[index].steps.length - 1}:drill`;
+  },
+  "remove-step": (rows, { index, step }) => {
+    rows[index].steps.splice(step, 1);
+    return `plans:${index}:add-step`;
+  },
+  add: (rows) => {
+    rows.push({ name: "", weekdays: [], steps: [{ ...NEW_STEP }] });
+    return `plans:${rows.length - 1}:name`;
+  },
+  remove: (rows, { index }) => {
+    rows.splice(index, 1);
+    return "plans:add";
+  },
+};
+
+// A change in the editor, by the data of its control.
+function editPlans(rows, control) {
+  const { edit, index, step, day } = control.dataset;
+  return PLAN_EDITS[edit](rows, { index: Number(index), step: Number(step), day }, control.value);
+}
+
 // What the board shows: a training game, a bull-off, Cricket, a party game, X01, or none.
 function gameView(stateOf) {
   const drill = drillView(stateOf("drill"));
@@ -6835,7 +7026,63 @@ const CSS = `${BASE_CSS}${PAD_CSS}
   }
 `;
 
-const TRAINING_CSS = `${BASE_CSS}
+const DIALOG_CSS = `
+  /* A dialog of a card: the one that asks before a profile changes or goes, and the
+     editor of the training plans. */
+  .manage-dialog {
+    width: min(420px, calc(100vw - 32px)); box-sizing: border-box; padding: 20px; border-radius: 16px;
+    border: 1px solid var(--divider-color, rgba(127,127,127,.3)); color: var(--primary-text-color);
+    background: var(--card-background-color, var(--ha-card-background, #fff));
+  }
+  .manage-dialog::backdrop { background: rgba(0,0,0,.45); }
+  .manage-dialog h2 { margin: 0 0 12px; font-size: 18px; }
+  .manage-dialog p { margin: 0 0 12px; font-size: 14px; }
+  .manage-field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .manage-field :is(input, select) {
+    min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; font: inherit;
+    font-size: max(16px, 1em); font-weight: 400; color: var(--primary-text-color); background: none;
+    border: 2px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .manage-field :is(input, select):focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+  .manage-error { color: var(--ad-error-text); }
+`;
+
+const TRAINING_CSS = `${BASE_CSS}${DIALOG_CSS}
+  .training header .plans-open { flex: 0 0 auto; min-height: 32px; }
+  @media (any-pointer: coarse) { .training header .plans-open { min-height: 40px; } }
+  .plans-dialog { width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); }
+  .plans-list, .plan-steps { display: grid; gap: 12px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .plan-edit fieldset {
+    margin: 0; padding: 12px; border-radius: 12px; min-width: 0;
+    border: 1px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .plan-edit legend { padding: 0 4px; font-size: 14px; font-weight: 700; }
+  .plan-days { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .plan-days-label { flex: 1 0 100%; font-size: 13px; font-weight: 600; }
+  .plan-days .day {
+    min-width: 44px; min-height: 36px; padding: 0 10px; border-radius: 999px; font: inherit; font-size: 13px;
+    font-weight: 600; color: var(--primary-text-color); background: none;
+    border: 2px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .plan-days .day[aria-pressed="true"] { color: #fff; background: var(--ad-accent-fill); border-color: var(--ad-accent-fill); }
+  .plan-steps { gap: 8px; }
+  .plan-step { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .plan-step-number { min-width: 1.5em; font-weight: 700; color: var(--ad-muted-text); font-variant-numeric: tabular-nums; }
+  .plan-step :is(select, input) {
+    min-height: 44px; box-sizing: border-box; padding: 0 10px; border-radius: 12px; font: inherit;
+    font-size: max(16px, 1em); color: var(--primary-text-color); background: none;
+    border: 2px solid var(--divider-color, rgba(127,127,127,.3));
+  }
+  .plan-step :is(select, input):focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+  .plan-step .plan-game { flex: 1 1 12em; min-width: 0; }
+  .plan-step .plan-amount { width: 6em; }
+  .plan-step .step-remove {
+    min-width: 44px; min-height: 44px; border: 0; border-radius: 12px; background: none; font: inherit;
+    font-size: 20px; color: var(--ad-muted-text);
+  }
+  .plan-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .plan-edit-actions .plan-remove { color: var(--ad-error-text); }
+  .plans-add { width: 100%; margin-bottom: 12px; }
   .training { display: flex; flex-direction: column; gap: 18px; padding: 18px; box-sizing: border-box; }
   .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .average {
@@ -7937,7 +8184,7 @@ ${compactPlayers(".scoreboard.full .players:is(.n3, .n4)", 280)}
   .stage[data-layout="full"] .overlay .sum .value { font-size: 5.4cqh; }
 `;
 
-const PLAYERS_CSS = `${BASE_CSS}
+const PLAYERS_CSS = `${BASE_CSS}${DIALOG_CSS}
   .players-card { display: flex; flex-direction: column; gap: 16px; padding: 18px; box-sizing: border-box; }
   .profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
 ${balancedCss(".profiles", 210, 10, 36)}
@@ -7968,23 +8215,6 @@ ${balancedCss(".profiles", 210, 10, 36)}
     font: inherit; font-size: 14px; font-weight: 600; color: var(--primary-text-color);
   }
   .manage-menu [data-action="delete"] { color: var(--ad-error-text); }
-  /* The dialog that asks before a profile changes or goes. */
-  .manage-dialog {
-    width: min(420px, calc(100vw - 32px)); box-sizing: border-box; padding: 20px; border-radius: 16px;
-    border: 1px solid var(--divider-color, rgba(127,127,127,.3)); color: var(--primary-text-color);
-    background: var(--card-background-color, var(--ha-card-background, #fff));
-  }
-  .manage-dialog::backdrop { background: rgba(0,0,0,.45); }
-  .manage-dialog h2 { margin: 0 0 12px; font-size: 18px; }
-  .manage-dialog p { margin: 0 0 12px; font-size: 14px; }
-  .manage-field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
-  .manage-field :is(input, select) {
-    min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; font: inherit;
-    font-size: max(16px, 1em); font-weight: 400; color: var(--primary-text-color); background: none;
-    border: 2px solid var(--divider-color, rgba(127,127,127,.3));
-  }
-  .manage-field :is(input, select):focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
-  .manage-error { color: var(--ad-error-text); }
   .profile-name .avatar { width: 1.6em; height: 1.6em; margin-right: .45em; }
   .profile dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; margin: 4px 0 0; }
   .profile dt { font-size: 12px; color: var(--ad-muted-text); }
@@ -8459,6 +8689,11 @@ function createElements(Base) {
 
     _t(key) {
       return translate(this._hass, key);
+    }
+
+    // Some actions are for administrators; others would only get an error.
+    _admin() {
+      return this._hass.user?.is_admin === true;
     }
 
     _state(name) {
@@ -9581,6 +9816,7 @@ function createElements(Base) {
               <header>
                 <div class="title"></div>
                 <div class="muted since"></div>
+                ${this._admin() ? `<button type="button" class="action plans-open">${t("plans_title")}</button>` : ""}
               </header>
               <div class="daily" hidden>
                 <span class="streak" hidden><span aria-hidden="true">🔥</span> <span class="streak-text"></span></span>
@@ -9609,6 +9845,7 @@ function createElements(Base) {
               }
               ${c.show_sessions ? this._sessionsHtml(t) : ""}
               ${c.show_reset ? this._footerHtml(t) : ""}
+              ${this._admin() ? this._plansDialogHtml(t) : ""}
             </div>
           </div>
         </ha-card>`;
@@ -9647,7 +9884,10 @@ function createElements(Base) {
         sessionState: root.querySelector(".session-state"),
         sessions: root.querySelector(".sessions"),
         sessionRows: root.querySelector(".session-table tbody"),
+        plansOpen: root.querySelector(".plans-open"),
+        plansDialog: root.querySelector(".plans-dialog"),
       };
+      if (this._el.plansDialog) this._buildPlans();
       this._el.newSession?.addEventListener("click", () => {
         if (this.preview) return;
         if (this._confirmed("new_session")) this._press(this._ids.newSession);
@@ -9681,6 +9921,113 @@ function createElements(Base) {
         this._source = button.dataset.source;
         this._update();
       });
+    }
+
+    // The editor of the board's own training plans, for administrators: the plans,
+    // each with its name, its weekdays and its steps, which the options of the board
+    // keep in YAML as well.
+    _plansDialogHtml(t) {
+      return (
+        `<dialog class="manage-dialog plans-dialog" aria-labelledby="plans-title"><form class="plans-form" novalidate>` +
+        `<h2 id="plans-title">${t("plans_title")}</h2><p class="muted">${t("plans_hint")}</p>` +
+        `<div class="plans-body"></div><p class="manage-error plans-error" role="alert" hidden></p>` +
+        `<div class="controls"><button type="button" class="action plans-cancel">${t("manage_cancel")}</button>` +
+        `<button type="submit" class="action primary plans-save">${t("plans_save")}</button></div></form></dialog>`
+      );
+    }
+
+    _buildPlans() {
+      const { plansOpen, plansDialog: dialog } = this._el;
+      const body = dialog.querySelector(".plans-body");
+      plansOpen.addEventListener("click", () => this._openPlans());
+      dialog.querySelector(".plans-cancel").addEventListener("click", () => dialog.close());
+      dialog.querySelector(".plans-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        this._savePlans();
+      });
+      // Typing changes only the rows; a choice, a tap on a weekday or a step added or
+      // removed draws the plans anew.
+      body.addEventListener("input", (event) => {
+        if (event.target.tagName === "INPUT") this._editPlans(event.target);
+      });
+      body.addEventListener("change", (event) => {
+        if (event.target.tagName === "SELECT") this._editPlans(event.target);
+      });
+      body.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-edit]");
+        if (button) this._editPlans(button);
+      });
+      // The keyboard comes back to the button that opened the editor.
+      dialog.addEventListener("close", () => {
+        this._plans = null;
+        plansOpen.focus();
+      });
+    }
+
+    // The editor opens at once and fills with the plans once the integration sent them.
+    async _openPlans() {
+      if (this.preview) return;
+      const dialog = this._el.plansDialog;
+      const body = dialog.querySelector(".plans-body");
+      this._plans = null;
+      this._plansError("");
+      dialog.querySelector(".plans-save").disabled = true;
+      this._setHtml(body, `<p class="muted">${escapeHtml(this._t("plans_loading"))}</p>`);
+      dialog.showModal();
+      try {
+        const result = await this._hass.callWS({ type: "homedarts/plans", device_id: this._deviceId });
+        // Closed meanwhile: the next opening loads them again.
+        if (!dialog.open) return;
+        this._planLimits = { ...PLAN_LIMITS, ...result.limits };
+        this._plans = planRows(result.plans);
+        dialog.querySelector(".plans-save").disabled = false;
+        this._drawPlans(this._plans.length ? "plans:0:name" : "plans:add");
+      } catch (failure) {
+        this._plansError(failure?.message || this._t("plans_failed"));
+      }
+    }
+
+    _drawPlans(focus) {
+      const body = this._el.plansDialog.querySelector(".plans-body");
+      this._setHtml(body, plansEditorHtml(this._plans, this._ui(), this._planLimits, weekdayNames(this._hass)));
+      withFocus(body, focus)?.focus();
+    }
+
+    _editPlans(control) {
+      const focus = editPlans(this._plans, control);
+      if (focus) this._drawPlans(focus);
+    }
+
+    _plansError(message) {
+      const error = this._el.plansDialog.querySelector(".plans-error");
+      error.textContent = message;
+      error.hidden = !message;
+    }
+
+    // What the editor can tell itself it says at once; the integration checks the rest
+    // and says what is wrong in the user's language.
+    async _savePlans() {
+      const dialog = this._el.plansDialog;
+      const save = dialog.querySelector(".plans-save");
+      if (save.disabled) return;
+      const problem = planProblem(this._plans, this._planLimits);
+      if (problem) {
+        this._plansError(fill(this._t(problem[0]), problem[1]));
+        return;
+      }
+      save.disabled = true;
+      try {
+        await this._hass.callWS({
+          type: "homedarts/save_plans",
+          device_id: this._deviceId,
+          plans: storedPlans(this._plans),
+          language: language(this._hass),
+        });
+        dialog.close();
+      } catch (failure) {
+        this._plansError(failure?.message || this._t("plans_failed"));
+        save.disabled = false;
+      }
     }
 
     _confirmChanged() {
@@ -11581,10 +11928,6 @@ function createElements(Base) {
       });
     }
 
-    _admin() {
-      return this._hass.user?.is_admin === true;
-    }
-
     // The board's config entry, for the actions, which need it with several boards.
     _entry() {
       const device = this._hass.devices?.[this._deviceId];
@@ -12354,6 +12697,12 @@ export {
   planMeta,
   planButtons,
   planOfferHtml,
+  planProblem,
+  planRows,
+  plansEditorHtml,
+  storedPlans,
+  editPlans,
+  weekdayNames,
   sectorAt,
   setupView,
   shortProcessor,

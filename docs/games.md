@@ -545,7 +545,9 @@ Four plans come with the integration:
 
 **The plan of the day:** when no game is on the board, the scoreboard offers today's plan with one tap: on Monday and Thursday *Warm-up 15 minutes*, on Tuesday and Friday *Doubles day*, on Wednesday and Sunday *Checkout day* and on Saturday *JDC week*. Once you finished it, the offer says so, and you can start it again. An own plan with `weekdays` takes the place of the plan on these days.
 
-**Your own plans** are a list in YAML, either in the options of the board (*Settings → Devices & services → HomeDarts → Configure*) or in the action [`homedarts.start_plan`](entities.md#training-plans-homedartsstart_plan):
+**Your own plans** come from the editor of the [training card](cards.md#training-card): an administrator taps *Training plans* in its header and gets every own plan of the board, each with its name, the weekdays on which it is the plan of the day as chips, and its steps as rows of a training game, a number and what it counts (darts, visits, or the end of its game). *Add plan* and *Add step* make one more, the × removes a step, and *Save* keeps the plans for the board at once, without loading it again, so a game or a plan on the board goes on. The editor names a plan without a name, a name twice or a number out of range before it saves, and the integration checks the rest and says what is wrong in your language. Users without administrator rights don't get the button, as the plans belong to the board.
+
+The plans are the same list in YAML that the options of the board (*Settings → Devices & services → HomeDarts → Configure*) show, and the action [`homedarts.start_plan`](entities.md#training-plans-homedartsstart_plan) takes one for a single run:
 
 ```yaml
 - name: Tuesday evening
@@ -567,7 +569,9 @@ A plan has a name and up to 12 steps, and a board up to 20 own plans. A step nam
 - `rounds`: after this many visits;
 - `until: finished`: with the end of the game, the default. The checkout training and the 121 checkout never end by themselves, so they need `darts` or `rounds`.
 
-With `options`, the checkout training stays among the finishes from `low` to `high`.
+With `options`, the checkout training stays among the finishes from `low` to `high`. The editor keeps them as they are while the step stays a checkout training; set them in YAML.
+
+When a list is not valid, the options of the board keep it in the form and say which plan and which step is at fault and why, such as *Plan 2 (Tuesday evening), step 3: darts_at_bull is not a training game*, followed by the games that are. The same text comes in the editor of the training card.
 
 A plan is for one player, like every training game, and goes on after a restart of Home Assistant in the middle of a step. A visit that ended a step cannot be [undone](#corrections-and-darts-entered-by-hand), as the next game is on the board by then. Another game that you start on the board ends the plan, and no plan starts during a tournament. [`plan_step_finished` and `plan_finished`](entities.md#board-events) announce the results, the [weekly report](entities.md#weekly-report) and the [training calendar](entities.md#training-calendar) count the finished plans, and the [achievement](entities.md#achievements) *Training plans* has its tiers at 1, 10 and 100.
 

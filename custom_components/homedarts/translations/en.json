@@ -130,7 +130,7 @@
           "online_bridge": "Opens a secret webhook address for the browser extension. The next step shows it.",
           "online_bridge_remote": "Only for an https address through Home Assistant Cloud or your own domain. Off: only devices in your home network can call the address.",
           "online_bridge_new_address": "The current address stops working. Enter the new one in Tools for Autodarts.",
-          "plans": "A list in YAML: every plan with a `name`, its `steps` and, if you like, the `weekdays` on which it is the plan of the day. The page Training plans of the documentation has an example. An empty list is none."
+          "plans": "A list in YAML: every plan with a `name`, its `steps` and, if you like, the `weekdays` on which it is the plan of the day. The page Training plans of the documentation has an example. An empty list is none. The training card has an editor for them as well."
         }
       },
       "online_bridge": {
@@ -139,7 +139,18 @@
       }
     },
     "error": {
-      "invalid_plans": "These plans are not valid. Every plan needs a name of its own and one to twelve steps. Every step names a training game as `drill` and at most one of `darts`, `rounds` and `until`. The checkout training and the 121 ladder never end by themselves and need `darts` or `rounds`."
+      "plans_list": "The plans are a list of at most {plans} plans. Start every plan with `- name:`.",
+      "plan_fields": "Plan {plan} is not valid: a plan has a `name`, its `steps` and, if you like, `weekdays`, and nothing else.",
+      "plan_name": "Plan {plan} needs a `name` of 1 to 40 characters.",
+      "plan_name_taken": "Plan {plan}: the name {value} is taken by another plan or by one that comes with HomeDarts. Every plan needs a name of its own.",
+      "plan_steps": "Plan {plan} needs a list of 1 to 12 `steps`.",
+      "plan_weekdays": "Plan {plan}: {value} is not a weekday. Write the `weekdays` as a list of monday to sunday.",
+      "step_fields": "Plan {plan}, step {step} is not valid: a step has a `drill`, at most one of `darts`, `rounds` and `until`, and `options` only in the checkout training.",
+      "step_drill": "Plan {plan}, step {step}: {value} is not a training game. Write one of {drills}.",
+      "step_limits": "Plan {plan}, step {step} has more than one limit. Keep one of `darts`, `rounds` and `until`.",
+      "step_limit": "Plan {plan}, step {step}: `darts` is a whole number from 1 to 1000, `rounds` one from 1 to 300, and `until` can only be `finished`.",
+      "step_endless": "Plan {plan}, step {step}: {value} never ends by itself and needs `darts` or `rounds`.",
+      "step_options": "Plan {plan}, step {step}: only `checkout` has `options`, a `low` and a `high` from 2 to 170 with a finish of three darts between them."
     }
   },
   "entity": {

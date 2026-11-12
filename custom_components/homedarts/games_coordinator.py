@@ -44,7 +44,7 @@ from .calls import Caller
 from .const import CONF_PLANS, DOMAIN, event_signal
 from .errors import ActionRefused
 from .games import Announcement, BoardGames, Event
-from .plans import own_plans
+from .plans import Plan, own_plans, own_stored
 from .positions import Aim
 from .quality import RECALIBRATE_RATE, RECOVERED_RATE
 from .report import BoardReports
@@ -618,6 +618,21 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         with refusals():
             events = self.games.start_plan(dt_util.now(), plan, name, steps, player)
         await self._async_changed(events)
+
+    async def async_save_plans(self, plans: tuple[Plan, ...]) -> None:
+        """Keep these own plans in the options of the board, where the options
+        flow keeps them, and use them at once: unlike the options flow, the
+        board is not loaded again, so a game or a plan being played goes on."""
+        options = {
+            key: value
+            for key, value in self._entry.options.items()
+            if key != CONF_PLANS
+        }
+        if plans:
+            options[CONF_PLANS] = own_stored(plans)
+        self.hass.config_entries.async_update_entry(self._entry, options=options)
+        self.games.plans.custom = plans
+        await self._async_changed()
 
     async def async_next_plan_step(self) -> None:
         """Skip the step of the training plan being played."""

@@ -130,7 +130,7 @@
           "online_bridge": "Öffnet eine geheime Webhook-Adresse für die Browser-Erweiterung. Der nächste Schritt zeigt sie.",
           "online_bridge_remote": "Nur für eine https-Adresse über Home Assistant Cloud oder deine eigene Domain. Aus: Nur Geräte in deinem Heimnetz können die Adresse aufrufen.",
           "online_bridge_new_address": "Die bisherige Adresse funktioniert dann nicht mehr. Trage die neue in Tools for Autodarts ein.",
-          "plans": "Eine Liste in YAML: jeder Plan mit einem `name`, seinen `steps` und, wenn du möchtest, den `weekdays`, an denen er der Plan des Tages ist. Die Seite Trainingspläne der Dokumentation hat ein Beispiel. Eine leere Liste bedeutet keine Pläne."
+          "plans": "Eine Liste in YAML: jeder Plan mit einem `name`, seinen `steps` und, wenn du möchtest, den `weekdays`, an denen er der Plan des Tages ist. Die Seite Trainingspläne der Dokumentation hat ein Beispiel. Eine leere Liste bedeutet keine Pläne. Die Trainingskarte hat dafür auch einen Editor."
         }
       },
       "online_bridge": {
@@ -139,7 +139,18 @@
       }
     },
     "error": {
-      "invalid_plans": "Diese Pläne sind nicht gültig. Jeder Plan braucht einen eigenen Namen und ein bis zwölf Schritte. Jeder Schritt nennt ein Trainingsspiel als `drill` und höchstens eines von `darts`, `rounds` und `until`. Das Checkout-Training und die 121-Leiter enden nie von selbst und brauchen `darts` oder `rounds`."
+      "plans_list": "Die Pläne sind eine Liste von höchstens {plans} Plänen. Beginne jeden Plan mit `- name:`.",
+      "plan_fields": "Plan {plan} ist nicht gültig: Ein Plan hat einen `name`, seine `steps` und, wenn du möchtest, `weekdays`, sonst nichts.",
+      "plan_name": "Plan {plan} braucht einen `name` mit 1 bis 40 Zeichen.",
+      "plan_name_taken": "Plan {plan}: Der Name {value} gehört schon einem anderen Plan oder einem, der mit HomeDarts kommt. Jeder Plan braucht einen eigenen Namen.",
+      "plan_steps": "Plan {plan} braucht eine Liste mit 1 bis 12 `steps`.",
+      "plan_weekdays": "Plan {plan}: {value} ist kein Wochentag. Schreibe die `weekdays` als Liste aus monday bis sunday.",
+      "step_fields": "Plan {plan}, Schritt {step} ist nicht gültig: Ein Schritt hat einen `drill`, höchstens eines von `darts`, `rounds` und `until` und `options` nur im Checkout-Training.",
+      "step_drill": "Plan {plan}, Schritt {step}: {value} ist kein Trainingsspiel. Schreibe eines von {drills}.",
+      "step_limits": "Plan {plan}, Schritt {step} hat mehr als eine Grenze. Behalte eines von `darts`, `rounds` und `until`.",
+      "step_limit": "Plan {plan}, Schritt {step}: `darts` ist eine ganze Zahl von 1 bis 1000, `rounds` eine von 1 bis 300, und `until` kann nur `finished` sein.",
+      "step_endless": "Plan {plan}, Schritt {step}: {value} endet nie von selbst und braucht `darts` oder `rounds`.",
+      "step_options": "Plan {plan}, Schritt {step}: Nur `checkout` hat `options`, ein `low` und ein `high` von 2 bis 170 mit einem Finish aus drei Darts dazwischen."
     }
   },
   "entity": {

@@ -130,7 +130,7 @@
           "online_bridge": "Opent een geheim webhookadres voor de browserextensie. De volgende stap toont het.",
           "online_bridge_remote": "Alleen voor een https-adres via Home Assistant Cloud of je eigen domein. Uit: alleen apparaten in je thuisnetwerk kunnen het adres aanroepen.",
           "online_bridge_new_address": "Het huidige adres werkt dan niet meer. Voer het nieuwe adres in bij Tools for Autodarts.",
-          "plans": "Een lijst in YAML: elk plan met een `name`, zijn `steps` en, als je wilt, de `weekdays` waarop het het plan van de dag is. De pagina Trainingsplannen van de documentatie heeft een voorbeeld. Een lege lijst betekent geen plannen."
+          "plans": "Een lijst in YAML: elk plan met een `name`, zijn `steps` en, als je wilt, de `weekdays` waarop het het plan van de dag is. De pagina Trainingsplannen van de documentatie heeft een voorbeeld. Een lege lijst betekent geen plannen. De trainingskaart heeft er ook een editor voor."
         }
       },
       "online_bridge": {
@@ -139,7 +139,18 @@
       }
     },
     "error": {
-      "invalid_plans": "Deze plannen zijn niet geldig. Elk plan heeft een eigen naam en één tot twaalf stappen nodig. Elke stap noemt een trainingsspel als `drill` en hoogstens één van `darts`, `rounds` en `until`. De checkouttraining en de 121-ladder eindigen nooit vanzelf en hebben `darts` of `rounds` nodig."
+      "plans_list": "De plannen zijn een lijst van hoogstens {plans} plannen. Begin elk plan met `- name:`.",
+      "plan_fields": "Plan {plan} is niet geldig: een plan heeft een `name`, zijn `steps` en, als je wilt, `weekdays`, en verder niets.",
+      "plan_name": "Plan {plan} heeft een `name` van 1 tot 40 tekens nodig.",
+      "plan_name_taken": "Plan {plan}: de naam {value} is al van een ander plan of van een plan dat met HomeDarts meekomt. Elk plan heeft een eigen naam nodig.",
+      "plan_steps": "Plan {plan} heeft een lijst van 1 tot 12 `steps` nodig.",
+      "plan_weekdays": "Plan {plan}: {value} is geen weekdag. Schrijf de `weekdays` als een lijst van monday tot sunday.",
+      "step_fields": "Plan {plan}, stap {step}: niet geldig. Een stap heeft een `drill`, hoogstens één van `darts`, `rounds` en `until`, en `options` alleen in de checkouttraining.",
+      "step_drill": "Plan {plan}, stap {step}: {value} is geen trainingsspel. Schrijf een van {drills}.",
+      "step_limits": "Plan {plan}, stap {step}: meer dan één grens. Houd één van `darts`, `rounds` en `until`.",
+      "step_limit": "Plan {plan}, stap {step}: `darts` is een geheel getal van 1 tot 1000, `rounds` een van 1 tot 300, en `until` kan alleen `finished` zijn.",
+      "step_endless": "Plan {plan}, stap {step}: {value} eindigt nooit vanzelf en heeft `darts` of `rounds` nodig.",
+      "step_options": "Plan {plan}, stap {step}: alleen `checkout` heeft `options`, een `low` en een `high` van 2 tot 170 met daartussen een finish van drie darts."
     }
   },
   "entity": {
