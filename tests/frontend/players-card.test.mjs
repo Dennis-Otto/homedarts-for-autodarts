@@ -799,7 +799,7 @@ test("a tap on a match of the history opens its summary, as the integration answ
   assert.ok($(card, ".match-summary table"));
   // A match that left the history closes, and stays closed when it shows again.
   card.hass = hass = update(hass, lastMatch({ matches: [] }));
-  card.hass = hass = update(hass, lastMatch({ matches: [renamed] }));
+  card.hass = update(hass, lastMatch({ matches: [renamed] }));
   assert.equal(opener(card).getAttribute("aria-expanded"), "false");
   assert.equal($(card, ".match-summary"), null);
   // A tap beside the rows does nothing.
