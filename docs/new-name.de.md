@@ -30,7 +30,7 @@ Die Entitäts-IDs bleiben, und damit auch dein Verlauf und deine Statistiken.
 
 1. Aktualisiere die Integration in HACS und starte Home Assistant neu. HACS installiert HomeDarts neben der alten Integration, die bis zur Übernahme weiterläuft. Meldet HACS *No manifest.json file found 'custom_components/autodarts/manifest.json'*, starte Home Assistant zuerst neu und aktualisiere dann noch einmal: Den neuen Ordner der Integration findet HACS erst bei einem Start.
 2. Öffne **Einstellungen → Geräte & Dienste**. Ein Board mit Board Manager 2 erscheint als gefunden: Wähle **Hinzufügen**. Sonst wähle **Integration hinzufügen → HomeDarts for Autodarts**.
-3. Wähle **Boards der Integration Autodarts übernehmen** und bestätige. HomeDarts übernimmt alle Boards auf einmal.
+3. Wähle **Boards der Integration Autodarts übernehmen** und bestätige. HomeDarts übernimmt alle Boards auf einmal. Wählst du stattdessen **Boards im Netzwerk suchen** oder **Board-Adresse eingeben** und ein Board der alten Integration, bietet HomeDarts auch dort die Übernahme an, statt das Board neu einzurichten.
 4. Starte Home Assistant noch einmal neu: Die Reparatur *Home Assistant neu starten, um den Wechsel zu HomeDarts abzuschließen* erledigt das für dich. Der Neustart entlädt die alte Integration, deren Dateien die Übernahme entfernt hat.
 
 ## Was die Übernahme behält
@@ -57,6 +57,8 @@ Die Reparatur bleibt über die Neustarts erhalten und sieht bei jedem Start von 
 **Ist HomeDarts ein Angebot von Autodarts?** Nein. HomeDarts for Autodarts ist ein inoffizielles Community-Projekt ohne Verbindung zu Autodarts. Es arbeitet mit Autodarts-Boards über die Schnittstelle, die der Board Manager in deinem Netzwerk anbietet.
 
 **Was, wenn sich eine Mediendatei nicht verschieben lässt oder Home Assistant während der Übernahme stoppt?** HomeDarts verschiebt alles andere und lässt die Datei, wo sie ist, mit einer Warnung im Protokoll, die sie nennt; verschiebe sie selbst. Eine Übernahme, die vor ihrem Ende anhält, mit einem Fehler im Protokoll oder weil Home Assistant neu startet, geht beim nächsten Start von Home Assistant weiter; das Board funktioniert solange.
+
+**Ich habe mein Board neu eingerichtet, statt es zu übernehmen. Was nun?** Eine frühere Version von HomeDarts hat ein Board, das du über die Suche gefunden oder dessen Adresse du eingegeben hast, als neues Board eingerichtet, neben dem Board der alten Integration. Das neue Board belegt dann die Board-ID, deshalb bietet die Übernahme das alte nicht mehr an, und es behält seine Entitäten, Statistiken und sein Training. Die Reparatur *Das HomeDarts-Board … blockiert die Übernahme des Autodarts-Boards …* nennt das neue Board: Bestätige sie, dann löscht HomeDarts das neue Board und übernimmt das alte. Was das neue Board inzwischen aufgezeichnet hat, bleibt als Sicherung erhalten, wie beim Löschen eines Boards. Von Hand geht es genauso: Lösche das neue Board unter **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts**, wähle dann **Integration hinzufügen → HomeDarts for Autodarts** und **Boards der Integration Autodarts übernehmen**.
 
 **Muss ich etwas neu einrichten?** Nein. Die Übernahme behält jedes Board mit seinen Entitäten und Statistiken. Nur Automationen, Skripte und YAML-Dashboards, die die alten Aktionen oder Karten nutzen, brauchen die neuen Namen.
 

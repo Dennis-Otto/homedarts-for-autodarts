@@ -1349,6 +1349,20 @@
         }
       }
     },
+    "takeover_duplicate": {
+      "title": "Das HomeDarts-Board {entry} blockiert die Übernahme des Autodarts-Boards {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Autodarts-Board {board} übernehmen",
+            "description": "Das HomeDarts-Board {entry} wurde über die Suche oder seine Adresse neu eingerichtet, für ein Board, das das Autodarts-Board {board} der Integration unter ihrem alten Namen noch belegt. Deshalb kann der Wechsel zu HomeDarts {board} nicht übernehmen, und seine Entitäten, Statistiken, sein Training und seine Optionen bleiben bei der alten Integration.\n\nDas HomeDarts-Board {entry} löschen und das Autodarts-Board {board} übernehmen? Es wird ein Board von HomeDarts, mit seinen Entitäts-IDs, seinem Verlauf und seinem Training, und der Wechsel zu HomeDarts wird abgeschlossen. Was das HomeDarts-Board {entry} seit seiner Einrichtung aufgezeichnet hat, bleibt als Sicherung erhalten, wie beim Löschen eines Boards. Um beide so zu lassen, wie sie sind, ignoriere diesen Hinweis."
+          }
+        },
+        "abort": {
+          "nothing_to_take_over": "Das Board der Integration Autodarts ist nicht mehr eingerichtet, es gibt also nichts mehr zu übernehmen."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Einige Automationen, Skripte oder Dashboards nutzen noch den alten Namen",
       "description": "HomeDarts for Autodarts hat deine Boards übernommen. Diese nutzen noch Aktionen oder Karten der Integration unter ihrem alten Namen Autodarts, die es nicht mehr gibt:\n\n{items}\n\nErsetze in ihren Aktionen `autodarts.` durch `homedarts.`, etwa `homedarts.start_game`, und in den Typen der Karten `custom:autodarts` durch `custom:homedarts`. Diese Reparatur sieht bei jedem Start von Home Assistant erneut nach und verschwindet, sobald nichts mehr übrig ist."

@@ -28,12 +28,17 @@ from typing import Any, Final
 from homeassistant.components.automation import DATA_COMPONENT as AUTOMATIONS
 from homeassistant.components.lovelace.const import LOVELACE_DATA
 from homeassistant.components.lovelace.dashboard import LovelaceStorage
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import (
+    SIGNAL_CONFIG_ENTRY_CHANGED,
+    ConfigEntry,
+    ConfigEntryChange,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.util.hass_dict import HassKey
 
 from .card import async_remove_modules
@@ -51,6 +56,8 @@ CONF_TAKEOVER: Final = "takeover"
 # The repairs once the last board is taken over.
 ISSUE_REFERENCES: Final = "takeover_references"
 ISSUE_RESTART: Final = "takeover_restart"
+# The repair of a board set up anew beside its old entry: <issue>_<entry_id>.
+ISSUE_DUPLICATE: Final = "takeover_duplicate"
 # The marker of a voice pack that the old integration generated.
 OLD_MARK: Final = ".autodarts-voice-pack"
 # An action of the old domain: autodarts.start_game, not play.autodarts.io.
@@ -73,13 +80,75 @@ def old_entries(hass: HomeAssistant) -> list[ConfigEntry]:
     domain autodarts, such as the original HACSAutodarts, stay as they are.
     """
     taken = {entry.unique_id for entry in hass.config_entries.async_entries(DOMAIN)}
+    return [entry for entry in _boards(hass) if entry.unique_id not in taken]
+
+
+@callback
+def _boards(hass: HomeAssistant) -> list[ConfigEntry]:
+    """The boards that the integration set up under its former name."""
     return [
         entry
         for entry in hass.config_entries.async_entries(OLD_DOMAIN, include_ignore=False)
-        if entry.version >= 2
-        and entry.data.get(CONF_BOARD_ID)
-        and entry.unique_id not in taken
+        if entry.version >= 2 and entry.data.get(CONF_BOARD_ID)
     ]
+
+
+@callback
+def async_report_duplicates(hass: HomeAssistant) -> None:
+    """A repair for each board set up anew, by the search or its address, while
+    the old integration still holds it.
+
+    Such an entry takes the board ID, so the takeover no longer offers the old
+    board, which keeps its entities, statistics and training. The repair names
+    the new entry; deleting it, which the repair does once confirmed, brings the
+    takeover back. It goes by itself when either entry goes. An entry that is
+    taking its old one over is no such board, and neither is an ignored one.
+    """
+    old = {entry.unique_id: entry for entry in _boards(hass)}
+    wanted = {
+        f"{ISSUE_DUPLICATE}_{entry.entry_id}": (entry, old[entry.unique_id])
+        for entry in hass.config_entries.async_entries(DOMAIN, include_ignore=False)
+        if entry.unique_id in old and CONF_TAKEOVER not in entry.data
+    }
+    issues = ir.async_get(hass)
+    for domain, issue_id in list(issues.issues):
+        if (
+            domain == DOMAIN
+            and issue_id.startswith(f"{ISSUE_DUPLICATE}_")
+            and issue_id not in wanted
+        ):
+            ir.async_delete_issue(hass, DOMAIN, issue_id)
+    for issue_id, (entry, old_entry) in wanted.items():
+        names = {"board": old_entry.title, "entry": entry.title}
+        data: dict[str, str | int | float | None] = {
+            "entry_id": entry.entry_id,
+            "old_entry_id": old_entry.entry_id,
+            **names,
+        }
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_DUPLICATE,
+            translation_placeholders=names,
+            data=data,
+        )
+
+
+@callback
+def async_watch_duplicates(hass: HomeAssistant) -> None:
+    """Report the boards set up twice now and whenever an entry of either domain
+    is added, changed or removed."""
+
+    @callback
+    def changed(change: ConfigEntryChange, entry: ConfigEntry) -> None:
+        if entry.domain in (DOMAIN, OLD_DOMAIN):
+            async_report_duplicates(hass)
+
+    async_dispatcher_connect(hass, SIGNAL_CONFIG_ENTRY_CHANGED, changed)
+    async_report_duplicates(hass)
 
 
 def takeover_data(old: ConfigEntry) -> dict[str, Any]:

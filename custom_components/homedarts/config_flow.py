@@ -203,6 +203,13 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="nothing_to_take_over")
         return await self._async_take_over(old)
 
+    def _held_by_old_integration(self, board_id: str) -> bool:
+        """Whether a board of the integration under its former name has this ID,
+        which the takeover takes over instead of setting it up anew."""
+        return any(
+            entry.unique_id == board_id for entry in takeover.old_entries(self.hass)
+        )
+
     async def _async_take_over(self, old: ConfigEntry) -> ConfigFlowResult:
         """An entry with the board, data and options of the old one, which its
         setup takes over."""
@@ -413,9 +420,7 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
         self._async_abort_entries_match({CONF_BOARD_ID: identity["board_id"]})
         self.context["title_placeholders"] = {"name": host}
-        if any(
-            entry.unique_id == board_id for entry in takeover.old_entries(self.hass)
-        ):
+        if self._held_by_old_integration(board_id):
             # A board of the integration under its former name: take it over.
             return await self.async_step_takeover()
         self._discovered = {"host": host, "port": port, **identity}
@@ -502,6 +507,12 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
                             )
                         self._abort_if_unique_id_configured()
                         self._async_abort_entries_match({CONF_BOARD_ID: board_id})
+                        if self._held_by_old_integration(board_id):
+                            # Entered or found by the search, as when discovered:
+                            # a new entry would leave the old one running and
+                            # take its board ID, so that nothing could take it
+                            # over any more.
+                            return await self.async_step_takeover()
                         return self._local_entry(host, port, identity)
         return self.async_show_form(
             step_id="local",

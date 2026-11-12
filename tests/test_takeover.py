@@ -18,6 +18,7 @@ from homeassistant.config_entries import (
     SOURCE_IMPORT,
     SOURCE_USER,
     SOURCE_ZEROCONF,
+    ConfigEntryDisabler,
     ConfigEntryState,
 )
 from homeassistant.core import CoreState
@@ -32,6 +33,7 @@ from pytest_homeassistant_custom_component.common import (
     flush_store,
 )
 
+from custom_components.homedarts.const import DISCOVERY_URL
 from custom_components.homedarts.storage import storage_key
 from custom_components.homedarts.takeover import (
     CONF_TAKEOVER,
@@ -43,7 +45,7 @@ from custom_components.homedarts.takeover import (
 )
 
 from .local_helpers import local_entry_data, mock_board_v2
-from .test_discovery import confirm_repair, zeroconf
+from .test_discovery import LISTED, confirm_repair, zeroconf
 
 DOMAIN = "homedarts"
 BOARD_ID = "manual_0123456789abcdef0123456789abcdef"
@@ -212,6 +214,235 @@ async def test_a_discovered_board_of_the_old_integration_is_taken_over(
     assert data["host"] == "192.0.2.10"
     assert "local_only" not in data
     assert len(hass.config_entries.async_entries(DOMAIN)) == 2
+
+
+async def choose(hass, step: str) -> dict:
+    """Choose a way to set up a board other than the takeover, which comes first."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert result["menu_options"][0] == "takeover"
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": step}
+    )
+
+
+async def assert_taken_over(hass, result: dict) -> None:
+    """The flow offers the takeover of the board, and confirmed, it takes it over
+    with its entities instead of setting it up anew."""
+    assert result["step_id"] == "takeover"
+    assert result["description_placeholders"] == {"boards": "- Autodarts (Wohnzimmer)"}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    await hass.async_block_till_done()
+    entry = result["result"]
+    assert entry.unique_id == "board-1"
+    assert entry.data["host"] == "192.0.2.10"
+    assert not hass.config_entries.async_entries(OLD_DOMAIN)
+    assert hass.config_entries.async_entries(DOMAIN) == [entry]
+    item = er.async_get(hass).async_get("sensor.wohnzimmer_practice_remaining")
+    assert item.config_entry_id == entry.entry_id
+
+
+async def test_a_board_of_the_old_integration_entered_by_address_is_taken_over(
+    hass, hass_storage, aioclient_mock
+):
+    mock_board_v2(aioclient_mock)
+    old_board(
+        hass,
+        hass_storage,
+        "board-1",
+        "old-board",
+        "Wohnzimmer",
+        data=local_entry_data(),
+    )
+    result = await choose(hass, "local")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"host": "192.0.2.10", "port": 3180}
+    )
+    await assert_taken_over(hass, result)
+
+
+async def test_a_board_of_the_old_integration_found_by_the_search_is_taken_over(
+    hass, hass_storage, aioclient_mock
+):
+    aioclient_mock.get(DISCOVERY_URL, json=LISTED)
+    mock_board_v2(aioclient_mock)
+    old_board(
+        hass,
+        hass_storage,
+        "board-1",
+        "old-board",
+        "Wohnzimmer",
+        data=local_entry_data(),
+    )
+    result = await choose(hass, "discover")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"board_id": "board-1"}
+    )
+    await assert_taken_over(hass, result)
+
+
+def fresh_board(hass) -> MockConfigEntry:
+    """A board of this integration set up anew for the board of an old entry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        unique_id=BOARD_ID,
+        title="Garage (new)",
+        data=DATA,
+        entry_id="fresh-entry",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+DUPLICATE = "takeover_duplicate_fresh-entry"
+
+
+async def set_up_twice(hass, hass_storage) -> tuple[MockConfigEntry, MockConfigEntry]:
+    """An old board, and a new entry set up for it beside the old one."""
+    old = old_board(hass, hass_storage)
+    fresh = fresh_board(hass)
+    assert await hass.config_entries.async_setup(fresh.entry_id)
+    await hass.async_block_till_done()
+    return old, fresh
+
+
+async def open_repair(hass, hass_client) -> tuple[object, dict]:
+    """Open the repair of the board set up twice, as the user does in the UI."""
+    assert await async_setup_component(hass, "repairs", {})
+    client = await hass_client()
+    response = await client.post(
+        "/api/repairs/issues/fix", json={"handler": DOMAIN, "issue_id": DUPLICATE}
+    )
+    return client, await response.json()
+
+
+async def test_a_board_set_up_anew_beside_its_old_entry_is_reported(hass, hass_storage):
+    # An ignored board and an entry that takes its old one over are not new.
+    MockConfigEntry(
+        domain=DOMAIN, unique_id="manual_other", source=SOURCE_IGNORE
+    ).add_to_hass(hass)
+    old_board(hass, hass_storage, "manual_other", "old-other", "Keller")
+    MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        unique_id="manual_third",
+        data={**DATA, "board_id": "manual_third", CONF_TAKEOVER: "old-third"},
+        # So that it waits, with its takeover not yet done.
+        disabled_by=ConfigEntryDisabler.USER,
+    ).add_to_hass(hass)
+    old_board(hass, hass_storage, "manual_third", "old-third", "Dachboden")
+    await set_up_twice(hass, hass_storage)
+    issues = ir.async_get(hass)
+    issue = issues.async_get_issue(DOMAIN, DUPLICATE)
+    assert issue.is_fixable
+    assert issue.translation_key == "takeover_duplicate"
+    assert issue.translation_placeholders == {
+        "board": "Autodarts (Garage)",
+        "entry": "Garage (new)",
+    }
+    assert issue.data == {
+        "entry_id": "fresh-entry",
+        "old_entry_id": "old-entry",
+        "board": "Autodarts (Garage)",
+        "entry": "Garage (new)",
+    }
+    assert [
+        issue_id
+        for domain, issue_id in issues.issues
+        if issue_id.startswith("takeover")
+    ] == [DUPLICATE]
+
+
+@pytest.mark.parametrize("language", ["de", "en", "es", "fr", "nl"])
+def test_the_report_tells_the_two_boards_apart_by_their_integration(language):
+    # Both entries are usually called after their board, such as "Autodarts
+    # (Garage)": the texts tell them apart by their integration, not by the titles.
+    texts = json.loads(
+        (
+            Path(__file__).parents[1]
+            / "custom_components/homedarts/translations"
+            / f"{language}.json"
+        ).read_text(encoding="utf-8")
+    )["issues"]["takeover_duplicate"]
+    confirm = texts["fix_flow"]["step"]["confirm"]
+    for text in (texts["title"], confirm["title"], confirm["description"]):
+        assert "{board}" in text
+    for text in (texts["title"], confirm["description"]):
+        assert "HomeDarts" in text.split("{entry}")[0].rsplit("{board}", 1)[-1]
+        assert "Autodarts" in text.split("{board}")[0].rsplit("{entry}", 1)[-1]
+
+
+async def test_the_report_follows_the_two_entries(hass, hass_storage):
+    old, fresh = await set_up_twice(hass, hass_storage)
+    # The entries of other integrations change nothing, and cost no look.
+    other = MockConfigEntry(domain="sun")
+    other.add_to_hass(hass)
+    with patch(
+        "custom_components.homedarts.takeover.async_report_duplicates"
+    ) as report:
+        hass.config_entries.async_update_entry(other, title="Sun")
+    report.assert_not_called()
+    # With the old entry deleted, nothing is left to take over.
+    await hass.config_entries.async_remove(old.entry_id)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, DUPLICATE) is None
+    old_board(hass, hass_storage)
+    hass.config_entries.async_update_entry(fresh, title="Garage (renamed)")
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, DUPLICATE)
+    assert issue.translation_placeholders["entry"] == "Garage (renamed)"
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert "takeover" not in result["menu_options"]
+    # With the new entry deleted instead, the takeover is offered again.
+    await hass.config_entries.async_remove(fresh.entry_id)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, DUPLICATE) is None
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert result["menu_options"][0] == "takeover"
+
+
+@pytest.mark.parametrize("gone", [False, True])
+async def test_the_repair_deletes_the_new_entry_and_takes_the_old_one_over(
+    hass, hass_storage, hass_client, gone
+):
+    _, fresh = await set_up_twice(hass, hass_storage)
+    client, flow = await open_repair(hass, hass_client)
+    assert flow["step_id"] == "confirm"
+    assert flow["description_placeholders"] == {
+        "board": "Autodarts (Garage)",
+        "entry": "Garage (new)",
+    }
+    if gone:
+        # The user deleted the new entry meanwhile: the takeover still comes.
+        await hass.config_entries.async_remove(fresh.entry_id)
+    response = await client.post(f"/api/repairs/issues/fix/{flow['flow_id']}", json={})
+    result = await response.json()
+    await hass.async_block_till_done()
+    assert result["type"] == "create_entry"
+    assert hass.config_entries.async_get_entry(fresh.entry_id) is None
+    assert not hass.config_entries.async_entries(OLD_DOMAIN)
+    (entry,) = hass.config_entries.async_entries(DOMAIN)
+    assert entry.unique_id == BOARD_ID
+    assert entry.title == "Autodarts (Garage)"
+    # The old entities, with their IDs, and the old stores.
+    assert hass.states.get("sensor.garage_practice_remaining").state == "301"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, DUPLICATE) is None
+
+
+async def test_the_repair_keeps_the_new_entry_once_the_old_one_is_gone(
+    hass, hass_storage, hass_client
+):
+    old, fresh = await set_up_twice(hass, hass_storage)
+    client, flow = await open_repair(hass, hass_client)
+    await hass.config_entries.async_remove(old.entry_id)
+    response = await client.post(f"/api/repairs/issues/fix/{flow['flow_id']}", json={})
+    result = await response.json()
+    assert result["type"] == "abort"
+    assert result["reason"] == "nothing_to_take_over"
+    assert hass.config_entries.async_get_entry(fresh.entry_id) is fresh
 
 
 async def test_a_board_taken_over_meanwhile_is_not_taken_over_again(hass, hass_storage):

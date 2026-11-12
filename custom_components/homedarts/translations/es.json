@@ -1349,6 +1349,20 @@
         }
       }
     },
+    "takeover_duplicate": {
+      "title": "La diana de HomeDarts {entry} impide transferir la diana de Autodarts {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Transferir la diana de Autodarts {board}",
+            "description": "La diana de HomeDarts {entry} se configuró de nuevo, mediante la búsqueda o su dirección, para una diana que la diana de Autodarts {board}, de la integración con su nombre antiguo, todavía ocupa. Por eso el cambio a HomeDarts no puede transferir {board}, y sus entidades, estadísticas, entrenamiento y opciones se quedan en la integración antigua.\n\n¿Eliminar la diana de HomeDarts {entry} y transferir la diana de Autodarts {board}? Esta pasa a ser una diana de HomeDarts con sus ID de entidad, su historial y su entrenamiento, y el cambio a HomeDarts se completa. Lo que la diana de HomeDarts {entry} registró desde su configuración se guarda como copia de seguridad, como al eliminar una diana. Para dejar ambas como están, ignora este aviso."
+          }
+        },
+        "abort": {
+          "nothing_to_take_over": "La diana de la integración Autodarts ya no está configurada, así que no queda nada por transferir."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Algunas automatizaciones, scripts o paneles aún usan el nombre antiguo",
       "description": "HomeDarts for Autodarts ha transferido tus dianas. Estos elementos aún usan acciones o tarjetas de la integración con su nombre antiguo, Autodarts, que ya no existen:\n\n{items}\n\nEn sus acciones, sustituye `autodarts.` por `homedarts.`, por ejemplo `homedarts.start_game`, y en los tipos de las tarjetas `custom:autodarts` por `custom:homedarts`. Esta reparación vuelve a comprobarlo en cada inicio de Home Assistant y desaparece cuando ya no queda nada."

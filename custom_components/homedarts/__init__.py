@@ -78,6 +78,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # The repair of what still uses the former name of the integration follows
     # the user's changes from one start to the next.
     async_at_started(hass, takeover.async_check_references)
+    # A board set up anew while the old integration still holds it gets a repair
+    # that brings the takeover back.
+    takeover.async_watch_duplicates(hass)
     return True
 
 

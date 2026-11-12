@@ -1349,6 +1349,20 @@
         }
       }
     },
+    "takeover_duplicate": {
+      "title": "Het HomeDarts-bord {entry} blokkeert de overname van het Autodarts-bord {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Autodarts-bord {board} overnemen",
+            "description": "Het HomeDarts-bord {entry} is opnieuw ingesteld, via het zoeken of via zijn adres, voor een bord dat het Autodarts-bord {board} van de integratie onder haar oude naam nog bezet. Daardoor kan de overstap naar HomeDarts {board} niet overnemen, en blijven zijn entiteiten, statistieken, training en opties bij de oude integratie.\n\nHet HomeDarts-bord {entry} verwijderen en het Autodarts-bord {board} overnemen? Dat wordt een bord van HomeDarts met zijn entiteits-ID's, zijn geschiedenis en zijn training, en de overstap naar HomeDarts wordt afgerond. Wat het HomeDarts-bord {entry} sinds het instellen heeft vastgelegd, blijft bewaard als back-up, zoals bij het verwijderen van een bord. Om beide te laten zoals ze zijn, negeer je deze melding."
+          }
+        },
+        "abort": {
+          "nothing_to_take_over": "Het bord van de integratie Autodarts is niet meer ingesteld, er is dus niets meer over te nemen."
+        }
+      }
+    },
     "takeover_references": {
       "title": "Sommige automatiseringen, scripts of dashboards gebruiken nog de oude naam",
       "description": "HomeDarts for Autodarts heeft je borden overgenomen. Deze gebruiken nog acties of kaarten van de integratie onder haar oude naam, Autodarts, die niet meer bestaan:\n\n{items}\n\nVervang in hun acties `autodarts.` door `homedarts.`, bijvoorbeeld `homedarts.start_game`, en in de typen van de kaarten `custom:autodarts` door `custom:homedarts`. Deze reparatie kijkt bij elke start van Home Assistant opnieuw en verdwijnt zodra er niets meer over is."
