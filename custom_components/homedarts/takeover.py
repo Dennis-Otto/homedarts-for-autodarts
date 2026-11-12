@@ -93,6 +93,12 @@ async def async_take_over(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     The old entry is unloaded first, which saves its stores, so that their copy
     misses nothing; its removal then deletes what is left of it.
+
+    The takeover leaves the data of the entry only when nothing of it is left for
+    this board: at once while other old boards remain, since the last of them
+    finishes, and otherwise once the finish has returned. A finish that fails, or
+    that a stop of Home Assistant interrupts, so runs again at the next setup of
+    the board, and finds done what is done.
     """
     old_id = entry.data[CONF_TAKEOVER]
     if (old := hass.config_entries.async_get_entry(old_id)) is not None:
@@ -101,12 +107,22 @@ async def async_take_over(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _move_registries(hass, old, entry.entry_id)
         await _async_copy_stores(hass, old_id, entry.entry_id)
         await hass.config_entries.async_remove(old_id)
+    if not hass.config_entries.async_entries(OLD_DOMAIN, include_ignore=False):
+        try:
+            await async_finish(hass)
+        # Whatever stops the finish must not stop the board, which has everything
+        # it needs by now: the finish runs again at its next setup.
+        except Exception:
+            _LOGGER.exception(
+                "The takeover of the boards of the integration Autodarts is not "
+                "finished; it continues when %s sets up again",
+                entry.title,
+            )
+            return
     hass.config_entries.async_update_entry(
         entry,
         data={key: value for key, value in entry.data.items() if key != CONF_TAKEOVER},
     )
-    if not hass.config_entries.async_entries(OLD_DOMAIN, include_ignore=False):
-        await async_finish(hass)
 
 
 @callback
@@ -234,20 +250,35 @@ def _report_references(hass: HomeAssistant, references: list[str]) -> None:
 def _move_media(roots: list[str]) -> None:
     """The highlights, exports and voice packs of the old integration move to the
     folders of this one; what is there already stays, and so does the old folder
-    with what could not move."""
+    with what could not move. A folder that is read-only or full, or a file that
+    cannot move, stays with a warning: it stops neither the rest of the media nor
+    the dashboards, the repairs and the removal of the old integration."""
     for root in roots:
         old = Path(root, OLD_DOMAIN)
         if not old.is_dir():
             continue
         new = Path(root, DOMAIN)
-        new.mkdir(exist_ok=True)
-        for item in old.iterdir():
+        try:
+            new.mkdir(exist_ok=True)
+            items = list(old.iterdir())
+        except OSError as err:
+            _LOGGER.warning("The media in %s stay where they are: %s", old, err)
+            continue
+        for item in items:
             if not (new / item.name).exists():
-                item.rename(new / item.name)
+                _move(item, new / item.name)
         for marker in Path(root, VOICES).glob(f"*/{OLD_MARK}"):
-            marker.rename(marker.with_name(MARK))
+            _move(marker, marker.with_name(MARK))
         with suppress(OSError):
             old.rmdir()
+
+
+def _move(source: Path, target: Path) -> None:
+    """Move a file or a folder, or warn that it stays where it is."""
+    try:
+        source.rename(target)
+    except OSError as err:
+        _LOGGER.warning("%s stays where it is: %s", source, err)
 
 
 async def _async_update_dashboards(hass: HomeAssistant) -> list[str]:
