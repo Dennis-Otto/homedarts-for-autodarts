@@ -23,7 +23,7 @@ Die optionale **Online-Brücke** bringt diese Momente mit der Browser-Erweiterun
 
 ## Brücke einrichten
 
-1. Öffne **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts**, dort **Konfigurieren** (das Zahnrad) deines Boards, schalte **Online-Matches von Tools for Autodarts empfangen** ein und sende ab. Diese Optionen haben nur Einträge mit lokalem Board.
+1. Öffne **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts**, dort **Konfigurieren** (das Zahnrad) deines Boards, schalte **Online-Matches von Tools for Autodarts empfangen** ein und sende ab. Diesen Schalter haben nur Einträge mit lokalem Board; die Optionen einer Dartscheibe ohne Autodarts haben nur ihre Trainingspläne.
 2. Der nächste Schritt zeigt die geheime Adresse und fertige Zeilen für Tools for Autodarts. Kopiere die Zeilen und sende ab. Ab jetzt nimmt Home Assistant Aufrufe unter der Adresse an. Öffne die Optionen wieder, wann immer du die Adresse brauchst.
 3. Öffne im Browser am Board die Einstellungen von Tools for Autodarts, schalte **WLED** ein, wähle **Import CSV**, füge die Zeilen ein und speichere. Jede Zeile ist ein Effekt vom Typ **URL** für einen Trigger; lösche die, die du nicht brauchst.
 4. Prüfe, ob die Momente ankommen: Öffne die Adresse mit angehängtem `?event=gameon` in einem Browser in deinem Heimnetz, oder spiele ein Match. Der Sensor **Letztes Ereignis der Online-Brücke** auf der Geräteseite unter *Diagnose* zeigt, wann der letzte Moment ankam, und seinen Trigger.

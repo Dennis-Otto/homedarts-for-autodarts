@@ -142,14 +142,10 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> AutodartsOptionsFlow:
+        """Every board has options, for its own training plans; the form shows
+        the bridge for online matches only where it applies. Home Assistant
+        offers them for every entry, since this method exists."""
         return AutodartsOptionsFlow()
-
-    @classmethod
-    @callback
-    def async_supports_options_flow(cls, config_entry: ConfigEntry) -> bool:
-        """The options switch the bridge for online matches, which delivers its
-        moments as events of the local board; without one, nothing receives them."""
-        return bool(config_entry.data.get(CONF_HOST))
 
     def __init__(self) -> None:
         self._user_input: dict[str, Any] = {}
@@ -571,31 +567,39 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class AutodartsOptionsFlow(OptionsFlowWithReload):
-    """Switch the bridge for online matches on or off and show its address, and
-    keep the own training plans of the board."""
+    """Keep the own training plans of the board and, for a board with a host,
+    switch the bridge for online matches on or off and show its address."""
 
     def __init__(self) -> None:
         self._options: dict[str, Any] = {}
+
+    @property
+    def _has_bridge(self) -> bool:
+        """The bridge delivers its moments as events of the local board; a
+        dartboard without Autodarts has none, so nothing would receive them."""
+        return bool(self.config_entry.data.get(CONF_HOST))
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         options = self.config_entry.options
         if user_input is not None:
-            enabled = user_input[CONF_ONLINE_BRIDGE]
             # An editor that was emptied gives an empty object.
             plans = user_input.get(CONF_PLANS) or []
             if own_plans(plans) is None:
                 return self._options_form({**options, **user_input}, invalid=True)
-            self._options = {
-                **options,
-                CONF_ONLINE_BRIDGE: enabled,
-                CONF_ONLINE_REMOTE: user_input[CONF_ONLINE_REMOTE],
-            }
+            self._options = dict(options)
             if plans:
                 self._options[CONF_PLANS] = plans
             else:
                 self._options.pop(CONF_PLANS, None)
+            if not self._has_bridge:
+                return self.async_create_entry(data=self._options)
+            enabled = user_input.get(CONF_ONLINE_BRIDGE, False)
+            self._options[CONF_ONLINE_BRIDGE] = enabled
+            self._options[CONF_ONLINE_REMOTE] = user_input.get(
+                CONF_ONLINE_REMOTE, False
+            )
             # The address stays when the bridge is switched off, so that the
             # effects in the browser work again after switching it on; a new
             # one replaces it at once, so a leaked address never works again.
@@ -612,17 +616,22 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
         self, values: Mapping[str, Any], invalid: bool = False
     ) -> ConfigFlowResult:
         """The form of the options; `invalid` when the own plans are not valid,
-        which stay in the form to be corrected."""
-        schema: dict[vol.Marker, Any] = {
-            vol.Required(
-                CONF_ONLINE_BRIDGE, default=values.get(CONF_ONLINE_BRIDGE, False)
-            ): bool,
-            vol.Required(
-                CONF_ONLINE_REMOTE, default=values.get(CONF_ONLINE_REMOTE, False)
-            ): bool,
-        }
-        if self.config_entry.options.get(CONF_WEBHOOK_ID):
-            schema[vol.Required(CONF_NEW_ADDRESS, default=False)] = bool
+        which stay in the form to be corrected. The fields of the bridge show
+        only for a board with a host, the plans for every board."""
+        schema: dict[vol.Marker, Any] = {}
+        if self._has_bridge:
+            schema[
+                vol.Required(
+                    CONF_ONLINE_BRIDGE, default=values.get(CONF_ONLINE_BRIDGE, False)
+                )
+            ] = bool
+            schema[
+                vol.Required(
+                    CONF_ONLINE_REMOTE, default=values.get(CONF_ONLINE_REMOTE, False)
+                )
+            ] = bool
+            if self.config_entry.options.get(CONF_WEBHOOK_ID):
+                schema[vol.Required(CONF_NEW_ADDRESS, default=False)] = bool
         schema[vol.Optional(CONF_PLANS, default=values.get(CONF_PLANS, []))] = (
             ObjectSelector()
         )

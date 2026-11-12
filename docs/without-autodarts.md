@@ -58,6 +58,7 @@ Everything the integration does with darts, because it never needed the cameras 
 
 - **Every game:** X01 from 101 to 1001 with legs, sets, double in and out, the checkout route and setup hints, the bull-off, teams and handicaps; the six Cricket games; the nine party games for up to eight; the eight training games; the [bot](games.md#playing-against-the-bot) and [tournaments](games.md#tournaments).
 - **Every statistic:** training sessions, personal bests, the daily goal and the streak, player profiles with their badges, achievements, trends, doubles, the leaderboard, the weekly report, the training calendar and the export. Darts entered by hand count for all of them like detected ones.
+- **Training plans:** the ready-made plans and your own. Store your own in the options of the board, **Settings → Devices & services → HomeDarts for Autodarts → Configure**, as a list in YAML that [Training plans](games.md#training-plans) describes; one with `weekdays` becomes the plan of the day on the scoreboard. The options of a dartboard without Autodarts hold only the plans, since the bridge for online matches needs an Autodarts board in the local network.
 - **The screen at the board:** the [scoreboard](scoreboard.md) with the new game screen, the caller, celebrations and idle mode.
 - **Automations:** the board events, such as `visit_completed` or `leg_won`, come as with a board, with `manual: true` and the source `manual`, so the light show, the callers and the reports [blueprints](automations.md#blueprints) work as they are.
 

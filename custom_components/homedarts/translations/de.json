@@ -119,7 +119,7 @@
     "step": {
       "init": {
         "title": "HomeDarts-Optionen",
-        "description": "**Online-Matches (experimentell):** Die Integration sieht die Darts auf deinem Board, aber nicht das Spiel eines Online-Matches auf play.autodarts.io. Die Browser-Erweiterung Tools for Autodarts kann dessen Momente wie ein Überwerfen, einen Game Shot oder eine 180 an Home Assistant senden. Diese Momente kommen als Board-Ereignisse an, deren Typ mit `online_` beginnt.",
+        "description": "**Eigene Trainingspläne** kommen zu den fertigen Plänen des Scoreboards hinzu; einer mit `weekdays` wird an diesen Tagen zum Plan des Tages.\n\n**Online-Matches (experimentell, nur Autodarts-Boards):** Die Integration sieht die Darts auf deinem Board, aber nicht das Spiel eines Online-Matches auf play.autodarts.io. Die Browser-Erweiterung Tools for Autodarts kann dessen Momente wie ein Überwerfen, einen Game Shot oder eine 180 an Home Assistant senden. Diese Momente kommen als Board-Ereignisse an, deren Typ mit `online_` beginnt.",
         "data": {
           "online_bridge": "Online-Matches von Tools for Autodarts empfangen",
           "online_bridge_remote": "Aufrufe von außerhalb deines Heimnetzes annehmen",

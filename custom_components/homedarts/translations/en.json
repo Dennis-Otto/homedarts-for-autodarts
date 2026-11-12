@@ -119,7 +119,7 @@
     "step": {
       "init": {
         "title": "HomeDarts options",
-        "description": "**Online matches (experimental):** the integration sees the darts on your board, but not the game of an online match on play.autodarts.io. The browser extension Tools for Autodarts can send its moments, such as a bust, a game shot or a 180, to Home Assistant. They arrive as board events whose type starts with `online_`.",
+        "description": "**Own training plans** join the ready-made plans of the scoreboard; one with `weekdays` becomes the plan of the day on those days.\n\n**Online matches (experimental, Autodarts boards only):** the integration sees the darts on your board, but not the game of an online match on play.autodarts.io. The browser extension Tools for Autodarts can send its moments, such as a bust, a game shot or a 180, to Home Assistant. They arrive as board events whose type starts with `online_`.",
         "data": {
           "online_bridge": "Receive online matches from Tools for Autodarts",
           "online_bridge_remote": "Accept calls from outside your home network",
