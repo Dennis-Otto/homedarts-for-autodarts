@@ -924,6 +924,25 @@ def test_a_tournament_being_played_is_stopped_before_a_new_one():
     assert tournament.tournament.players == NAMES[3:6]
 
 
+@pytest.mark.parametrize(
+    ("players", "key"),
+    [
+        (["Tom #2", "Ida", "Ben"], "invalid_player_name"),
+        (["Weiß", "WEISS", "Ben"], "duplicate_player"),
+        (["Tom"], "tournament_players"),
+    ],
+)
+def test_a_new_lineup_is_checked_before_the_tournament_being_played(players, key):
+    # The card stops the tournament being played only for a new one that would
+    # start: a lineup that is refused anyway says why, not that one is played.
+    tournament, practice = director(3)
+    with pytest.raises(ActionRefused) as error:
+        tournament.start(practice, NOW, players=players)
+    assert error.value.key == key
+    assert tournament.tournament.status == PLAYING
+    assert tournament.tournament.players == NAMES[:3]
+
+
 def test_a_finished_tournament_says_so_for_the_next_match():
     tournament, practice = director(3)
     play_out(tournament, practice)

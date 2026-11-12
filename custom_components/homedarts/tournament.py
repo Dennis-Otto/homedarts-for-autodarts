@@ -1073,10 +1073,10 @@ class TournamentDirector:
         same seed. Groups with knockout make groups of about four players
         with 0 groups. Boards, the key and the name of each with this board first,
         make a tournament on several boards, which the other boards then join.
-        A tournament being played has to be stopped first.
+        A tournament being played has to be stopped first; the new lineup is
+        checked before that, so that a refusal for a tournament being played
+        means that the new one starts once it is stopped.
         """
-        if self.running:
-            raise ActionRefused("tournament_running")
         check_names(list(players or []))
         given_starts = list(start_scores or [])
         entrants = [
@@ -1111,6 +1111,8 @@ class TournamentDirector:
                 groups=str(drawn),
                 advance=str(advance),
             )
+        if self.running:
+            raise ActionRefused("tournament_running")
         self.configure(players=names, groups=groups, advance=advance, **setup)
         if seed is None and self.setup.random_draw:
             seed = _RANDOM.randint(1, MAX_SEED)

@@ -403,6 +403,7 @@ export default {
   "lobby_nobody": "Niemand gewählt: Ein Spieler wirft ohne Namen.",
   "lobby_detection": "Die Erkennung ist gestoppt: Der Start schaltet sie ein.",
   "lobby_tournament_running": "Es läuft ein Turnier: Der Start beendet es zuerst, nach einem zweiten Tippen.",
+  "lobby_start_failed": "Das Spiel ist nicht gestartet. Versuch es noch einmal.",
   "lobby_start": "{game} starten",
   "lobby_close": "Schließen",
   "lobby_end": "Spiel beenden",

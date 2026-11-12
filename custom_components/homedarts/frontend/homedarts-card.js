@@ -2454,8 +2454,20 @@ function pictureUrl(value, hass) {
 const avatarHtml = (picture) =>
   picture ? `<img class="avatar" src="${escapeHtml(picture)}" alt="" draggable="false">` : "";
 
-// Names are the same player regardless of upper and lower case, as in the integration.
-const nameKey = (name) => String(name ?? "").trim().toLowerCase();
+// The characters no player name contains, as NAME_EXCLUDED of the integration: Home
+// Assistant would run curly brackets, percent and number signs as a template, and
+// control characters break file names and messages.
+// eslint-disable-next-line no-control-regex -- the control characters are what it excludes
+const NAME_EXCLUDED = /[{}%#\u0000-\u001f\u007f-\u009f]/g;
+
+// A player name as the integration keeps it (clean_name): without those characters,
+// trimmed and at most 20 characters long.
+const cleanName = (name) => String(name ?? "").replace(NAME_EXCLUDED, "").trim().slice(0, LOBBY_LIMITS.name).trim();
+
+// Names are the same player regardless of upper and lower case, as in the integration,
+// which compares them case-folded: the lower case of the upper case folds Weiß and WEISS
+// into one name, as Python's casefold does.
+const nameKey = (name) => cleanName(name).toUpperCase().toLowerCase();
 
 // The person each player is linked to, with the picture and whether they are home.
 function personLinks(hass, profiles) {
@@ -2700,7 +2712,8 @@ function lobbyChange(choice, action, value) {
     const { advance, most } = groupSetup(next);
     next.advance = Math.min(Math.max(advance + index, 1), most);
   } else if (action === "add") {
-    const name = String(value ?? "").trim().slice(0, LOBBY_LIMITS.name);
+    // The name as the integration takes it: Tom #2 plays as Tom 2, and Weiß is WEISS.
+    const name = cleanName(value);
     if (room && name && !next.players.some((player) => nameKey(player) === nameKey(name))) {
       next.players.push(name);
       next.starts.push(0);
@@ -3025,11 +3038,15 @@ function lobbyHtml(choice, ui) {
         button("format", format, text(`tournament_${format}`), ` class="option" aria-pressed="${choice.format === format}"`)
       ).join("")}</div>`
     : "";
-  const blocked = lobbyBlocked(choice);
-  // The screen's live region reads the hints out; here they are shown.
-  const hints = lobbyHints(choice, ui)
-    .map((hint) => `<span class="lobby-hint">${escapeHtml(hint)}</span>`)
-    .join("");
+  // The start waits for the answer of the integration, which one tap asks for.
+  const blocked = lobbyBlocked(choice) || ui.starting;
+  // The screen's live region reads the hints out; here they are shown, after why the
+  // integration refused the last start.
+  const hints =
+    (ui.error ? `<span class="lobby-hint lobby-error">${escapeHtml(ui.error)}</span>` : "") +
+    lobbyHints(choice, ui)
+      .map((hint) => `<span class="lobby-hint">${escapeHtml(hint)}</span>`)
+      .join("");
   const actions =
     `<div class="lobby-actions">${hints}` +
     (ui.running || ui.tournamentRunning
@@ -3049,7 +3066,7 @@ function lobbyHtml(choice, ui) {
         : choice.tournament
           ? text("tournament_start")
           : text("lobby_start", { game: ui.name(choice.game) }),
-      ` class="start${ui.confirmStart ? " confirm" : ""}"${blocked ? " disabled" : ""}`
+      ` class="start${ui.confirmStart ? " confirm" : ""}"${blocked ? " disabled" : ""}${ui.starting ? ' aria-busy="true"' : ""}`
     ) +
     `</div>`;
   return (
@@ -7419,6 +7436,7 @@ const SCOREBOARD_CSS = `${BASE_CSS}${PAD_CSS}
   .scoreboard.full.choosing .lobby-actions { align-self: end; }
   @container (max-width: 880px) { .scoreboard.full.choosing .lobby { grid-template-rows: auto auto minmax(0, 1fr); } }
   .lobby-hint { flex: 1 1 100%; font-weight: 700; color: var(--ad-warn-text); }
+  .lobby-hint.lobby-error { color: var(--ad-error-text); }
   .lobby-hint:empty { display: none; }
   .lobby .secondary { background: none; }
   .lobby .start {
@@ -10971,13 +10989,16 @@ function createElements(Base) {
     }
 
     _lobbyAction(action, value) {
-      if (this.preview) return;
+      // The screen waits for the answer to its start.
+      if (this.preview || this._starting) return;
       if (action === "open") {
         this._openLobby(false);
         return;
       }
       const choice = this._lobby;
       if (!choice) return;
+      // A change answers the refusal of the last start.
+      this._lobbyError = "";
       if (action === "close") {
         this._lobby = null;
       } else if (action === "start") {
@@ -11034,39 +11055,71 @@ function createElements(Base) {
       // Between the matches of a tournament, its table or bracket shows instead.
       if (this.preview || !games.length || this._lobby || (auto && this._tournamentOwned)) return;
       this._lobby = { ...lobbyChoice(this._board(), games), auto, averages: lobbyAverages(this._state("profiles")) };
+      this._lobbyError = "";
       // The screen that opens by itself also waits the idle time before idle mode takes over.
       this._activity = Date.now();
       this._idleOff();
       this._update();
     }
 
-    // Darts count only while the board detects them: the start switches detection on,
-    // which the new game screen says beforehand.
-    _startGame(choice) {
+    // The screen waits for the answer of the integration: it closes once the game started,
+    // and a start that the integration refuses leaves it with its players and says why.
+    // Darts count only while the board detects them: a start switches detection on, which
+    // the new game screen says beforehand.
+    async _startGame(choice) {
       const options = {
         entry: this._entry(),
         distance: Boolean(this._ids.bullOffDistance),
         bed: Boolean(this._ids.threeInABed),
       };
-      if (this._detectionOff()) this._toggleDetection();
-      if (choice.tournament) this._startTournament(tournamentStartData(choice, options));
-      else this._call("homedarts", "start_game", startGameData(choice, options));
-      this._lobby = null;
+      this._starting = true;
+      try {
+        if (choice.tournament) await this._startTournament(tournamentStartData(choice, options));
+        else await this._action("start_game", startGameData(choice, options));
+        this._lobby = null;
+        if (this._detectionOff()) this._toggleDetection();
+      } catch (failure) {
+        this._lobbyError = await this._refusal(failure);
+      } finally {
+        this._starting = false;
+      }
+      this._update();
     }
 
-    // The integration starts no tournament while one is played: the one being played
-    // stops first, and the new one starts once the stop succeeded. A failure shows
-    // Home Assistant's message, in the language of the user.
+    // The integration checks a new lineup before it says that a tournament is being played:
+    // only a tournament that would start stops the one being played, after the second tap,
+    // and it starts once the stop succeeded.
     async _startTournament(data) {
-      if (this._tournamentRunning()) {
+      try {
+        await this._action("start_tournament", data);
+      } catch (failure) {
+        if (failure?.translation_key !== "tournament_running" || !this._tournamentRunning()) throw failure;
         const entry = this._entry();
+        await this._action("stop_tournament", entry ? { config_entry_id: entry } : {});
+        await this._action("start_tournament", data);
+      }
+    }
+
+    // An action of the integration whose failure the card shows itself, without the toast
+    // of Home Assistant.
+    _action(service, data) {
+      return this._hass.callService("homedarts", service, data, undefined, false);
+    }
+
+    // Why the integration refused an action, in the language of the user as Home Assistant's
+    // toast says it, or the message of the answer.
+    async _refusal(failure) {
+      const { translation_domain: domain, translation_key: key, translation_placeholders: values } = failure ?? {};
+      let text = "";
+      if (domain && key && typeof this._hass.loadBackendTranslation === "function") {
         try {
-          await this._hass.callService("homedarts", "stop_tournament", entry ? { config_entry_id: entry } : {});
+          const localize = await this._hass.loadBackendTranslation("exceptions", domain);
+          text = localize(`component.${domain}.exceptions.${key}.message`, values);
         } catch {
-          return;
+          // The message of the answer says it in English.
         }
       }
-      this._call("homedarts", "start_tournament", data);
+      return text || failure?.message || this._t("lobby_start_failed");
     }
 
     // Detection is stopped on a board that is online.
@@ -11340,11 +11393,13 @@ function createElements(Base) {
           confirmEnd: this._confirm === "end",
           confirmStart: this._confirm === "start",
           detectionOff: this._detectionOff(),
+          starting: Boolean(this._starting),
+          error: this._lobbyError,
         };
         title = t("lobby_title");
         meta = "";
         main = lobbyHtml(choice, lobbyUi);
-        hints = lobbyHints(choice, lobbyUi).join(" ");
+        hints = [this._lobbyError, ...lobbyHints(choice, lobbyUi)].filter(Boolean).join(" ");
       } else if (panel) {
         title = ui.name;
         meta = t(`idle_panel_${panel.panel}`);
