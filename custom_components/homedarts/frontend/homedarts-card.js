@@ -5367,7 +5367,8 @@ function targetSounds(target) {
 function callerSounds(call, has, t) {
   const sound = (key) => (has(key) ? { sound: key } : null);
   const one = (key) => (has(key) ? [{ sound: key }] : null);
-  const name = (words) => sound(nameKey(words)) ?? { text: words };
+  // The file of a name is its plain lower case, not the key of a player: Weiß is weiß.
+  const name = (words) => sound(String(words ?? "").trim().toLowerCase()) ?? { text: words };
   // Every part the first of its sounds that the pack has; without one for each part, none.
   const parts = (choices) => {
     const found = choices.map((keys) => keys.find(has));

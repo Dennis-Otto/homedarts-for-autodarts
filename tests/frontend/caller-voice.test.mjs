@@ -164,6 +164,11 @@ test("a call is the sounds of darts-caller's file names, or nothing the pack can
     { sound: "alex bee" },
   ]);
   assert.deepEqual(sounds({ kind: "match", name: null }, "matchshot"), [{ sound: "matchshot" }]);
+  // The file of a name is its plain lower case, as darts-caller names it, also with ß.
+  assert.deepEqual(sounds({ kind: "match", name: "Weiß" }, "matchshot", "weiß"), [
+    { sound: "matchshot" },
+    { sound: "weiß" },
+  ]);
   assert.equal(sounds({ kind: "match", name: "Alex" }, "alex"), null);
   // What a player requires: one sound, or you_require and the score.
   const alone = { kind: "require", remaining: 40, players: 1, player: 1, name: null };
