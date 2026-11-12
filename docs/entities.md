@@ -118,7 +118,7 @@ The defaults, automatic start on and no pause limit, count every dart as version
 | Training points | Sensor, total | Sum of all dart scores. |
 | Training 3-dart average | Sensor | Points per three darts, the usual darts average. *Unknown* before the first dart. |
 | Training visits | Sensor, total | Visits with at least one counted dart. |
-| Training highest visit | Sensor | Highest visit score of the session. |
+| Training highest visit | Sensor | Highest visit score of the session. Darts that a missed takeout merges into a visit of more than three darts set none, as for the 100+, 140+ and 180 visits, though they count for the darts, points and average. |
 | Training 100+ visits | Sensor, total | Visits with 100–139 points. |
 | Training 140+ visits | Sensor, total | Visits with 140–179 points. |
 | Training 180s | Sensor, total | Visits with three triple 20s. |

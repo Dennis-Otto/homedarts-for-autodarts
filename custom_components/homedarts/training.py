@@ -117,6 +117,12 @@ def _visit_summary(darts: list[dict[str, Any]]) -> dict[str, int]:
     return summary
 
 
+def _visit_high(contribution: dict[str, int]) -> int:
+    """The score a visit offers as the highest visit: none for darts merged
+    after a missed takeout, as for the score bands of _visit_summary."""
+    return contribution["points"] if 0 < contribution["darts"] <= 3 else 0
+
+
 def is_takeout(state: dict[str, Any]) -> bool:
     """The Board Manager reports removal in its status or last event."""
     return any(
@@ -333,7 +339,7 @@ class TrainingSession:
             "ended": self.ended,
             "active": self.active,
             **{key: self._committed[key] + current[key] for key in COUNTERS},
-            "highest_visit": max(self._highest_visit, current["points"]),
+            "highest_visit": max(self._highest_visit, _visit_high(current)),
             "manual_darts": self._manual + self._manual_darts(),
             "total_darts": self._total + self._total_darts(),
             "hits": dict(sorted(hits.items())),
@@ -344,7 +350,7 @@ class TrainingSession:
         current = self._contribution()
         for key in COUNTERS:
             self._committed[key] += current[key]
-        self._highest_visit = max(self._highest_visit, current["points"])
+        self._highest_visit = max(self._highest_visit, _visit_high(current))
         self._manual += self._manual_darts()
         self._total += self._total_darts()
         self._hits.update(self._hit_counts())
