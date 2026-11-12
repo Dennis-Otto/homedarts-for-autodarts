@@ -283,12 +283,11 @@ def test_the_next_match_of_a_board_starts_at_once_when_asked():
 def test_a_board_in_a_tournament_starts_no_other():
     host, guest, third = boards(3)
     start(host, guest)
+    # A board of the tournament plays in one being played: stopping it there
+    # stops the tournament of every board.
     with pytest.raises(ActionRefused) as error:
         start(guest)
-    assert (error.value.key, error.value.placeholders) == (
-        "board_in_tournament",
-        {"board": "Garage"},
-    )
+    assert (error.value.key, error.value.placeholders) == ("tournament_running", {})
     with pytest.raises(ActionRefused) as error:
         start(third, guest)
     assert error.value.placeholders == {"board": "Board 2"}
@@ -302,6 +301,41 @@ def test_a_board_in_a_tournament_starts_no_other():
         {"max": str(MAX_BOARDS)},
     )
     assert third.tournament.tournament is None
+
+
+@pytest.mark.parametrize(
+    ("players", "key"),
+    [
+        (["Tom #2", "Ida", "Ben"], "invalid_player_name"),
+        (["Weiß", "WEISS", "Ben"], "duplicate_player"),
+        (["Tom"], "tournament_players"),
+    ],
+)
+def test_a_board_of_a_tournament_checks_a_new_lineup_first(players, key):
+    # The card stops the tournament being played only for a new one that would
+    # start: on every board of it, a lineup refused anyway says why.
+    host, guest = boards()
+    start(host, guest)
+    for board_games in (guest, host):
+        with pytest.raises(ActionRefused) as error:
+            start(board_games, players=players)
+        assert error.value.key == key
+    assert host.tournament.running
+    assert guest.host is host
+
+
+def test_the_boards_of_the_tournament_being_played_are_free_for_the_next():
+    # The boards of the tournament being played leave it as it stops, so only
+    # the tournament being played stands in the way of a new one with them.
+    host, guest, third = boards(3)
+    start(host, guest)
+    for board_games, others in ((host, (guest,)), (guest, (host,)), (guest, (third,))):
+        with pytest.raises(ActionRefused) as error:
+            start(board_games, *others)
+        assert error.value.key == "tournament_running"
+    host.stop_tournament()
+    start(guest, host)
+    assert host.host is guest
 
 
 def test_the_board_itself_and_a_board_named_twice_count_once():

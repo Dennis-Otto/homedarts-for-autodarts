@@ -1069,7 +1069,7 @@ data:
   pause: 30
 ```
 
-A tournament being played has to be stopped before the next one starts; a finished one is replaced. The action fails with a clear message while a tournament is being played, when the format does not take the number of players, when the players do not fit into the groups, when a name appears twice or contains curly brackets, a percent sign, a number sign or control characters, when the start scores are wrong as above, when a board in `boards` is no board of HomeDarts or is not loaded, when one of the boards plays in a tournament already, or when there are more than eight boards.
+A tournament being played has to be stopped before the next one starts; a finished one is replaced. The action fails with a clear message while a tournament is being played, when the format does not take the number of players, when the players do not fit into the groups, when a name appears twice or contains curly brackets, a percent sign, a number sign or control characters, when the start scores are wrong as above, when a board in `boards` is no board of HomeDarts or is not loaded, when one of the boards plays in a tournament already, or when there are more than eight boards. It checks the new tournament first: the message that a tournament is being played comes only for a tournament that starts once the one being played is stopped, which is how the [new game screen](cards.md#new-game-screen) replaces a tournament without stopping it for one that can't start. On a board that plays in a tournament on several boards, it says that a tournament is being played as well: stopping it there stops it on every board, and its boards are free for the new one.
 
 ### Start the next tournament match: `homedarts.next_tournament_match`
 

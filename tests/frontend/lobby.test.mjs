@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { $, $$, DEVICE, READY, loadCards, makeHass, mount, text, update, window } from "./dom.mjs";
+import { $, $$, DEVICE, READY, loadCards, makeHass, mount, settle, text, update, window } from "./dom.mjs";
 
 const {
   botMatch,
@@ -432,7 +432,7 @@ test("a card that reaches the page before Home Assistant waits for it", () => {
   assert.equal(card.shadowRoot.innerHTML, "");
 });
 
-test("the new game screen starts the chosen game with players, format and rules", () => {
+test("the new game screen starts the chosen game with players, format and rules", async () => {
   const { hass, card } = setup();
   tap(card, ".main .lobby-cta");
   lobbyTap(card, "game", "cricket");
@@ -464,6 +464,9 @@ test("the new game screen starts the chosen game with players, format and rules"
       { game: "cricket", players: ["Kim", "Alex"], legs: 4, sets: 2, bull_off: true },
     ],
   ]);
+  // The screen closes once the game started.
+  assert.equal(choosing(card), true);
+  await settle();
   assert.equal(choosing(card), false);
   assert.equal(text(card, ".main .lobby-cta"), "New game");
   assert.equal($(card, ".lobby-toggle").hidden, true);
@@ -597,7 +600,7 @@ test("X01 rules, bull-off by distance and the board's config entry go with the s
   assert.equal(started(other.hass)[0][2].config_entry_id, "entry-9");
 });
 
-test("Wild Mouse offers three in a bed, which goes with its start", () => {
+test("Wild Mouse offers three in a bed, which goes with its start", async () => {
   const games = { state: "off", attributes: { options: [...OPTIONS, "wild_mouse"] } };
   const { hass, card } = setup({ "select.practice_game": games, "switch.practice_three_in_a_bed": "off" });
   tap(card, ".lobby-toggle");
@@ -617,6 +620,7 @@ test("Wild Mouse offers three in a bed, which goes with its start", () => {
     bull_off: false,
     three_in_a_bed: true,
   });
+  await settle();
   // Other games leave the rule out, and so does a board without it.
   tap(card, ".lobby-toggle");
   lobbyTap(card, "game", "cricket");
@@ -1046,14 +1050,17 @@ test("the start stays at the bottom below both columns, and a live region reads 
   assert.equal(said.textContent, "");
 });
 
-test("a start with detection stopped switches detection on, which the screen says first", () => {
+test("a start with detection stopped switches detection on, which the screen says first", async () => {
   const { hass, card } = setup({ "switch.detection": "off" });
   tap(card, ".lobby-toggle");
   assert.deepEqual($$(card, ".lobby-hint").map((hint) => hint.textContent), ["Detection is stopped: the start switches it on."]);
   lobbyTap(card, "start");
+  // Once the game started: a start that the integration refuses leaves detection alone.
+  assert.deepEqual(hass.calls.map(([domain]) => domain), ["homedarts"]);
+  await settle();
   assert.deepEqual(hass.calls.slice(0, 2), [
-    ["switch", "turn_on", { entity_id: "switch.dartboard_detection" }],
     ["homedarts", "start_game", started(hass)[0][2]],
+    ["switch", "turn_on", { entity_id: "switch.dartboard_detection" }],
   ]);
   // Boards without the switch press their start button; an offline board and a running one are left alone.
   const { "switch.detection": _, ...ready } = READY;
@@ -1061,14 +1068,126 @@ test("a start with detection stopped switches detection on, which the screen say
   const legacy = mount("homedarts-scoreboard-card", buttons);
   tap(legacy, ".lobby-toggle");
   lobbyTap(legacy, "start");
-  assert.deepEqual(buttons.calls[0], ["button", "press", { entity_id: "button.dartboard_start" }]);
+  await settle();
+  assert.deepEqual(buttons.calls[1], ["button", "press", { entity_id: "button.dartboard_start" }]);
   for (const states of [{ "switch.detection": "off", "binary_sensor.local_connected": "off" }, {}]) {
     const other = setup(states);
     tap(other.card, ".lobby-toggle");
     assert.equal($(other.card, ".lobby-hint"), null);
     lobbyTap(other.card, "start");
+    await settle();
     assert.deepEqual(other.hass.calls.map(([domain]) => domain), ["homedarts"]);
   }
+});
+
+// Refused starts ------------------------------------------------------------------
+
+test("a name is added as the integration keeps it, and once in any upper and lower case", () => {
+  let choice = lobbyChoice({ game: "501", players: 1, names: ["Weiß"] }, ["501"]);
+  // Curly brackets, percent and number signs and control characters are no part of a name.
+  choice = lobbyChange({ ...choice, draft: "Tom #2" }, "add", "Tom #2");
+  assert.deepEqual(choice.players, ["Weiß", "Tom 2"]);
+  assert.equal(choice.draft, "");
+  choice = lobbyChange({ ...choice, draft: "{%#}" }, "add", "{%#}");
+  assert.equal(choice.draft, "{%#}");
+  // The integration folds the case of names as Python's casefold does: WEISS is Weiß.
+  for (const name of ["WEISS", "weiss", "tom 2", "Tom \u00072", "TOM 2\u0085"]) {
+    assert.deepEqual(lobbyChange(choice, "add", name).players, ["Weiß", "Tom 2"], name);
+  }
+  // Twenty characters at most, without a space at the end.
+  assert.deepEqual(lobbyChange(choice, "add", "\u0001100% Darts ab sofort und immer").players.at(-1), "100 Darts ab sofort");
+});
+
+test("a typed name with a number sign plays without it", () => {
+  const { hass, card } = setup();
+  tap(card, ".lobby-toggle");
+  const input = $(card, ".lobby-name");
+  input.value = "Tom #2";
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+  lobbyTap(card, "add-name");
+  assert.deepEqual(players(card), ["Alex", "Sam", "Tom 2"]);
+  assert.equal($(card, ".lobby-name").value, "");
+  lobbyTap(card, "start");
+  assert.deepEqual(started(hass)[0][2].players, ["Alex", "Sam", "Tom 2"]);
+});
+
+test("a start that the integration refuses leaves the screen with its players and says why", async () => {
+  const { hass, card } = setup({ "switch.detection": "off" });
+  const refused = Object.assign(new Error("Player names can't contain { } % #."), {
+    translation_domain: "homedarts",
+    translation_key: "invalid_player_name",
+    translation_placeholders: { name: "Tom" },
+  });
+  let failure = refused;
+  hass.callService = (domain, service, data, target, notify) => {
+    hass.calls.push([domain, service, data, notify]);
+    return failure === null ? Promise.resolve() : Promise.reject(failure);
+  };
+  // Home Assistant's own words for the refusal, in the language of the user.
+  const asked = [];
+  hass.loadBackendTranslation = async (category, domain) => {
+    asked.push([category, domain]);
+    return (key, values) => (key === "component.homedarts.exceptions.invalid_player_name.message" ? `Kein Name wie ${values.name}` : "");
+  };
+  tap(card, ".lobby-toggle");
+  lobbyTap(card, "add", "Lea");
+  lobbyTap(card, "start");
+  // The screen waits for the answer, and taps wait with it.
+  assert.equal($(card, ".lobby .start").getAttribute("aria-busy"), "true");
+  lobbyTap(card, "close");
+  assert.equal(choosing(card), true);
+  await settle();
+  assert.deepEqual(hass.calls, [["homedarts", "start_game", started(hass)[0][2], false]]);
+  assert.deepEqual(asked, [["exceptions", "homedarts"]]);
+  assert.equal(choosing(card), true);
+  assert.deepEqual(players(card), ["Alex", "Sam", "Lea"]);
+  assert.equal(text(card, ".lobby-error"), "Kein Name wie Tom");
+  assert.equal($(card, ".lobby .start").hasAttribute("aria-busy"), false);
+  assert.equal($(card, ".lobby .start").disabled, false);
+  assert.equal(text(card, ".said"), "Kein Name wie Tom Detection is stopped: the start switches it on.");
+  // Detection stays as it is for a game that did not start.
+  assert.equal(hass.calls.some(([domain]) => domain === "switch"), false);
+
+  // Without a translation, the message of the answer, and without one either, the card's own words.
+  const message = async (answer, translation) => {
+    failure = answer;
+    hass.loadBackendTranslation = translation;
+    lobbyTap(card, "start");
+    await settle();
+    return text(card, ".lobby-error");
+  };
+  const plain = new Error("Board unavailable");
+  const unknownKey = Object.assign(new Error("Not now"), { translation_domain: "homedarts", translation_key: "other" });
+  const noKey = Object.assign(new Error("No key"), { translation_domain: "homedarts" });
+  const translate = async () => (key) => (key.endsWith(".invalid_player_name.message") ? "Übersetzt" : "");
+  assert.equal(await message(plain, translate), "Board unavailable");
+  assert.equal(await message(unknownKey, translate), "Not now");
+  assert.equal(await message(noKey, translate), "No key");
+  assert.equal(await message(refused, undefined), "Player names can't contain { } % #.");
+  assert.equal(
+    await message(refused, async () => {
+      throw new Error("offline");
+    }),
+    "Player names can't contain { } % #."
+  );
+  assert.equal(await message(undefined, translate), "The game did not start. Try again.");
+  assert.equal(await message(refused, translate), "Übersetzt");
+  // A change answers the message; the screen opens again without it.
+  lobbyTap(card, "remove", "2");
+  assert.equal($(card, ".lobby-error"), null);
+  lobbyTap(card, "start");
+  await settle();
+  lobbyTap(card, "close");
+  assert.equal(choosing(card), false);
+
+  // A start that succeeds closes the screen and switches detection on.
+  failure = null;
+  tap(card, ".lobby-toggle");
+  assert.equal($(card, ".lobby-error"), null);
+  lobbyTap(card, "start");
+  await settle();
+  assert.equal(choosing(card), false);
+  assert.deepEqual(hass.calls.at(-1), ["switch", "turn_on", { entity_id: "switch.dartboard_detection" }, undefined]);
 });
 
 // Fair start ---------------------------------------------------------------------

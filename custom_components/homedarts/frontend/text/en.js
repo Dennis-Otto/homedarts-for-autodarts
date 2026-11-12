@@ -407,6 +407,7 @@ export default {
   "lobby_nobody": "Nobody chosen: one player throws without a name.",
   "lobby_detection": "Detection is stopped: the start switches it on.",
   "lobby_tournament_running": "A tournament is being played: the start stops it first, after a second tap.",
+  "lobby_start_failed": "The game did not start. Try again.",
   "lobby_start": "Start {game}",
   "lobby_close": "Close",
   "lobby_end": "End game",

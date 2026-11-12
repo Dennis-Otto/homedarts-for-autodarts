@@ -1069,7 +1069,7 @@ data:
   pause: 30
 ```
 
-Ein laufendes Turnier muss beendet sein, bevor das nächste beginnt; ein abgeschlossenes wird ersetzt. Die Aktion bricht mit einer klaren Meldung ab, solange ein Turnier läuft, wenn das Format die Zahl der Spieler nicht nimmt, wenn die Spieler nicht in die Gruppen passen, wenn ein Name zweimal vorkommt oder geschweifte Klammern, ein Prozentzeichen, eine Raute oder Steuerzeichen enthält, wenn die Startpunkte wie oben nicht passen, wenn ein Board in `boards` kein Board von HomeDarts oder nicht geladen ist, wenn eines der Boards schon in einem Turnier spielt oder wenn es mehr als acht Boards sind.
+Ein laufendes Turnier muss beendet sein, bevor das nächste beginnt; ein abgeschlossenes wird ersetzt. Die Aktion bricht mit einer klaren Meldung ab, solange ein Turnier läuft, wenn das Format die Zahl der Spieler nicht nimmt, wenn die Spieler nicht in die Gruppen passen, wenn ein Name zweimal vorkommt oder geschweifte Klammern, ein Prozentzeichen, eine Raute oder Steuerzeichen enthält, wenn die Startpunkte wie oben nicht passen, wenn ein Board in `boards` kein Board von HomeDarts oder nicht geladen ist, wenn eines der Boards schon in einem Turnier spielt oder wenn es mehr als acht Boards sind. Sie prüft das neue Turnier zuerst: Die Meldung, dass ein Turnier läuft, kommt nur für ein Turnier, das startet, sobald das laufende beendet ist; so ersetzt die [Spielauswahl](cards.de.md#spielauswahl) ein Turnier, ohne es für eines zu beenden, das nicht starten kann. Auf einem Board, das in einem Turnier auf mehreren Boards spielt, sagt sie ebenso, dass ein Turnier läuft: Dort beendet, endet es auf jedem Board, und seine Boards sind frei für das neue.
 
 ### Nächstes Turniermatch starten: `homedarts.next_tournament_match`
 

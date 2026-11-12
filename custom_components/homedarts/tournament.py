@@ -1049,6 +1049,55 @@ class TournamentDirector:
 
     # -- the tournament ------------------------------------------------------------
 
+    def lineup(
+        self,
+        *,
+        players: list[str] | None = None,
+        start_scores: list[int] | None = None,
+        groups: int | None = None,
+        advance: int | None = None,
+        chosen: str | None = None,
+    ) -> tuple[list[tuple[str, int]], int, int, int]:
+        """Check the players of a new tournament, as start takes them, without
+        touching the one being played: the entrants with their start scores,
+        the groups and qualifiers asked for, and the number of groups drawn.
+        Unset values come from the setup."""
+        check_names(list(players or []))
+        given_starts = list(start_scores or [])
+        entrants = [
+            (_name(name), given_starts[index] if index < len(given_starts) else 0)
+            for index, name in enumerate(
+                self.setup.players if players is None else players
+            )
+            if name.strip()
+        ]
+        names = [name for name, _ in entrants]
+        seen: set[str] = set()
+        for name in names:
+            if name.casefold() in seen:
+                raise ActionRefused("duplicate_player", name=name)
+            seen.add(name.casefold())
+        chosen = chosen or self.setup.format
+        fewest, most = ENTRANTS[chosen]
+        if not fewest <= len(names) <= most:
+            raise ActionRefused(
+                "tournament_players",
+                count=str(len(names)),
+                min=str(fewest),
+                max=str(most),
+            )
+        groups = self.setup.groups if groups is None else groups
+        advance = self.setup.advance if advance is None else advance
+        drawn = groups or auto_groups(len(names))
+        if chosen == GROUPS_KNOCKOUT and not fits_groups(len(names), drawn, advance):
+            raise ActionRefused(
+                "tournament_groups",
+                count=str(len(names)),
+                groups=str(drawn),
+                advance=str(advance),
+            )
+        return entrants, groups, advance, drawn
+
     def start(
         self,
         practice: PracticeGame,
@@ -1073,44 +1122,20 @@ class TournamentDirector:
         same seed. Groups with knockout make groups of about four players
         with 0 groups. Boards, the key and the name of each with this board first,
         make a tournament on several boards, which the other boards then join.
-        A tournament being played has to be stopped first.
+        A tournament being played has to be stopped first; the new lineup is
+        checked before that, so that a refusal for a tournament being played
+        means that the new one starts once it is stopped.
         """
+        entrants, groups, advance, drawn = self.lineup(
+            players=players,
+            start_scores=start_scores,
+            groups=groups,
+            advance=advance,
+            chosen=setup.get("format"),
+        )
+        names = [name for name, _ in entrants]
         if self.running:
             raise ActionRefused("tournament_running")
-        check_names(list(players or []))
-        given_starts = list(start_scores or [])
-        entrants = [
-            (_name(name), given_starts[index] if index < len(given_starts) else 0)
-            for index, name in enumerate(
-                self.setup.players if players is None else players
-            )
-            if name.strip()
-        ]
-        names = [name for name, _ in entrants]
-        seen: set[str] = set()
-        for name in names:
-            if name.casefold() in seen:
-                raise ActionRefused("duplicate_player", name=name)
-            seen.add(name.casefold())
-        chosen = setup.get("format") or self.setup.format
-        fewest, most = ENTRANTS[chosen]
-        if not fewest <= len(names) <= most:
-            raise ActionRefused(
-                "tournament_players",
-                count=str(len(names)),
-                min=str(fewest),
-                max=str(most),
-            )
-        groups = self.setup.groups if groups is None else groups
-        advance = self.setup.advance if advance is None else advance
-        drawn = groups or auto_groups(len(names))
-        if chosen == GROUPS_KNOCKOUT and not fits_groups(len(names), drawn, advance):
-            raise ActionRefused(
-                "tournament_groups",
-                count=str(len(names)),
-                groups=str(drawn),
-                advance=str(advance),
-            )
         self.configure(players=names, groups=groups, advance=advance, **setup)
         if seed is None and self.setup.random_draw:
             seed = _RANDOM.randint(1, MAX_SEED)

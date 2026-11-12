@@ -373,8 +373,7 @@ async def test_the_boards_of_the_action_are_checked(hass, board_and_dartboard):
             config_entry_id=dartboard.entry_id,
             players=PLAYERS,
         )
-    assert error.value.translation_key == "board_in_tournament"
-    assert error.value.translation_placeholders == {"board": "Autodarts Board"}
+    assert error.value.translation_key == "tournament_running"
     await enter(hass, dartboard, "T20", "S1", "D20")
     with pytest.raises(ServiceValidationError) as error:
         await act(hass, "next_tournament_match", config_entry_id=dartboard.entry_id)

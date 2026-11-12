@@ -402,6 +402,7 @@ export default {
   "lobby_nobody": "Aucun joueur choisi\u00a0: un joueur lance sans nom.",
   "lobby_detection": "La détection est arrêtée\u00a0: le lancement l'active.",
   "lobby_tournament_running": "Un tournoi est en cours\u00a0: le lancement l'arrête d'abord, après un second appui.",
+  "lobby_start_failed": "La partie n'a pas démarré. Réessayez.",
   "lobby_start": "Démarrer {game}",
   "lobby_close": "Fermer",
   "lobby_end": "Terminer la partie",
