@@ -577,6 +577,28 @@ async def test_the_list_of_references_outlasts_the_restart(hass, hass_storage):
     }
 
 
+async def test_the_list_of_an_earlier_version_comes_back_after_its_restart(hass):
+    earlier_repair(hass, "- automation.autodarts_start_game")
+    await flush_store(ir.async_get(hass)._store)
+    # The restart after a takeover with an earlier version kept only an inactive
+    # entry of its repair, without the list.
+    restarted = ir.IssueRegistry(hass)
+    await restarted.async_load()
+    hass.data[ir.DATA_REGISTRY] = restarted
+    issue = restarted.async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert not issue.active
+    assert issue.translation_placeholders is None
+    await automations(hass, "autodarts.start_game")
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert issue.active
+    assert issue.is_persistent
+    assert issue.translation_placeholders == {
+        "items": "- automation.autodarts_start_game"
+    }
+
+
 async def test_the_list_follows_the_changes_at_the_next_start(hass):
     hass.set_state(CoreState.not_running)
     earlier_repair(
