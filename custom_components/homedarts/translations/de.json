@@ -1360,6 +1360,21 @@
         }
       }
     },
+    "backup_available_other": {
+      "title": "Ein Backup von {backup} ist für {board} vorhanden",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Backup wiederherstellen",
+            "description": "{board} wurde ohne gespeicherte Daten hinzugefügt, und es gibt ein Backup von {backup} vom {date}, einer Dartscheibe ohne Autodarts, die nicht mehr eingerichtet ist. Eine Dartscheibe ohne Autodarts bekommt mit jeder Einrichtung eine neue Board-ID, darum ist dies das neueste Backup mit Spielerdaten einer solchen Scheibe, das keinem Board gehört, etwa das beim Löschen geschriebene.\n\nIn {board} wiederherstellen? Das Board lädt neu, mit dem Training, den Spielen, den Spielerprofilen mit Fortschritt und Abzeichen, den persönlichen Bestwerten und dem Kalender des Backups; was es seit dem Hinzufügen gespeichert hat, wird ersetzt, und die Backups von {backup} werden die von {board}. Hat es seitdem Spielerdaten gespeichert, werden diese zuerst gesichert. Um neu anzufangen, ignoriere diesen Hinweis."
+          }
+        },
+        "abort": {
+          "board_unavailable": "Das Board ist nicht mehr eingerichtet.",
+          "restore_failed": "Das Backup konnte nicht wiederhergestellt werden. Die Aktion homedarts.restore stellt es wieder her und nennt den Grund, wenn es nicht klappt."
+        }
+      }
+    },
     "takeover_duplicate": {
       "title": "Das HomeDarts-Board {entry} blockiert die Übernahme des Autodarts-Boards {board}",
       "fix_flow": {

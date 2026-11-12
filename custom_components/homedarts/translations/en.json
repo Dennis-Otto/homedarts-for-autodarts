@@ -1360,6 +1360,21 @@
         }
       }
     },
+    "backup_available_other": {
+      "title": "A backup of {backup} is available for {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restore the backup",
+            "description": "{board} was added with nothing stored yet, and there is a backup of {backup}, a dartboard without Autodarts that is no longer set up, from {date}. A dartboard without Autodarts gets a new board ID with every setup, so this is the newest backup with player data of such a board that no board owns, such as the one written when it was deleted.\n\nRestore it into {board}? The board reloads with the training, the games, the player profiles with their progress and badges, the personal bests and the calendar of the backup; what it stored since it was added is replaced, and the backups of {backup} become those of {board}. If it stored player data since, that is backed up first. To start anew, ignore this notice."
+          }
+        },
+        "abort": {
+          "board_unavailable": "The board is no longer set up.",
+          "restore_failed": "The backup could not be restored. The action homedarts.restore restores it and says why it fails."
+        }
+      }
+    },
     "takeover_duplicate": {
       "title": "The HomeDarts board {entry} blocks the takeover of the Autodarts board {board}",
       "fix_flow": {

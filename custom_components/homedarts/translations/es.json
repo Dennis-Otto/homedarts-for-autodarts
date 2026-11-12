@@ -1360,6 +1360,21 @@
         }
       }
     },
+    "backup_available_other": {
+      "title": "Hay una copia de seguridad de {backup} para {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restaurar la copia de seguridad",
+            "description": "{board} se añadió sin datos guardados, y hay una copia de seguridad de {backup} del {date}, una diana sin Autodarts que ya no está configurada. Una diana sin Autodarts recibe un nuevo ID de diana con cada configuración, así que esta es la copia de seguridad más reciente con datos de jugadores de una diana así que no pertenece a ninguna diana, como la que se guardó al eliminarla.\n\n¿Restaurarla en {board}? La diana se recarga con el entrenamiento, los juegos, los perfiles de jugador con su progreso e insignias, los récords personales y el calendario de la copia de seguridad; lo que ha guardado desde que se añadió se reemplaza, y las copias de seguridad de {backup} pasan a ser las de {board}. Si ha guardado datos de jugadores desde entonces, primero se guarda una copia de ellos. Para empezar de cero, ignora este aviso."
+          }
+        },
+        "abort": {
+          "board_unavailable": "La diana ya no está configurada.",
+          "restore_failed": "No se ha podido restaurar la copia de seguridad. La acción homedarts.restore la restaura y explica por qué falla."
+        }
+      }
+    },
     "takeover_duplicate": {
       "title": "La diana de HomeDarts {entry} impide transferir la diana de Autodarts {board}",
       "fix_flow": {

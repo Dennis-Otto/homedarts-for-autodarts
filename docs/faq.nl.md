@@ -82,7 +82,7 @@ In de eigen opslag van Home Assistant, nooit in de cloud: de trainingssessies, h
 
 ### Ik heb mijn bord verwijderd. Zijn mijn statistieken weg?
 
-Nee. Voordat een bord wordt verwijderd, schrijft HomeDarts een back-up van alles wat het heeft opgeslagen naar `homedarts/backups` in de mediamap. Voeg het bord opnieuw toe, en de reparatie *Er is een back-up van …* brengt alles terug; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) zet elke back-up terug. [Backups](statistics.md#backups)
+Nee. Voordat een bord wordt verwijderd, schrijft HomeDarts een back-up van alles wat het heeft opgeslagen naar `homedarts/backups` in de mediamap. Voeg het bord opnieuw toe, en de reparatie *Er is een back-up van …* brengt alles terug. Een dartbord zonder Autodarts krijgt een nieuwe bord-ID als het opnieuw wordt toegevoegd, dus krijgt het de nieuwste back-up van een verwijderd dartbord zonder Autodarts aangeboden, met de naam van dat bord. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) zet elke back-up terug. [Backups](statistics.md#backups)
 
 ## Updates en overstappen
 

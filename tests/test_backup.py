@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
 from homeassistant.core import Context
 from homeassistant.core_config import Config
 from homeassistant.exceptions import (
@@ -208,6 +208,142 @@ async def test_deleting_the_board_removes_the_offer(
     await hass.config_entries.async_remove(again.entry_id)
     await hass.async_block_till_done()
     assert offer(hass, again) is None
+
+
+async def add_by_hand(hass, name: str):
+    """A dartboard without Autodarts set up as a user does, with a new board ID."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": name}
+    )
+    await hass.async_block_till_done()
+    return result["result"]
+
+
+async def act(hass, service: str, **data) -> None:
+    await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    await hass.async_block_till_done()
+
+
+def folder_of(media: Path, entry) -> Path:
+    return media / "homedarts" / "backups" / entry.data["board_id"].replace("_", "-")
+
+
+async def test_a_dartboard_without_autodarts_added_again_gets_its_backup(
+    hass, hass_storage, hass_client, media
+):
+    garage = await add_by_hand(hass, "Garage")
+    await act(hass, "start_game", game="501", players=["Alex", "Sam"])
+    garage.runtime_data.local.games.practice.players[0].remaining = 40
+    await act(hass, "throw_dart", segment="D20")
+    await act(hass, "next_player")
+    await hass.config_entries.async_remove(garage.entry_id)
+    await hass.async_block_till_done()
+    (file,) = folder_of(media, garage).glob("*.json")
+
+    # Added again, it has a new board ID, and the backup of the deleted one is
+    # offered with the name of the board it belonged to.
+    again = await add_by_hand(hass, "Garage 2")
+    assert again.data["board_id"] != garage.data["board_id"]
+    issue = offer(hass, again)
+    assert issue is not None and issue.is_persistent and issue.is_fixable
+    assert issue.translation_key == "backup_available_other"
+    assert issue.translation_placeholders["board"] == "Garage 2"
+    assert issue.translation_placeholders["backup"] == "Garage"
+    assert issue.data["file"] == str(file)
+
+    result = await fix(hass, hass_client, issue.issue_id)
+    assert result["type"] == "create_entry"
+    await hass.async_block_till_done()
+    assert offer(hass, again) is None
+    profiles = again.runtime_data.local.games.practice.profiles
+    assert profiles.players["alex"].legs_won == 1
+    # Its backups are the new board's now, which no other board is offered.
+    assert not folder_of(media, garage).exists()
+    assert [path.name for path in folder_of(media, again).glob("*.json")] == [file.name]
+    assert await hass.config_entries.async_unload(again.entry_id)
+    shed = await add_by_hand(hass, "Shed")
+    assert offer(hass, shed) is None
+
+
+async def test_a_dartboard_without_autodarts_is_offered_no_backup_of_a_board_set_up(
+    hass, aioclient_mock, media
+):
+    garage = await add_by_hand(hass, "Garage")
+    owned = a_board(garage.data["board_id"], "owned", history=[{}])
+    write(folder_of(media, garage), owned)
+    # A deleted board with Autodarts keeps its board ID and gets its own backup.
+    write(
+        media / "homedarts" / "backups" / "board-9",
+        a_board("board-9", "x", history=[{}]),
+    )
+    # A dartboard without Autodarts that holds no player data leaves none to offer.
+    write(media / "homedarts" / "backups" / "manual-empty", a_board(None, "y"))
+    shed = await add_by_hand(hass, "Shed")
+    assert offer(hass, shed) is None
+
+
+async def test_a_backup_of_a_deleted_dartboard_without_autodarts_is_for_one(
+    hass, media
+):
+    old = media / "homedarts" / "backups" / "manual-old"
+    unnamed = {**a_board(None, "old", history=[{}]), "board": None}
+    write(old, unnamed)
+    # A Granboard's board ID comes from its address and stays the same.
+    granboard = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "board_id": "granboard_aabbccddee01",
+            "manual_board": True,
+            "granboard": "AA:BB:CC:DD:EE:01",
+        },
+    )
+    by_hand = MockConfigEntry(
+        domain=DOMAIN, data={"board_id": "manual_new", "manual_board": True}
+    )
+    for entry in (granboard, by_hand):
+        entry.add_to_hass(hass)
+        await backup.async_offer_backup(hass, entry)
+    assert offer(hass, granboard) is None
+    issue = offer(hass, by_hand)
+    assert issue is not None
+    # A backup without the name of its board is named by its folder.
+    assert issue.translation_placeholders["backup"] == "manual-old"
+    assert issue.data["folder"] == str(old)
+
+
+def test_only_the_backups_of_a_deleted_dartboard_without_autodarts_move(tmp_path):
+    root = tmp_path / "backups"
+    target = root / "manual-new"
+    # A folder elsewhere, or of another kind of board, stays where it is.
+    for source in (tmp_path / "manual-old", root / "board-1"):
+        write(source, {}, "kept.json")
+        backup._adopt(source, target, root)
+        assert (source / "kept.json").exists()
+    assert not target.exists()
+    # A file of the same name stays, and with it its folder.
+    old = root / "manual-old"
+    write(old, {"a": 1}, "same.json")
+    write(old, {}, "other.json")
+    write(target, {"b": 2}, "same.json")
+    backup._adopt(old, target, root)
+    assert [path.name for path in old.iterdir()] == ["same.json"]
+    assert json.loads((target / "same.json").read_text(encoding="utf-8")) == {"b": 2}
+    assert (target / "other.json").exists()
+
+
+async def test_backups_that_cannot_move_stay(hass, media, caplog):
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={"board_id": "manual_new", "manual_board": True}
+    )
+    with patch.object(backup, "_adopt", side_effect=OSError("read-only")):
+        await backup.async_adopt(hass, entry, str(media / "manual-old"))
+    assert "stay there" in caplog.text and "read-only" in caplog.text
 
 
 # -- homedarts.backup ---------------------------------------------------------------

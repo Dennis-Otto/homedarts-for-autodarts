@@ -82,7 +82,7 @@ En el almacenamiento propio de Home Assistant, nunca en la nube: las sesiones de
 
 ### Borré mi diana. ¿Se han perdido mis estadísticas?
 
-No. Antes de borrar una diana, HomeDarts escribe una copia de seguridad de todo lo que guardó en `homedarts/backups` de la carpeta multimedia. Añade la diana otra vez, y la reparación *Hay una copia de seguridad de …* lo recupera todo; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restaura cualquier copia. [Backups](statistics.md#backups)
+No. Antes de borrar una diana, HomeDarts escribe una copia de seguridad de todo lo que guardó en `homedarts/backups` de la carpeta multimedia. Añade la diana otra vez, y la reparación *Hay una copia de seguridad de …* lo recupera todo. Una diana sin Autodarts recibe un nuevo ID de diana al añadirla otra vez, así que se le ofrece la copia más reciente de una diana sin Autodarts eliminada, con el nombre de esa diana. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restaura cualquier copia. [Backups](statistics.md#backups)
 
 ## Actualizaciones y migración
 

@@ -22,7 +22,10 @@ twice. A backup of a newer version than this release knows is refused. Before
 a restore writes, what the board holds is backed up, so a restore can be undone.
 
 A board added again, with nothing stored yet and the board ID of a backup,
-offers the newest backup that holds player data with a repair.
+offers the newest backup that holds player data with a repair. A dartboard
+without Autodarts gets a new board ID with every setup, so one with no backup of
+its own is offered the newest of the deleted dartboards without Autodarts, whose
+folders no board owns; restoring it takes their backups into its own folder.
 """
 
 from __future__ import annotations
@@ -30,6 +33,8 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from collections.abc import Iterable
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Final
@@ -48,7 +53,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from .const import CONF_BOARD_ID, DOMAIN
+from .const import CONF_BOARD_ID, CONF_GRANBOARD, CONF_MANUAL_BOARD, DOMAIN
 from .export import ExportFolderError, allowed_path, media_folder, offer_download
 from .journal import TrainingJournal
 from .profiles import Profiles
@@ -76,6 +81,11 @@ MERGED: Final = "merged_backups"
 # In the training store: the board IDs of the boards merged into the board.
 MERGED_BOARDS: Final = "merged_boards"
 ISSUE: Final = "backup_available"
+# The repair of a dartboard without Autodarts that offers the backup of another.
+ISSUE_OTHER: Final = "backup_available_other"
+# The folders of the backups of dartboards without Autodarts, by their board IDs
+# manual_<random hex> in slugs.
+HAND_FOLDERS: Final = "manual-*"
 
 
 class BackupFileError(Exception):
@@ -96,9 +106,18 @@ def _stores(hass: HomeAssistant, entry: ConfigEntry) -> list[Store[dict[str, Any
 
 def _board_folder(config: Config, entry: ConfigEntry) -> Path:
     """The folder of the backups of a board, by its board ID, which stays the same
-    when the board is deleted and added again."""
+    when the board is deleted and added again, but for a dartboard without
+    Autodarts, which gets a new one with every setup."""
     board = str(entry.data.get(CONF_BOARD_ID) or entry.entry_id)
     return media_folder(config, BACKUP_FOLDER / slugify(board, separator="-"))
+
+
+def _by_hand(entry: ConfigEntry) -> bool:
+    """Whether the board is a dartboard without Autodarts whose board ID is new
+    with every setup: one without a Granboard, whose address names it."""
+    return bool(entry.data.get(CONF_MANUAL_BOARD)) and not entry.data.get(
+        CONF_GRANBOARD
+    )
 
 
 def _board_name(entry: ConfigEntry) -> str:
@@ -515,41 +534,82 @@ async def async_restore(
 # -- the offer of a board added again ----------------------------------------------
 
 
-def _holds_data(path: Path) -> bool:
-    """Whether the file is a backup with player data; runs in the executor."""
+def _with_data(path: Path) -> dict[str, Any] | None:
+    """The backup in the file when it holds player data; runs in the executor."""
     try:
         if path.stat().st_size > MAX_BACKUP_BYTES:
-            return False
+            return None
         backup = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, ValueError):
-        return False
-    return isinstance(backup, dict) and has_data(backup)
+        return None
+    return backup if isinstance(backup, dict) and has_data(backup) else None
 
 
-def _newest(folder: Path) -> tuple[Path, float] | None:
-    """The newest backup in the folder that holds player data and when it was
-    written; runs in the executor."""
-    found = [(path.stat().st_mtime, path) for path in folder.glob("*.json")]
+def _newest(folders: Iterable[Path]) -> tuple[Path, float, dict[str, Any]] | None:
+    """The newest backup in the folders that holds player data, when it was
+    written and what it holds; runs in the executor."""
+    found = [
+        (path.stat().st_mtime, path)
+        for folder in folders
+        for path in folder.glob("*.json")
+    ]
     for modified, path in sorted(found, reverse=True):
-        if _holds_data(path):
-            return path, modified
+        if (backup := _with_data(path)) is not None:
+            return path, modified, backup
     return None
+
+
+def _orphans(root: Path, owned: set[Path]) -> list[Path]:
+    """The folders of the backups of deleted dartboards without Autodarts: those
+    that no board set up owns; runs in the executor."""
+    return [
+        folder
+        for folder in root.glob(HAND_FOLDERS)
+        if folder.is_dir() and folder not in owned
+    ]
+
+
+def _newest_orphan(
+    root: Path, owned: set[Path]
+) -> tuple[Path, float, dict[str, Any]] | None:
+    """The newest backup with player data of a deleted dartboard without
+    Autodarts; runs in the executor."""
+    return _newest(_orphans(root, owned))
 
 
 async def async_offer_backup(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """A board with nothing stored yet: offer the newest backup of its board ID.
 
-    The repair stays until the backup is restored, the board is deleted or the
-    user ignores it.
+    A dartboard without Autodarts without a backup of its own is offered the
+    newest backup of a deleted one instead, with a repair that names the board
+    of the backup, as a home may have several. The repair stays until the
+    backup is restored, the board is deleted or the user ignores it.
     """
     newest = await hass.async_add_executor_job(
-        _newest, _board_folder(hass.config, entry)
+        _newest, [_board_folder(hass.config, entry)]
     )
+    other = newest is None and _by_hand(entry)
+    if other:
+        owned = {
+            _board_folder(hass.config, board)
+            for board in hass.config_entries.async_entries(DOMAIN)
+        }
+        newest = await hass.async_add_executor_job(
+            _newest_orphan, media_folder(hass.config, BACKUP_FOLDER), owned
+        )
     if newest is None:
         return
-    path, modified = newest
+    path, modified, backup = newest
     when = dt_util.as_local(dt_util.utc_from_timestamp(modified))
     placeholders = {"board": entry.title, "date": f"{when:%Y-%m-%d %H:%M}"}
+    data: dict[str, Any] = {"entry_id": entry.entry_id, "file": str(path)}
+    if other:
+        name = backup.get("board")
+        placeholders["backup"] = (
+            name if isinstance(name, str) and name else path.parent.name
+        )
+        # Its backups move to this board once it restores one.
+        data["folder"] = str(path.parent)
     ir.async_create_issue(
         hass,
         DOMAIN,
@@ -557,7 +617,41 @@ async def async_offer_backup(hass: HomeAssistant, entry: ConfigEntry) -> None:
         is_fixable=True,
         is_persistent=True,
         severity=ir.IssueSeverity.WARNING,
-        translation_key=ISSUE,
+        translation_key=ISSUE_OTHER if other else ISSUE,
         translation_placeholders=placeholders,
-        data={"entry_id": entry.entry_id, "file": str(path), **placeholders},
+        data={**data, **placeholders},
     )
+
+
+def _adopt(source: Path, target: Path, root: Path) -> None:
+    """Move the backups of a deleted dartboard without Autodarts into the folder
+    of the board that restored one of them; runs in the executor."""
+    if source.parent != root or not source.match(HAND_FOLDERS):
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    for path in source.glob("*.json"):
+        moved = target / path.name
+        if not moved.exists():
+            path.rename(moved)
+    # A file of the same name stays where it was, and with it the folder.
+    with suppress(OSError):
+        source.rmdir()
+
+
+async def async_adopt(hass: HomeAssistant, entry: ConfigEntry, folder: str) -> None:
+    """The dartboard without Autodarts restored the backup of a deleted one and
+    takes over its backups, so that no other board is offered them again."""
+    try:
+        await hass.async_add_executor_job(
+            _adopt,
+            Path(folder),
+            _board_folder(hass.config, entry),
+            media_folder(hass.config, BACKUP_FOLDER),
+        )
+    except OSError as err:
+        _LOGGER.warning(
+            "The backups in %s stay there, %s did not take them over: %s",
+            folder,
+            entry.title,
+            err,
+        )
