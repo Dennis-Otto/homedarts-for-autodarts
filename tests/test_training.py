@@ -257,6 +257,35 @@ def test_analytics_buckets_hits_and_highest_visit():
     assert snapshot["hits"] == {"D16": 1, "MISS": 1, "S1": 1, "S20": 3, "T20": 6}
 
 
+def test_a_merged_visit_never_sets_the_highest_visit():
+    # A missed takeout merges the next darts into one visit of more than
+    # three darts: like the score bands, it sets no highest visit, while its
+    # darts and points still count.
+    session = TrainingSession(NOW)
+    session.observe(board(), now=NOW)
+    for count in range(1, 4):
+        session.observe(board(*[S20] * count), now=NOW)
+    session.observe(board(), now=NOW)
+    for count in range(1, 7):
+        session.observe(board(*[T20] * count), now=NOW)
+    bands = ("scores_100", "scores_140", "scores_180")
+    live = session.snapshot()
+    assert live["highest_visit"] == 60
+    assert live["darts"] == 9 and live["points"] == 420
+    assert [live[band] for band in bands] == [0, 0, 0]
+    events = session.observe(board(), now=NOW)
+    assert events[-1][0] == "visit_completed"
+    assert events[-1][1]["score"] == 360 and events[-1][1]["darts"] == 6
+    pulled = session.snapshot()
+    assert pulled["highest_visit"] == 60
+    assert pulled["visits"] == 2 and pulled["points"] == 420
+    assert [pulled[band] for band in bands] == [0, 0, 0]
+    _, summary = session.end("manual", now=NOW)
+    assert summary["highest_visit"] == 60
+    assert summary["darts"] == 9 and summary["points"] == 420
+    assert [summary[band] for band in bands] == [0, 0, 0]
+
+
 def test_completed_visits_are_announced_once():
     session = TrainingSession(NOW)
     session.observe(board(), now=NOW)
