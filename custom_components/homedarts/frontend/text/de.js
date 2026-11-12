@@ -356,6 +356,7 @@ export default {
   "plans_error_taken": "Zwei Pläne heißen {name}. Jeder Plan braucht einen eigenen Namen.",
   "plans_error_amount": "Plan {number}, Schritt {step}: Die Anzahl ist eine ganze Zahl von 1 bis {max}.",
   "plans_failed": "Die Pläne konnten nicht gespeichert werden.",
+  "plans_load_failed": "Die Pläne konnten nicht geladen werden.",
   "lobby_open": "Neues Spiel",
   "lobby_title": "Neues Spiel",
   "lobby_label": "Wähle das Spiel, die Spieler und das Format",

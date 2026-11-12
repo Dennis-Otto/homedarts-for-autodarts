@@ -619,6 +619,11 @@ class AutodartsGamesCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             events = self.games.start_plan(dt_util.now(), plan, name, steps, player)
         await self._async_changed(events)
 
+    @property
+    def plan_options(self) -> object:
+        """The own plans as the options of the board hold them, valid or not."""
+        return self._entry.options.get(CONF_PLANS, [])
+
     async def async_save_plans(self, plans: tuple[Plan, ...]) -> None:
         """Keep these own plans in the options of the board, where the options
         flow keeps them, and use them at once: unlike the options flow, the

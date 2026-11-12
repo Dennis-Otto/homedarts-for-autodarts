@@ -355,6 +355,7 @@ export default {
   "plans_error_taken": "Twee plannen heten {name}. Elk plan heeft een eigen naam nodig.",
   "plans_error_amount": "Plan {number}, stap {step}: het aantal is een geheel getal van 1 tot {max}.",
   "plans_failed": "De plannen konden niet worden opgeslagen.",
+  "plans_load_failed": "De plannen konden niet worden geladen.",
   "lobby_open": "Nieuw spel",
   "lobby_title": "Nieuw spel",
   "lobby_label": "Kies het spel, de spelers en het format",

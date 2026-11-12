@@ -355,6 +355,7 @@ export default {
   "plans_error_taken": "Deux plans s'appellent {name}. Chaque plan a besoin d'un nom bien à lui.",
   "plans_error_amount": "Plan {number}, étape {step}\u00a0: le nombre est un entier de 1 à {max}.",
   "plans_failed": "Les plans n'ont pas pu être enregistrés.",
+  "plans_load_failed": "Les plans n'ont pas pu être chargés.",
   "lobby_open": "Nouvelle partie",
   "lobby_title": "Nouvelle partie",
   "lobby_label": "Choisissez le jeu, les joueurs et le format",

@@ -9975,7 +9975,11 @@ function createElements(Base) {
       this._setHtml(body, `<p class="muted">${escapeHtml(this._t("plans_loading"))}</p>`);
       dialog.showModal();
       try {
-        const result = await this._hass.callWS({ type: "homedarts/plans", device_id: this._deviceId });
+        const result = await this._hass.callWS({
+          type: "homedarts/plans",
+          device_id: this._deviceId,
+          language: language(this._hass),
+        });
         // Closed meanwhile: the next opening loads them again.
         if (!dialog.open) return;
         this._planLimits = { ...PLAN_LIMITS, ...result.limits };
@@ -9983,7 +9987,9 @@ function createElements(Base) {
         dialog.querySelector(".plans-save").disabled = false;
         this._drawPlans(this._plans.length ? "plans:0:name" : "plans:add");
       } catch (failure) {
-        this._plansError(failure?.message || this._t("plans_failed"));
+        // Nothing to edit: no plans that a save could overwrite.
+        this._setHtml(body, "");
+        this._plansError(failure?.message || this._t("plans_load_failed"));
       }
     }
 

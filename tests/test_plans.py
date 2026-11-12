@@ -318,7 +318,8 @@ def wrong(*steps: object, **plan: object) -> list:
             "2",
             "501",
         ),
-        (wrong({"darts": 3}), "step_drill", "2 (Late)", "1", "None"),
+        (wrong({"darts": 3}), "step_fields", "2 (Late)", "1", "None"),
+        (wrong({"drill": None}), "step_fields", "2 (Late)", "1", "None"),
         (wrong({"drill": "y" * 60}), "step_drill", "2 (Late)", "1", f"{'y' * 39}…"),
         (
             wrong({"drill": "doubles", "darts": 3, "rounds": 3}),
@@ -1311,6 +1312,17 @@ async def test_the_training_card_keeps_own_plans(hass, aioclient_mock, hass_ws_c
     assert emptied["result"] == {"plans": []}
     assert "plans" not in entry.options
     assert coordinator.games.plans.custom == ()
+
+    # Options that are not valid, written by hand, are not offered as an
+    # empty list that a save would overwrite: the editor hears why.
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "plans": [{"name": "Late", "steps": [{}]}]}
+    )
+    await hass.async_block_till_done()
+    broken = await plans_command(client, "plans", device_id=device, language="en")
+    assert (broken["success"], broken["error"]["code"]) == (False, "invalid_format")
+    assert broken["error"]["message"].startswith("Plan 1 (Late), step 1 is not valid")
+    assert entry.options["plans"] == [{"name": "Late", "steps": [{}]}]
 
 
 # Home Assistant logs every refused command as an error.

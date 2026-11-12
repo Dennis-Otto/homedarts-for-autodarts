@@ -258,6 +258,9 @@ def read_step(raw: object) -> Step:
     if not isinstance(raw, dict) or set(raw) - STEP_KEYS:
         raise PlanError("step_fields")
     drill = raw.get("drill")
+    # A step without its game says what a step has, not that None is no game.
+    if drill is None:
+        raise PlanError("step_fields")
     if drill not in DRILLS:
         raise PlanError("step_drill", drill)
     darts, rounds, until = raw.get("darts"), raw.get("rounds"), raw.get("until")

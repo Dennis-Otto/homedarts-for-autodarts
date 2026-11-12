@@ -223,7 +223,7 @@ test("the editor loads the board's plans, changes them and saves them", async ()
   const card = setup({ callWS, language: "de" });
   const dialog = await opened(card);
   assert.equal(dialog.open, true);
-  assert.deepEqual(requests, [{ type: "homedarts/plans", device_id: DEVICE }]);
+  assert.deepEqual(requests, [{ type: "homedarts/plans", device_id: DEVICE, language: "de" }]);
   assert.equal($(card, ".plans-save").disabled, false);
   assert.equal(card.shadowRoot.activeElement, $(card, '[data-edit="name"]'));
   assert.equal(text(card, "#plans-title"), "Trainingspläne");
@@ -332,12 +332,14 @@ test("the editor says when the plans cannot be loaded, and waits for nothing onc
   const card = setup({ callWS });
   await opened(card);
   assert.equal(text(card, ".plans-error"), "Unauthorized");
+  // The loading text goes: there is nothing to edit or save.
+  assert.equal(text(card, ".plans-body"), "");
   assert.equal($(card, ".plans-save").disabled, true);
   // Saving before the plans are there does nothing.
   submit(card);
   $(card, ".plans-cancel").click();
   await opened(card);
-  assert.equal(text(card, ".plans-error"), "The plans could not be saved.");
+  assert.equal(text(card, ".plans-error"), "The plans could not be loaded.");
   $(card, ".plans-cancel").click();
 
   const dialog = await opened(card);

@@ -123,6 +123,8 @@ PLAN_LIMITS = {
     {
         vol.Required("type"): f"{DOMAIN}/plans",
         vol.Required("device_id"): str,
+        # The language of the user, for the error; else that of Home Assistant.
+        vol.Optional("language"): vol.All(str, vol.Length(min=2, max=35)),
     }
 )
 @websocket_api.require_admin
@@ -131,14 +133,25 @@ async def ws_plans(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
 ) -> None:
     """The own training plans of a board as its options keep them, with their
-    limits; for administrators, who change them."""
+    limits; for administrators, who change them. Options that are not valid,
+    such as a hand-edited store, are refused with the error that tells why, so
+    that the editor never offers an empty list that would overwrite them."""
     board = _board(hass, msg["device_id"])
     if board is None:
         _no_board(connection, msg)
         return
+    try:
+        plans = read_plans(board.plan_options)
+    except PlanError as error:
+        language = msg.get("language") or hass.config.language
+        connection.send_error(
+            msg["id"],
+            websocket_api.ERR_INVALID_FORMAT,
+            await _plan_error(hass, error, language),
+        )
+        return
     connection.send_result(
-        msg["id"],
-        {"plans": own_stored(board.games.plans.custom), "limits": PLAN_LIMITS},
+        msg["id"], {"plans": own_stored(plans), "limits": PLAN_LIMITS}
     )
 
 
