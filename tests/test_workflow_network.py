@@ -27,6 +27,7 @@ ROOT = Path(__file__).parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 PROJECT_WORKFLOWS = (
     "e2e.yml",
+    "release-type.yml",
     "translations.yml",
     "twice.yml",
     "visual-comment.yml",
@@ -69,6 +70,8 @@ HOSTS = {
     ("e2e.yml", "gate"): {"github.com"},
     ("e2e.yml", "live-demo"): {"github.com", *PLAYWRIGHT, *PYTHON_PACKAGES},
     ("e2e.yml", "beta"): BROWSER_TEST,
+    # The files of the pull request, and the script and the explanations of the coach.
+    ("release-type.yml", "release-type"): GITHUB,
     ("translations.yml", "issues"): GITHUB,
     # As the images of the visual check, without those of an earlier run.
     ("twice.yml", "twice"): IMAGES - {"api.github.com"},

@@ -532,6 +532,7 @@ Every pull request, and every push to `main`, runs:
   [When the end-to-end tests run](#when-the-end-to-end-tests-run));
 - the [visual check](#visual-check) of the documentation images, when a pull request changes the integration, its blueprints or the screenshot tool;
 - HACS validation and hassfest;
+- the [release type](releases.md#which-type-a-pull-request-takes): a title of the types `feat`, `fix` or `perf`, or one with `!`, makes a release, so the pull request has to change the package that HACS installs;
 - actionlint, CodeQL for Python, the card JavaScript and the workflows, and dependency review;
 - Gitleaks and an SPDX SBOM.
 
@@ -547,7 +548,12 @@ the repository weekly and on every push to `main`.
 
 Pull request titles follow Conventional Commits. The **Pull request title**
 workflow checks the title and sets its label; the title decides the next version
-(see the [release guide](releases.md)).
+(see the [release guide](releases.md)). The **Release type** workflow, whose check
+*release type* `main` requires, fails a title that makes a release when the pull
+request changes nothing under `custom_components/` or `blueprints/` and not
+`hacs.json`: a pull request of workflows, tests, the screenshot tool or pictures is a
+`ci:`, `test:` or `docs:` without a fragment of the changelog
+([which type a pull request takes](releases.md#which-type-a-pull-request-takes)).
 
 Dependencies are pinned:
 
@@ -672,11 +678,12 @@ with a stand-in for `gh`.
 
 ### When a check of this project fails
 
-A check that fails explains itself, also to a contributor from a fork: the [PR coach](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#when-a-check-fails) of the blueprint says what it found, why that matters and how to fix it, with the commands to run. It takes the checks of the blueprint from `.github/checks.toml`, and those of this project alone from `.github/checks.project.toml`. When a job of the end-to-end tests or of the visual check fails, its last step, *Explain the failure*, writes the explanation into the summary of the job and as its annotation. After the checks, the coach shows it in its one comment on the pull request; the comment follows the visual check as well, because the answer `test_workflows` of `.copier-answers.yml` names it.
+A check that fails explains itself, also to a contributor from a fork: the [PR coach](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#when-a-check-fails) of the blueprint says what it found, why that matters and how to fix it, with the commands to run. It takes the checks of the blueprint from `.github/checks.toml`, and those of this project alone from `.github/checks.project.toml`. When a job of the end-to-end tests, of the visual check or of the release type fails, its last step, *Explain the failure*, writes the explanation into the summary of the job and as its annotation. After the checks, the coach shows it in its one comment on the pull request; the comment follows the visual check and the release type as well, because the answer `test_workflows` of `.copier-answers.yml` names them.
 
 | Check | What its explanation names | How it is fixed |
 | --- | --- | --- |
 | *e2e*, which `main` requires | the test job that had to run and didn't pass | by the job that failed |
+| *release type*, which `main` requires | the types that fit the files of a pull request whose title makes a release without a change of the package | by a person, with a new title, which runs the check again |
 | *scenario (…)* | `tests/e2e/run.sh` with the Board Manager of the job, and how to run the oldest Home Assistant | by a person |
 | *browser (…)* | `tests/e2e/browser.sh` with the `BROWSER_SHARD` of the job, and `BROWSER_STEPS` for one step | by a person |
 | *live demo* | `tests/e2e/live_demo.sh`, and `scripts/record_demo.py` for a recording that no longer fits | by a person |
@@ -698,7 +705,7 @@ A new job of the end-to-end tests or of the visual check comes with its explanat
 
 Every job begins with [Harden-Runner](https://github.com/step-security/harden-runner).
 In the project's own workflows, the end-to-end tests, the visual check and its comment,
-the translation bot and *Same images*, it blocks every host that the steps of the
+the release type, the translation bot and *Same images*, it blocks every host that the steps of the
 job don't need (`egress-policy: block`), so that a compromised action, package or test
 can't send a token or data anywhere else. A job that starts no container also runs
 without sudo and Docker, so that no step can lift the block. Harden-Runner allows
@@ -709,6 +716,7 @@ GitHub's own services of Actions itself, such as the storage of artifacts and ca
 | translation bot | `api.github.com`, `github.com` | It may write issues, so it reaches GitHub alone. |
 | comment of the visual check | `api.github.com` | It reads the reports of the check and writes the comment, nothing else. |
 | *changes* of the end-to-end tests | `api.github.com` | the files of the pull request |
+| *release type* | `api.github.com`, `github.com` | the title and the files of the pull request, and a checkout of `scripts/release_type.py` and of `.github/` for the explanations of the [PR coach](#when-a-check-of-this-project-fails) |
 | *scenario* | `github.com`, `ghcr.io`, `pkg-containers.githubusercontent.com` | the code and the Home Assistant image |
 | *browser* and the nightly beta | the same, `mcr.microsoft.com`, `*.data.mcr.microsoft.com`, `registry.npmjs.org`, `pypi.org`, `files.pythonhosted.org` | the Playwright image, axe-core and the Python packages of the browser test |
 | *render* of the visual check | as *browser* without npm, and `launchpad.net`, `launchpadlibrarian.net`, `brands.home-assistant.io`, `api.github.com` | pngquant, the icons of Home Assistant's other integrations, which the images show, and the [images of an earlier run](#images-rendered-once) with the same key |

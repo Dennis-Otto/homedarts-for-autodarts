@@ -11,9 +11,11 @@ topics = ["homedarts", "wled", "scoreboard", "darts-scoreboard", "x01"]
 # The end-to-end tests in Docker (e2e.yml): one check for all of them, with Board
 # Manager 1 and 2 and with the oldest supported Home Assistant. It passes when they
 # all pass, or when a pull request changes nothing they test, so the check keeps its
-# name when the tests change or the oldest Home Assistant moves on.
+# name when the tests change or the oldest Home Assistant moves on. And the release
+# type (release-type.yml): a title of the types feat, fix or perf, or one with a !,
+# makes a release, so it has to change the package that HACS installs (#676).
 [branch]
-required_checks = ["e2e"]
+required_checks = ["e2e", "release type"]
 
 # A beta of the next release after every change for users, for the testers
 # (release.yml of the blueprint).
