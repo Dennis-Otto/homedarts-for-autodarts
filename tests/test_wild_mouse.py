@@ -4,10 +4,13 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from custom_components.homedarts.bot import (
+    Aim,
     _dart,
     _wild_mouse_bed,
     aim,
+    aim_dart,
     wild_mouse_aim,
+    wild_mouse_dart,
 )
 from custom_components.homedarts.const import DOMAIN
 from custom_components.homedarts.cricket import (
@@ -269,6 +272,26 @@ def test_the_bot_plays_wild_mouse_by_its_targets():
     practice.track(darts("S5"), now=NOW)
     # The doubles go to a number the bot closed, here the 20.
     assert aim(practice.snapshot()) == "D20"
+    assert aim_dart(practice.snapshot()) == Aim("D20", three_in_a_bed=False)
+    # Three in a bed, at the bed of the visit's first dart: the bot throws
+    # with its own scatter there.
+    practice.players[1].marks = marks(*range(6), D, T)
+    assert aim_dart(practice.snapshot()) == Aim("S5", three_in_a_bed=True)
+
+
+def test_the_bot_knows_when_it_aims_at_three_in_a_bed():
+    def bot(own, visit=(), targets=WILD_MOUSE_TARGETS):
+        return wild_mouse_dart(
+            own, 0, [OPEN[: len(own)]], [0], NUMBERS, targets, darts(*visit)
+        )
+
+    assert bot(marks(*range(6), D, T)) == Aim("S20", True)
+    assert bot(marks(*range(6), D, T), visit=("S5", "S5")) == Aim("S5", True)
+    # A bed the visit can no longer make: the bull, no bed.
+    assert bot(marks(*range(6), D, T), visit=("S1", "S2")) == Aim("BULL", False)
+    # Without three in a bed, no dart is one.
+    assert bot(marks(*range(6))[:9], targets=(DOUBLES, TRIPLES)) == Aim("D20", False)
+    assert bot(CLOSED) == Aim("T20", False)
 
 
 def test_the_bot_closes_threats_first_and_scores_while_behind():
