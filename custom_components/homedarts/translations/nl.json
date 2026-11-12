@@ -119,7 +119,7 @@
     "step": {
       "init": {
         "title": "HomeDarts-opties",
-        "description": "**Onlinewedstrijden (experimenteel):** de integratie ziet de darts op je bord, maar niet het spel van een onlinewedstrijd op play.autodarts.io. De browserextensie Tools for Autodarts kan momenten daaruit, zoals een bust, een game shot of een 180, naar Home Assistant sturen. Ze komen binnen als bordgebeurtenissen waarvan het type begint met `online_`.",
+        "description": "**Eigen trainingsplannen** komen bij de kant-en-klare plannen van het scorebord; een plan met `weekdays` wordt op die dagen het plan van de dag.\n\n**Onlinewedstrijden (experimenteel, alleen Autodarts-borden):** de integratie ziet de darts op je bord, maar niet het spel van een onlinewedstrijd op play.autodarts.io. De browserextensie Tools for Autodarts kan momenten daaruit, zoals een bust, een game shot of een 180, naar Home Assistant sturen. Ze komen binnen als bordgebeurtenissen waarvan het type begint met `online_`.",
         "data": {
           "online_bridge": "Onlinewedstrijden ontvangen van Tools for Autodarts",
           "online_bridge_remote": "Aanroepen van buiten je thuisnetwerk accepteren",

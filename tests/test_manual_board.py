@@ -101,8 +101,43 @@ async def test_setup_offers_a_dartboard_without_autodarts(hass):
         "manual_board": True,
         "name": "Garage",
     }
-    # Without a board, there is no bridge for online matches to set up.
-    assert not AutodartsConfigFlow.async_supports_options_flow(entry)
+    # The options keep the own training plans, on every board.
+    assert AutodartsConfigFlow.async_supports_options_flow(entry)
+    assert entry.supports_options
+
+
+async def test_a_dartboard_without_autodarts_keeps_own_plans(hass):
+    entry = await setup_manual(hass)
+    plans = [{"name": "Garage evening", "steps": [{"drill": "doubles", "darts": 30}]}]
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    # Without a board, there is no bridge for online matches: only the plans.
+    assert result["step_id"] == "init"
+    assert [str(key) for key in result["data_schema"].schema] == ["plans"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"plans": plans}
+    )
+    await hass.async_block_till_done()
+    # The plans are kept at once, without the step of the bridge's address.
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options == {"plans": plans}
+    # The options reload the entry, whose coordinator reads them anew.
+    coordinator = entry.runtime_data.local
+    assert isinstance(coordinator, AutodartsManualCoordinator)
+    assert [plan.name for plan in coordinator.games.plans.custom] == ["Garage evening"]
+    await hass.services.async_call(
+        "homedarts", "start_plan", {"plan": "Garage evening"}, blocking=True
+    )
+    assert coordinator.games.practice.drill == "doubles"
+
+    # The form shows the stored plans again, and an empty list removes them.
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    defaults = {str(key): key.default() for key in result["data_schema"].schema}
+    assert defaults == {"plans": plans}
+    await hass.config_entries.options.async_configure(result["flow_id"], {"plans": {}})
+    await hass.async_block_till_done()
+    assert entry.options == {}
+    assert entry.runtime_data.local.games.plans.custom == ()
 
 
 async def test_a_home_may_have_several_dartboards_without_autodarts(hass):

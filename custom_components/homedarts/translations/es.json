@@ -119,7 +119,7 @@
     "step": {
       "init": {
         "title": "Opciones de HomeDarts",
-        "description": "**Partidos en línea (experimental):** la integración ve los dardos en tu diana, pero no el desarrollo de un partido en línea en play.autodarts.io. La extensión de navegador Tools for Autodarts puede enviar a Home Assistant los momentos del partido, como un bust, un game shot o un 180. Llegan como eventos de la diana cuyo tipo empieza por `online_`.",
+        "description": "**Los planes de entrenamiento propios** se suman a los planes ya preparados del marcador; uno con `weekdays` pasa a ser el plan del día en esos días.\n\n**Partidos en línea (experimental, solo dianas Autodarts):** la integración ve los dardos en tu diana, pero no el desarrollo de un partido en línea en play.autodarts.io. La extensión de navegador Tools for Autodarts puede enviar a Home Assistant los momentos del partido, como un bust, un game shot o un 180. Llegan como eventos de la diana cuyo tipo empieza por `online_`.",
         "data": {
           "online_bridge": "Recibir partidos en línea de Tools for Autodarts",
           "online_bridge_remote": "Aceptar llamadas desde fuera de tu red doméstica",
