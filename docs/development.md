@@ -532,7 +532,7 @@ Every pull request, and every push to `main`, runs:
   [When the end-to-end tests run](#when-the-end-to-end-tests-run));
 - the [visual check](#visual-check) of the documentation images, when a pull request changes the integration, its blueprints or the screenshot tool;
 - HACS validation and hassfest;
-- the [release type](releases.md#which-type-a-pull-request-takes): a title of the types `feat`, `fix` or `perf`, or one with `!`, makes a release, so the pull request has to change the package that HACS installs;
+- for a pull request only, the [release type](releases.md#which-type-a-pull-request-takes): a title of the types `feat`, `fix` or `perf`, or one with `!`, makes a release, so the pull request has to change the package that HACS installs;
 - actionlint, CodeQL for Python, the card JavaScript and the workflows, and dependency review;
 - Gitleaks and an SPDX SBOM.
 

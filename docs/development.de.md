@@ -295,11 +295,12 @@ Behebe, was eine Warnung nennt. Kann die Integration ihr noch nicht folgen, etwa
 
 ## Wenn ein Check dieses Projekts fehlschlägt
 
-Ein Check, der fehlschlägt, erklärt sich selbst, auch jemandem, der aus einem Fork beiträgt: Der [PR-Coach](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#when-a-check-fails) des Blueprints sagt, was er gefunden hat, warum das wichtig ist und wie es sich beheben lässt, mit den Befehlen dazu. Die Checks des Blueprints nimmt er aus `.github/checks.toml`, die dieses Projekts allein aus `.github/checks.project.toml`. Schlägt ein Job der End-to-End-Tests oder des Bildvergleichs fehl, schreibt sein letzter Schritt, *Explain the failure*, die Erklärung in die Zusammenfassung des Jobs und als seine Annotation. Nach den Checks zeigt der Coach sie in seinem einen Kommentar am Pull Request; der Kommentar folgt auch dem Bildvergleich, weil die Antwort `test_workflows` in `.copier-answers.yml` ihn nennt.
+Ein Check, der fehlschlägt, erklärt sich selbst, auch jemandem, der aus einem Fork beiträgt: Der [PR-Coach](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#when-a-check-fails) des Blueprints sagt, was er gefunden hat, warum das wichtig ist und wie es sich beheben lässt, mit den Befehlen dazu. Die Checks des Blueprints nimmt er aus `.github/checks.toml`, die dieses Projekts allein aus `.github/checks.project.toml`. Schlägt ein Job der End-to-End-Tests, des Bildvergleichs oder des Release-Typs fehl, schreibt sein letzter Schritt, *Explain the failure*, die Erklärung in die Zusammenfassung des Jobs und als seine Annotation. Nach den Checks zeigt der Coach sie in seinem einen Kommentar am Pull Request; der Kommentar folgt auch dem Bildvergleich und dem Release-Typ, weil die Antwort `test_workflows` in `.copier-answers.yml` sie nennt.
 
 | Check | Was seine Erklärung nennt | Wie er behoben wird |
 | --- | --- | --- |
 | *e2e*, den `main` verlangt | den Test-Job, der laufen musste und nicht bestand | durch den Job, der fehlschlug |
+| *release type*, den `main` verlangt | die Typen, die zu den Dateien eines Pull Requests passen, dessen Titel ein Release ohne Änderung des Pakets macht | von einem Menschen, mit einem neuen Titel, der den Check erneut startet |
 | *scenario (…)* | `tests/e2e/run.sh` mit dem Board Manager des Jobs, und wie das älteste Home Assistant läuft | von einem Menschen |
 | *browser (…)* | `tests/e2e/browser.sh` mit dem `BROWSER_SHARD` des Jobs, und `BROWSER_STEPS` für einen Schritt | von einem Menschen |
 | *live demo* | `tests/e2e/live_demo.sh`, und `scripts/record_demo.py` für eine Aufnahme, die nicht mehr passt | von einem Menschen |
@@ -332,13 +333,14 @@ Ein echtes Board zeichnet `python scripts/capture_board.py <Adresse des Board-PC
 
 ## Netzwerk der Jobs
 
-Jeder Job beginnt mit [Harden-Runner](https://github.com/step-security/harden-runner). In den projekteigenen Workflows, den End-to-End-Tests, dem Bildvergleich und seinem Kommentar, dem Übersetzungsbot und *Same images*, sperrt er jeden Host, den die Schritte des Jobs nicht brauchen (`egress-policy: block`), damit eine kompromittierte Action, ein Paket oder ein Test kein Token und keine Daten anderswohin schicken kann. Ein Job, der keinen Container startet, läuft außerdem ohne sudo und Docker, damit kein Schritt die Sperre aufheben kann. Die Dienste von GitHub Actions selbst, etwa den Speicher der Artefakte und Caches, lässt Harden-Runner von sich aus zu.
+Jeder Job beginnt mit [Harden-Runner](https://github.com/step-security/harden-runner). In den projekteigenen Workflows, den End-to-End-Tests, dem Bildvergleich und seinem Kommentar, dem Release-Typ, dem Übersetzungsbot und *Same images*, sperrt er jeden Host, den die Schritte des Jobs nicht brauchen (`egress-policy: block`), damit eine kompromittierte Action, ein Paket oder ein Test kein Token und keine Daten anderswohin schicken kann. Ein Job, der keinen Container startet, läuft außerdem ohne sudo und Docker, damit kein Schritt die Sperre aufheben kann. Die Dienste von GitHub Actions selbst, etwa den Speicher der Artefakte und Caches, lässt Harden-Runner von sich aus zu.
 
 | Jobs | Hosts | Wofür |
 | --- | --- | --- |
 | Übersetzungsbot | `api.github.com`, `github.com` | Er darf Issues schreiben, also erreicht er nur GitHub. |
 | Kommentar des Bildvergleichs | `api.github.com` | Er liest die Berichte der Prüfung und schreibt den Kommentar, sonst nichts. |
 | *changes* der End-to-End-Tests | `api.github.com` | die Dateien des Pull Requests |
+| *release type* | `api.github.com`, `github.com` | der Titel und die Dateien des Pull Requests sowie ein Checkout von `scripts/release_type.py` und von `.github/` für die Erklärungen des [PR-Coachs](#wenn-ein-check-dieses-projekts-fehlschlägt) |
 | *scenario* | `github.com`, `ghcr.io`, `pkg-containers.githubusercontent.com` | der Code und das Image von Home Assistant |
 | *browser* und die nächtliche Beta | dieselben, `mcr.microsoft.com`, `*.data.mcr.microsoft.com`, `registry.npmjs.org`, `pypi.org`, `files.pythonhosted.org` | das Image von Playwright, axe-core und die Python-Pakete des Browsertests |
 | *render* des Bildvergleichs | wie *browser* ohne npm, dazu `launchpad.net`, `launchpadlibrarian.net`, `brands.home-assistant.io`, `api.github.com` | pngquant, die Symbole der anderen Integrationen von Home Assistant, die die Bilder zeigen, und die [Bilder eines früheren Laufs](#einmal-erzeugte-bilder) mit demselben Schlüssel |
