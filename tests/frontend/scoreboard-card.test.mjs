@@ -669,6 +669,31 @@ test("two scoreboards of one board in a view call every call once", () => {
   beside.remove();
 });
 
+test("two scoreboards of one board that word a dart or a route differently call it once", () => {
+  const { hass, card } = setup(x01(100, [], { checkout: "T20 D20" }), {
+    caller: true,
+    call_darts: "bed",
+    call_route: true,
+  });
+  const beside = mount("homedarts-scoreboard-card", hass, {
+    caller: true,
+    call_darts: "score",
+    call_route: true,
+    call_checkouts: false,
+    full_height: false,
+  });
+  tap(card);
+  said();
+  const next = update(hass, { ...visit(T20), ...x01(40, ["T20"], { checkout: "D20" }) });
+  card.hass = next;
+  beside.hass = next;
+  // The card beside would say the dart as its score, 60: the first card said it as its bed.
+  assert.deepEqual(said(), ["Treble 20", "40: Double 20"]);
+  tap(card);
+  said();
+  beside.remove();
+});
+
 test("before the opening double a visit is no score, and without double out 180 can be required", () => {
   const { hass, card } = setup(x01(501, [], { opened: false }), { caller: true });
   tap(card);

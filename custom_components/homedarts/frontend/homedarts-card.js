@@ -5577,12 +5577,21 @@ const callerAudio = { unlocked: false, context: null };
 // and the page calls each of them once.
 const callerSaid = new Map();
 
+// What a call tells, without how a card words it: the cards name a dart each in their own way,
+// and the route comes with the score it finishes only from a card that does not say it before.
+function callKey(call) {
+  const told = { ...call };
+  delete told.by;
+  if (told.kind === "route") delete told.remaining;
+  return JSON.stringify(told);
+}
+
 function unsaid(board, states, calls) {
   const last = callerSaid.get(board);
   const said = last?.states === states ? last.said : new Set();
   callerSaid.set(board, { states, said });
-  const fresh = calls.filter((call) => !said.has(JSON.stringify(call)));
-  for (const call of fresh) said.add(JSON.stringify(call));
+  const fresh = calls.filter((call) => !said.has(callKey(call)));
+  for (const call of fresh) said.add(callKey(call));
   return fresh;
 }
 
