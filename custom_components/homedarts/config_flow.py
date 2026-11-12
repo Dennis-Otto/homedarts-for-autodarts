@@ -495,7 +495,12 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
                             reason="reconfigure_successful",
                         )
                     else:
-                        await self.async_set_unique_id(board_id)
+                        # The card of the board's announcement may wait for its
+                        # confirmation; Home Assistant ends it once this entry
+                        # is made, so it doesn't stop the user here.
+                        await self.async_set_unique_id(
+                            board_id, raise_on_progress=False
+                        )
                         known = self._entry_elsewhere(board_id, host, port)
                         if known is not None:
                             # The board answers where the user says it is now.
