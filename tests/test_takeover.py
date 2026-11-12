@@ -20,6 +20,7 @@ from homeassistant.config_entries import (
     SOURCE_ZEROCONF,
     ConfigEntryState,
 )
+from homeassistant.core import CoreState
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -28,6 +29,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
+    flush_store,
 )
 
 from custom_components.homedarts.storage import storage_key
@@ -525,3 +527,104 @@ async def test_nothing_to_report_without_old_references(hass, hass_storage):
     await take_over(hass)
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES) is None
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+
+
+async def automations(hass, *actions: str) -> None:
+    """Automations, one with each action, named after it."""
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": [
+                {
+                    "id": action,
+                    "alias": action.replace(".", " "),
+                    "triggers": [{"trigger": "event", "event_type": action}],
+                    "actions": [{"action": action}],
+                }
+                for action in actions
+            ]
+        },
+    )
+
+
+def earlier_repair(hass, items: str) -> None:
+    """The repair of the references as an earlier version made it: not kept over
+    a restart, with what was left at the takeover."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_REFERENCES,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=ISSUE_REFERENCES,
+        translation_placeholders={"items": items},
+    )
+
+
+async def test_the_list_of_references_outlasts_the_restart(hass, hass_storage):
+    await automations(hass, "autodarts.start_game")
+    old_board(hass, hass_storage)
+    await take_over(hass)
+    await flush_store(ir.async_get(hass)._store)
+    # The restart that the takeover asks for loads the repairs anew.
+    restarted = ir.IssueRegistry(hass)
+    await restarted.async_load()
+    issue = restarted.async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert issue.active
+    assert issue.translation_placeholders == {
+        "items": "- automation.autodarts_start_game"
+    }
+
+
+async def test_the_list_follows_the_changes_at_the_next_start(hass):
+    hass.set_state(CoreState.not_running)
+    earlier_repair(
+        hass, "- automation.autodarts_start_game\n- automation.autodarts_next_player"
+    )
+    assert await async_setup_component(hass, DOMAIN, {})
+    # The automations load after the integration, and only one still has an old
+    # action: the list waits for the start of Home Assistant.
+    await automations(hass, "autodarts.start_game", "homedarts.next_player")
+    await hass.async_block_till_done()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert issue.translation_placeholders["items"].count("\n") == 1
+    await hass.async_start()
+    await hass.async_block_till_done()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert issue.translation_placeholders == {
+        "items": "- automation.autodarts_start_game"
+    }
+    assert issue.is_persistent
+    assert issue.active
+
+
+async def test_the_repair_goes_with_the_last_reference(hass):
+    earlier_repair(hass, "- automation.autodarts_start_game")
+    await automations(hass, "homedarts.start_game")
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES) is None
+
+
+async def test_an_ignored_list_stays_ignored(hass):
+    earlier_repair(
+        hass, "- automation.autodarts_start_game\n- automation.autodarts_next_player"
+    )
+    ir.async_get(hass).async_ignore(DOMAIN, ISSUE_REFERENCES, True)
+    await automations(hass, "autodarts.start_game")
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES)
+    assert issue.translation_placeholders == {
+        "items": "- automation.autodarts_start_game"
+    }
+    assert issue.dismissed_version is not None
+
+
+async def test_without_the_repair_a_start_looks_at_nothing(hass):
+    # An automation of another integration named autodarts, after no takeover.
+    await automations(hass, "autodarts.start_game")
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES) is None

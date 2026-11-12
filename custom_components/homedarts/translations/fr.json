@@ -1351,7 +1351,7 @@
     },
     "takeover_references": {
       "title": "Des automatisations, scripts ou tableaux de bord utilisent encore l'ancien nom",
-      "description": "HomeDarts for Autodarts a repris vos cibles. Ces éléments utilisent encore des actions ou des cartes de l'intégration sous son ancien nom, Autodarts, qui n'existent plus\u00a0:\n\n{items}\n\nDans leurs actions, remplacez `autodarts.` par `homedarts.`, par exemple `homedarts.start_game`, et dans les types des cartes `custom:autodarts` par `custom:homedarts`. Ignorez ensuite cette réparation."
+      "description": "HomeDarts for Autodarts a repris vos cibles. Ces éléments utilisent encore des actions ou des cartes de l'intégration sous son ancien nom, Autodarts, qui n'existent plus\u00a0:\n\n{items}\n\nDans leurs actions, remplacez `autodarts.` par `homedarts.`, par exemple `homedarts.start_game`, et dans les types des cartes `custom:autodarts` par `custom:homedarts`. Cette réparation vérifie à nouveau à chaque démarrage de Home Assistant et disparaît dès qu'il ne reste plus rien."
     },
     "takeover_restart": {
       "title": "Redémarrez Home Assistant pour terminer le passage à HomeDarts",

@@ -1351,7 +1351,7 @@
     },
     "takeover_references": {
       "title": "Sommige automatiseringen, scripts of dashboards gebruiken nog de oude naam",
-      "description": "HomeDarts for Autodarts heeft je borden overgenomen. Deze gebruiken nog acties of kaarten van de integratie onder haar oude naam, Autodarts, die niet meer bestaan:\n\n{items}\n\nVervang in hun acties `autodarts.` door `homedarts.`, bijvoorbeeld `homedarts.start_game`, en in de typen van de kaarten `custom:autodarts` door `custom:homedarts`. Negeer deze reparatie daarna."
+      "description": "HomeDarts for Autodarts heeft je borden overgenomen. Deze gebruiken nog acties of kaarten van de integratie onder haar oude naam, Autodarts, die niet meer bestaan:\n\n{items}\n\nVervang in hun acties `autodarts.` door `homedarts.`, bijvoorbeeld `homedarts.start_game`, en in de typen van de kaarten `custom:autodarts` door `custom:homedarts`. Deze reparatie kijkt bij elke start van Home Assistant opnieuw en verdwijnt zodra er niets meer over is."
     },
     "takeover_restart": {
       "title": "Start Home Assistant opnieuw om de overstap naar HomeDarts af te ronden",

@@ -298,7 +298,7 @@ Bis Version 1.18 hieß die Integration Autodarts, mit der Domain `autodarts` und
 - **Speicher.** Die drei Speicher des alten Eintrags, mit Training, Spielen, Berichten und Kalender, werden geladen und als Speicher des neuen Eintrags gesichert, `homedarts.<entry>.…`; danach wird der alte Eintrag entfernt.
 - **Verwaltung.** Die Entitäten und das Gerät des Boards wechseln in der Entitäts- und Geräteverwaltung von Home Assistant zum neuen Eintrag, mit ihren IDs, Namen, Bereichen und Anpassungen, sodass Verlauf und Statistiken bei ihnen bleiben.
 - **Medien.** Die Highlights, Exporte und Voice-Packs ziehen im Medienordner vom Ordner `autodarts` nach `homedarts`; eine Datei, die dort schon liegt, bleibt.
-- **Dashboards.** Die Karten und die Strategie in den Dashboards, die Home Assistant verwaltet, bekommen ihre neuen Typen, und aus `board_style: autodarts` wird `flat`; Dashboards in YAML, Automationen und Skripte bleiben, wie sie sind, und eine Reparatur listet die, die noch den alten Namen nutzen.
+- **Dashboards.** Die Karten und die Strategie in den Dashboards, die Home Assistant verwaltet, bekommen ihre neuen Typen, und aus `board_style: autodarts` wird `flat`; Dashboards in YAML, Automationen und Skripte bleiben, wie sie sind, und eine Reparatur listet die, die noch den alten Namen nutzen. Sie bleibt über einen Neustart erhalten und sieht bei jedem Start erneut nach, bis nichts mehr übrig ist.
 - **Alte Dateien.** Mit dem letzten Board löscht die Übernahme den Ordner der Integration unter ihrem früheren Namen, `autodarts` in `custom_components`, erkannt an ihrem Manifest. Andere Integrationen mit der Domain `autodarts` und ihre Boards bleiben unberührt.
 
 ## Sicherheit

@@ -1351,7 +1351,7 @@
     },
     "takeover_references": {
       "title": "Algunas automatizaciones, scripts o paneles aún usan el nombre antiguo",
-      "description": "HomeDarts for Autodarts ha transferido tus dianas. Estos elementos aún usan acciones o tarjetas de la integración con su nombre antiguo, Autodarts, que ya no existen:\n\n{items}\n\nEn sus acciones, sustituye `autodarts.` por `homedarts.`, por ejemplo `homedarts.start_game`, y en los tipos de las tarjetas `custom:autodarts` por `custom:homedarts`. Después ignora esta reparación."
+      "description": "HomeDarts for Autodarts ha transferido tus dianas. Estos elementos aún usan acciones o tarjetas de la integración con su nombre antiguo, Autodarts, que ya no existen:\n\n{items}\n\nEn sus acciones, sustituye `autodarts.` por `homedarts.`, por ejemplo `homedarts.start_game`, y en los tipos de las tarjetas `custom:autodarts` por `custom:homedarts`. Esta reparación vuelve a comprobarlo en cada inicio de Home Assistant y desaparece cuando ya no queda nada."
     },
     "takeover_restart": {
       "title": "Reinicia Home Assistant para completar el cambio a HomeDarts",

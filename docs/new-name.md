@@ -50,7 +50,7 @@ The takeover cannot change what you wrote yourself. A repair, *Some automations,
 - **Automations and scripts** that call an action of the old integration: replace `autodarts.` with `homedarts.`, for example `homedarts.next_player`.
 - **Dashboards in YAML**: replace `custom:autodarts` with `custom:homedarts` in the types of the cards and the strategy, and `board_style: autodarts` with `board_style: flat`.
 
-Then ignore the repair.
+The repair stays over the restarts and looks again at each start of Home Assistant: what you changed leaves the list, and once nothing is left, the repair goes by itself. If you would rather keep something as it is, ignore the repair.
 
 ## Questions
 
