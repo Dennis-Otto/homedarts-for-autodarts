@@ -1,6 +1,7 @@
 """Repairs the integration can fix itself: calibrate, follow a moved board,
-replace a changed blueprint with the one of the release, or restore the backup
-of a board added again."""
+replace a changed blueprint with the one of the release, restore the backup
+of a board added again, or take over a board of the integration under its
+former name that was set up anew."""
 
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ from homeassistant.components.repairs import (
     RepairsFlow,
     RepairsFlowResult,
 )
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
@@ -26,7 +27,7 @@ from .local_api import AutodartsLocalClient
 from .local_coordinator import AutodartsLocalCoordinator
 from .shipped_blueprints import ISSUE as BLUEPRINT_EDITED
 from .shipped_blueprints import async_restore_blueprint
-from .takeover import ISSUE_RESTART
+from .takeover import CONF_TAKEOVER, ISSUE_DUPLICATE, ISSUE_RESTART
 
 
 def address_title(entry: ConfigEntry, host: str) -> str:
@@ -258,6 +259,43 @@ class RestartFlow(RepairsFlow):
         return self.async_show_form(step_id="confirm")
 
 
+class DuplicateFlow(RepairsFlow):
+    """A board set up anew while the integration under its former name still
+    holds it: delete the new entry once confirmed, which writes its backup, and
+    take the old one over with its entities, statistics and training."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        return await self.async_step_confirm()
+
+    async def async_step_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        if user_input is None:
+            return self.async_show_form(
+                step_id="confirm",
+                description_placeholders={
+                    key: str(self._data.get(key, "")) for key in ("board", "entry")
+                },
+            )
+        entries = self.hass.config_entries
+        old_id = str(self._data.get("old_entry_id", ""))
+        if entries.async_get_entry(old_id) is None:
+            # Deleted meanwhile: the new entry is all there is of the board.
+            return self.async_abort(reason="nothing_to_take_over")
+        new_id = str(self._data.get("entry_id", ""))
+        if entries.async_get_entry(new_id) is not None:
+            await entries.async_remove(new_id)
+        await entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data={CONF_TAKEOVER: old_id}
+        )
+        return self.async_create_entry(data={})
+
+
 async def async_create_fix_flow(
     hass: HomeAssistant, issue_id: str, data: dict[str, Any] | None
 ) -> RepairsFlow:
@@ -276,5 +314,7 @@ async def async_create_fix_flow(
         return BackupFlow(data)
     if issue_id == ISSUE_RESTART:
         return RestartFlow()
+    if issue_id.startswith(ISSUE_DUPLICATE):
+        return DuplicateFlow(data)
     # Only the issues above are fixable; any other one has nothing to confirm.
     return ConfirmRepairFlow()

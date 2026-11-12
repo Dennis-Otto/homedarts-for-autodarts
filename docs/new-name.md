@@ -30,7 +30,7 @@ The entity IDs stay, and so do your history and statistics.
 
 1. Update the integration in HACS and restart Home Assistant. HACS installs HomeDarts beside the old integration, which keeps running until the takeover. If HACS says *No manifest.json file found 'custom_components/autodarts/manifest.json'*, restart Home Assistant first and update again: HACS finds the new folder of the integration only when it starts.
 2. Open **Settings → Devices & services**. A board with Board Manager 2 shows up as discovered: select **Add**. Otherwise select **Add integration → HomeDarts for Autodarts**.
-3. Choose **Take over the boards of the integration Autodarts** and confirm. HomeDarts takes over every board at once.
+3. Choose **Take over the boards of the integration Autodarts** and confirm. HomeDarts takes over every board at once. If you choose **Search for boards on this network** or **Enter board address** instead and pick a board of the old integration, HomeDarts offers the takeover there as well, rather than setting the board up anew.
 4. Restart Home Assistant once more: the repair *Restart Home Assistant to finish the switch to HomeDarts* does it for you. The restart unloads the old integration, whose files the takeover removed.
 
 ## What the takeover keeps
@@ -57,6 +57,8 @@ The repair stays over the restarts and looks again at each start of Home Assista
 **Is HomeDarts an offer of Autodarts?** No. HomeDarts for Autodarts is an unofficial community project, not affiliated with Autodarts. It works with Autodarts boards through the interface that the Board Manager offers in your network.
 
 **What if a media file can't move, or Home Assistant stops during the takeover?** HomeDarts moves everything else and leaves the file where it is, with a warning in the log that names it; move it yourself. A takeover that stops before it is finished, with an error in the log or because Home Assistant restarts, goes on at the next start of Home Assistant; the board works meanwhile.
+
+**I set my board up anew instead of taking it over. What now?** An earlier version of HomeDarts set a board up as a new one when you found it by the search or entered its address, beside the board of the old integration. The new board then holds the board ID, so the takeover no longer offers the old one, which keeps its entities, statistics and training. The repair *… holds the board of …, which so can't be taken over* names the new board: confirm it, and HomeDarts deletes the new board and takes the old one over. What the new board recorded meanwhile is kept as a backup, as when you delete a board. By hand, it works the same way: delete the new board under **Settings → Devices & services → HomeDarts for Autodarts**, then select **Add integration → HomeDarts for Autodarts** and choose **Take over the boards of the integration Autodarts**.
 
 **Do I need to set anything up again?** No. The takeover keeps every board with its entities and statistics. Only automations, scripts and YAML dashboards that use the old actions or cards need the new names.
 
