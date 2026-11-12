@@ -344,7 +344,7 @@ async def test_the_bot_throws_with_its_cricket_scatter(hass, aioclient_mock, fre
     ) as throw:
         receive(coordinator, board(T20), board())
         await pass_time(hass, freezer, 1.1)
-    assert throw.call_args.kwargs == {"cricket": True}
+    assert throw.call_args.kwargs == {"cricket": True, "three_in_a_bed": False}
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 
