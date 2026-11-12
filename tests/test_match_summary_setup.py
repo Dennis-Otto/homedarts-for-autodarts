@@ -2,6 +2,7 @@
 
 import json
 
+from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.components.diagnostics import (
     get_diagnostics_for_config_entry,
@@ -108,3 +109,44 @@ async def test_diagnostics_leave_the_names_of_the_summary_out(
     summary = diagnostics["local"]["practice"]["summary"]
     assert [player["name"] for player in summary["players"]] == ["**REDACTED**"] * 2
     assert "Alexandra" not in json.dumps(diagnostics)
+
+
+async def test_the_players_card_opens_the_summary_of_a_match_of_the_history(
+    hass, aioclient_mock, hass_ws_client
+):
+    """The last match sensor lists which matches keep their summary, and the
+    card asks for its numbers by the end of the match."""
+    entry = await setup_local(hass, aioclient_mock, state=board())
+    coordinator = entry.runtime_data.local
+    await start_game(hass, game="101", players=["Alex", "Sam"])
+    await throw(hass, coordinator, T20, S1, D20)
+    last = hass.states.get(entity_id(hass, "sensor", "last_match")).attributes
+    listed = last["matches"][0]
+    assert listed["details"] is True and "summary" not in listed
+    device = dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, "board-1"), entry.entry_id
+    )
+    assert device is not None
+    client = await hass_ws_client(hass)
+
+    async def ask(device_id: str, ended: str) -> dict:
+        await client.send_json_auto_id(
+            {"type": "homedarts/match_summary", "device_id": device_id, "ended": ended}
+        )
+        return await client.receive_json()
+
+    answer = await ask(device.id, listed["ended"])
+    assert answer["success"], answer
+    result = answer["result"]
+    assert result["ended"] == listed["ended"] and result["double_out"] is True
+    assert [
+        (player["name"], player["darts"], player["highest_checkout"])
+        for player in result["players"]
+    ] == [("Alex", 3, 101), ("Sam", 0, None)]
+    for device_id, ended in (
+        (device.id, "2026-01-01T00:00:00+00:00"),
+        ("no-such-device", listed["ended"]),
+    ):
+        answer = await ask(device_id, ended)
+        assert not answer["success"]
+        assert answer["error"]["code"] == "not_found"

@@ -13,6 +13,7 @@ from custom_components.homedarts.profiles import (
     Profile,
     Profiles,
     _person,
+    match_summary,
 )
 
 from .local_helpers import NOW, throw
@@ -144,7 +145,117 @@ def test_the_history_keeps_the_last_matches():
     for index in range(MATCH_HISTORY + 5):
         profiles.match(501, [{"name": "A"}, {"name": "B"}], index % 2, 1, 1, now=NOW)
     assert len(profiles.matches) == MATCH_HISTORY
-    assert profiles.snapshot()["head_to_head"][0]["wins"] == [13, 12]
+    assert profiles.snapshot()["head_to_head"][0]["wins"] == [28, 27]
+
+
+def test_the_history_keeps_the_summary_of_every_match():
+    """Its numbers are there to open again once the scoreboard shows the next
+    game; the sensor only lists that they are."""
+    practice = named(501, "Alex", "Lea")
+    throw(practice, "T20", "T20", "T20")
+    win_leg(practice)
+    profiles = practice.profiles
+    assert practice.summary is not None
+    stored = profiles.matches[0]
+    assert stored["summary"] == {
+        "double_out": True,
+        "players": practice.summary["players"],
+    }
+    lea = stored["summary"]["players"][1]
+    assert (lea["name"], lea["checkout_rate"], lea["best_leg"]) == ("Lea", 100.0, 1)
+    listed = profiles.snapshot()["matches"][0]
+    assert listed["details"] is True and "summary" not in listed
+    summary = profiles.summary(stored["ended"])
+    assert summary == stored["summary"]
+    # The answer is a copy: what a caller does with it leaves the history alone.
+    summary["players"].clear()
+    assert profiles.summary(stored["ended"]) == stored["summary"]
+    assert profiles.summary("2026-01-01T00:00:00+00:00") is None
+
+
+def test_a_match_without_a_summary_keeps_no_details():
+    """As every match stored before the history kept the summaries."""
+    profiles = Profiles()
+    profiles.match(501, [{"name": "A"}, {"name": "B"}], 0, 1, 1, now=NOW)
+    profiles.match(
+        "cricket",
+        [{"name": "A"}, {"name": "B"}],
+        1,
+        1,
+        1,
+        now=NOW + timedelta(minutes=1),
+        summary={"players": "x"},
+    )
+    assert all("summary" not in match for match in profiles.matches)
+    assert all("details" not in match for match in profiles.snapshot()["matches"])
+    assert profiles.summary(profiles.matches[0]["ended"]) is None
+
+
+@pytest.mark.parametrize(
+    ("saved", "expected"),
+    [
+        (None, None),
+        ("x", None),
+        ({}, None),
+        ({"players": "x"}, None),
+        ({"players": [{"player": 1}, "x"]}, None),
+        ({"players": []}, {"double_out": True, "players": []}),
+        (
+            {"double_out": False, "players": [{"player": 1, "darts": 9}]},
+            {"double_out": False, "players": [{"player": 1, "darts": 9}]},
+        ),
+    ],
+)
+def test_only_a_valid_summary_goes_into_the_history(saved, expected):
+    assert match_summary(saved) == expected
+
+
+def test_a_restored_history_keeps_only_valid_summaries():
+    seats = [{"name": "Alex"}, {"name": "Sam"}]
+    details = {"double_out": True, "players": [{"player": 1, "name": "Alex"}]}
+    profiles = Profiles()
+    profiles.restore(
+        {
+            "matches": [
+                {"ended": "2026-11-12T20:00:00", "players": seats, "summary": details},
+                {"ended": "2026-11-11T20:00:00", "players": seats, "summary": [1]},
+                {"ended": "2026-11-10T20:00:00", "players": seats},
+            ]
+        }
+    )
+    assert [match.get("summary") for match in profiles.matches] == [
+        details,
+        None,
+        None,
+    ]
+    assert [match.get("details") for match in profiles.snapshot()["matches"]] == [
+        True,
+        None,
+        None,
+    ]
+    assert profiles.summary("2026-11-12T20:00:00") == details
+    # What is stored comes back as it was.
+    again = Profiles()
+    again.restore(profiles.stored())
+    assert again.matches == profiles.matches
+
+
+def test_a_merge_keeps_a_match_once_and_with_its_summary():
+    """A backup made before the history kept summaries has the same match
+    without one: the merge keeps it once, with the numbers of the summary."""
+    seats = [{"name": "Alex"}, {"name": "Sam"}]
+    details = {"double_out": True, "players": [{"player": 1, "name": "Alex"}]}
+    played = {"ended": "2026-11-12T20:00:00", "players": seats}
+    other = {"ended": "2026-11-11T20:00:00", "players": seats}
+    for ours, theirs in (
+        ([played, other], [{**played, "summary": details}]),
+        ([{**played, "summary": details}, other], [played]),
+    ):
+        profiles, backup = Profiles(), Profiles()
+        profiles.restore({"matches": ours})
+        backup.restore({"matches": theirs})
+        profiles.merge(backup)
+        assert profiles.matches == [{**played, "summary": details}, other]
 
 
 def test_a_player_in_two_seats_plays_the_match_once_and_not_against_oneself():
@@ -257,6 +368,10 @@ def test_a_renamed_profile_keeps_its_numbers_matches_and_head_to_head():
         "Sam",
         "Lea",
     ]
+    # The summary of the match says the new name, too.
+    summary = profiles.summary(snapshot["matches"][0]["ended"])
+    assert summary is not None
+    assert [entry["name"] for entry in summary["players"]] == ["Sam", "Lea"]
 
 
 def test_a_new_spelling_of_the_same_name_renames_the_profile():

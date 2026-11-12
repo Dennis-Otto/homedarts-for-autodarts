@@ -105,7 +105,7 @@ When an X01 or Cricket match of several players ends, the scoreboard and the liv
 - **X01:** legs and sets, 3-dart and first-9 average, the checkout rate with the legs checked out and the darts at a double, the highest checkout, 180s, 140+ and 100+ visits, the best leg in darts and all darts. Without double out, the checkout rate and the darts at a double are left out.
 - **Cricket:** legs and sets, marks per round, marks, the best leg in darts and all darts.
 - **Party games** keep their scores on the screen.
-- **How long:** until the first dart of the next game, or for `summary_seconds` of the [card](cards.md#match-summary). `match_won` carries the numbers for your automations, for example to [send them to your phone](automations.md#send-the-summary-of-a-match). [How they are counted](how-it-works.md#match-summary).
+- **How long:** until the first dart of the next game, or for `summary_seconds` of the [card](cards.md#match-summary). After that, the summary stays with the match in the match history: tap the match under *Recent matches* of the [players card](cards.md#players-card) to open it again, for each of the last 50 matches. `match_won` carries the numbers for your automations, for example to [send them to your phone](automations.md#send-the-summary-of-a-match). [How they are counted](how-it-works.md#match-summary).
 
 ## Teams
 

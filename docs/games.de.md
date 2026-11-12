@@ -105,7 +105,7 @@ Endet ein X01- oder Cricket-Match mehrerer Spieler, fassen Anzeigetafel und Live
 - **X01:** Legs und Sätze, 3-Dart- und First-9-Average, die Checkout-Quote mit den ausgecheckten Legs und den Darts aufs Double, der höchste Checkout, 180er, Aufnahmen mit 140+ und 100+, das beste Leg in Darts und alle Darts. Ohne Double-Out fehlen Checkout-Quote und Darts aufs Double.
 - **Cricket:** Legs und Sätze, Marks pro Runde, Marks, das beste Leg in Darts und alle Darts.
 - **Partyspiele** behalten ihre Punkte auf dem Bildschirm.
-- **Wie lange:** bis zum ersten Dart des nächsten Spiels oder für `summary_seconds` der [Karte](cards.de.md#match-zusammenfassung). `match_won` liefert die Zahlen für deine Automationen, etwa um [sie aufs Handy zu schicken](automations.de.md#die-zusammenfassung-eines-matches-senden). [So werden sie gezählt](how-it-works.de.md#match-zusammenfassung).
+- **Wie lange:** bis zum ersten Dart des nächsten Spiels oder für `summary_seconds` der [Karte](cards.de.md#match-zusammenfassung). Danach bleibt die Zusammenfassung mit dem Match im Match-Verlauf: Tippe unter *Letzte Matches* der [Spielerkarte](cards.de.md#spielerkarte) auf das Match, um sie wieder zu öffnen, für jedes der letzten 50 Matches. `match_won` liefert die Zahlen für deine Automationen, etwa um [sie aufs Handy zu schicken](automations.de.md#die-zusammenfassung-eines-matches-senden). [So werden sie gezählt](how-it-works.de.md#match-zusammenfassung).
 
 ## Teams
 

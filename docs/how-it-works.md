@@ -155,7 +155,7 @@ The rules of every game, from X01 and the bull-off to the party and training gam
 
 ## Match summary
 
-When a match of several players ends, the practice game sums it up for every player. `match_won` announces the numbers the moment the deciding dart lands, as they will be once the visit is booked; the `summary` attribute keeps them until the next match ends.
+When a match of several players ends, the practice game sums it up for every player. `match_won` announces the numbers the moment the deciding dart lands, as they will be once the visit is booked; the `summary` attribute keeps them until the next match ends. The match history of the player profiles keeps them with the match, for the last 50 matches; the *Last match* sensor lists only whether a match has them, as the numbers of 50 summaries would be too many for its attributes, and the players card reads them with the WebSocket command `homedarts/match_summary` (`device_id` and the `ended` of the match) when a match is opened.
 
 - **Legs, sets and darts:** the legs won in the whole match, the sets, and every dart thrown in the match.
 - **3-dart average:** points per three darts of the whole match; darts of a bust visit count, their points do not.
@@ -285,7 +285,7 @@ Everything the integration keeps lives in Home Assistant's `.storage` folder, ne
 
 | Store | Contents |
 | --- | --- |
-| `homedarts.<entry>.training` | The training session with its settings, the last 20 sessions and the last 10 visits; the practice game with its rules, teams, start scores, player names and the last 10 legs; the personal bests, the training streak and the darts of the day; the player profiles with their statistics, personal bests, doubles and linked persons, the last 20 matches and the head-to-head records; every player's progress with weekly sums, achievements and the positions of their last 1000 darts; the doubles analysis; the tournament with its results |
+| `homedarts.<entry>.training` | The training session with its settings, the last 20 sessions and the last 10 visits; the practice game with its rules, teams, start scores, player names and the last 10 legs; the personal bests, the training streak and the darts of the day; the player profiles with their statistics, personal bests, doubles and linked persons, the last 50 matches with the numbers of their summaries and the head-to-head records; every player's progress with weekly sums, achievements and the positions of their last 1000 darts; the doubles analysis; the tournament with its results |
 | `homedarts.<entry>.report` | The running week and the last weekly report |
 | `homedarts.<entry>.journal` | The sessions and matches of the training calendar, 365 days, at most 3,000 of each |
 

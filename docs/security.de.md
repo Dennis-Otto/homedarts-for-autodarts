@@ -88,6 +88,7 @@ Wie die Integration den Schwachstellen der [CWE Top 25](https://cwe.mitre.org/to
   - die Downloads der Exporte seit dem letzten Start unter `/api/homedarts/export/`, für Administratoren oder mit ihrem signierten Link, der nach einer Minute abläuft;
   - kleine Kopien der Highlight-Fotos unter `/api/homedarts/highlights/`, für angemeldete Benutzer wie die Fotos selbst; ausgeliefert werden nur einfache Dateinamen von Fotos im Highlight-Ordner;
   - den WebSocket-Befehl `homedarts/positions`, mit dem die Karten die Dart-Positionen lesen, für angemeldete Benutzer;
+  - den WebSocket-Befehl `homedarts/match_summary`, mit dem die Spielerkarte die Zusammenfassung eines Matches aus dem Verlauf liest, für angemeldete Benutzer;
   - den WebSocket-Befehl `homedarts/voice_pack`, mit dem die Anzeigetafel die Sounds eines Voice-Packs auflistet (höchstens 10.000 Dateien werden angesehen), für angemeldete Benutzer;
   - nur solange die Online-Brücke an ist, eine geheime Webhook-Adresse.
 

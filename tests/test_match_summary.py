@@ -79,6 +79,8 @@ def test_a_finished_x01_match_sums_up_every_player():
     # The dart that wins the match announces the same numbers.
     assert won["summary"] == summary["players"]
     assert (won["legs"], won["average"]) == (2, 106.0)
+    # The history keeps the numbers of the summary with the match.
+    assert game.profiles.matches[0]["summary"]["players"] == summary["players"]
     # Nothing of the scratch booking reached the profiles.
     assert game.profiles.players["alex"].legs_won == 2
     assert game.profiles.players["alex"].matches_won == 1
@@ -166,6 +168,9 @@ def test_party_matches_sum_up_legs_and_darts():
         {"player": 2, "name": "Sam", "legs": 1, "sets": 1, "darts": 3},
     ]
     assert events["match_won"]["summary"] == summary["players"]
+    # The history keeps no summary of a party game: it stays a plain row.
+    assert "summary" not in game.profiles.matches[0]
+    assert "details" not in game.profiles.snapshot()["matches"][0]
 
 
 def test_a_party_match_decided_by_the_last_round_announces_its_summary():

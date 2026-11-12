@@ -1,7 +1,7 @@
 """A year of training sessions and practice matches, for the training calendar.
 
 The training session keeps its last 20 sessions and the player profiles their
-last 20 matches. The journal takes over every finished one and keeps it for
+last 50 matches. The journal takes over every finished one and keeps it for
 365 days in a compact form, bounded in size, so the calendar and exports reach
 further back.
 """

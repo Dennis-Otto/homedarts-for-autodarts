@@ -124,3 +124,98 @@ test("the dashboard gets a players view once a player has a profile", () => {
   assert.equal(players.title, "Players");
   assert.equal(players.sections[0].cards[0].type, "custom:homedarts-players-card");
 });
+
+// A match of the history that keeps its summary, and the numbers the integration answers.
+const kept = (ended, extra = {}) => ({
+  ended,
+  game: 501,
+  legs_to_win: 2,
+  sets_to_win: 1,
+  winner: 1,
+  details: true,
+  players: [
+    { name: "Alex", legs: 2, sets: 1 },
+    { name: "Lea", legs: 1, sets: 0 },
+  ],
+  ...extra,
+});
+const NUMBERS = {
+  double_out: true,
+  players: [
+    { player: 1, name: "Alex", legs: 2, sets: 1, darts: 45, average: 66.8, checkouts: 2, darts_at_double: 5, checkout_rate: 40 },
+    { player: 2, name: "Lea", legs: 1, sets: 0, darts: 42, average: 59.1, checkouts: 1, darts_at_double: 6, checkout_rate: 16.7 },
+  ],
+};
+const summaryUi = { ...ui, format: (value, digits = 0) => value.toFixed(digits) };
+const historyView = (...matches) => playersView(undefined, { attributes: { matches } });
+
+test("a match whose summary the history keeps is a button that opens it", () => {
+  const view = historyView(kept("a"), { ...kept("b"), details: "yes" });
+  assert.deepEqual(
+    view.matches.map((match) => match.details),
+    [true, false]
+  );
+  const closed = playersHtml(view, summaryUi).matches;
+  assert.match(closed, /^<button type="button" class="match" data-match="a" data-focus="match:a" aria-expanded="false">/);
+  assert.match(closed, /<\/button><div class="match">/);
+  assert.doesNotMatch(closed, /match-summary/);
+  // Opened, it says that it loads until the integration answers, then shows the table.
+  const open = (answer) =>
+    playersHtml(view, { ...summaryUi, matches: { open: new Set(["a"]), summaries: new Map(answer ? [[`a\nAlex\nLea`, answer]] : []) } })
+      .matches;
+  assert.match(open(), /aria-expanded="true">.*<\/button><div class="match-summary"><p class="muted">match_summary_loading<\/p><\/div>/);
+  assert.match(open({ state: "loading" }), /match_summary_loading/);
+  const table = open({ state: "loaded", numbers: NUMBERS });
+  assert.match(table, /<div class="match-summary"><table class="summary">/);
+  assert.match(table, /<tr class="result"><th>score_legs<\/th><td class="winner">2<\/td><td class="">1<\/td><\/tr>/);
+  assert.match(table, /<th>average<\/th><td class="winner">66\.8<\/td><td class="">59\.1<\/td>/);
+  assert.match(table, /<th>summary_checkout<\/th><td class="winner">40\.0% \(2\/5\)<\/td>/);
+  // A failed answer, or one without the numbers of two players, says so.
+  for (const answer of [{ state: "failed" }, { state: "loaded", numbers: { players: [NUMBERS.players[0]] } }]) {
+    assert.match(open(answer), /<p class="muted" role="alert">match_summary_failed<\/p>/);
+  }
+});
+
+test("in the summary of a team match both partners of the winning team won", () => {
+  const four = [...NUMBERS.players, ...NUMBERS.players.map((player) => ({ ...player, player: player.player + 2, name: `${player.name} 2` }))];
+  const match = kept("t", {
+    winners: [1, 3],
+    players: [{ name: "Alex" }, { name: "Lea" }, { name: "Alex 2" }, { name: "Lea 2" }],
+  });
+  const html = playersHtml(historyView(match), {
+    ...summaryUi,
+    matches: {
+      open: new Set(["t"]),
+      summaries: new Map([["t\nAlex\nLea\nAlex 2\nLea 2", { state: "loaded", numbers: { players: four } }]]),
+    },
+  }).matches;
+  const result = html.match(/<tr class="result">(.*?)<\/tr>/)[1];
+  assert.deepEqual(
+    [...result.matchAll(/<td class="(\w*)">/g)].map((cell) => cell[1]),
+    ["winner", "", "winner", ""]
+  );
+  // An unnamed seat keys its summary without a name.
+  const unnamed = historyView(kept("u", { players: [{ name: "Alex" }, { name: null }] }));
+  const shown = playersHtml(unnamed, {
+    ...summaryUi,
+    matches: { open: new Set(["u"]), summaries: new Map([["u\nAlex\n", { state: "loaded", numbers: NUMBERS }]]) },
+  }).matches;
+  assert.match(shown, /<table class="summary">/);
+});
+
+test("the card lists the latest ten matches and all of them on request", () => {
+  const view = historyView(...Array.from({ length: 12 }, (_, index) => ({ ...kept(`m${index}`), details: index % 2 === 0 })));
+  const ten = playersHtml(view, summaryUi).matches;
+  assert.equal([...ten.matchAll(/class="match"/g)].length, 10);
+  assert.match(
+    ten,
+    /<button type="button" class="link more-matches" data-more-matches data-focus="matches:more" aria-expanded="false">matches_all<svg/
+  );
+  const all = playersHtml(view, { ...summaryUi, t: (key) => (key === "matches_all" ? "All {count}" : key), matches: { all: true } }).matches;
+  assert.equal([...all.matchAll(/class="match"/g)].length, 12);
+  assert.match(all, /aria-expanded="true">matches_fewer<svg/);
+  const counted = playersHtml(view, { ...summaryUi, t: (key) => (key === "matches_all" ? "All {count}" : key) }).matches;
+  assert.match(counted, />All 12<svg/);
+  // Ten matches need no link.
+  assert.doesNotMatch(playersHtml(historyView(kept("x")), summaryUi).matches, /more-matches/);
+});
