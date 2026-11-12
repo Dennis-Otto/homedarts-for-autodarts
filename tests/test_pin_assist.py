@@ -1,8 +1,11 @@
 """scripts/pin_assist.py pins Assist's packages for the tests at the versions of the
 conversation manifest of Home Assistant and compiles the lock file again, the fix
-that tests/test_voice_blueprints.py names when the two differ."""
+that tests/test_voice_blueprints.py names when the two differ, and that the fix bot
+makes in the pull request of Renovate for a new Home Assistant test base."""
 
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -37,6 +40,13 @@ HEADER = (
 LOCK = HEADER + "".join(
     f"{name}=={version} \\\n    --hash=sha256:00\n" for name, version in WANTED.items()
 )
+# What the script runs to compile the lock file again.
+COMPILE = [sys.executable, ".github/blueprint.py", "locks", "--compile", "--fix"]
+SHOWN = "python3 .github/blueprint.py locks --compile --fix"
+# The step of scripts/check.sh whose autofix runs the script, and the check of the CI
+# whose fix bot runs it.
+STEP = "Tests, with every line and branch covered"
+CHECK = "check (home-assistant)"
 
 
 def test_the_manifest_of_the_installed_home_assistant():
@@ -66,38 +76,29 @@ def test_the_lock_file_holds_each_package_at_its_version():
     assert not pin_assist.locked(HEADER, WANTED)
 
 
-def test_the_command_in_the_header_of_the_lock_file():
-    assert pin_assist.compile_command(LOCK) == COMMAND.split()
-    real = pin_assist.compile_command(
-        (ROOT / "requirements-test.txt").read_text(encoding="utf-8")
-    )
-    assert real[0] == "pip-compile"
-    assert "--generate-hashes" in real
-    assert real[-1] == "requirements-test.in"
-    with pytest.raises(SystemExit, match="names no command"):
-        pin_assist.compile_command("ruff==0.16.10\n")
-
-
 @pytest.fixture
 def files(tmp_path, monkeypatch):
     """requirements-test.in and .txt in a folder of their own, the manifest of a
-    new Home Assistant, and the commands the script runs."""
+    new Home Assistant, and the compiles the script runs, each of which writes the
+    lock file that compiled tells it."""
     source = tmp_path / "requirements-test.in"
     lock = tmp_path / "requirements-test.txt"
     monkeypatch.setattr(pin_assist, "SOURCE", source)
     monkeypatch.setattr(pin_assist, "LOCK", lock)
     monkeypatch.setattr(pin_assist, "manifest_pins", lambda: dict(WANTED))
     runs = []
+    compiled = {"lock": LOCK}
 
     def run(command, **options):
         runs.append((command, options))
+        lock.write_text(compiled["lock"], encoding="utf-8")
 
     monkeypatch.setattr(pin_assist.subprocess, "run", run)
-    return source, lock, runs
+    return source, lock, runs, compiled
 
 
 def test_nothing_to_do_when_both_files_pin_home_assistants_versions(files, capsys):
-    source, lock, runs = files
+    source, lock, runs, _ = files
     source.write_text(PINNED, encoding="utf-8")
     lock.write_text(LOCK, encoding="utf-8")
     assert pin_assist.main() == 0
@@ -107,32 +108,75 @@ def test_nothing_to_do_when_both_files_pin_home_assistants_versions(files, capsy
 
 
 def test_new_versions_are_pinned_and_compiled(files, capsys):
-    source, lock, runs = files
+    source, lock, runs, _ = files
     source.write_text(SOURCE, encoding="utf-8")
     lock.write_text(HEADER, encoding="utf-8")
     assert pin_assist.main() == 0
     assert source.read_bytes() == PINNED.encode()
-    assert runs == [(COMMAND.split(), {"cwd": pin_assist.ROOT, "check": True})]
-    assert f"Compiling: {COMMAND}" in capsys.readouterr().out
+    assert lock.read_text(encoding="utf-8") == LOCK
+    assert runs == [(COMPILE, {"cwd": pin_assist.ROOT, "check": False})]
+    assert f"Compiling: {SHOWN}" in capsys.readouterr().out
 
 
 def test_a_lock_file_behind_its_pins_is_compiled(files):
-    source, lock, runs = files
+    source, lock, runs, _ = files
     source.write_text(PINNED, encoding="utf-8")
     lock.write_text(HEADER, encoding="utf-8")
     assert pin_assist.main() == 0
-    assert [command for command, _ in runs] == [COMMAND.split()]
+    assert [command for command, _ in runs] == [COMPILE]
 
 
-def test_without_pip_tools_it_says_what_to_run(files, monkeypatch, capsys):
-    source, lock, _ = files
+def test_a_compile_that_moves_no_pin_fails_and_says_what_to_run(files, capsys):
+    """The blueprint's compile does nothing where uv is missing, and nothing where
+    the sources can't be compiled: the pins are written all the same, and the script
+    fails, so that the fix bot's log and a person see what is left."""
+    source, lock, runs, compiled = files
     source.write_text(SOURCE, encoding="utf-8")
+    compiled["lock"] = HEADER
     lock.write_text(HEADER, encoding="utf-8")
-
-    def missing(command, **options):
-        raise FileNotFoundError(command[0])
-
-    monkeypatch.setattr(pin_assist.subprocess, "run", missing)
     assert pin_assist.main() == 1
     assert source.read_text(encoding="utf-8") == PINNED
-    assert f"Install pip-tools, then run: {COMMAND}" in capsys.readouterr().err
+    assert len(runs) == 1
+    assert f"install uv, which requirements-test.txt names, then run: {SHOWN}" in (
+        capsys.readouterr().err
+    )
+
+
+def test_the_compile_is_the_blueprints():
+    """The blueprint's tool compiles the lock files with --compile, and keeps the
+    result with --fix."""
+    result = subprocess.run(
+        [sys.executable, *COMPILE[1:3], "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        encoding="utf-8",
+        check=True,
+    )
+    assert "--compile" in result.stdout
+    assert "--fix" in result.stdout
+
+
+def test_the_fix_bot_pins_assist_when_the_ci_fails():
+    """When the CI of a pull request fails, as the one of Renovate for a new Home
+    Assistant test base does, the fix bot runs the commands of autofix of every step
+    of scripts/check.sh, and the step of the tests names this script, so that pull
+    request turns green by itself when only Assist's pins had to move."""
+    code = "\n".join(
+        [
+            "import sys; sys.path.insert(0, '.github')",
+            "from pathlib import Path",
+            "from blueprint.coach import Catalog",
+            "from blueprint.fixes import fixers",
+            "root = Path('.')",
+            f"for step, command in fixers(Catalog.load(root), root, {CHECK!r}):",
+            "    print(f'{step}: {command}')",
+        ]
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        capture_output=True,
+        encoding="utf-8",
+        check=True,
+    )
+    assert f"{STEP}: {{python}} scripts/pin_assist.py" in result.stdout.splitlines()

@@ -1209,7 +1209,7 @@ def test_assist_has_the_versions_of_home_assistant():
     """Assist runs in the tests with the packages Home Assistant installs for it:
     those of the conversation manifest of the Home Assistant the test plugin pins.
     When the test plugin brings a new Home Assistant, scripts/pin_assist.py pins
-    them again."""
+    them again, which the fix bot runs in the pull request of Renovate."""
     wanted = pin_assist.manifest_pins()
     pinned = dict(
         re.findall(
@@ -1222,7 +1222,8 @@ def test_assist_has_the_versions_of_home_assistant():
     assert {name: pinned.get(name) for name in wanted} == wanted, (
         f"Home Assistant {HA_VERSION} installs these for Assist:\n{lines}\nRun"
         " python scripts/pin_assist.py, which pins them in requirements-test.in and"
-        " compiles requirements-test.txt again."
+        " compiles requirements-test.txt again; in a pull request, the fix bot does"
+        " it after the checks."
     )
     assert {name: version(name) for name in wanted} == wanted, (
         "Install requirements-test.txt again: pip install --require-hashes -r"
