@@ -2,7 +2,7 @@
 
 custom_components/homedarts/strings.json holds the English texts, translations/en.json
 is its copy, and every other file of translations/ has the same keys in the same order
-(CONTRIBUTING.md#translations). This script makes what a command can make of that:
+(docs/development.md#translations). This script makes what a command can make of that:
 
 - en.json becomes the copy of strings.json;
 - every other translation takes the order of strings.json and loses the texts that
@@ -12,7 +12,7 @@ is its copy, and every other file of translations/ has the same keys in the same
 
 A text that a language misses stays missing, as only a person can write it: the
 script names the first one, for the contributor or for a maintainer or a native
-speaker who adds it before the merge (CONTRIBUTING.md#translations). A file that is right already keeps
+speaker who adds it before the merge (docs/development.md#translations). A file that is right already keeps
 every byte. tests/test_consistency.py checks the files; when a check fails, the fix
 bot runs this script and commits what it changed (.github/checks.project.toml).
 
@@ -113,7 +113,7 @@ def sync(root: Path) -> tuple[list[str], list[str]]:
                 f"{name} misses {len(missing)} of the texts of strings.json, such as "
                 f"{missing[0]}: write them in the language, or ask in the pull "
                 "request for a maintainer or a native speaker to add them before "
-                "the merge (CONTRIBUTING.md#translations)."
+                "the merge (docs/development.md#translations)."
             )
     return changed, remaining
 

@@ -38,7 +38,7 @@ NOTE = {
     "text": "Deze pagina is er nog alleen in het Engels.",
     "link": "Help mee met de vertaling",
     "href": "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/"
-    "CONTRIBUTING.md#translations",
+    "docs/development.md#translations",
 }
 WITH_NOTE = SimpleNamespace(docs_dir=CONFIG.docs_dir, extra={"untranslated": NOTE})
 MKDOCS = yaml.safe_load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
@@ -162,7 +162,7 @@ def test_the_hooks_know_the_languages_of_the_website():
 def test_a_further_language_names_its_menu_and_notes_its_english_pages(language):
     """Its own words for the tabs, the footer, the description and the switch of
     the theme, and the note on a page it shows in English, with the section of
-    the contributor guide that shows how to help to translate it, which stays when an
+    the development guide that shows how to help to translate it, which stays when an
     issue of the language closes."""
     i18n = MKDOCS["plugins"]["i18n"]
     settings = next(item for item in i18n["languages"] if item["locale"] == language)
@@ -175,6 +175,18 @@ def test_a_further_language_names_its_menu_and_notes_its_english_pages(language)
     note = settings["extra"]["untranslated"]
     assert set(note) == {"text", "link", "href"}
     assert note["href"] == NOTE["href"]
+
+
+def test_the_note_of_an_english_page_leads_to_a_section_of_the_project():
+    """The section on translations is in docs/development.md, a file of this project:
+    CONTRIBUTING.md belongs to the blueprint, and a section of the project there made
+    every update of the blueprint conflict (#673)."""
+    page, _, anchor = (
+        NOTE["href"].removeprefix(f"{REPOSITORY}/blob/main/").partition("#")
+    )
+    assert page == "docs/development.md"
+    text = (ROOT / page).read_text(encoding="utf-8")
+    assert f"\n## {anchor.capitalize()}\n" in text
 
 
 def test_the_website_of_a_page_is_the_language_of_its_folder():

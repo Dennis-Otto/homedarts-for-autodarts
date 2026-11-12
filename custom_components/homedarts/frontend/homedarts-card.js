@@ -152,7 +152,7 @@ const THEME_COLORS = new Set([
 ]);
 
 // Every language of the cards, English first: its file in text/ has the keys of
-// text/en.js in their order (CONTRIBUTING.md#translations).
+// text/en.js in their order (docs/development.md#translations).
 const TEXT = { en, de, es, fr, nl };
 
 const DEFAULTS = {

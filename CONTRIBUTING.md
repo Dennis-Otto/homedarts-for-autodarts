@@ -10,14 +10,7 @@ Coding agents find these rules in short in [AGENTS.md](AGENTS.md), with the file
 
 ## Requirements for changes
 
-- New functionality and bug fixes must include automated tests. Use pytest for integration behavior and extend the Docker end-to-end test in `tests/e2e/` when a user-visible Home Assistant flow changes.
-- Code must pass Ruff (lint and format) and strict mypy with the rules configured in `pyproject.toml`, keep the test coverage of every line and branch at 100 %, and remain compatible with the Home Assistant version used by the tests.
-- The JavaScript of the cards and of their tests must pass ESLint with the rules of `eslint.config.mjs`. Dashboard card changes need Node tests in `tests/frontend/` and, for visible changes, the browser test in `tests/e2e/browser.py`.
-- Blueprint changes need tests in `tests/test_blueprints.py`, which run the blueprints through Home Assistant's automation engine, and `python scripts/ship_blueprints.py`, which copies them into the integration, whose release package carries them, and records the fingerprint of the new version; `tests/test_shipped_blueprints.py` fails until it has run. Each start of Home Assistant brings the blueprints of the installed release into the configuration and updates those nobody changed ([decision 0023](docs/decisions/0023-blueprints-ship-with-the-integration.md)). The import buttons and the `source_url` of every blueprint point to `main`, so whoever imports or re-imports a blueprint between two releases gets the one on `main`, while HACS installs the latest release of the integration. A blueprint on `main` therefore keeps working with the latest release: a change that needs events, attributes or actions of an unreleased version is merged together with its release, or the blueprint's description names the version it needs. New inputs get defaults that keep existing automations working as before.
-- Tests keep working under the weekly [mutation tests](docs/development.md#mutation-tests), which run them several times in one process and in processes forked from it, against changed code in a copy of the repository: a test leaves its parameters unchanged, and one that reads the code as text or asks Git is marked `@pytest.mark.mutation_unsafe`.
-- User-facing text belongs in `strings.json` and every translation, card texts in every file of `frontend/text/`; see [Translations](#translations).
-- Update the README and `docs/` when behavior, setup, or supported versions change. The documentation is English, with a German translation next to each page (`docs/games.de.md` next to `docs/games.md`); update both. Regenerate screenshots with `bash tests/e2e/screenshots.sh` when a visible card or dialog changes.
-- Local Board Manager communication must not log, store, or expose the board API key. Cloud tokens remain in the config entry.
+- Changes need tests, and the checks of `scripts/check.sh` pass.
 - Every commit carries a [Developer Certificate of Origin](https://developercertificate.org/) sign-off, `Signed-off-by: Your Name <you@example.com>`, which `git commit -s` adds.
 - Every commit also has a signature that GitHub verifies, as the rules of `main` require; without one, GitHub blocks the merge, and the check *signed commits* and the PR coach name the commit and how to sign it again. `git commit -S` signs, while `git commit -s` only adds the sign-off, so a commit needs both. To sign every commit with an SSH key, run `git config gpg.format ssh`, `git config user.signingkey ~/.ssh/id_ed25519.pub` and `git config commit.gpgsign true`. The same key goes on your account on GitHub as a *signing key*, and the email of the commit must be verified on your account, as [GitHub's guide](https://docs.github.com/en/authentication/managing-commit-signature-verification) explains.
 - Keep *Allow edits by maintainers* on for a pull request from a fork. Without it the branch bot can't bring the pull request up to date, and a person has to.
@@ -65,18 +58,11 @@ A decision that shapes the project gets a record in [`docs/decisions/`](docs/dec
 
 ## Checks
 
-Before opening a pull request, run the checks of the CI, then the end-to-end and the browser test:
-
-```bash
-python3.14 -m venv .venv
+```sh
+python3 -m venv .venv
 .venv/bin/pip install --require-hashes -r requirements-test.txt
-npm ci
 . .venv/bin/activate && bash scripts/check.sh
-BOARD_MANAGER=2 bash tests/e2e/run.sh
-bash tests/e2e/browser.sh
 ```
-
-The end-to-end and browser tests require Docker with Compose. The [development guide](docs/development.md) describes every tool, including the demo instance.
 
 Home Assistant runs on Linux and macOS, but the commands above run on Linux alone, as in the CI: `requirements-test.txt`, compiled for Linux, pins neither the `winrt-runtime` that bleak needs on Windows nor the `pyobjc-core` that it needs on macOS, and `pip install --require-hashes` refuses every package without its pin and hash. On Windows, pytest couldn't start anyway: `homeassistant/runner.py` imports `fcntl`, a module of Python for Unix alone, and pytest-homeassistant-custom-component imports that runner as pytest starts. An install with `--no-deps` or without the hashes doesn't help, so leave the lock file as it is. On macOS, run the checks in the dev container of `.devcontainer/`, below, or in GitHub Codespaces. What works on Windows:
 
@@ -91,32 +77,7 @@ git config core.hooksPath .githooks
 
 Git runs the hook only when its file is executable. Windows has no such mode and adds the file as a plain one, which `scripts/check.sh` reports; `git update-index --chmod=+x .githooks/pre-push` and a commit make it executable.
 
-Do not include real credentials, board IDs, API keys, private network addresses, or logs containing personal data. Use reserved documentation addresses such as `192.0.2.10` and clearly synthetic values in tests and documentation.
-
-The development container in `.devcontainer/` sets up Python 3.14, Node.js 24 and Docker in one step, ShellCheck for the step *Shell scripts* as well, for VS Code and GitHub Codespaces, and `bash scripts/check.sh` runs in it. Optional pre-commit hooks run Ruff and basic file checks before each commit: `pip install pre-commit && pre-commit install`.
-
-## Translations
-
-The integration speaks English, German, Dutch, French and Spanish. Its texts live in two places:
-
-- `custom_components/homedarts/strings.json` with the English source, copied unchanged to `translations/en.json`, and one file per language in `translations/` with the same keys in the same order;
-- the texts of the dashboard cards, one file per language in `custom_components/homedarts/frontend/text/`: `en.js` with the English source and one file per language with the same keys in the same order. Each file is `export default` followed by JSON, one text per line such as `"visit": "Current visit",`, with a comma after every text but the last; comments stand on lines of their own. The card module imports every file, and `TEXT` puts them together.
-
-`tests/test_consistency.py` keeps every language complete. It fails when a translation file or a file of card texts misses a key, has one too many, loses a placeholder such as `{name}`, uses the wrong form of address, or when a translation file has no file of card texts or the other way round. It names the line of a slip in a file of card texts, such as a comma after the last text. It also fails for a card text that no card reads, by its key or by a family of keys such as `party_${game}`, because the translation bot would still ask volunteers to translate it. So a pull request that adds a text adds it to every language, and one that removes a text, or the last code that shows it, removes it everywhere. If you do not speak a language, ask in the pull request; a maintainer or a native speaker adds the missing texts before the merge. The texts `picker_*` have a copy in `homedarts-strategy.js`, the small module of every page, which `python3 scripts/sync_translations.py` writes.
-
-When an English text changes, change its translations in the same pull request. If you can't, the [translation bot](docs/development.md#translation-bot) opens an issue for each language with outdated or missing texts and asks native speakers for them. A translation that stays right after an English change is marked with a line such as `Translations-checked: de fr status_ready` in the description of the pull request: the languages first, then the keys, or no keys for every text of the languages.
-
-A new language needs its translation file, its file of card texts with its import and its entry in `TEXT` of `homedarts-card.js`, its code in `LANGUAGES` of `const.py`, its words for the calendar in `journal.py`, its month names and date format for the highlight gallery in `media_source.py`, its decimal mark for the weekly report in `DECIMAL_MARKS` of `calls.py`, the default sentences of the three voice blueprints with their examples in `tests/test_voice_blueprints.py` and the guide, the answers of *Ask Assist about your darts* in its `answers`, and a line in the documentation's [language section](docs/README.md#languages). `tests/test_consistency.py` and `tests/test_voice_blueprints.py` fail until each of these lists, except the line of the documentation, names the languages of the translation files, so a new language can't stay English in one place unnoticed. The card picks a language by Home Assistant's language code, so `es` also serves `es-419`. The settings of the blueprints stay English because Home Assistant does not translate blueprints. What the callers and the weekly report say comes from the integration instead: the board events carry it in `call`, `title` and `summary`, rendered by `calls.py` from the `caller_*`, `report_*`, `voice_*` and `voice_pack_*` messages, so a translation of these messages is what they say. The sentences of the voice blueprints come in every language, and so do the answers of *Ask Assist about your darts*, which a blueprint has to bring itself: they follow the style below, which `tests/test_voice_blueprints.py` checks for French and Spanish. The translation bot reads only the translation files and the files of card texts, so it doesn't see the sentences and answers of the voice blueprints: a change to their English text changes the other languages in the same pull request, or asks native speakers for them in an issue with the label `translations`.
-
-Style of the languages:
-
-- Speak to the user as Home Assistant does in that language: informally in German ("du"), Dutch ("je") and Spanish ("tú"), formally in French ("vous"). French puts a no-break space (`\u00a0`) before `:`, `;`, `?` and `!`; Spanish opens questions with `¿`. The tests check both.
-- Keep the darts terms players use in that language, and the English ones where they do: leg, set, bull, 180, game shot, double out. Game names such as Around the Clock, Bob's 27 or Shanghai stay English.
-- Use one term for one thing throughout. The glossaries: German "Aufnahme" for a visit, "Übungsspiel", "Doppelquote"; Dutch "beurt", "uitgooi", "dubbel", "oefenspel", "bullen"; French "volée", "manche" for a leg, "finish", "partie"; Spanish "tirada", "cierre", "doble", "partida".
-- The `say_*` texts are spoken by the caller; write them as a caller would say them.
-- `practice_entity` and `tournament_entity` of the card texts say how the names of the practice and tournament entities read, for example `Practice {name}` or `{name} de la partie`, so the automatic dashboard can show them without the section they sit in. Keep them in line with the entity names of the translation file.
-
-The documentation is English with a complete German translation. Each German page sits next to its English page, with the English name and `.de`, such as `docs/games.de.md` next to `docs/games.md`, and links to German pages by those names. A pull request that changes a page changes both languages. Keep the terms of the [glossary](docs/glossary.md) ([German](docs/glossary.de.md)), for example "Übungsspiel", "Aufnahme" for a visit and "Doppelquote". Dutch, French and Spanish have the pages that decide whether someone tries the integration, `index`, `getting-started`, `installation` and `faq`, such as `docs/faq.nl.md`, and their websites show every other page in English, with a note that leads to this section, which `extra.untranslated` of the language in `mkdocs.yml` words ([decision 0027](docs/decisions/0027-the-start-pages-in-dutch-french-and-spanish.md)). A pull request that changes one of these four pages changes them in every language where it can, in the terms of the glossaries above; where it can't, it says so, keeps the English words in the translated page, and an issue with the label `translations` asks native speakers. A native speaker can improve them at any time: the pencil of each page of the website opens its file on GitHub. `tests/test_website_translations.py` holds these pages to what a player sees: the buttons and terms of the translation files, the menus of Home Assistant, which it lists from the translations of Home Assistant's frontend, and the style above. It also fails when `getting-started` or `faq` lacks a section or a link of its English page: add it to the translated page as well, in English if you can't translate it, and say so in the pull request. A link from such a page goes to its own page in that language, such as `installation.nl.md`, and to the English page for a section that only English has, such as `installation.md#reconfigure`. `tests/test_docs_links.py` checks that every link, heading anchor and image resolves, and that every count of blueprints, dashboard cards and `homedarts.*` actions matches the blueprint files, the card picker and `services.yaml`.
+The dev container in `.devcontainer/` has all of this set up, ShellCheck for the step *Shell scripts* as well, for VS Code and for GitHub Codespaces: open the repository in it, and `bash scripts/check.sh` runs.
 
 ## When a check fails
 
@@ -166,20 +127,6 @@ The READMEs, this guide and the pages of `docs/` have one column, so that they r
 
 `scripts/check.sh` fails on a `<table>` with a picture and on a cell with a width in a README, a CONTRIBUTING file or a page of `docs/`, with its file and line, and warns of a cell of a Markdown table with more than 30 words, which fails nothing yet. `python3 .github/blueprint.py pages --fix` puts the cells of such a table one below the other, the text before its picture, and leaves out the widths; a table inside a table it leaves to you.
 
-Every page of the website starts with front matter that describes it in one sentence of 50 to 160 characters, written for that page in its language. Search engines show it under the title of the page, and so do the previews of a shared link:
-
-```markdown
----
-description: "X01, Cricket, party and training games in Home Assistant: matches, sets, teams and tournaments, against the bot or each other, with every rule explained."
----
-
-# Games and rules
-```
-
-`tests/test_docs_links.py` fails for a page without a description, with a description that another page has, or with the words of the template of a decision. A page that moves keeps its file for the old links on GitHub, with front matter such as `moved: installation.md` instead: on the website it leads to that page at once, in the language of the website, and stays out of search engines, the sitemap and the search of the website (`scripts/mkdocs_hooks.py`).
-
-After its title, a page starts with the line back to the overview on GitHub and the link to the other language, such as `[← Documentation](README.md) · [Deutsch](games.de.md)`. The website leaves that line out, because its menu and its switch of the language do the same. The changelog of the website, `docs/changelog.md`, is the line `--8<-- "CHANGELOG.md"`: the hooks include the file with its links written from the root, so that `docs/games.md` there leads to the page of the website, and its pencil edits `CHANGELOG.md`. `README.md`, which HACS shows too, and its German translation `docs/README.de.md` link to the pages of the website, such as `https://dennis-otto.github.io/homedarts-for-autodarts/games.html` and `https://dennis-otto.github.io/homedarts-for-autodarts/de/games.html`, and not to the Markdown on GitHub, which has no search, no dark mode and no switch of the language. Only their link to the changelog stays on GitHub until the website has published its page. `tests/test_docs_links.py` names the address on the website for every link of the two that still leads to a page on GitHub.
-
 ## Diagrams
 
 The GitHub app, the stores of the projects and other renderers of Markdown show a `mermaid` block as code, so a diagram is a picture of its source. The source is Mermaid in `docs/diagrams/<name>.mmd`, and `bash scripts/diagrams.sh` draws it, with Docker, as `docs/images/diagrams/<name>.svg` on a white card and `<name>.dark.svg` for a dark theme. The Markdown shows them with paths from its own folder, and the website shows them too, the picture of the theme that the reader switches to:
@@ -210,13 +157,16 @@ The GitHub app, the stores of the projects and other renderers of Markdown show 
 
 ## Releases
 
-The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with the package for HACS, its SBOM and its signed provenance; the [release guide](docs/releases.md) describes every step. A release of dependency updates merges and publishes itself, once a day, or at once when it fixes a vulnerability.
+The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance, and delivers it to HACS. A release of dependency updates merges and publishes itself, once a day, or at once when it fixes a vulnerability.
 
 A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release, for a prerelease for example. After the merge, the release bot writes the title and such a line, or one of `BREAKING CHANGE:`, into the end of the description as an override in an HTML comment, which release-please reads instead of the squash commit, whose parser could fail on another line of the description. A prerelease leaves the fragments and the text of Unreleased to the release that follows it.
 
 A file that the release ships beside its package, such as the zip of a browser extension, comes from `scripts/release-assets.sh` of this project, if it has one. The build of the release runs `bash scripts/release-assets.sh FOLDER VERSION` at the commit of the release, in a job of its own without a token that may write, a secret, `sudo` or Docker, with the Node.js of `.nvmrc` (or that of the runner without one) and `npm ci --ignore-scripts` first where a `package.json` is. The script writes each asset as a file at the top of `FOLDER`, by a name of letters, digits, `.`, `_`, `+` and `-` that starts and ends with a letter or a digit and that no asset of the release has. The release keeps `provenance.*`, `*.intoto.jsonl`, `*.spdx.json`, `*.cdx.json`, `*.openvex.json` and `THIRD_PARTY_NOTICES.md` for itself. The script reaches only GitHub, Node.js and npm. The release attests every asset and attaches it to the draft before it is published; its SBOMs describe the zips and tarballs of the script where no registry delivers the project (`PUBLISH_TO` is `none` or unset), and the verification of the release fails for an asset without its signed provenance. When the script fails or the release refuses one of its names, the job explains in the summary of its run what failed and how to fix it, and the release stays a draft. After a hiccup, re-run the failed jobs of that run, which finishes the draft. A fix of the script ships with the next release, as the build runs at the commit of the release, so give its pull request a `fix:` title, and once that release is out, delete the old draft by hand with `gh release delete vX.Y.Z --yes`, which keeps the signed tag.
 
 <!-- The text of this project about its releases starts below this line, and every update of the blueprint keeps it. -->
+The [release guide](docs/releases.md) describes every step of a release of this project, from the pull request of the release bot to the package that HACS installs.
+
+What this project asks beyond these rules is in its [development guide](docs/development.md), which the website shows as well: the [requirements of a change](docs/development.md#requirements-for-changes) of the integration, the cards and the blueprints, the [commands of the checks](docs/development.md#tests) with the end-to-end and the browser test, the [translations](docs/development.md#translations) of the integration, the cards and the website, and the [pages of the website](docs/development.md#pages-of-the-website).
 <!-- The text of this project about its releases ends above this line. -->
 
 By contributing, you agree that your contribution is licensed under the MIT license of this project.

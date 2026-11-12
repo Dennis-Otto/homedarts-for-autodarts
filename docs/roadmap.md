@@ -215,7 +215,7 @@ Ideas for the versions after 2.0. Votes and reactions on the [feature requests](
 | --- | --- | --- |
 | **Granboard at a real board** | Check every bed of a real Granboard and take the label *experimental* off the Granboard support of 1.17 | A player with a Granboard who [checks every bed](granboard.md#check-every-bed) and reports what counts wrong |
 | **Autodarts Desktop** | Verify boards run by Autodarts Desktop and document what works; a player reported 2.0.2 on Linux working ([#105](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/105)) | Test reports from players who use it on Windows |
-| **Further languages** | The integration and the cards in more languages, and the questions and answers of Assist in Spanish, French and Dutch as native speakers say them ([#380](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/380)) | Contributions from native speakers ([how to add a language](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations)) |
+| **Further languages** | The integration and the cards in more languages, and the questions and answers of Assist in Spanish, French and Dutch as native speakers say them ([#380](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/380)) | Contributions from native speakers ([how to add a language](development.md#translations)) |
 
 ## Later
 
