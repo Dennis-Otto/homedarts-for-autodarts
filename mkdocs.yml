@@ -87,7 +87,7 @@ plugins:
   # start, the installation and the frequently asked questions (decision 0027). A
   # page without a version in a language is shown in English there, which search
   # engines don't list twice, with the note of extra.untranslated, which links to
-  # the section of CONTRIBUTING.md that shows how to translate it (scripts/mkdocs_hooks.py).
+  # the section of docs/development.md that shows how to translate it (scripts/mkdocs_hooks.py).
   # The theme of a language names the switch between light and dark in its words.
   # https://ultrabug.github.io/mkdocs-static-i18n/
   i18n:
@@ -135,7 +135,7 @@ plugins:
           untranslated:
             text: "Deze pagina is er nog alleen in het Engels."
             link: "Help mee met de vertaling"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/docs/development.md#translations"
       - locale: fr
         name: Français
         build: true
@@ -159,7 +159,7 @@ plugins:
           untranslated:
             text: "Cette page n'existe encore qu'en anglais."
             link: "Aidez-nous à la traduire"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/docs/development.md#translations"
       - locale: es
         name: Español
         build: true
@@ -183,7 +183,7 @@ plugins:
           untranslated:
             text: "Esta página todavía solo está en inglés."
             link: "Ayúdanos a traducirla"
-            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/CONTRIBUTING.md#translations"
+            href: "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/docs/development.md#translations"
 
 # Links in the HTML of a page, links to the start pages of GitHub and links to the
 # other language lead to the pages of the website, as the links of the Markdown do.

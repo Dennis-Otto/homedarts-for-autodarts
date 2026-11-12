@@ -22,10 +22,8 @@ INTEGRATION = ROOT / "custom_components" / "homedarts"
 LANGUAGES = ("nl", "fr", "es")
 PAGES = ("index", "getting-started", "installation", "faq")
 NBSP = "\xa0"
-CONTRIBUTING = (
-    "https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/"
-    "CONTRIBUTING.md#translations"
-)
+# The section of the development guide that shows how to help with a translation.
+TRANSLATION_GUIDE = "](development.md#translations)"
 
 # The words of the menus of Home Assistant, as its frontend has them in its
 # translations (hass_frontend/static/translations of frontend 20260930.5, which
@@ -102,7 +100,7 @@ QUOTES = {
 # The placeholders of these quotes, as the pages fill them in.
 FILLED_IN = {"{game}": "501", "{board}": "…"}
 
-# One term for one thing (CONTRIBUTING.md#translations): the pages use the words of
+# One term for one thing (docs/development.md#translations): the pages use the words of
 # these texts of the integration.
 TERMS = (
     "card.heatmap",
@@ -352,7 +350,7 @@ def test_a_page_with_all_of_the_english_page_keeps_up_with_it(language, page):
     translation = read(f"{page}.{language}")
     way_out = (
         f"Add it to docs/{page}.{language}.md as well, in English if you can't "
-        "translate it: see CONTRIBUTING.md#translations."
+        "translate it: see docs/development.md#translations."
     )
     assert HEADING.findall(translation) == HEADING.findall(english), (
         f"docs/{page}.{language}.md does not have the headings of docs/{page}.md. "
@@ -369,4 +367,4 @@ def test_a_page_with_all_of_the_english_page_keeps_up_with_it(language, page):
 def test_help_with_a_translation_leads_to_how_to_help(language):
     for page, text in pages(language).items():
         assert not OWN_ISSUE.search(text), page
-    assert CONTRIBUTING in read(f"index.{language}")
+    assert TRANSLATION_GUIDE in read(f"index.{language}")

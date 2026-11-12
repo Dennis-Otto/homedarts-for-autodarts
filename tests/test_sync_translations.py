@@ -135,7 +135,7 @@ def test_a_missing_text_stays_missing_for_a_person(tmp_path):
         "custom_components/homedarts/translations/nl.json misses 3 of the texts of "
         "strings.json, such as config.step.user.title: write them in the language, "
         "or ask in the pull request for a maintainer or a native speaker to add them "
-        "before the merge (CONTRIBUTING.md#translations)."
+        "before the merge (docs/development.md#translations)."
     ]
 
 
