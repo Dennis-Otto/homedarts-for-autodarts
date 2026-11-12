@@ -298,7 +298,7 @@ Up to version 1.18 the integration was called Autodarts, with the domain `autoda
 - **Stores.** The three stores of the old entry, with the training, the games, the reports and the calendar, are loaded and saved as the stores of the new entry, `homedarts.<entry>.…`; the old entry is removed afterwards.
 - **Registries.** The entities and the device of the board move to the new entry in Home Assistant's registries, with their IDs, names, areas and customizations, so history and statistics stay with them.
 - **Media.** The highlights, exports and voice packs move from the folder `autodarts` of the media folder to `homedarts`; a file that is there already stays.
-- **Dashboards.** The cards and the strategy in the dashboards that Home Assistant keeps get their new types, and the board style `autodarts` becomes `flat`; dashboards in YAML, automations and scripts stay as they are, and a repair lists those that still use the old name.
+- **Dashboards.** The cards and the strategy in the dashboards that Home Assistant keeps get their new types, and the board style `autodarts` becomes `flat`; dashboards in YAML, automations and scripts stay as they are, and a repair lists those that still use the old name. It stays over a restart and looks again at each start, until nothing is left.
 - **Old files.** With the last board, the takeover deletes the folder of the integration under its former name, `autodarts` in `custom_components`, recognized by its manifest. Other integrations with the domain `autodarts` and their boards stay untouched.
 
 ## Security

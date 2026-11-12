@@ -10,7 +10,8 @@ dashboards. The old entry goes, and with the last one the folder of the old
 integration, which HACS leaves beside the new one when the domain changes.
 
 What refers to the actions of the old domain, such as autodarts.start_game, in
-automations, scripts and dashboards in YAML stays as it is: a repair lists it.
+automations, scripts and dashboards in YAML stays as it is: a repair lists it,
+looks again at each start and goes when nothing is left.
 """
 
 from __future__ import annotations
@@ -189,21 +190,9 @@ async def async_finish(hass: HomeAssistant) -> None:
         await hass.async_add_executor_job(
             _move_media, list(hass.config.media_dirs.values())
         )
-        references = await _async_update_dashboards(hass)
+        references = await _async_references(hass)
         await async_remove_modules(hass, *OLD_MODULES, folder=OLD_DOMAIN)
-        references[:0] = _automations_and_scripts(hass)
-        if references:
-            ir.async_create_issue(
-                hass,
-                DOMAIN,
-                ISSUE_REFERENCES,
-                is_fixable=False,
-                severity=ir.IssueSeverity.WARNING,
-                translation_key=ISSUE_REFERENCES,
-                translation_placeholders={
-                    "items": "\n".join(f"- {item}" for item in references)
-                },
-            )
+        _report_references(hass, references)
         if await hass.async_add_executor_job(
             _remove_old_folder, Path(hass.config.path("custom_components", OLD_DOMAIN))
         ):
@@ -215,6 +204,47 @@ async def async_finish(hass: HomeAssistant) -> None:
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=ISSUE_RESTART,
             )
+
+
+async def async_check_references(hass: HomeAssistant) -> None:
+    """Once Home Assistant has started, with the automations and scripts loaded:
+    look again for what still names the old domain while the repair that lists it
+    is there, so that its list stays current and the repair goes with the last of
+    it. The repair may also be one that an earlier version made without keeping
+    it over a restart, which comes back this way. Without the repair nothing is looked
+    at: after the user has worked it off, a start costs nothing."""
+    if ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_REFERENCES) is None:
+        return
+    async with hass.data.setdefault(FINISHING, asyncio.Lock()):
+        _report_references(hass, await _async_references(hass))
+
+
+async def _async_references(hass: HomeAssistant) -> list[str]:
+    """The automations, the scripts and the dashboards in YAML that still use the
+    old domain; the dashboards that Home Assistant keeps get the new cards."""
+    return [*_automations_and_scripts(hass), *await _async_update_dashboards(hass)]
+
+
+@callback
+def _report_references(hass: HomeAssistant, references: list[str]) -> None:
+    """The repair that lists what still uses the old domain, kept over a restart,
+    because the takeover asks for one; it goes when nothing is left. A repair
+    that the user ignored stays ignored."""
+    if not references:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_REFERENCES)
+        return
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_REFERENCES,
+        is_fixable=False,
+        is_persistent=True,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=ISSUE_REFERENCES,
+        translation_placeholders={
+            "items": "\n".join(f"- {item}" for item in references)
+        },
+    )
 
 
 def _move_media(roots: list[str]) -> None:

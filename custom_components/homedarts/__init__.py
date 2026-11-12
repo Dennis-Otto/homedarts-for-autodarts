@@ -18,6 +18,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
 from . import takeover
@@ -74,6 +75,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async_setup_services(hass)
     async_setup_websocket(hass)
     await async_install_blueprints(hass)
+    # The repair of what still uses the former name of the integration follows
+    # the user's changes from one start to the next.
+    async_at_started(hass, takeover.async_check_references)
     return True
 
 
