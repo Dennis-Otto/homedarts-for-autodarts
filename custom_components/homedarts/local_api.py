@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import re
 from collections.abc import AsyncIterator
@@ -24,6 +25,13 @@ MAX_CAMERAS = 8
 CLOSING = (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSING, aiohttp.WSMsgType.CLOSED)
 # Home Assistant stores states of at most 255 characters.
 MAX_TEXT = 255
+# The largest answer the integration reads from a board, like a frame of its
+# socket; a camera picture may be larger. They count what an answer becomes once
+# aiohttp has inflated it, not what was sent.
+MAX_ANSWER = 1024 * 1024
+MAX_PICTURE = 8 * 1024 * 1024
+# The media types of JSON, as aiohttp accepts them for a JSON answer.
+JSON_TYPE = re.compile(r"^application/(?:[\w.+-]+?\+)?json")
 # The sockets of a board. Board Manager 2.1 sends everything of the first on the
 # second as well, and its motion there alone.
 EVENTS = "/api/events"
@@ -295,6 +303,36 @@ def _flag(value: Any) -> bool | None:
     return value if isinstance(value, bool) else None
 
 
+async def _body(response: aiohttp.ClientResponse, limit: int, path: str) -> bytes:
+    """The answer, refused beyond limit bytes without reading more of it.
+
+    The Content-Length is what was sent; the bytes read are what aiohttp made
+    of it, after it inflated a compressed answer.
+    """
+    length = response.headers.get(aiohttp.hdrs.CONTENT_LENGTH)
+    if length is not None and int(length) > limit:
+        raise AutodartsProtocolError(path)
+    # The test double of Home Assistant makes a new reader on each access.
+    stream = response.content
+    body = bytearray()
+    while chunk := await stream.read(limit + 1 - len(body)):
+        body += chunk
+        if len(body) > limit:
+            raise AutodartsProtocolError(path)
+    return bytes(body)
+
+
+def _json(response: aiohttp.ClientResponse, body: bytes, path: str) -> Any:
+    """The JSON of an answer that says it is JSON, as aiohttp would read it."""
+    # Without the header, aiohttp names the type application/octet-stream, which
+    # is refused; the test double of Home Assistant names none.
+    if not JSON_TYPE.match(response.content_type or "application/json"):
+        raise AutodartsProtocolError(path)
+    if not body.strip():
+        return None
+    return json.loads(body)
+
+
 class AutodartsLocalClient:
     """Control one local board, using the Board Manager's own HTTP protocol."""
 
@@ -342,19 +380,19 @@ class AutodartsLocalClient:
                             f"Board rejected command (HTTP {response.status})"
                         )
                     response.raise_for_status()
-                    if response_type == "none":
-                        # PATCH /config may return secrets. Discard the response.
-                        await response.read()
-                        return None
-                    if response_type == "text":
-                        return (await response.text()).strip()
                     if response_type == "image":
                         if not response.headers.get("Content-Type", "").startswith(
                             "image/"
                         ):
                             raise AutodartsConnectionError("No camera image available")
-                        return await response.read()
-                    return await response.json()
+                        return await _body(response, MAX_PICTURE, path)
+                    body = await _body(response, MAX_ANSWER, path)
+                    if response_type == "none":
+                        # PATCH /config may return secrets. Discard the response.
+                        return None
+                    if response_type == "text":
+                        return body.decode().strip()
+                    return _json(response, body, path)
         except aiohttp.ContentTypeError as err:
             # Something answers, but not like a Board Manager, e.g. a web page.
             raise AutodartsProtocolError(path) from err
@@ -363,8 +401,8 @@ class AutodartsLocalClient:
             raise AutodartsConnectionError(
                 "Unable to communicate with local board"
             ) from err
-        except ValueError as err:
-            # Invalid JSON or text.
+        except (ValueError, RecursionError) as err:
+            # Invalid JSON or text, or JSON nested deeper than Python parses.
             raise AutodartsProtocolError(path) from err
 
     async def _object(self, path: str) -> dict[str, Any]:

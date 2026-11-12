@@ -1,5 +1,6 @@
 """Finding boards: mDNS announcements, the Autodarts lookup and manual fallback."""
 
+import json
 from ipaddress import ip_address
 from unittest.mock import patch
 
@@ -18,9 +19,11 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homedarts.const import DISCOVERY_URL
+from custom_components.homedarts.local_api import MAX_ANSWER
 
 from .local_helpers import (
     BASE,
+    STATE,
     local_entry_data,
     mock_board,
     mock_board_v2,
@@ -315,6 +318,34 @@ async def test_announced_board_that_does_not_answer_is_ignored(hass, aioclient_m
     )
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "cannot_connect_local"
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        pytest.param(
+            {"json": STATE, "headers": {"Content-Length": str(MAX_ANSWER + 1)}},
+            id="announced",
+        ),
+        pytest.param(
+            {"content": json.dumps(STATE).encode().ljust(MAX_ANSWER + 1)},
+            id="unannounced",
+        ),
+    ],
+)
+async def test_announced_device_with_an_oversized_answer_is_ignored(
+    hass, aioclient_mock, answer
+):
+    # A board in every other answer: the size alone stops the identity read.
+    aioclient_mock.get(BASE + "/api/state", **answer)
+    mock_board(aioclient_mock)
+    result = await hass.config_entries.flow.async_init(
+        "homedarts", context={"source": SOURCE_ZEROCONF}, data=zeroconf()
+    )
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "cannot_connect_local"
+    # The identity read stopped at the first answer.
+    assert len(aioclient_mock.mock_calls) == 1
 
 
 async def test_announced_board_without_board_id_asks_for_setup(hass, aioclient_mock):
