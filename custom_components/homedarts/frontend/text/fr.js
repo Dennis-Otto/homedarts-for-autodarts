@@ -1,6 +1,6 @@
 // The French texts of the dashboard cards, with the keys of en.js in its order.
 // Change only the text on the right, in its quotes; keep the key, the quotes, the
-// comma after them and placeholders such as {name} (CONTRIBUTING.md#translations).
+// comma after them and placeholders such as {name} (docs/development.md#translations).
 export default {
   "visit": "Volée en cours",
   "points": "points",

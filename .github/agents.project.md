@@ -9,6 +9,7 @@ This file belongs to the project: the blueprint wrote it once, and its updates l
 - The integration is in `custom_components/homedarts/`, its manifest and version in `custom_components/homedarts/manifest.json`, the HACS metadata in `hacs.json`.
 - `README.md` documents installation, configuration and use, `docs/` holds the pages of the website, <https://dennis-otto.github.io/homedarts-for-autodarts/>, and `CHANGELOG.md` lists the changes of every release.
 - The tests are in `tests/`; `scripts/check.sh` runs every check.
+- The rules of this project for contributors are in `docs/development.md`: the [requirements of a change](../docs/development.md#requirements-for-changes), the [checks with the end-to-end and the browser test](../docs/development.md#tests), the [translations](../docs/development.md#translations) and the [pages of the website](../docs/development.md#pages-of-the-website). `CONTRIBUTING.md` belongs to the blueprint and equals what its template renders: a section of this project there makes every update of the blueprint conflict (#673). New text of the project goes into `docs/development.md`, and into `CONTRIBUTING.md` only between the two marked lines of `## Releases`.
 
 ## Names
 

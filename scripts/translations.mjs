@@ -436,7 +436,7 @@ export function render(result, links) {
       `4. Once it is merged, the next release brings your texts to every user, and the [changelog](${links.blob}/CHANGELOG.md) thanks you by your GitHub name. A maintainer writes that line, you don't need to.`,
     ].join("\n"),
     `Is a text still right as it is? Say so in a comment here, or put a line such as \`Translations-checked: ${language} ${items[0].key}\` with its keys into the description of your pull request; once merged, the bot counts them as up to date.`,
-    `The [translation guide](${links.blob}/CONTRIBUTING.md#translations) has the style of each language: how to address the reader and which darts terms stay English. This issue updates itself when the texts change and closes itself once every ${name} text is up to date.`
+    `The [translation guide](${links.blob}/docs/development.md#translations) has the style of each language: how to address the reader and which darts terms stay English. This issue updates itself when the texts change and closes itself once every ${name} text is up to date.`
   );
   return { title, body: `${parts.join("\n\n")}\n` };
 }

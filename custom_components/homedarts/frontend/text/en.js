@@ -1,6 +1,6 @@
 // The English texts of the dashboard cards, the source of every other file in this
 // folder: one text per line, "key": "text". A new text comes in every language, in
-// the same place (CONTRIBUTING.md#translations).
+// the same place (docs/development.md#translations).
 export default {
   "visit": "Current visit",
   "points": "points",

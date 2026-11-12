@@ -527,7 +527,7 @@ test("an issue names each text with its English text then and now and its transl
   assert.ok(body.includes("`fix(i18n): update the French texts`"));
   assert.ok(body.includes(`[changelog](${LINKS.blob}/CHANGELOG.md) thanks you`));
   assert.ok(body.includes("`Translations-checked: fr config.title`"));
-  assert.ok(body.includes(`[translation guide](${LINKS.blob}/CONTRIBUTING.md#translations)`));
+  assert.ok(body.includes(`[translation guide](${LINKS.blob}/docs/development.md#translations)`));
   assert.ok(body.endsWith("once every French text is up to date.\n"));
 });
 

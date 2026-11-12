@@ -356,7 +356,7 @@ commands = [
   "python3 scripts/ship_blueprints.py",
   "bash scripts/check-project.sh",
 ]
-docs = "CONTRIBUTING.md#checks"
+docs = "docs/development.md#tests"
 autofix = [
   "npx --no-install eslint --fix .",
   "{python} scripts/sync_translations.py",
