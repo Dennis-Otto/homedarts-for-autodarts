@@ -20,7 +20,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from yarl import URL
 
 from .backup import ISSUE as BACKUP_AVAILABLE
-from .backup import async_restore
+from .backup import async_adopt, async_restore
 from .const import CONF_BOARD_ID, CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN
 from .errors import AutodartsApiError
 from .local_api import AutodartsLocalClient
@@ -224,7 +224,8 @@ class BackupFlow(RepairsFlow):
             return self.async_show_form(
                 step_id="confirm",
                 description_placeholders={
-                    key: str(self._data.get(key, "")) for key in ("board", "date")
+                    key: str(self._data.get(key, ""))
+                    for key in ("board", "date", "backup")
                 },
             )
         entry = self.hass.config_entries.async_get_entry(
@@ -238,6 +239,10 @@ class BackupFlow(RepairsFlow):
             )
         except HomeAssistantError:
             return self.async_abort(reason="restore_failed")
+        if folder := self._data.get("folder"):
+            # The backup of a deleted dartboard without Autodarts: its backups
+            # become this board's, so that no other board is offered them.
+            await async_adopt(self.hass, entry, str(folder))
         return self.async_create_entry(data={})
 
 

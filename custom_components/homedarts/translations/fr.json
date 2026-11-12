@@ -1360,6 +1360,21 @@
         }
       }
     },
+    "backup_available_other": {
+      "title": "Une sauvegarde de {backup} est disponible pour {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restaurer la sauvegarde",
+            "description": "{board} a été ajoutée sans données enregistrées, et il existe une sauvegarde de {backup} du {date}, une cible sans Autodarts qui n'est plus configurée. Une cible sans Autodarts reçoit un nouvel identifiant de cible à chaque configuration\u00a0: c'est donc la sauvegarde la plus récente avec des données de joueurs d'une telle cible qui n'appartient à aucune cible, comme celle écrite lors de sa suppression.\n\nLa restaurer dans {board}\u00a0? La cible se recharge avec l'entraînement, les jeux, les profils de joueurs avec leur progression et leurs badges, les records personnels et le calendrier de la sauvegarde\u00a0; ce qu'elle a enregistré depuis son ajout est remplacé, et les sauvegardes de {backup} deviennent celles de {board}. Si elle a enregistré des données de joueurs depuis, elles sont d'abord sauvegardées. Pour repartir de zéro, ignorez ce message."
+          }
+        },
+        "abort": {
+          "board_unavailable": "La cible n'est plus configurée.",
+          "restore_failed": "Impossible de restaurer la sauvegarde. L'action homedarts.restore la restaure et indique pourquoi elle échoue."
+        }
+      }
+    },
     "takeover_duplicate": {
       "title": "La cible HomeDarts {entry} bloque la reprise de la cible Autodarts {board}",
       "fix_flow": {

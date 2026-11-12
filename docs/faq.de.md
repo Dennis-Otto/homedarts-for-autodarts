@@ -82,7 +82,7 @@ Im eigenen Speicher von Home Assistant, nie in der Cloud: die Trainingssessions,
 
 ### Ich habe mein Board gelöscht. Ist meine Statistik weg?
 
-Nein. Bevor ein Board gelöscht wird, schreibt HomeDarts ein Backup von allem, was es gespeichert hat, nach `homedarts/backups` im Medienordner. Füge das Board wieder hinzu, und die Reparatur *Ein Backup von … ist vorhanden* holt alles zurück; [`homedarts.restore`](entities.de.md#backup-wiederherstellen-homedartsrestore) stellt jedes Backup wieder her. [Backups](statistics.de.md#backups)
+Nein. Bevor ein Board gelöscht wird, schreibt HomeDarts ein Backup von allem, was es gespeichert hat, nach `homedarts/backups` im Medienordner. Füge das Board wieder hinzu, und die Reparatur *Ein Backup von … ist vorhanden* holt alles zurück. Eine Dartscheibe ohne Autodarts bekommt beim erneuten Hinzufügen eine neue Board-ID; ihr wird darum das neueste Backup einer gelöschten angeboten, benannt nach dieser Scheibe. [`homedarts.restore`](entities.de.md#backup-wiederherstellen-homedartsrestore) stellt jedes Backup wieder her. [Backups](statistics.de.md#backups)
 
 ## Updates und Umstieg
 
