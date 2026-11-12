@@ -1624,7 +1624,7 @@
         },
         "folder": {
           "name": "Dossier",
-          "description": "Facultatif. Un dossier relatif au dossier de configuration, ou un chemin absolu, dans lequel Home Assistant autorise l'écriture\u00a0: www, un dossier multimédia ou un dossier de allowlist_external_dirs. Sans dossier\u00a0: la galerie des temps forts, homedarts/highlights dans le dossier multimédia."
+          "description": "Facultatif. Un dossier relatif au dossier de configuration, ou un chemin absolu, dans lequel Home Assistant autorise l'écriture\u00a0: www, un dossier multimédia ou un dossier de allowlist_external_dirs. Les fichiers placés dans www sont accessibles sous /local/ sans connexion. Sans dossier\u00a0: la galerie des temps forts, homedarts/highlights dans le dossier multimédia."
         },
         "player": {
           "name": "Joueur",

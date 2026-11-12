@@ -275,7 +275,7 @@ The camera entities relay the live stream of Board Manager 2 to at most two view
 - **Board secrets** are dropped as soon as they are read and are never stored, logged or shown: the board API key, TLS keys, camera device paths and similar configuration.
 - **Diagnostics** redact the board ID, host and player names. The connection history in them holds counts, kinds of errors and durations, but no addresses or error messages.
 - **Exports** contain player names. The action writes them only on request; files in `www` are served at `/local/` without a login, see [exports](#training-calendar-and-exports).
-- **Highlight photos** stay in your media folder; the gallery reads nothing else.
+- **Highlight photos** and clips show the room and the players. By default they stay in the gallery in your media folder, which needs a login, and the gallery reads nothing else; in a folder of `www` you choose, they are served at `/local/` without a login, under names with a random part, see [the action](entities.md#save-a-highlight-photo-homedartssave_highlight).
 - **Persons:** a player linked to a person keeps only the entity ID of the person; the card reads the picture and whether the person is home from Home Assistant.
 - **The caller of the scoreboard** speaks with the voice of the browser on the screen at the board. Which voice that is depends on the browser and the operating system: the voices of the operating system work offline, while some browsers offer online voices that send the text of the calls to their provider. Choose an offline voice in the settings of the device if that matters to you.
 

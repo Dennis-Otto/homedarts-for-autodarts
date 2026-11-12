@@ -101,6 +101,47 @@ async def test_a_photo_in_another_allowed_folder_has_no_address(
     }
 
 
+@pytest.mark.parametrize(
+    ("folder", "local"), [("www", "/local/"), ("www/darts", "/local/darts/")]
+)
+async def test_a_photo_in_www_gets_a_name_that_cannot_be_guessed_and_its_address(
+    hass, aioclient_mock, tmp_path, freezer, folder, local
+):
+    """Home Assistant serves www at /local/ without a login: a photo and a clip
+    there get a random part in their names, as an export does, and their
+    /local/ addresses."""
+    freezer.move_to(TAKEN)
+    config = tmp_path / "config"
+    folders(hass, config, tmp_path / "media")
+    camera, *_ = await setup_cameras(hass, aioclient_mock, 0)
+    hass.services.async_register("camera", "record", lambda call: None)
+    names = []
+    for _ in range(2):
+        camera_picture(aioclient_mock, 0)
+        saved = await save(
+            hass,
+            camera=camera,
+            folder=folder,
+            player="Alex Bee",
+            label="180",
+            clip_camera="camera.room",
+        )
+        photo = Path(saved["photo"])
+        assert re.fullmatch(rf"{STAMP}_Alex Bee_180-[0-9a-f]{{16}}\.jpg", photo.name)
+        assert photo.parent == (config / folder).resolve()
+        assert saved == {
+            "photo": str(photo),
+            "photo_url": local + quote(photo.name),
+            "clip": str(photo.with_suffix(".mp4")),
+            "clip_url": local + quote(photo.stem) + ".mp4",
+        }
+        names.append(photo.name)
+        await hass.async_block_till_done()
+    # Two photos of one moment are told apart by the random part, not by " (2)".
+    assert names[0] != names[1]
+    assert " (2)" not in names[1]
+
+
 async def test_only_administrators_and_automations_save_photos(
     hass, aioclient_mock, tmp_path, hass_read_only_user, hass_admin_user
 ):

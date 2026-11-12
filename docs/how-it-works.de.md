@@ -275,7 +275,7 @@ Die Kamera-Entitäten geben den Livestream von Board Manager 2 an höchstens zwe
 - **Board-Geheimnisse** wie der API-Schlüssel des Boards, TLS-Schlüssel, Kamerapfade und ähnliche Konfiguration werden direkt beim Lesen verworfen. Sie werden nie gespeichert, protokolliert oder angezeigt.
 - **Diagnosedaten** schwärzen Board-ID, Adresse und Spielernamen. Der Verbindungsverlauf darin enthält Zähler, Fehlerarten und Dauern, aber keine Adressen oder Fehlermeldungen.
 - **Exporte** enthalten Spielernamen. Die Aktion schreibt sie nur auf Anforderung; Dateien in `www` liefert Home Assistant unter `/local/` ohne Anmeldung aus, siehe [Exporte](#trainingskalender-und-exporte).
-- **Highlight-Fotos** bleiben in deinem Medienordner; die Galerie liest nichts anderes.
+- **Highlight-Fotos** und Clips zeigen den Raum und die Spieler. Standardmäßig bleiben sie in der Galerie in deinem Medienordner, der eine Anmeldung braucht, und die Galerie liest nichts anderes; in einem Ordner von `www`, den du wählst, liefert Home Assistant sie unter `/local/` ohne Anmeldung aus, unter Namen mit einem zufälligen Teil, siehe [die Aktion](entities.de.md#highlight-foto-speichern-homedartssave_highlight).
 - **Personen:** Ein mit einer Person verknüpfter Spieler behält nur die Entitäts-ID der Person; Bild und Anwesenheit liest die Karte aus Home Assistant.
 - **Der Caller der Anzeigetafel** spricht mit der Stimme des Browsers auf dem Bildschirm am Board. Welche Stimme das ist, hängt von Browser und Betriebssystem ab: Die Stimmen des Betriebssystems arbeiten offline, manche Browser bieten Online-Stimmen an, die den Text der Ansagen an ihren Anbieter schicken. Wähle eine Offline-Stimme in den Einstellungen des Geräts, wenn dir das wichtig ist.
 
