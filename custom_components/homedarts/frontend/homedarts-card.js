@@ -5571,6 +5571,21 @@ function callerText(call, t) {
 // One audio context for every card; browsers allow sound only after a tap.
 const callerAudio = { unlocked: false, context: null };
 
+// What the caller of each board said last, by its device: the states of Home Assistant it
+// called and the calls. Every card of a view gets the same states, so two scoreboards of one
+// board work out the same calls from them: the second one says none that the first one said,
+// and the page calls each of them once.
+const callerSaid = new Map();
+
+function unsaid(board, states, calls) {
+  const last = callerSaid.get(board);
+  const said = last?.states === states ? last.said : new Set();
+  callerSaid.set(board, { states, said });
+  const fresh = calls.filter((call) => !said.has(JSON.stringify(call)));
+  for (const call of fresh) said.add(JSON.stringify(call));
+  return fresh;
+}
+
 // Voice packs -----------------------------------------------------------------
 //
 // A voice pack is a folder of /media/homedarts/voices with recorded calls, named as darts-caller
@@ -11354,10 +11369,11 @@ function createElements(Base) {
       this._tournamentCall = followed;
       if (!this._config.caller || !callerAudio.unlocked || this.preview) return;
       this._followVoice();
-      for (const call of [
+      const calls = [
         ...callerCalls(previous, current, this._config),
         ...tournamentCalls(before, followed, this._config),
-      ]) {
+      ];
+      for (const call of unsaid(this._deviceId, this._hass.states, calls)) {
         if (call.kind === "fanfare") playFanfare();
         else this._callOut(call);
       }

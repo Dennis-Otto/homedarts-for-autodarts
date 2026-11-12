@@ -233,7 +233,7 @@ show_system: false
 
   It uses the speech output of the browser, so nothing needs to be set up in Home Assistant. Browsers play sound only after a tap: tap *Caller* on the scoreboard once to switch it on, and again to mute it. The button keeps its name; its pressed state and the speaker symbol show whether the caller is on.
 
-  An X01 visit counts from the score the integration says it started from, so a moment the screen missed, such as a takeout while a tablet woke up, never adds two visits up. A scoreboard that was away, on another view or without its connection to Home Assistant, calls and celebrates nothing that happened meanwhile: it follows the game again from the states it finds when it is back.
+  An X01 visit counts from the score the integration says it started from, so a moment the screen missed, such as a takeout while a tablet woke up, never adds two visits up. A scoreboard that was away, on another view or without its connection to Home Assistant, calls and celebrates nothing that happened meanwhile: it follows the game again from the states it finds when it is back. Two scoreboards of one board in a view call each call once.
 
 <img src="images/en/bot-match.webp" alt="Animation: a 301 match against the bot on the scoreboard. Alex throws and pulls the darts, the bot's three darts land one by one, and Alex is at the board again" width="760">
 

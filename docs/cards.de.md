@@ -233,7 +233,7 @@ show_system: false
 
   Er nutzt die Sprachausgabe des Browsers, in Home Assistant muss nichts eingerichtet werden. Browser spielen Ton erst nach einem Tippen: Tippe einmal auf *Caller* auf der Anzeigetafel, um ihn einzuschalten, und noch einmal zum Stummschalten. Die Taste behält ihren Namen; ihr gedrückter Zustand und das Lautsprechersymbol zeigen, ob der Caller an ist.
 
-  Eine Aufnahme in X01 zählt ab dem Rest, mit dem sie laut der Integration begann, sodass ein Moment, den der Bildschirm verpasst hat, etwa ein Herausziehen, während ein Tablet aufwachte, nie zwei Aufnahmen zusammenzählt. Eine Anzeigetafel, die weg war, auf einer anderen Ansicht oder ohne ihre Verbindung zu Home Assistant, sagt nichts an und feiert nichts, was in der Zwischenzeit geschah: Sie folgt dem Spiel wieder ab den Zuständen, die sie bei ihrer Rückkehr vorfindet.
+  Eine Aufnahme in X01 zählt ab dem Rest, mit dem sie laut der Integration begann, sodass ein Moment, den der Bildschirm verpasst hat, etwa ein Herausziehen, während ein Tablet aufwachte, nie zwei Aufnahmen zusammenzählt. Eine Anzeigetafel, die weg war, auf einer anderen Ansicht oder ohne ihre Verbindung zu Home Assistant, sagt nichts an und feiert nichts, was in der Zwischenzeit geschah: Sie folgt dem Spiel wieder ab den Zuständen, die sie bei ihrer Rückkehr vorfindet. Zwei Anzeigetafeln desselben Boards in einer Ansicht sagen jede Ansage einmal an.
 
 <img src="images/de/bot-match.webp" alt="Animation: ein 301-Match gegen den Bot auf der Anzeigetafel. Alex wirft und zieht die Darts, die drei Darts des Bots landen nacheinander, und Alex ist wieder am Board" width="760">
 
