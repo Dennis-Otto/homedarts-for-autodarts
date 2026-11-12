@@ -10,19 +10,33 @@ HACS installs the GitHub releases of the integration and shows their notes in th
 
 ## The release pull request
 
-Every pull request that changes something for users describes it under `## Unreleased` in `CHANGELOG.md`, in the words of a user, with the number of the pull request and the GitHub name of a tester who helped. The release bot (**Release** workflow) keeps a pull request titled `chore: release x.y.z` up to date with `main`:
+Every pull request that changes something for users describes it in a fragment of its own in `changelog.d/`, in the words of a user, with the GitHub name of a tester who helped ([which type a pull request takes](#which-type-a-pull-request-takes)). The release bot (**Release** workflow) keeps a pull request titled `chore: release x.y.z` up to date with `main`:
 
 - **The version** follows from the titles of the pull requests merged since the last release: `fix` makes a patch, `feat` a minor and `!` or `BREAKING CHANGE` a major version. Every merge decides it anew. Pull requests of the types `docs`, `test`, `ci`, `chore`, `refactor`, `build` and `style` make no release on their own.
-- **The notes:** the text of *Unreleased* becomes the section of the release in `CHANGELOG.md`. The release notes show that text, followed by every pull request of the release.
+- **The notes:** the fragments of `changelog.d/` and the text of *Unreleased* become the section of the release in `CHANGELOG.md`. The release notes show that text, followed by every pull request of the release.
 - **The files of the version:** `custom_components/homedarts/manifest.json`, `version.txt` and `.release-please-manifest.json`.
 
 The release pull request needs the same required checks as every other one, the Docker end-to-end tests with Board Manager 1 and 2 and the oldest supported Home Assistant included, and it is always up to date with `main`, so its checks are those of the commit that becomes the release. Merging it publishes the release; until then, nothing reaches users. A release of dependency updates alone merges itself; every other release waits for the maintainer.
 
+## Which type a pull request takes
+
+A release reaches every installation as an update in HACS, which needs a restart of Home Assistant, and its notes show in the update dialog. So a release has to change what HACS installs, and its notes speak only of what a user of the integration sees:
+
+| The pull request changes | Its type | A fragment in `changelog.d/` |
+| --- | --- | --- |
+| the integration in `custom_components/homedarts/`, its cards and texts included, the blueprints in `blueprints/`, or `hacs.json` | `feat`, `fix` or `perf`, with `!` for a breaking change | yes, in the words of a user |
+| only workflows, the scripts of the checks and the screenshot tool | `ci` | no |
+| only tests | `test` | no |
+| only the documentation, the website or its pictures | `docs` | no |
+| only tools, such as those of the tests of the cards | `chore` | no |
+
+A pull request that repairs a workflow, a test or the screenshot tool is a `ci:` or `test:` even when it fixes a bug of that tool: 2.3.1 and 2.2.3 were releases of `fix(ci):` and `fix:` titles that changed nothing in the package but its version ([#676](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/676)). The check **release type** (`release-type.yml`), which `main` requires, asks GitHub for the files of each pull request and fails a title of the types `feat`, `fix` or `perf`, or one with `!`, when none of them is under `custom_components/` or `blueprints/` or is `hacs.json`; its annotation names the types that fit the files. It reads the title as the pull request has it now, so a new title runs it again by itself, and so does a run of the job again. On your machine, `git diff --name-only origin/main... | TITLE='fix: …' python3 scripts/release_type.py` gives the same answer ([decision 0030](decisions/0030-a-release-changes-the-package.md)).
+
 ## Betas
 
-Every pull request of the types `feat`, `fix` and `perf` that reaches `main` also becomes a beta of the next release (the repository variable `BETA_CHANNEL` in `.github/repository.project.toml`): the version of the release pull request with `-beta.N`, such as `1.10.0-beta.2`, with the text of *Unreleased* as its notes. It is built, signed and verified like a release, and published as a prerelease that HACS offers only to those who turn on the beta switch ([Betas for testers](installation.md#betas-for-testers)); it announces nothing in the discussions. Updates of dependencies make no beta.
+Every pull request of the types `feat`, `fix` and `perf` that reaches `main` also becomes a beta of the next release (the repository variable `BETA_CHANNEL` in `.github/repository.project.toml`): the version of the release pull request with `-beta.N`, such as `1.10.0-beta.2`, with the fragments of `changelog.d/` and the text of *Unreleased* as its notes. It is built, signed and verified like a release, and published as a prerelease that HACS offers only to those who turn on the beta switch ([Betas for testers](installation.md#betas-for-testers)); it announces nothing in the discussions. Updates of dependencies make no beta.
 
-A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release. A version with a suffix such as `-beta.1` becomes a prerelease, which HACS offers only to those who turn on its beta switch for the integration. A beta keeps the text of *Unreleased* for the release that follows it, so the final release names everything again.
+A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release. A version with a suffix such as `-beta.1` becomes a prerelease, which HACS offers only to those who turn on its beta switch for the integration. A beta keeps the fragments of `changelog.d/` and the text of *Unreleased* for the release that follows it, so the final release names everything again.
 
 ## Publication
 

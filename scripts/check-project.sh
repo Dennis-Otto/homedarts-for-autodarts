@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The checks of this integration alone, which scripts/check.sh runs last: the license
-# terms, every line and branch of the key of the rendered images tested, the rules
+# terms, every line and branch of the key of the rendered images and of the check of
+# the release type tested, the rules
 # of ESLint for the JavaScript (eslint.config.mjs), and the tests of the dashboard
 # cards and of the translation bot with Node (100 % of lines, branches and functions
 # covered).
@@ -24,13 +25,14 @@ for path in ("LICENSE", "custom_components/homedarts/LICENSE"):
 print("LICENSE and the copy in the integration carry the MIT terms.")
 PYTHON
 
-printf '\n== %s\n' "The key of the rendered images, with every line and branch tested"
+printf '\n== %s\n' "The key of the rendered images and the release type, with every line and branch tested"
 # tests/e2e/render_key.py decides whether the visual check takes the images of an
-# earlier run instead of rendering them; the coverage of the integration leaves
-# tests/e2e out.
+# earlier run instead of rendering them, and scripts/release_type.py whether the title
+# of a pull request may make a release; the coverage of the integration leaves both out.
 coverage_data="$(mktemp)"
 python3 -m coverage run --rcfile=/dev/null --data-file="${coverage_data}" --branch \
-	--include=tests/e2e/render_key.py -m pytest --quiet -p no:cacheprovider tests/test_render_key.py
+	--include=tests/e2e/render_key.py,scripts/release_type.py -m pytest --quiet -p no:cacheprovider \
+	tests/test_render_key.py tests/test_release_type.py
 python3 -m coverage report --rcfile=/dev/null --data-file="${coverage_data}" --show-missing --fail-under=100
 rm -f "${coverage_data}"
 

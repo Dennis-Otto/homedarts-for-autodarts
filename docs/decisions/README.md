@@ -39,3 +39,4 @@ Copy [the template](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/
 | [0027](0027-the-start-pages-in-dutch-french-and-spanish.md) | The start pages of the website in Dutch, French and Spanish, the rest in English with a note | accepted |
 | [0028](0028-the-cards-load-on-first-use.md) | Load the cards on their first use, with stand-ins that become the cards | accepted |
 | [0029](0029-the-images-render-with-the-screenshot-bot-of-the-blueprint.md) | Render the images with the screenshot bot of the blueprint, in shards | accepted |
+| [0030](0030-a-release-changes-the-package.md) | A release changes the package that HACS installs, which the check release type keeps | accepted |

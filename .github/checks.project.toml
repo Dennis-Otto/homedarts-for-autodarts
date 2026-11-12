@@ -290,6 +290,38 @@ docs = "docs/development.md#visual-check"
 autofix = """The images that look different are the change itself, which a person
 looks at: the screenshot bot commits them after the merge."""
 
+# ---------------------------------------------------------------- the release type
+# The job of release-type.yml, which main requires: a title of the types feat, fix or
+# perf, or one with a !, makes a release, so it has to change the package that HACS
+# installs (#676).
+[check."release type"]
+title = "The type of the title and the files of the pull request"
+problem = """The title of the pull request makes a release, by its type `feat`, `fix`
+or `perf` or by a `!`, but the pull request changes nothing of what HACS installs:
+nothing under `custom_components/` or `blueprints/`, and not `hacs.json`. The
+annotation of the check names the types that fit its files instead.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
+why = """Every release reaches each installation as an update in HACS, which needs a
+restart of Home Assistant, and its notes show in the update dialog. A release whose
+package is the same as the last one makes users restart for nothing, and notes about
+workflows, tests or pictures teach them to skip the notes of the releases that
+matter."""
+fix = """Change the type of the title to one that the annotation names: `ci:` for the
+workflows and the scripts of the checks and of the pictures, `test:` for the tests,
+`docs:` for the documentation and its pictures, `chore:` for the rest. Delete the
+fragment of the pull request in `changelog.d/`, as it would become notes that users
+can't relate to. A new title runs the check again by itself. On your machine, the check
+reads the title from `TITLE` and the files from its input:"""
+commands = [
+  "git diff --name-only origin/main... | TITLE='ci: what it does' python3 scripts/release_type.py",
+]
+docs = "docs/releases.md#which-type-a-pull-request-takes"
+autofix = """The title says what the pull request means to change, which only its
+author knows: a fix of the integration that lacks its files needs them, not another
+type."""
+
 # ---------------------------------------------------------------- scripts/check.sh
 # The step that runs scripts/check-project.sh, with the commands that fix what a
 # command can fix of this project. The fix bot runs the commands of every step when

@@ -79,8 +79,8 @@ def explanation(name: str) -> dict | None:
     return None
 
 
-def test_the_end_to_end_tests_and_the_visual_check_are_the_checks_of_this_project():
-    assert CHECKS == ["e2e.yml", "visual.yml"]
+def test_the_end_to_end_tests_the_release_type_and_the_visual_check_are_the_checks():
+    assert CHECKS == ["e2e.yml", "release-type.yml", "visual.yml"]
     assert set(UNEXPLAINED) <= set(JOBS)
 
 

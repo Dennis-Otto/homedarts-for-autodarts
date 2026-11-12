@@ -50,7 +50,7 @@ on:
     # The checks of this repository, its end-to-end tests if a workflow of its own named Docker E2E runs them,
     # and the workflows of its other tests that the answer test_workflows of the blueprint names.
     # Then those of the other required checks and of the scanners, the same in every repository, and Renovate for the check of its rules where it runs in the repository.
-    workflows: [CI (home-assistant), Docker E2E, Visual check, CodeQL, Dependency review, Docs, Lint, Pull request title, Secret scan, Fuzzing, Links, OSV-Scanner, Workflow security]
+    workflows: [CI (home-assistant), Docker E2E, Visual check, Release type, CodeQL, Dependency review, Docs, Lint, Pull request title, Secret scan, Fuzzing, Links, OSV-Scanner, Workflow security]
     types: [completed]
   # The schedule is only a safety net, for an event that GitHub lost and a pull
   # request whose fix passed its checks: every merge into main is a push of the

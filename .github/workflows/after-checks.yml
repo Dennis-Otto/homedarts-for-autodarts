@@ -127,7 +127,7 @@ on:
     # The checks of this repository, its end-to-end tests if a workflow of its own named Docker E2E runs them,
     # and the workflows of its other tests that the answer test_workflows of the blueprint names.
     # Then those of the other required checks and of the scanners, the same in every repository, Renovate for the check of its rules where it runs in the repository, and the release.
-    workflows: [CI (home-assistant), Docker E2E, Visual check, CodeQL, Dependency review, Docs, Lint, Pull request title, Secret scan, Fuzzing, Links, OSV-Scanner, Workflow security, Release]
+    workflows: [CI (home-assistant), Docker E2E, Visual check, Release type, CodeQL, Dependency review, Docs, Lint, Pull request title, Secret scan, Fuzzing, Links, OSV-Scanner, Workflow security, Release]
     types: [completed]
 
 permissions: {}

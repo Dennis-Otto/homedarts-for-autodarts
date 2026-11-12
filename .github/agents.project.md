@@ -11,6 +11,11 @@ This file belongs to the project: the blueprint wrote it once, and its updates l
 - The tests are in `tests/`; `scripts/check.sh` runs every check.
 - The rules of this project for contributors are in `docs/development.md`: the [requirements of a change](../docs/development.md#requirements-for-changes), the [checks with the end-to-end and the browser test](../docs/development.md#tests), the [translations](../docs/development.md#translations) and the [pages of the website](../docs/development.md#pages-of-the-website). `CONTRIBUTING.md` belongs to the blueprint and equals what its template renders: a section of this project there makes every update of the blueprint conflict (#673). New text of the project goes into `docs/development.md`, and into `CONTRIBUTING.md` only between the two marked lines of `## Releases`.
 
+## Titles of pull requests
+
+- **`feat`, `fix` and `perf` are for the package that HACS installs:** a change under `custom_components/homedarts/` or `blueprints/`, or of `hacs.json`, with a fragment in `changelog.d/` in the words of a user. Each makes a release that every installation is offered, with a restart of Home Assistant.
+- **A pull request that changes only workflows, tests, the screenshot tool, the pictures or the documentation** is titled `ci:`, `test:` or `docs:` (`chore:` for other tools) and gets no fragment, even when it fixes a bug of that tool: 2.3.1 and 2.2.3 shipped an unchanged integration because of `fix(ci):` and `fix:` titles (#676). The required check *release type* (`scripts/release_type.py`) fails such a title and names the type that fits; [which type a pull request takes](../docs/releases.md#which-type-a-pull-request-takes) has the table.
+
 ## Names
 
 - The integration is **HomeDarts for Autodarts**, **HomeDarts** for short, with the domain `homedarts` and the repository `Dennis-Otto/homedarts-for-autodarts` ([decision 0026](../docs/decisions/0026-a-name-of-its-own.md)). Up to 1.18 it was called Autodarts, with the domain `autodarts` and the repository `Dennis-Otto/ha-autodarts`; `custom_components/homedarts/takeover.py` takes over the boards set up under that name, and `docs/new-name.md` explains the switch to users.
