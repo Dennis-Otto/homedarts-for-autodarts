@@ -362,8 +362,9 @@ async def test_a_new_address_replaces_the_old_one_when_switching_off(
     assert entry.options["online_bridge"] is False
 
 
-async def test_only_an_entry_with_a_local_board_has_options(hass, aioclient_mock):
-    """The bridge delivers moments as events of the local board."""
+async def test_only_an_entry_with_a_local_board_has_the_bridge(hass, aioclient_mock):
+    """The bridge delivers moments as events of the local board; the options
+    keep the own training plans of every board."""
     local = await setup_bridge(hass, aioclient_mock, options={})
     manual = MockConfigEntry(
         domain="homedarts",
@@ -373,8 +374,17 @@ async def test_only_an_entry_with_a_local_board_has_options(hass, aioclient_mock
     )
     manual.add_to_hass(hass)
     assert AutodartsConfigFlow.async_supports_options_flow(local)
-    assert not AutodartsConfigFlow.async_supports_options_flow(manual)
-    assert local.supports_options and not manual.supports_options
+    assert AutodartsConfigFlow.async_supports_options_flow(manual)
+    assert local.supports_options and manual.supports_options
+    fields = {}
+    for entry in (local, manual):
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        fields[entry.entry_id] = [str(key) for key in result["data_schema"].schema]
+        hass.config_entries.options.async_abort(result["flow_id"])
+    assert fields == {
+        local.entry_id: ["online_bridge", "online_bridge_remote", "plans"],
+        manual.entry_id: ["plans"],
+    }
 
 
 async def test_address_without_the_configured_urls(hass):

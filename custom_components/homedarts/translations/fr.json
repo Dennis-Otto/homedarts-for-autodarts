@@ -119,7 +119,7 @@
     "step": {
       "init": {
         "title": "Options de HomeDarts",
-        "description": "**Matchs en ligne (expérimental)\u00a0:** l'intégration voit les fléchettes sur votre cible, mais pas le déroulement d'un match en ligne sur play.autodarts.io. L'extension de navigateur Tools for Autodarts peut envoyer les moments forts de ce match, comme un bust, un game shot ou un 180, à Home Assistant. Ils arrivent sous forme d'événements de la cible dont le type commence par `online_`.",
+        "description": "**Les plans d'entraînement personnels** s'ajoutent aux plans tout prêts du tableau des scores\u00a0; un plan avec `weekdays` devient le plan du jour ces jours-là.\n\n**Matchs en ligne (expérimental, cibles Autodarts uniquement)\u00a0:** l'intégration voit les fléchettes sur votre cible, mais pas le déroulement d'un match en ligne sur play.autodarts.io. L'extension de navigateur Tools for Autodarts peut envoyer les moments forts de ce match, comme un bust, un game shot ou un 180, à Home Assistant. Ils arrivent sous forme d'événements de la cible dont le type commence par `online_`.",
         "data": {
           "online_bridge": "Recevoir les matchs en ligne depuis Tools for Autodarts",
           "online_bridge_remote": "Accepter les appels depuis l'extérieur de votre réseau domestique",

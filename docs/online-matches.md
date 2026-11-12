@@ -23,7 +23,7 @@ The optional **online bridge** brings these moments into Home Assistant with the
 
 ## Set up the bridge
 
-1. Go to **Settings → Devices & services → HomeDarts for Autodarts**, open **Configure** (the cog) of your board, turn on **Receive online matches from Tools for Autodarts** and submit. Only entries with a local board have these options.
+1. Go to **Settings → Devices & services → HomeDarts for Autodarts**, open **Configure** (the cog) of your board, turn on **Receive online matches from Tools for Autodarts** and submit. Only entries with a local board have this switch; the options of a dartboard without Autodarts hold only its training plans.
 2. The next step shows the secret address and ready-made lines for Tools for Autodarts. Copy the lines and submit. From now on, Home Assistant accepts calls at the address. Open the options again whenever you need the address.
 3. In the browser at the board, open the settings of Tools for Autodarts, turn on **WLED**, choose **Import CSV**, paste the lines and save. Each line is an effect of the type **URL** for one trigger; delete the ones you don't need.
 4. Check that the moments arrive: open the address with `?event=gameon` added in a browser of your home network, or play a match. The **Online bridge last event** sensor on the device page, under *Diagnostic*, shows when the last moment arrived and its trigger.
