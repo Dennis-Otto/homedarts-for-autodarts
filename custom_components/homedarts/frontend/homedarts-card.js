@@ -2280,19 +2280,27 @@ function summaryView(state) {
   if (!Number.isInteger(attributes.winner) || summary.winner !== attributes.winner || summary.game !== attributes.game) {
     return null;
   }
-  const raw = (Array.isArray(summary.players) ? summary.players : []).filter(
+  return summaryOf(summary, summary.winner, summary.ended, {
+    legsToWin: finite(summary.legs_to_win) ?? 1,
+    setsToWin: finite(summary.sets_to_win) ?? 1,
+  });
+}
+
+// The numbers of a summary, of the match on the board or of one of the history,
+// which keeps its format and winner beside them; null for fewer than two players.
+function summaryOf(numbers, winner, ended, format) {
+  const raw = (Array.isArray(numbers?.players) ? numbers.players : []).filter(
     (item) => item && Number.isInteger(item.player)
   );
   if (raw.length < 2) return null;
   // X01 has averages, the Cricket games marks per round; party games neither.
   const kind = "average" in raw[0] ? "x01" : "mpr" in raw[0] ? "cricket" : "party";
   return {
-    ended: String(summary.ended ?? ""),
+    ended: String(ended ?? ""),
     kind,
-    winner: summary.winner,
-    legsToWin: finite(summary.legs_to_win) ?? 1,
-    setsToWin: finite(summary.sets_to_win) ?? 1,
-    doubleOut: summary.double_out !== false,
+    winner,
+    ...format,
+    doubleOut: numbers.double_out !== false,
     players: raw.map((item) => ({
       player: item.player,
       name: named(item.name),
@@ -2517,9 +2525,23 @@ function playersView(profiles, lastMatch) {
       legsToWin: finite(match.legs_to_win) ?? 1,
       setsToWin: finite(match.sets_to_win) ?? 1,
       players: match.players.filter((player) => player && typeof player === "object"),
+      // The history keeps the numbers of its summary, which the card asks for.
+      details: match.details === true,
     }));
   return { players, headToHead, matches };
 }
+
+// The recent matches the card lists before a link to all of them.
+const MATCHES_SHOWN = 10;
+
+// What the card keeps the summary of a match of the history under: the end of the
+// match, and the names of its players, which a renamed profile changes.
+const matchKey = (match) => [match.ended, ...match.players.map((player) => named(player.name) ?? "")].join("\n");
+
+// The summary of a match of the history, as the integration answers for it: its
+// numbers, with the format and the winner of the match.
+const historySummary = (match, numbers) =>
+  summaryOf(numbers, match.winner, match.ended, { legsToWin: match.legsToWin, setsToWin: match.setsToWin });
 
 // What a player won in a match of the history: sets when the match had sets,
 // otherwise legs. Up to version 1.5, winning the match took the winner's legs
@@ -2570,7 +2592,7 @@ function manageHtml(name, ui, others) {
 }
 
 function playersHtml(view, ui) {
-  const { t, format, percent, date } = ui;
+  const { t, format, percent } = ui;
   const value = (number, digits = 0) => (number === null ? "–" : format(number, digits));
   const players = view.players
     .map((player) => {
@@ -2612,24 +2634,55 @@ function playersHtml(view, ui) {
       );
     })
     .join("");
-  const matches = view.matches
+  return { players, headToHead, matches: matchesHtml(view, ui) };
+}
+
+// The recent matches, the latest first and the rest behind a link. A match whose
+// summary the history keeps opens it below its row, as the integration answers for it.
+function matchesHtml(view, ui) {
+  const { t, date } = ui;
+  const shown = { open: new Set(), summaries: new Map(), all: false, ...ui.matches };
+  const listed = shown.all ? view.matches : view.matches.slice(0, MATCHES_SHOWN);
+  const rows = listed
     .map((match) => {
       const players = match.players
         .map((player, index) => {
-          const shown = `${player.name || `${t("score_player")} ${index + 1}`} ${historyScore(match, player, index)}`;
+          const name = `${player.name || `${t("score_player")} ${index + 1}`} ${historyScore(match, player, index)}`;
           const tag = match.winners.includes(index + 1) ? "b" : "span";
-          return `<${tag}>${escapeHtml(shown)}</${tag}>`;
+          return `<${tag}>${escapeHtml(name)}</${tag}>`;
         })
         .join(" · ");
       // Results count legs; a match of sets says so.
       const game = [gameName(t, match.game), match.setsToWin > 1 ? t("score_sets") : ""].filter(Boolean).join(" · ");
-      return (
-        `<div class="match"><span class="muted">${escapeHtml(date(match.ended))}</span>` +
-        `<span class="game">${escapeHtml(game)}</span><span>${players}</span></div>`
-      );
+      const parts =
+        `<span class="muted">${escapeHtml(date(match.ended))}</span>` +
+        `<span class="game">${escapeHtml(game)}</span><span>${players}</span>`;
+      if (!match.details) return `<div class="match">${parts}</div>`;
+      const open = shown.open.has(match.ended);
+      const row =
+        `<button type="button" class="match" data-match="${escapeHtml(match.ended)}"` +
+        ` data-focus="${escapeHtml(`match:${match.ended}`)}" aria-expanded="${open}">${parts}${cueHtml("expand", true)}</button>`;
+      if (!open) return row;
+      return `${row}<div class="match-summary">${matchSummaryHtml(match, shown.summaries.get(matchKey(match)), ui)}</div>`;
     })
     .join("");
-  return { players, headToHead, matches };
+  if (view.matches.length <= MATCHES_SHOWN) return rows;
+  const words = shown.all ? t("matches_fewer") : fill(t("matches_all"), { count: ui.format(view.matches.length, 0) });
+  return (
+    `${rows}<button type="button" class="link more-matches" data-more-matches data-focus="matches:more"` +
+    ` aria-expanded="${shown.all}">${escapeHtml(words)}${cueHtml("expand", true)}</button>`
+  );
+}
+
+// The summary of an open match of the history: its table once the integration
+// answered, until then that it loads, or that it did not.
+function matchSummaryHtml(match, answer, ui) {
+  const summary = answer?.numbers ? historySummary(match, answer.numbers) : null;
+  if (summary) return summaryTable(summary, ui, match.winners.length > 1 ? [{ players: match.winners }] : []);
+  // An answer without the numbers of two players is no summary either.
+  const failed = Boolean(answer && answer.state !== "loading");
+  const key = failed ? "match_summary_failed" : "match_summary_loading";
+  return `<p class="muted"${failed ? ' role="alert"' : ""}>${escapeHtml(ui.t(key))}</p>`;
 }
 
 // People ---------------------------------------------------------------------
@@ -6836,6 +6889,20 @@ const PAD_CSS = `
   .pad button:focus-visible { outline: 3px solid var(--ad-accent); outline-offset: 2px; }
 `;
 
+// The match summary as a compact table: in the practice card, and below a match of
+// the history in the players card.
+const SUMMARY_CSS = `
+  .summary { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .summary th, .summary td { padding: 2px 6px; text-align: center; }
+  .summary tr > :first-child { width: 36%; text-align: left; }
+  .summary thead th { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .summary thead th.caption { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ad-accent-text); }
+  .summary tbody th { font-weight: 400; color: var(--secondary-text-color); }
+  .summary td { font-weight: 700; color: var(--primary-text-color); }
+  .summary tr.result td { font-size: 17px; font-weight: 800; color: var(--ad-accent-text); }
+  .summary .winner { background: color-mix(in srgb, ${STATUS_COLORS.ready} 20%, transparent); }
+`;
+
 const CSS = `${BASE_CSS}${PAD_CSS}
   .layout {
     position: relative;
@@ -6945,15 +7012,7 @@ const CSS = `${BASE_CSS}${PAD_CSS}
   .cricket td.aim-score { box-shadow: inset 0 0 0 2px ${STATUS_COLORS.ready}; }
   .cricket td.aim-close { box-shadow: inset 0 0 0 2px ${STATUS_COLORS.takeout}; }
   .cricket .winner { background: color-mix(in srgb, ${STATUS_COLORS.ready} 20%, transparent); }
-  .summary { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; font-variant-numeric: tabular-nums; }
-  .summary th, .summary td { padding: 2px 6px; text-align: center; }
-  .summary tr > :first-child { width: 36%; text-align: left; }
-  .summary thead th { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .summary thead th.caption { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ad-accent-text); }
-  .summary tbody th { font-weight: 400; color: var(--secondary-text-color); }
-  .summary td { font-weight: 700; color: var(--primary-text-color); }
-  .summary tr.result td { font-size: 17px; font-weight: 800; color: var(--ad-accent-text); }
-  .summary .winner { background: color-mix(in srgb, ${STATUS_COLORS.ready} 20%, transparent); }
+${SUMMARY_CSS}
   .aim path {
     fill: color-mix(in srgb, var(--ad-accent) 35%, transparent);
     stroke: var(--ad-accent); stroke-width: 3; stroke-dasharray: 6 3;
@@ -8233,6 +8292,17 @@ ${balancedCss(".profiles", 210, 10, 36)}
     padding: 6px 0; border-top: 1px solid var(--divider-color, rgba(127,127,127,.2)); font-size: 13px;
   }
   .match .game { font-weight: 700; }
+  /* A match whose summary the history keeps opens it with a tap on its row, big enough for a finger. */
+  button.match {
+    grid-template-columns: auto auto minmax(0, 1fr) auto; width: 100%; min-height: 44px; margin: 0; border-width: 1px 0 0;
+    align-items: center;
+    border-radius: 0; background: none; color: inherit; font: inherit; font-size: 13px; text-align: start; cursor: pointer;
+  }
+  button.match:focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+  .match-summary { padding: 4px 0 10px; overflow-x: auto; }
+  .match-summary p { margin: 0; font-size: 13px; }
+  .more-matches { margin-top: 6px; }
+${SUMMARY_CSS}
   .match b { color: var(--ad-ok-text); }
   .players-card header .export { flex: 0 0 auto; margin-left: auto; min-height: 32px; font-size: 13px; }
   /* Finger-sized at a touch screen. */
@@ -11922,6 +11992,10 @@ function createElements(Base) {
         dialog: root.querySelector(".manage-dialog"),
       };
       this._el.export?.addEventListener("click", () => this._export());
+      // The matches of the history whose summary is open, by their end, the summaries the
+      // integration answered, and whether the card lists all matches.
+      this._matches = { open: new Set(), summaries: new Map(), all: false };
+      this._el.matches?.addEventListener("click", (event) => this._matchClick(event));
       this._menu = null;
       if (this._el.dialog) this._buildManage();
       // The players whose badge gallery shows all its badges.
@@ -12154,7 +12228,13 @@ function createElements(Base) {
       el.empty.hidden = view.players.length > 0;
       // A menu stays open only while its profile is there.
       if (!view.players.some((player) => player.name === this._menu)) this._menu = null;
-      const html = playersHtml(view, { ...this._ui(), manage: Boolean(this._el.dialog), menu: this._menu });
+      this._askSummaries(view);
+      const html = playersHtml(view, {
+        ...this._ui(),
+        manage: Boolean(this._el.dialog),
+        menu: this._menu,
+        matches: this._matches,
+      });
       el.profiles.className = `profiles balanced n${view.players.length}`;
       this._setHtml(el.profiles, html.players);
       // Unless the keyboard went on meanwhile.
@@ -12168,6 +12248,58 @@ function createElements(Base) {
         this._setHtml(el.matches, html.matches);
       }
       this._updateProgress();
+    }
+
+    // A tap on a match of the history opens its summary or closes it, and asks again for
+    // a summary that did not load; the link below lists all matches or the latest again.
+    _matchClick(event) {
+      const button = event.target.closest("[data-match], [data-more-matches]");
+      if (!button) return;
+      const { open, summaries } = this._matches;
+      const ended = button.dataset.match;
+      const failed = [...summaries].filter(([, answer]) => answer.state === "failed");
+      const retry = open.has(ended) && failed.some(([, answer]) => answer.ended === ended);
+      if (ended === undefined) this._matches.all = !this._matches.all;
+      else if (!retry && !open.delete(ended)) open.add(ended);
+      for (const [key] of failed) summaries.delete(key);
+      this._update();
+    }
+
+    // The summaries of the open matches that the card has not asked the integration for
+    // yet: after a rename, the history names other players, so the card asks again. An
+    // open match that left the history closes.
+    _askSummaries(view) {
+      const { open, summaries } = this._matches;
+      const listed = new Map(view.matches.filter((match) => match.details).map((match) => [match.ended, match]));
+      for (const ended of [...open]) {
+        const match = listed.get(ended);
+        if (!match) open.delete(ended);
+        else if (!summaries.has(matchKey(match))) this._loadSummary(match);
+      }
+    }
+
+    async _loadSummary(match) {
+      const key = matchKey(match);
+      const { summaries } = this._matches;
+      if (typeof this._hass.callWS !== "function") {
+        summaries.set(key, { state: "failed", ended: match.ended });
+        return;
+      }
+      summaries.set(key, { state: "loading" });
+      try {
+        const numbers = await this._hass.callWS({
+          type: "homedarts/match_summary",
+          device_id: this._deviceId,
+          ended: match.ended,
+        });
+        // An answer without the numbers of two players is no summary either: the next tap asks again.
+        const loaded = historySummary(match, numbers) ? { state: "loaded", numbers } : null;
+        summaries.set(key, loaded ?? { state: "failed", ended: match.ended });
+      } catch {
+        // After a restart of Home Assistant or a dropped connection; the next tap asks again.
+        summaries.set(key, { state: "failed", ended: match.ended });
+      }
+      this._update();
     }
 
     // Badges, trends and groupings, each in a section of its own.

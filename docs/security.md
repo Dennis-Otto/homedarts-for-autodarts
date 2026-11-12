@@ -88,6 +88,7 @@ How the integration counters the weaknesses of the [CWE Top 25](https://cwe.mitr
   - the downloads of this run's exports at `/api/homedarts/export/`, for administrators or with their signed link that expires after a minute;
   - small copies of the highlight photos at `/api/homedarts/highlights/`, for logged-in users like the photos themselves; only plain file names of photos in the highlight folder are served;
   - the WebSocket command `homedarts/positions`, with which the cards read the dart positions, for logged-in users;
+  - the WebSocket command `homedarts/match_summary`, with which the players card reads the summary of a match of the history, for logged-in users;
   - the WebSocket command `homedarts/voice_pack`, with which the scoreboard lists the sounds of a voice pack (at most 10,000 files are looked at), for logged-in users;
   - only while the online bridge is on, one secret webhook address.
 

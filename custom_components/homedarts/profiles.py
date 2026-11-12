@@ -5,11 +5,14 @@ upper and lower case. Legs count in every game; X01 legs add the averages and
 the checkout rate, Cricket legs the marks per round. The highest checkout and
 the fewest darts come from X01 legs with double out only; the fewest darts
 also only from legs a player played alone, from one of the X01 start scores.
-A rated match moves the ratings of its players, see rating.py.
+A rated match moves the ratings of its players, see rating.py. The history of
+the last matches keeps the numbers of each match summary, which the players
+card asks for when a match of the history is opened.
 """
 
 from __future__ import annotations
 
+import copy
 import math
 import re
 from collections.abc import Iterable, Sequence
@@ -26,7 +29,10 @@ GAMES = (101, 301, 501, 701, 901, 1001)
 # The bests of a profile, the highest of which counts.
 BESTS = ("highest_visit", "highest_checkout", "best_mpr")
 
-MATCH_HISTORY = 20
+# The matches of the history, with the numbers of their summaries: enough for a
+# few evenings or a tournament of eight in groups, and few enough that the list
+# without the summaries fits the attributes of the last match sensor.
+MATCH_HISTORY = 50
 NAME_LENGTH = 20
 # The bests of a profile that a merge keeps the higher of; every other whole
 # number of a profile is a count that a merge adds up.
@@ -38,6 +44,23 @@ NAME_EXCLUDED = re.compile(r"[{}%#\x00-\x1f\x7f-\x9f]")
 # The entity ID of a person in Home Assistant, as Home Assistant checks entity
 # IDs: slugs without a double underscore, none at either end.
 PERSON = re.compile(r"^(?!.+__)person\.(?!_)[\da-z_]+(?<!_)$")
+
+
+def match_summary(saved: object) -> dict[str, Any] | None:
+    """The numbers of a match summary as the history keeps them: whether the
+    match was played with double out, and every player's numbers; None if
+    invalid. The format, the winner and the end are those of the match."""
+    if not isinstance(saved, dict):
+        return None
+    players = saved.get("players")
+    if not isinstance(players, list) or not all(
+        isinstance(player, dict) for player in players
+    ):
+        return None
+    return {
+        "double_out": saved.get("double_out") is not False,
+        "players": copy.deepcopy(players),
+    }
 
 
 def valid_name(name: str) -> bool:
@@ -388,9 +411,11 @@ class Profiles:
         *,
         now: datetime,
         rated: bool = False,
+        summary: dict[str, Any] | None = None,
     ) -> None:
         """A finished match of several players: history, head-to-head and, for a
-        rated match, the ratings.
+        rated match, the ratings. The history keeps the numbers of the match
+        summary with it, see match_summary.
 
         In a team match, both players of the winning team win it, and each of
         them beats both opponents; partners play no head-to-head. A player in
@@ -422,6 +447,8 @@ class Profiles:
         }
         if len(side) > 1:
             match["winners"] = [index + 1 for index in side]
+        if details := match_summary(summary):
+            match["summary"] = details
         self.matches.insert(0, match)
         del self.matches[MATCH_HISTORY:]
         losers = [key for key, victory in won.items() if not victory]
@@ -519,6 +546,11 @@ class Profiles:
             merged[1] += counts[1]
         for match in self.matches:
             match["players"] = renamed_seats(match["players"], (name, spelled), spelled)
+            if "summary" in match:
+                details = match["summary"]
+                details["players"] = renamed_seats(
+                    details["players"], (name, spelled), spelled
+                )
         return target is not None
 
     def link(self, name: str, person: str) -> bool:
@@ -561,12 +593,17 @@ class Profiles:
                 self.players[key].person = self.players[key].person or theirs.person
             else:
                 self.players[key] = theirs
-        known = [*self.matches, *other.matches]
-        self.matches = sorted(
-            [match for index, match in enumerate(known) if match not in known[:index]],
-            key=lambda match: match["ended"],
-            reverse=True,
-        )[:MATCH_HISTORY]
+        # The same match is there once, with its summary where one side kept
+        # it: a backup made before the history kept summaries has none.
+        known = sorted(
+            [*self.matches, *other.matches], key=lambda match: "summary" not in match
+        )
+        unique: list[dict[str, Any]] = []
+        for match in known:
+            if _plain(match) not in map(_plain, unique):
+                unique.append(match)
+        unique.sort(key=lambda match: match["ended"], reverse=True)
+        self.matches = unique[:MATCH_HISTORY]
         for pair, (first, second) in other.head_to_head.items():
             wins = self.head_to_head.setdefault(pair, [0, 0])
             wins[0] += first
@@ -591,7 +628,7 @@ class Profiles:
                 self.players[_key(profile.name)] = profile
         matches = saved.get("matches")
         self.matches = [
-            dict(match)
+            _restored_match(match)
             for match in (matches if isinstance(matches, list) else [])
             if isinstance(match, dict)
             and isinstance(match.get("ended"), str)
@@ -612,7 +649,21 @@ class Profiles:
 
     # -- state -----------------------------------------------------------------
 
+    def summary(self, ended: str) -> dict[str, Any] | None:
+        """The numbers of the summary of the match of the history that ended
+        then, see match_summary; None for a match that is gone or that the
+        history kept without them, as before version 2.4."""
+        for match in self.matches:
+            if match["ended"] == ended and "summary" in match:
+                details: dict[str, Any] = copy.deepcopy(match["summary"])
+                return details
+        return None
+
     def snapshot(self) -> dict[str, Any]:
+        """The players, the matches and the head-to-head records for the
+        sensors. A match says only whether the history keeps its summary, which
+        the cards ask for by the end of the match, see summary(): the numbers of
+        every summary would make the attributes of the sensor too large."""
         names = {key: profile.name for key, profile in self.players.items()}
         return {
             "players": [
@@ -623,7 +674,7 @@ class Profiles:
                     reverse=True,
                 )
             ],
-            "matches": [dict(match) for match in self.matches],
+            "matches": [_listed(match) for match in self.matches],
             "head_to_head": [
                 {
                     "players": [names.get(key, key) for key in pair.split("\x00")],
@@ -634,3 +685,27 @@ class Profiles:
                 )
             ],
         }
+
+
+def _restored_match(saved: dict[str, Any]) -> dict[str, Any]:
+    """A stored match of the history, with the numbers of its summary only
+    where they are valid."""
+    match = dict(saved)
+    details = match_summary(match.pop("summary", None))
+    if details:
+        match["summary"] = details
+    return match
+
+
+def _plain(match: dict[str, Any]) -> dict[str, Any]:
+    """A match of the history without the numbers of its summary."""
+    return {key: value for key, value in match.items() if key != "summary"}
+
+
+def _listed(match: dict[str, Any]) -> dict[str, Any]:
+    """A match of the history as the sensor lists it: without the numbers of
+    its summary, but with whether the history keeps them."""
+    listed = _plain(match)
+    if "summary" in match:
+        listed["details"] = True
+    return listed
