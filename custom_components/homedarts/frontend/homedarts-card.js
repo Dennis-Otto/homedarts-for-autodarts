@@ -11942,7 +11942,9 @@ function createElements(Base) {
           device_id: this._deviceId,
           ended: match.ended,
         });
-        summaries.set(key, { state: "loaded", numbers });
+        // An answer without the numbers of two players is no summary either: the next tap asks again.
+        const loaded = historySummary(match, numbers) ? { state: "loaded", numbers } : null;
+        summaries.set(key, loaded ?? { state: "failed", ended: match.ended });
       } catch {
         // After a restart of Home Assistant or a dropped connection; the next tap asks again.
         summaries.set(key, { state: "failed", ended: match.ended });

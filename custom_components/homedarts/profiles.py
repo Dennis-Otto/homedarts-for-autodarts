@@ -593,12 +593,17 @@ class Profiles:
                 self.players[key].person = self.players[key].person or theirs.person
             else:
                 self.players[key] = theirs
-        known = [*self.matches, *other.matches]
-        self.matches = sorted(
-            [match for index, match in enumerate(known) if match not in known[:index]],
-            key=lambda match: match["ended"],
-            reverse=True,
-        )[:MATCH_HISTORY]
+        # The same match is there once, with its summary where one side kept
+        # it: a backup made before the history kept summaries has none.
+        known = sorted(
+            [*self.matches, *other.matches], key=lambda match: "summary" not in match
+        )
+        unique: list[dict[str, Any]] = []
+        for match in known:
+            if _plain(match) not in map(_plain, unique):
+                unique.append(match)
+        unique.sort(key=lambda match: match["ended"], reverse=True)
+        self.matches = unique[:MATCH_HISTORY]
         for pair, (first, second) in other.head_to_head.items():
             wins = self.head_to_head.setdefault(pair, [0, 0])
             wins[0] += first
@@ -692,10 +697,15 @@ def _restored_match(saved: dict[str, Any]) -> dict[str, Any]:
     return match
 
 
+def _plain(match: dict[str, Any]) -> dict[str, Any]:
+    """A match of the history without the numbers of its summary."""
+    return {key: value for key, value in match.items() if key != "summary"}
+
+
 def _listed(match: dict[str, Any]) -> dict[str, Any]:
     """A match of the history as the sensor lists it: without the numbers of
     its summary, but with whether the history keeps them."""
-    listed = {key: value for key, value in match.items() if key != "summary"}
+    listed = _plain(match)
     if "summary" in match:
         listed["details"] = True
     return listed

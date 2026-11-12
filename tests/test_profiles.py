@@ -240,6 +240,24 @@ def test_a_restored_history_keeps_only_valid_summaries():
     assert again.matches == profiles.matches
 
 
+def test_a_merge_keeps_a_match_once_and_with_its_summary():
+    """A backup made before the history kept summaries has the same match
+    without one: the merge keeps it once, with the numbers of the summary."""
+    seats = [{"name": "Alex"}, {"name": "Sam"}]
+    details = {"double_out": True, "players": [{"player": 1, "name": "Alex"}]}
+    played = {"ended": "2026-11-12T20:00:00", "players": seats}
+    other = {"ended": "2026-11-11T20:00:00", "players": seats}
+    for ours, theirs in (
+        ([played, other], [{**played, "summary": details}]),
+        ([{**played, "summary": details}, other], [played]),
+    ):
+        profiles, backup = Profiles(), Profiles()
+        profiles.restore({"matches": ours})
+        backup.restore({"matches": theirs})
+        profiles.merge(backup)
+        assert profiles.matches == [{**played, "summary": details}, other]
+
+
 def test_a_player_in_two_seats_plays_the_match_once_and_not_against_oneself():
     """Names kept from before every seat needed a name of its own."""
     profiles = Profiles()

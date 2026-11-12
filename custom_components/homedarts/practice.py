@@ -1422,8 +1422,10 @@ class PracticeGame:
             for index in side:
                 self.players[index].remaining = winner.remaining if rounds else 0
             self.winner = self.current
-            # The summary goes with the match into the history, which keeps it.
             self.summary = self._summary(self.current, now)
+            # The summary of an X01 or Cricket match goes with it into the
+            # history, which keeps it; party games sum up nothing to look at again.
+            kept = isinstance(self.mode, X01Mode | CricketMode)
             self.profiles.match(
                 self.mode.kind,
                 self._match_entries(),
@@ -1434,7 +1436,7 @@ class PracticeGame:
                 self.match_started,
                 now=now,
                 rated=self._rated(),
-                summary=self.summary,
+                summary=self.summary if kept else None,
             )
             return
         players = len(self.players)

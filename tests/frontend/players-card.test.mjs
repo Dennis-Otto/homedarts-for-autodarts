@@ -832,6 +832,20 @@ test("a summary that did not load says so, and a tap on its match asks again", a
   );
 });
 
+test("an answer without the numbers of two players is retried like a failed one", async () => {
+  const { requests, callWS } = summaries({ double_out: true, players: [] }, NUMBERS);
+  const { card } = setup({ ...profiles(ALEX), ...lastMatch({ matches: [KEPT] }) }, {}, { callWS });
+  opener(card).click();
+  await settle();
+  assert.equal(summaryText(card), "The summary did not load. Tap the match to try again.");
+  // The tap asks again instead of closing the match.
+  opener(card).click();
+  assert.equal(opener(card).getAttribute("aria-expanded"), "true");
+  await settle();
+  assert.ok($(card, ".match-summary table"));
+  assert.equal(requests.length, 2);
+});
+
 test("the card lists the latest ten matches, and all of them with the link below", () => {
   const matches = Array.from({ length: 12 }, (_, index) => ({
     ...KEPT,
