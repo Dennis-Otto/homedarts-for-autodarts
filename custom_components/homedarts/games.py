@@ -18,8 +18,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
-from .bot import BOT_DARTS, Bot
-from .bot import aim as bot_aim
+from .bot import BOT_DARTS, Bot, aim_dart
 from .errors import ActionRefused
 from .lifecycle import GameLifecycle
 from .local_api import number
@@ -979,10 +978,12 @@ class BoardGames:
         return bool(thrown >= BOT_DARTS or snapshot.get("bust") or snapshot["won"])
 
     def _bot_throw(self) -> None:
+        bed, three_in_a_bed = aim_dart(self.practice.snapshot())
         dart, position = self.bot.throw(
-            bot_aim(self.practice.snapshot()),
+            bed,
             self.practice.bot_level,
             cricket=self.practice.cricket is not None,
+            three_in_a_bed=three_in_a_bed,
         )
         self.manual.add(dart, position, "bot")
 
