@@ -153,7 +153,7 @@ def test_the_compile_is_the_blueprints():
         check=True,
     )
     assert "--compile" in result.stdout
-    assert "with --compile, keep the result" in " ".join(result.stdout.split())
+    assert "--fix" in result.stdout
 
 
 def test_the_fix_bot_pins_assist_when_the_ci_fails():

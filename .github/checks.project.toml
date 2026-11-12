@@ -303,6 +303,9 @@ looks at: the screenshot bot commits them after the merge."""
 # pins them and compiles requirements-test.txt again. The fix bot runs it in the job
 # of the CI, where the requirements-test.txt of the pull request is installed, and
 # commits both files; tests/test_pin_assist.py holds that it does.
+# A project's step replaces the blueprint's whole explanation: its text is a copy of
+# that of .github/checks.toml, so compare it with the blueprint's after an update of
+# the blueprint.
 [step."Tests, with every line and branch covered"]
 problem = """A test fails, or a line or a branch of the code runs in no test; in
 the CI, each test that fails is an annotation at the line where it failed, and the
