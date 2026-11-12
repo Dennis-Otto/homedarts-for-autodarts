@@ -82,7 +82,7 @@ Dans le stockage propre de Home Assistant, jamais dans le cloud : les sessions 
 
 ### J'ai supprimé ma cible. Mes statistiques ont-elles disparu ?
 
-Non. Avant qu'une cible soit supprimée, HomeDarts écrit une sauvegarde de tout ce qu'il a enregistré dans `homedarts/backups` du dossier multimédia. Ajoutez la cible à nouveau, et la réparation *Une sauvegarde de … est disponible* ramène tout ; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restaure n'importe quelle sauvegarde. [Backups](statistics.md#backups)
+Non. Avant qu'une cible soit supprimée, HomeDarts écrit une sauvegarde de tout ce qu'il a enregistré dans `homedarts/backups` du dossier multimédia. Ajoutez la cible à nouveau, et la réparation *Une sauvegarde de … est disponible* ramène tout. Une cible sans Autodarts reçoit un nouvel identifiant de cible quand elle est ajoutée à nouveau : on lui propose donc la sauvegarde la plus récente d'une cible sans Autodarts supprimée, au nom de cette cible. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restaure n'importe quelle sauvegarde. [Backups](statistics.md#backups)
 
 ## Mises à jour et migration
 

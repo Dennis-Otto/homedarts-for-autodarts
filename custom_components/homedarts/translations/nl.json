@@ -1360,6 +1360,21 @@
         }
       }
     },
+    "backup_available_other": {
+      "title": "Er is een back-up van {backup} voor {board}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "De back-up terugzetten",
+            "description": "{board} is toegevoegd zonder opgeslagen gegevens, en er is een back-up van {backup} van {date}, een dartbord zonder Autodarts dat niet meer is ingesteld. Een dartbord zonder Autodarts krijgt bij elke installatie een nieuwe bord-ID, dus dit is de nieuwste back-up met spelersgegevens van zo'n bord die bij geen enkel bord hoort, zoals de back-up die werd geschreven toen het werd verwijderd.\n\nTerugzetten in {board}? Het bord laadt opnieuw met de training, de spellen, de spelersprofielen met hun voortgang en badges, de persoonlijke records en de kalender van de back-up; wat het sinds het toevoegen heeft opgeslagen, wordt vervangen, en de back-ups van {backup} worden die van {board}. Heeft het sindsdien spelersgegevens opgeslagen, dan wordt daar eerst een back-up van gemaakt. Om opnieuw te beginnen, negeer je deze melding."
+          }
+        },
+        "abort": {
+          "board_unavailable": "Het bord is niet meer ingesteld.",
+          "restore_failed": "De back-up kon niet worden teruggezet. De actie homedarts.restore zet hem terug en zegt waarom het mislukt."
+        }
+      }
+    },
     "takeover_duplicate": {
       "title": "Het HomeDarts-bord {entry} blokkeert de overname van het Autodarts-bord {board}",
       "fix_flow": {

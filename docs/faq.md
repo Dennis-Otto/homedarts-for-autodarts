@@ -82,7 +82,7 @@ In Home Assistant's own storage, never in the cloud: the training sessions, the 
 
 ### I deleted my board. Are my statistics gone?
 
-No. Before a board is deleted, HomeDarts writes a backup of everything it stored to `homedarts/backups` in the media folder. Add the board again, and the repair *A backup of … is available* brings it all back; [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restores any backup. [Backups](statistics.md#backups)
+No. Before a board is deleted, HomeDarts writes a backup of everything it stored to `homedarts/backups` in the media folder. Add the board again, and the repair *A backup of … is available* brings it all back. A dartboard without Autodarts gets a new board ID when it is added again, so it is offered the newest backup of a deleted one, named after that board. [`homedarts.restore`](entities.md#restore-a-backup-homedartsrestore) restores any backup. [Backups](statistics.md#backups)
 
 ## Updates and switching
 
