@@ -296,6 +296,43 @@ looks at: the screenshot bot commits them after the merge."""
 # the check (home-assistant) fails, so these also bring the files in step that the
 # tests check and that a command makes from others.
 
+# The step of the tests, as the blueprint explains it, with Assist's packages: the
+# pull request of Renovate for a new Home Assistant test base fails
+# tests/test_voice_blueprints.py when that Home Assistant installs other versions of
+# them, and scripts/pin_assist.py, which reads them from the installed Home Assistant,
+# pins them and compiles requirements-test.txt again. The fix bot runs it in the job
+# of the CI, where the requirements-test.txt of the pull request is installed, and
+# commits both files; tests/test_pin_assist.py holds that it does.
+[step."Tests, with every line and branch covered"]
+problem = """A test fails, or a line or a branch of the code runs in no test; in
+the CI, each test that fails is an annotation at the line where it failed, and the
+coverage report names the files and lines that it misses. A test also fails when it runs
+longer than the `timeout` of `pyproject.toml` (the log says `Timeout`), or when it depends
+on another test: the tests run in parallel, in another order on each worker.
+`tests/test_voice_blueprints.py` also fails when a new Home Assistant of the test plugin
+installs other versions of Assist's packages (hassil, home-assistant-intents and
+gazetteer-matcher) than `requirements-test.in` pins, as in the pull request of Renovate
+for a new Home Assistant test base."""
+why = """Every line and branch under test means that every change of behavior shows in a
+test, so that a bug can't come back unnoticed. The tests talk to Assist as the Home
+Assistant of the test plugin does only with the packages that it installs."""
+fix = """Fix the test that fails, or the code that it catches, and write a test for each
+line and branch that the report lists as missing. Make a slow test faster, or let it wait
+for a condition instead of a time; give a test that shares state with another one its own
+files and settings, such as `tmp_path`. `python3 scripts/pin_assist.py` pins Assist's
+packages as the installed Home Assistant does and compiles `requirements-test.txt`
+again; the fix bot runs it too. `coverage run -m pytest` runs the tests one after
+another; `python -m pytest -n logical --maxprocesses=8 --cov` runs them in parallel as
+CI does, where pytest-xdist and pytest-cov are installed:"""
+commands = [
+  "python3 scripts/pin_assist.py",
+  "coverage run -m pytest",
+  "coverage report",
+  "python -m pytest -n logical --maxprocesses=8 --cov",
+]
+docs = "docs/development.md#continuous-integration"
+autofix = ["{python} scripts/pin_assist.py"]
+
 [step."Checks of this project"]
 problem = """A check of this integration alone, in `scripts/check-project.sh`, failed;
 the line `==` above the error names it: the license terms of `LICENSE` and of its copy

@@ -5,10 +5,17 @@ packages (hassil, home-assistant-intents, gazetteer-matcher) the conversation
 manifest of Home Assistant names with exact versions. Renovate leaves them alone.
 When pytest-homeassistant-custom-component brings a new Home Assistant, that test
 fails, and this script writes the versions of its manifest into
-`requirements-test.in` and compiles `requirements-test.txt` again with the command
-in its header, which needs pip-tools and the Python named there:
+`requirements-test.in` and compiles `requirements-test.txt` again with the
+blueprint's `locks --compile --fix`: uv, which `requirements-test.txt` installs,
+compiles it with the command in its header, for the Python named there, and keeps
+every other pin of the file.
 
     python scripts/pin_assist.py
+
+The fix bot runs it as well, by the autofix of the step of the tests in
+`.github/checks.project.toml`: when the CI of a pull request fails, it runs it where
+the `requirements-test.txt` of that pull request is installed, so the pull request of
+Renovate for a new Home Assistant test base pins Assist by itself.
 """
 
 from __future__ import annotations
@@ -24,6 +31,9 @@ from pathlib import Path
 ROOT = Path(__file__).parents[1]
 SOURCE = ROOT / "requirements-test.in"
 LOCK = ROOT / "requirements-test.txt"
+# The blueprint's command that compiles each lock file of pip-compile again with the
+# command in its header, on the versions that it pins.
+COMPILE = (".github/blueprint.py", "locks", "--compile", "--fix")
 
 
 def manifest_pins() -> dict[str, str]:
@@ -55,32 +65,25 @@ def locked(lock: str, wanted: dict[str, str]) -> bool:
     )
 
 
-def compile_command(lock: str) -> list[str]:
-    """The command in the header of `requirements-test.txt` that compiled it."""
-    match = re.search(r"^# by the following command:\n#\n#    (.+)$", lock, re.M)
-    if match is None:
-        raise SystemExit(f"{LOCK.name} names no command that compiled it.")
-    return shlex.split(match.group(1))
-
-
 def main() -> int:
     wanted = manifest_pins()
     text = SOURCE.read_text(encoding="utf-8")
-    lock = LOCK.read_text(encoding="utf-8")
     pinned = pin(text, wanted)
-    if pinned == text and locked(lock, wanted):
+    if pinned == text and locked(LOCK.read_text(encoding="utf-8"), wanted):
         print(f"{SOURCE.name} and {LOCK.name} pin Assist as Home Assistant does.")
         return 0
     SOURCE.write_text(pinned, encoding="utf-8", newline="\n")
-    command = compile_command(lock)
     print("Pinned", ", ".join(f"{n}=={v}" for n, v in sorted(wanted.items())))
-    print("Compiling:", shlex.join(command), flush=True)
-    try:
-        subprocess.run(command, cwd=ROOT, check=True)
-    except FileNotFoundError:
-        print(f"Install pip-tools, then run: {shlex.join(command)}", file=sys.stderr)
-        return 1
-    return 0
+    print("Compiling:", shlex.join(["python3", *COMPILE]), flush=True)
+    subprocess.run([sys.executable, *COMPILE], cwd=ROOT, check=False)
+    if locked(LOCK.read_text(encoding="utf-8"), wanted):
+        return 0
+    print(
+        f"{LOCK.name} still pins other versions of them: install uv, which "
+        f"{LOCK.name} names, then run: {shlex.join(['python3', *COMPILE])}",
+        file=sys.stderr,
+    )
+    return 1
 
 
 if __name__ == "__main__":
