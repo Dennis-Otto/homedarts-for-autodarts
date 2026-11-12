@@ -1,6 +1,7 @@
 """Board connection: gaps mid-visit, faults, polling, repairs and diagnostics."""
 
 import asyncio
+import json
 import logging
 from datetime import timedelta
 from unittest.mock import AsyncMock, patch
@@ -16,7 +17,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homedarts.diagnostics import async_get_config_entry_diagnostics
 from custom_components.homedarts.errors import AutodartsConnectionError
-from custom_components.homedarts.local_api import AutodartsLocalClient
+from custom_components.homedarts.local_api import MAX_ANSWER, AutodartsLocalClient
 from custom_components.homedarts.local_coordinator import AutodartsLocalCoordinator
 from custom_components.homedarts.repairs import async_offer_address
 
@@ -624,6 +625,25 @@ async def test_unknown_state_answers_raise_a_repair(hass, aioclient_mock, caplog
     mock_board(aioclient_mock)
     await coordinator.async_refresh()
     assert issue(hass, "unsupported_response", entry) is None
+
+
+async def test_an_oversized_state_answer_is_an_unknown_format(
+    hass, aioclient_mock, caplog
+):
+    entry = await setup_local(hass, aioclient_mock)
+    coordinator = entry.runtime_data.local
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(
+        BASE + "/api/state", content=json.dumps(STATE).encode().ljust(MAX_ANSWER + 1)
+    )
+    mock_board(aioclient_mock)
+    for _ in range(3):
+        await coordinator.async_refresh()
+    assert coordinator.last_exception.translation_key == "unsupported_response"
+    found = issue(hass, "unsupported_response", entry)
+    assert found.translation_placeholders == {"reads": "/api/state"}
+    unknown = "answered /api/state in an unknown format"
+    assert messages(caplog, logging.WARNING, unknown) == 1
 
 
 async def test_unknown_optional_answers_are_only_logged(hass, aioclient_mock, caplog):
