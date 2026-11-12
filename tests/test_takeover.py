@@ -39,6 +39,7 @@ from custom_components.homedarts.takeover import (
     ISSUE_RESTART,
     OLD_DOMAIN,
     async_finish,
+    async_take_over,
 )
 
 from .local_helpers import local_entry_data, mock_board_v2
@@ -395,6 +396,115 @@ async def test_another_integration_named_autodarts_stays(
     await take_over(hass)
     assert folder.exists()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+
+
+async def test_a_file_that_cannot_move_stops_nothing_else(
+    hass, hass_storage, config_dir, caplog
+):
+    media = config_dir / "media"
+    (media / OLD_DOMAIN / "highlights").mkdir(parents=True)
+    (media / OLD_DOMAIN / "exports").mkdir()
+    pack = media / DOMAIN / "voices" / "Anna"
+    pack.mkdir(parents=True)
+    (pack / ".autodarts-voice-pack").touch()
+    folder = old_folder(config_dir)
+    rename = Path.rename
+
+    def stuck(source: Path, target: Path) -> Path:
+        # A file in use, or a folder without the right to write it.
+        if source.name in {"highlights", ".autodarts-voice-pack"}:
+            raise PermissionError(13, "Permission denied", str(source))
+        return rename(source, target)
+
+    old_board(hass, hass_storage)
+    with patch.object(Path, "rename", stuck):
+        await take_over(hass)
+    assert (media / OLD_DOMAIN / "highlights").is_dir()
+    assert (pack / ".autodarts-voice-pack").exists()
+    assert (media / DOMAIN / "exports").is_dir()
+    assert "highlights stays where it is" in caplog.text
+    assert ".autodarts-voice-pack stays where it is" in caplog.text
+    # The rest of the finish went on.
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
+    assert CONF_TAKEOVER not in hass.config_entries.async_entries(DOMAIN)[0].data
+
+
+async def test_a_media_folder_without_room_for_the_new_folder_stays(
+    hass, hass_storage, config_dir, caplog
+):
+    media = config_dir / "media"
+    (media / OLD_DOMAIN / "highlights").mkdir(parents=True)
+    # A file where the new folder belongs: the folder can't be made.
+    (media / DOMAIN).write_bytes(b"")
+    folder = old_folder(config_dir)
+    old_board(hass, hass_storage)
+    await take_over(hass)
+    assert (media / OLD_DOMAIN / "highlights").is_dir()
+    assert "stay where they are" in caplog.text
+    assert not folder.exists()
+
+
+@pytest.mark.expected_errors
+async def test_a_finish_that_fails_runs_again_at_the_next_setup(
+    hass, hass_storage, config_dir, caplog
+):
+    folder = old_folder(config_dir)
+    old_board(hass, hass_storage)
+    with patch(
+        "custom_components.homedarts.takeover._async_update_dashboards",
+        side_effect=OSError(28, "No space left on device"),
+    ):
+        await take_over(hass)
+    # The board sets up all the same, and the takeover stays in its data.
+    [entry] = hass.config_entries.async_entries(DOMAIN)
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.data[CONF_TAKEOVER] == "old-entry"
+    assert "is not finished" in caplog.text
+    assert folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.data == DATA
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
+
+
+async def test_a_finish_that_a_stop_interrupted_runs_at_the_next_start(
+    hass, hass_storage, config_dir
+):
+    media = config_dir / "media"
+    (media / OLD_DOMAIN / "highlights").mkdir(parents=True)
+    folder = old_folder(config_dir)
+    old_board(hass, hass_storage)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        unique_id=BOARD_ID,
+        data={**DATA, CONF_TAKEOVER: "old-entry"},
+    )
+    entry.add_to_hass(hass)
+    # Home Assistant stops while the takeover is finishing: the old entry is gone,
+    # but the takeover stays in the data of the new one.
+    with (
+        patch(
+            "custom_components.homedarts.takeover._async_update_dashboards",
+            side_effect=asyncio.CancelledError,
+        ),
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await async_take_over(hass, entry)
+    assert hass.config_entries.async_get_entry("old-entry") is None
+    assert entry.data[CONF_TAKEOVER] == "old-entry"
+
+    # The next start finishes it.
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert (media / DOMAIN / "highlights").is_dir()
+    assert not folder.exists()
+    assert entry.data == DATA
 
 
 class YamlDashboard:

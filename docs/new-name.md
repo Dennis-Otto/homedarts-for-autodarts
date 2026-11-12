@@ -56,6 +56,8 @@ The repair stays over the restarts and looks again at each start of Home Assista
 
 **Is HomeDarts an offer of Autodarts?** No. HomeDarts for Autodarts is an unofficial community project, not affiliated with Autodarts. It works with Autodarts boards through the interface that the Board Manager offers in your network.
 
+**What if a media file can't move, or Home Assistant stops during the takeover?** HomeDarts moves everything else and leaves the file where it is, with a warning in the log that names it; move it yourself. A takeover that stops before it is finished, with an error in the log or because Home Assistant restarts, goes on at the next start of Home Assistant; the board works meanwhile.
+
 **Do I need to set anything up again?** No. The takeover keeps every board with its entities and statistics. Only automations, scripts and YAML dashboards that use the old actions or cards need the new names.
 
 **Will the cloud link come?** No: Autodarts issues no client IDs to third parties, so HomeDarts works locally. Online matches still reach Home Assistant through [Tools for Autodarts](online-matches.md).
