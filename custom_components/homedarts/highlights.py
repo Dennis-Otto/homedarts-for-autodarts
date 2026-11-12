@@ -9,6 +9,11 @@ folder Home Assistant does not allow writing to, fail the action. camera.snapsho
 passes over a disabled or unavailable camera and a missing picture without an
 error, so whoever relied on it announced photos that were never saved.
 
+Home Assistant serves the folder www at /local/ without a login. A photo there
+gets a random part at the end of its name, as an export does, so that its name
+does not follow from the moment, the player and the score, and its /local/
+address; the names in the gallery stay as they are, since the gallery reads them.
+
 With a clip camera, a camera with a video stream, it also records the moment as a
 clip beside the photo, under its name with .mp4, where the gallery plays it.
 camera.record returns only when the recording has ended, so the clip records in
@@ -20,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import re
+import secrets
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -33,7 +39,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .export import ExportFolderError, export_folder
+from .export import ExportFolderError, export_folder, public_url
 from .profiles import NAME_LENGTH
 
 if TYPE_CHECKING:
@@ -57,6 +63,8 @@ UNSAFE = re.compile(r'[\\/:*?"<>|_{}%#~]|\.{2,}')
 COPIES = 100
 # The pictures of most cameras are JPEG, which is also the suffix for any other kind.
 SUFFIXES = {"image/png": ".png", "image/webp": ".webp"}
+# The random bytes at the end of the name of a photo in www, as many as an export has.
+RANDOM_BYTES = 8
 
 
 def media_folder(hass: HomeAssistant, folder: Path) -> tuple[str, Path] | None:
@@ -100,11 +108,15 @@ def media_url(config: Config, path: Path) -> str:
 def _write(
     config: Config, folder: str, stem: str, suffix: str, image: bytes
 ) -> tuple[Path, str]:
-    """Write the photo under a name no file has yet, and find its address;
-    runs in the executor."""
+    """Write the photo under a name no file has yet, and find its address in
+    the media browser or, in www, at /local/; runs in the executor."""
     # The rules of the exports: not hidden, and where Home Assistant allows writing.
     target = export_folder(config, folder)
     target.mkdir(parents=True, exist_ok=True)
+    if public_url(config.config_dir, target) is not None:
+        # www needs no login: a name that follows from the moment, the player and
+        # the score would let anyone who reaches Home Assistant find the photo.
+        stem = f"{stem}-{secrets.token_hex(RANDOM_BYTES)}"
     for copy in range(1, COPIES + 1):
         path = target / (f"{stem} ({copy}){suffix}" if copy > 1 else stem + suffix)
         try:
@@ -116,7 +128,8 @@ def _write(
             # Part of a photo is no photo, and the gallery would show it broken.
             path.unlink(missing_ok=True)
             raise
-        return path, media_url(config, path)
+        url = media_url(config, path) or public_url(config.config_dir, path)
+        return path, url or ""
     raise FileExistsError(f"{COPIES} photos named {stem}{suffix} exist already")
 
 

@@ -1,6 +1,6 @@
 flowchart TB
   accTitle: How the highlight photo saves a photo and what your actions get
-  accDescr: After a big visit or a checkout, the highlight photo waits half a second. With Save to the gallery on, homedarts.save_highlight saves the photo only when the camera entity is enabled and available, the camera gives a picture and Home Assistant may write to the folder; then photo is the saved file and photo_url its address in the media folder. Otherwise nothing is saved, the log says why, and photo and photo_url stay empty, as they do with Save to the gallery off. Your actions run either way, and photo_url or image is the saved photo or the live picture of the camera.
+  accDescr: After a big visit or a checkout, the highlight photo waits half a second. With Save to the gallery on, homedarts.save_highlight saves the photo only when the camera entity is enabled and available, the camera gives a picture and Home Assistant may write to the folder; then photo is the saved file and photo_url its address in the media folder, or at /local/ for a folder in www. Otherwise nothing is saved, the log says why, and photo and photo_url stay empty, as they do with Save to the gallery off. Your actions run either way, and photo_url or image is the saved photo or the live picture of the camera.
   MOMENT["A big visit<br/>or a checkout"] --> SAVE{"<i>Save to the gallery</i>?"}
   SAVE -- "yes" --> CAMERA{"Camera enabled<br/>and available?"}
   CAMERA -- "yes" --> PICTURE{"Does the camera<br/>give a picture?"}

@@ -10,6 +10,7 @@ from hypothesis import strategies as st
 from custom_components.homedarts.board import SECTORS, aim_point, bed_name, segment_at
 from custom_components.homedarts.bot import (
     AVERAGE_PER_MPR,
+    BED_LEVEL,
     CRICKET_SCATTER,
     MAX_LEVEL,
     MIN_LEVEL,
@@ -19,11 +20,12 @@ from custom_components.homedarts.bot import (
     cricket_aim,
     play_cricket_leg,
     play_leg,
+    play_wild_mouse_leg,
     scatter,
     valid_level,
     x01_aim,
 )
-from custom_components.homedarts.cricket import TACTICS_NUMBERS
+from custom_components.homedarts.cricket import DOUBLES, TACTICS_NUMBERS, TRIPLES
 from custom_components.homedarts.manual import BEDS
 from custom_components.homedarts.scoring import DOUBLE, STRAIGHT
 
@@ -37,6 +39,9 @@ LEGS = {20: 400, 60: 300, 100: 300, 120: 300}
 # The marks per round the bot plays in Cricket, a 24th of its level, hold
 # within 1.5 % over these legs.
 CRICKET_LEGS = {20: 150, 60: 300, 120: 300}
+# Legs of Wild Mouse per level: three in a bed costs level 20 about 9 % more
+# visits than a leg without it over 1,000 legs, and level 40 about 18 %.
+WILD_MOUSE_LEGS = 100
 
 
 def polar(radius: float, number: int) -> tuple[float, float]:
@@ -298,6 +303,39 @@ def test_the_cricket_scatter_of_a_level():
     cricket = Bot(random.Random(1)).throw("T20", 60, cricket=True)[1]
     ratio = (cricket[1] * 170 - aim_y) / (x01[1] * 170 - aim_y)
     assert ratio == pytest.approx(scatter(60, cricket=True) / scatter(60), rel=0.01)
+
+
+def test_three_in_a_bed_takes_the_scatter_of_level_40_at_most():
+    assert BED_LEVEL == 40
+    bed = scatter(BED_LEVEL, cricket=True)
+    for level in (MIN_LEVEL, 25, 30, 39):
+        assert scatter(level, cricket=True) > bed
+        assert scatter(level, cricket=True, bed=True) == bed
+    for level in (40, 60, MAX_LEVEL):
+        assert scatter(level, cricket=True, bed=True) == scatter(level, cricket=True)
+    # A dart at three in a bed lands with that scatter.
+    _aim_x, aim_y = aim_point("S20")
+    plain = Bot(random.Random(3)).throw("S20", 20, cricket=True)[1]
+    grouped = Bot(random.Random(3)).throw("S20", 20, True, three_in_a_bed=True)[1]
+    ratio = (grouped[1] * 170 - aim_y) / (plain[1] * 170 - aim_y)
+    assert ratio == pytest.approx(bed / scatter(20, cricket=True), rel=0.01)
+
+
+@pytest.mark.parametrize("level", [MIN_LEVEL, 30, 60])
+def test_the_bot_wins_wild_mouse_with_three_in_a_bed_about_as_fast(level):
+    """Three in a bed adds a few visits to a leg of Wild Mouse at every level:
+    with the scatter of level 20, the bot needed about seven times as many."""
+    without = with_bed = cricket = 0
+    for seed in range(WILD_MOUSE_LEGS):
+        without += play_wild_mouse_leg(
+            Bot(random.Random(seed)), level, (DOUBLES, TRIPLES)
+        )
+        with_bed += play_wild_mouse_leg(Bot(random.Random(seed)), level)
+        cricket += play_cricket_leg(Bot(random.Random(seed)), level)[1] / 3
+    assert with_bed <= without * 1.3
+    if level == MIN_LEVEL:
+        # A low level plays Wild Mouse about as fast as its Cricket.
+        assert with_bed <= cricket * 1.3
 
 
 def test_the_bot_plays_tactics_down_to_ten():

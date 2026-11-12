@@ -8,7 +8,8 @@ for the numbers that do not show yet. Its darts land
 with a Gaussian scatter in millimetres around the aim point. In X01, the
 scatter of a level is calibrated so that the bot's 3-dart average in legs of
 501 with double out matches the level; in the Cricket games, so that its marks
-per round match those of a player with that average, a 24th of it.
+per round match those of a player with that average, a 24th of it. At
+three in a bed of Wild Mouse, it throws with the scatter of level 40 at most.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from __future__ import annotations
 import random
 from bisect import bisect_left
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, NamedTuple
 
 from .board import RADIUS_MM, aim_point, bed_name, segment_at, top_bed
 from .checkout import (
@@ -28,13 +29,16 @@ from .checkout import (
     setup,
 )
 from .cricket import (
+    BED,
     BULL,
     CRICKET_NUMBERS,
     HIDDEN_CRICKET,
     MARKS_TO_CLOSE,
     WILD_MOUSE,
+    WILD_MOUSE_TARGETS,
     by_value,
     play_visit,
+    play_wild_mouse_visit,
     wild_mouse_bed,
     wild_mouse_order,
 )
@@ -104,6 +108,13 @@ CRICKET_SCATTER = (
     (115, 8.99),
     (120, 8.51),
 )
+# Three in a bed of Wild Mouse asks for the three darts of a visit in one bed,
+# which the scatter of a low level almost never throws: with it, a leg of Wild
+# Mouse took level 20 a median of 556 visits, against 84 without three in a
+# bed. From level 40 on, the target costs a leg only a few visits, so a dart at
+# three in a bed lands with the scatter of level 40 at most. That was measured
+# with play_wild_mouse_leg() over 1,000 legs per level, and the tests check it.
+BED_LEVEL = 40
 
 
 def valid_level(value: object) -> bool:
@@ -111,9 +122,12 @@ def valid_level(value: object) -> bool:
     return type(value) is int and (value == 0 or MIN_LEVEL <= value <= MAX_LEVEL)
 
 
-def scatter(level: int, cricket: bool = False) -> float:
+def scatter(level: int, cricket: bool = False, bed: bool = False) -> float:
     """The scatter in millimetres that plays this 3-dart average, or in the
-    Cricket games the marks per round that go with it."""
+    Cricket games the marks per round that go with it; at three in a bed that
+    of BED_LEVEL at most."""
+    if bed:
+        level = max(level, BED_LEVEL)
     table = CRICKET_SCATTER if cricket else SCATTER
     levels = [entry[0] for entry in table]
     level = min(max(level, levels[0]), levels[-1])
@@ -270,6 +284,14 @@ def hidden_cricket_aim(
     )
 
 
+class Aim(NamedTuple):
+    """Where the bot aims a dart, and whether at three in a bed, which it
+    throws with the scatter of BED_LEVEL at most."""
+
+    bed: str
+    three_in_a_bed: bool = False
+
+
 def _wild_mouse_bed(
     slot: int,
     marks: list[int],
@@ -306,6 +328,21 @@ def wild_mouse_aim(
     close them; three in a bed follows the first dart of the visit, and once the
     visit's darts can no longer make a bed, the next target takes over.
     """
+    return wild_mouse_dart(
+        marks, points, others_marks, others_points, numbers, targets, visit
+    ).bed
+
+
+def wild_mouse_dart(
+    marks: list[int],
+    points: int,
+    others_marks: list[list[int]],
+    others_points: list[int],
+    numbers: tuple[int, ...],
+    targets: tuple[str, ...],
+    visit: list[dict[str, Any]],
+) -> Aim:
+    """The bed of wild_mouse_aim(), and whether the dart is at three in a bed."""
     order = wild_mouse_order(numbers, targets)
     closed = {slot: marks[slot] >= MARKS_TO_CLOSE for slot in order}
     open_slots = [slot for slot in order if not closed[slot]]
@@ -326,8 +363,11 @@ def wild_mouse_aim(
         wanted = [*scoring, *open_slots]
     else:
         wanted = [*open_slots, *scoring]
-    beds = (_wild_mouse_bed(slot, marks, numbers, targets, visit) for slot in wanted)
-    return next((bed for bed in beds if bed), "T20")
+    bed_slot = len(numbers) + targets.index(BED) if BED in targets else None
+    for slot in wanted:
+        if bed := _wild_mouse_bed(slot, marks, numbers, targets, visit):
+            return Aim(bed, slot == bed_slot)
+    return Aim("T20")
 
 
 def _dart(key: str) -> dict[str, Any]:
@@ -341,8 +381,14 @@ def _dart(key: str) -> dict[str, Any]:
 
 def aim(snapshot: dict[str, Any]) -> str:
     """Where the bot aims next, from the practice game's snapshot."""
+    return aim_dart(snapshot).bed
+
+
+def aim_dart(snapshot: dict[str, Any]) -> Aim:
+    """Where the bot aims next and whether at three in a bed, from the practice
+    game's snapshot."""
     if snapshot.get("bull_off"):
-        return "BULL"
+        return Aim("BULL")
     thrown = len(snapshot.get("visit") or [])
     if "numbers" in snapshot:
         numbers = tuple(snapshot["numbers"])
@@ -356,16 +402,18 @@ def aim(snapshot: dict[str, Any]) -> str:
             if score["player"] != player and (team is None or score.get("team") != team)
         ]
         if snapshot["game"] == HIDDEN_CRICKET:
-            return hidden_cricket_aim(
-                own["marks"],
-                own["points"],
-                [score["marks"] for score in others],
-                [score["points"] for score in others],
-                numbers,
-                snapshot["darts"],
+            return Aim(
+                hidden_cricket_aim(
+                    own["marks"],
+                    own["points"],
+                    [score["marks"] for score in others],
+                    [score["points"] for score in others],
+                    numbers,
+                    snapshot["darts"],
+                )
             )
         if snapshot["game"] == WILD_MOUSE:
-            return wild_mouse_aim(
+            return wild_mouse_dart(
                 own["marks"],
                 own["points"],
                 [score["marks"] for score in others],
@@ -374,22 +422,26 @@ def aim(snapshot: dict[str, Any]) -> str:
                 tuple(snapshot["targets"]),
                 [_dart(key) for key in snapshot["visit"]],
             )
-        return cricket_aim(
-            own["marks"],
-            own["points"],
-            [score["marks"] for score in others],
-            [score["points"] for score in others],
-            numbers,
-            snapshot["game"] == "cut_throat",
+        return Aim(
+            cricket_aim(
+                own["marks"],
+                own["points"],
+                [score["marks"] for score in others],
+                [score["points"] for score in others],
+                numbers,
+                snapshot["game"] == "cut_throat",
+            )
         )
-    return x01_aim(
-        snapshot["remaining"],
-        BOT_DARTS - thrown,
-        snapshot.get("out_mode", DOUBLE),
-        STRAIGHT
-        if snapshot.get("opened") is not False
-        else snapshot.get("in_mode", DOUBLE),
-        snapshot.get("bull_mode", BULL_25_50),
+    return Aim(
+        x01_aim(
+            snapshot["remaining"],
+            BOT_DARTS - thrown,
+            snapshot.get("out_mode", DOUBLE),
+            STRAIGHT
+            if snapshot.get("opened") is not False
+            else snapshot.get("in_mode", DOUBLE),
+            snapshot.get("bull_mode", BULL_25_50),
+        )
     )
 
 
@@ -404,10 +456,14 @@ class Bot:
         self.rng = rng or random.Random()
 
     def throw(
-        self, bed: str, level: int, cricket: bool = False
+        self,
+        bed: str,
+        level: int,
+        cricket: bool = False,
+        three_in_a_bed: bool = False,
     ) -> tuple[dict[str, Any], tuple[float, float]]:
         """A dart aimed at the bed: its segment and its position on the board."""
-        sigma = scatter(level, cricket)
+        sigma = scatter(level, cricket, three_in_a_bed)
         aim_x, aim_y = aim_point(bed)
         # Positions like the board's, relative to the outer edge of the double
         # ring; the bed is the one at the position the cards show.
@@ -477,4 +533,35 @@ def play_cricket_leg(
         total += result.darts
         if result.won:
             return counted, total
+        marks, points = result.marks, result.points
+
+
+def play_wild_mouse_leg(
+    bot: Bot, level: int, targets: tuple[str, ...] = WILD_MOUSE_TARGETS
+) -> int:
+    """The visits of the bot for a leg of Wild Mouse against a player who never
+    scores, by the rules of the practice game.
+
+    This is how the scatter at three in a bed was calibrated, and how the tests
+    check it.
+    """
+    numbers = CRICKET_NUMBERS
+    marks, points, visits = [0] * (len(numbers) + len(targets)), 0, 0
+    others, scores = [[0] * len(marks)], [0]
+    while True:
+        visit: list[dict[str, Any]] = []
+        visits += 1
+        result = play_wild_mouse_visit(
+            marks, points, visit, others, scores, numbers, targets
+        )
+        for _ in range(BOT_DARTS):
+            bed, at_bed = wild_mouse_dart(
+                result.marks, result.points, others, scores, numbers, targets, visit
+            )
+            visit.append(bot.throw(bed, level, cricket=True, three_in_a_bed=at_bed)[0])
+            result = play_wild_mouse_visit(
+                marks, points, visit, others, scores, numbers, targets
+            )
+            if result.won:
+                return visits
         marks, points = result.marks, result.points

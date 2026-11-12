@@ -1624,7 +1624,7 @@
         },
         "folder": {
           "name": "Carpeta",
-          "description": "Opcional. Una carpeta relativa a la carpeta de configuración, o una ruta absoluta, en la que Home Assistant permite escribir: www, una carpeta multimedia o una carpeta de allowlist_external_dirs. Sin carpeta: la galería de momentos destacados, homedarts/highlights en la carpeta multimedia."
+          "description": "Opcional. Una carpeta relativa a la carpeta de configuración, o una ruta absoluta, en la que Home Assistant permite escribir: www, una carpeta multimedia o una carpeta de allowlist_external_dirs. Los archivos de www están disponibles en /local/ sin iniciar sesión. Sin carpeta: la galería de momentos destacados, homedarts/highlights en la carpeta multimedia."
         },
         "player": {
           "name": "Jugador",
