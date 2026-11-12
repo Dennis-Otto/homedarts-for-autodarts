@@ -1350,12 +1350,12 @@
       }
     },
     "takeover_duplicate": {
-      "title": "{entry} occupe la cible de {board}, qui ne peut donc plus être reprise",
+      "title": "La cible HomeDarts {entry} bloque la reprise de la cible Autodarts {board}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "Reprendre {board}",
-            "description": "{entry} a été configurée à nouveau, par la recherche ou par son adresse, pour une cible que {board} de l'intégration sous son ancien nom, Autodarts, occupe encore. Le passage à HomeDarts ne peut donc pas reprendre {board}, et ses entités, statistiques, entraînement et options restent dans l'ancienne intégration.\n\nSupprimer {entry} et reprendre {board} ? {board} devient une cible de HomeDarts avec ses identifiants d'entité, son historique et son entraînement, et le passage à HomeDarts se termine. Ce que {entry} a enregistré depuis sa configuration est conservé dans une sauvegarde, comme lors de la suppression d'une cible. Pour laisser les deux telles quelles, ignorez cet avis."
+            "title": "Reprendre la cible Autodarts {board}",
+            "description": "La cible HomeDarts {entry} a été configurée à nouveau, par la recherche ou par son adresse, pour une cible que la cible Autodarts {board}, de l'intégration sous son ancien nom, occupe encore. Le passage à HomeDarts ne peut donc pas reprendre {board}, et ses entités, statistiques, entraînement et options restent dans l'ancienne intégration.\n\nSupprimer la cible HomeDarts {entry} et reprendre la cible Autodarts {board} ? Celle-ci devient une cible de HomeDarts avec ses identifiants d'entité, son historique et son entraînement, et le passage à HomeDarts se termine. Ce que la cible HomeDarts {entry} a enregistré depuis sa configuration est conservé dans une sauvegarde, comme lors de la suppression d'une cible. Pour laisser les deux telles quelles, ignorez cet avis."
           }
         },
         "abort": {

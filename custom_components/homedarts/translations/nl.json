@@ -1350,12 +1350,12 @@
       }
     },
     "takeover_duplicate": {
-      "title": "{entry} bezet het bord van {board}, dat zo niet kan worden overgenomen",
+      "title": "Het HomeDarts-bord {entry} blokkeert de overname van het Autodarts-bord {board}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "{board} overnemen",
-            "description": "{entry} is opnieuw ingesteld, via het zoeken of via zijn adres, voor een bord dat {board} van de integratie onder haar oude naam, Autodarts, nog bezet. Daardoor kan de overstap naar HomeDarts {board} niet overnemen, en blijven zijn entiteiten, statistieken, training en opties bij de oude integratie.\n\n{entry} verwijderen en {board} overnemen? {board} wordt een bord van HomeDarts met zijn entiteits-ID's, zijn geschiedenis en zijn training, en de overstap naar HomeDarts wordt afgerond. Wat {entry} sinds het instellen heeft vastgelegd, blijft bewaard als back-up, zoals bij het verwijderen van een bord. Om beide te laten zoals ze zijn, negeer je deze melding."
+            "title": "Autodarts-bord {board} overnemen",
+            "description": "Het HomeDarts-bord {entry} is opnieuw ingesteld, via het zoeken of via zijn adres, voor een bord dat het Autodarts-bord {board} van de integratie onder haar oude naam nog bezet. Daardoor kan de overstap naar HomeDarts {board} niet overnemen, en blijven zijn entiteiten, statistieken, training en opties bij de oude integratie.\n\nHet HomeDarts-bord {entry} verwijderen en het Autodarts-bord {board} overnemen? Dat wordt een bord van HomeDarts met zijn entiteits-ID's, zijn geschiedenis en zijn training, en de overstap naar HomeDarts wordt afgerond. Wat het HomeDarts-bord {entry} sinds het instellen heeft vastgelegd, blijft bewaard als back-up, zoals bij het verwijderen van een bord. Om beide te laten zoals ze zijn, negeer je deze melding."
           }
         },
         "abort": {

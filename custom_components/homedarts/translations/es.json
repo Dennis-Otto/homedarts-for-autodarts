@@ -1350,12 +1350,12 @@
       }
     },
     "takeover_duplicate": {
-      "title": "{entry} ocupa la diana de {board}, que así no puede transferirse",
+      "title": "La diana de HomeDarts {entry} impide transferir la diana de Autodarts {board}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "Transferir {board}",
-            "description": "{entry} se configuró de nuevo, mediante la búsqueda o su dirección, para una diana que {board} de la integración con su nombre antiguo, Autodarts, todavía ocupa. Por eso el cambio a HomeDarts no puede transferir {board}, y sus entidades, estadísticas, entrenamiento y opciones se quedan en la integración antigua.\n\n¿Eliminar {entry} y transferir {board}? {board} pasa a ser una diana de HomeDarts con sus ID de entidad, su historial y su entrenamiento, y el cambio a HomeDarts se completa. Lo que {entry} registró desde su configuración se guarda como copia de seguridad, como al eliminar una diana. Para dejar ambas como están, ignora este aviso."
+            "title": "Transferir la diana de Autodarts {board}",
+            "description": "La diana de HomeDarts {entry} se configuró de nuevo, mediante la búsqueda o su dirección, para una diana que la diana de Autodarts {board}, de la integración con su nombre antiguo, todavía ocupa. Por eso el cambio a HomeDarts no puede transferir {board}, y sus entidades, estadísticas, entrenamiento y opciones se quedan en la integración antigua.\n\n¿Eliminar la diana de HomeDarts {entry} y transferir la diana de Autodarts {board}? Esta pasa a ser una diana de HomeDarts con sus ID de entidad, su historial y su entrenamiento, y el cambio a HomeDarts se completa. Lo que la diana de HomeDarts {entry} registró desde su configuración se guarda como copia de seguridad, como al eliminar una diana. Para dejar ambas como están, ignora este aviso."
           }
         },
         "abort": {

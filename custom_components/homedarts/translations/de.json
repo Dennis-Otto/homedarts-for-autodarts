@@ -1350,12 +1350,12 @@
       }
     },
     "takeover_duplicate": {
-      "title": "{entry} belegt das Board von {board}, das so nicht übernommen werden kann",
+      "title": "Das HomeDarts-Board {entry} blockiert die Übernahme des Autodarts-Boards {board}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "{board} übernehmen",
-            "description": "{entry} wurde über die Suche oder seine Adresse neu eingerichtet, für ein Board, das {board} der Integration unter ihrem alten Namen, Autodarts, noch belegt. Deshalb kann der Wechsel zu HomeDarts {board} nicht übernehmen, und seine Entitäten, Statistiken, sein Training und seine Optionen bleiben bei der alten Integration.\n\n{entry} löschen und {board} übernehmen? {board} wird ein Board von HomeDarts, mit seinen Entitäts-IDs, seinem Verlauf und seinem Training, und der Wechsel zu HomeDarts wird abgeschlossen. Was {entry} seit seiner Einrichtung aufgezeichnet hat, bleibt als Sicherung erhalten, wie beim Löschen eines Boards. Um beide so zu lassen, wie sie sind, ignoriere diesen Hinweis."
+            "title": "Autodarts-Board {board} übernehmen",
+            "description": "Das HomeDarts-Board {entry} wurde über die Suche oder seine Adresse neu eingerichtet, für ein Board, das das Autodarts-Board {board} der Integration unter ihrem alten Namen noch belegt. Deshalb kann der Wechsel zu HomeDarts {board} nicht übernehmen, und seine Entitäten, Statistiken, sein Training und seine Optionen bleiben bei der alten Integration.\n\nDas HomeDarts-Board {entry} löschen und das Autodarts-Board {board} übernehmen? Es wird ein Board von HomeDarts, mit seinen Entitäts-IDs, seinem Verlauf und seinem Training, und der Wechsel zu HomeDarts wird abgeschlossen. Was das HomeDarts-Board {entry} seit seiner Einrichtung aufgezeichnet hat, bleibt als Sicherung erhalten, wie beim Löschen eines Boards. Um beide so zu lassen, wie sie sind, ignoriere diesen Hinweis."
           }
         },
         "abort": {

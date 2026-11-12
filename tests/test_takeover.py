@@ -355,6 +355,25 @@ async def test_a_board_set_up_anew_beside_its_old_entry_is_reported(hass, hass_s
     ] == [DUPLICATE]
 
 
+@pytest.mark.parametrize("language", ["de", "en", "es", "fr", "nl"])
+def test_the_report_tells_the_two_boards_apart_by_their_integration(language):
+    # Both entries are usually called after their board, such as "Autodarts
+    # (Garage)": the texts tell them apart by their integration, not by the titles.
+    texts = json.loads(
+        (
+            Path(__file__).parents[1]
+            / "custom_components/homedarts/translations"
+            / f"{language}.json"
+        ).read_text(encoding="utf-8")
+    )["issues"]["takeover_duplicate"]
+    confirm = texts["fix_flow"]["step"]["confirm"]
+    for text in (texts["title"], confirm["title"], confirm["description"]):
+        assert "{board}" in text
+    for text in (texts["title"], confirm["description"]):
+        assert "HomeDarts" in text.split("{entry}")[0].rsplit("{board}", 1)[-1]
+        assert "Autodarts" in text.split("{board}")[0].rsplit("{entry}", 1)[-1]
+
+
 async def test_the_report_follows_the_two_entries(hass, hass_storage):
     old, fresh = await set_up_twice(hass, hass_storage)
     # The entries of other integrations change nothing, and cost no look.

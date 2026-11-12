@@ -1350,12 +1350,12 @@
       }
     },
     "takeover_duplicate": {
-      "title": "{entry} holds the board of {board}, which so can't be taken over",
+      "title": "The HomeDarts board {entry} blocks the takeover of the Autodarts board {board}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "Take over {board}",
-            "description": "{entry} was set up anew, by the search or by its address, for a board that {board} of the integration under its old name, Autodarts, still holds. So the switch to HomeDarts can't take {board} over, and its entities, statistics, training and options stay with the old integration.\n\nDelete {entry} and take {board} over? {board} becomes a board of HomeDarts with its entity IDs, its history and its training, and the switch to HomeDarts finishes. What {entry} recorded since it was set up is kept as a backup, as when a board is deleted. To leave both as they are, ignore this notice."
+            "title": "Take over the Autodarts board {board}",
+            "description": "The HomeDarts board {entry} was set up anew, by the search or by its address, for a board that the Autodarts board {board}, of the integration under its old name, still holds. So the switch to HomeDarts can't take {board} over, and its entities, statistics, training and options stay with the old integration.\n\nDelete the HomeDarts board {entry} and take the Autodarts board {board} over? It becomes a board of HomeDarts with its entity IDs, its history and its training, and the switch to HomeDarts finishes. What the HomeDarts board {entry} recorded since it was set up is kept as a backup, as when a board is deleted. To leave both as they are, ignore this notice."
           }
         },
         "abort": {
