@@ -376,6 +376,7 @@ CARD_TEXT_FAMILIES = (
     ("period_", ""),
     ("picker_", ""),
     ("picker_", "_description"),
+    ("plans_end_", ""),
     ("record_", ""),
     ("rules_", ""),
     ("style_", ""),

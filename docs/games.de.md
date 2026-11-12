@@ -545,7 +545,9 @@ Vier Pläne gehören zur Integration:
 
 **Der Plan des Tages:** Liegt kein Spiel auf dem Board, bietet die Anzeigetafel den heutigen Plan mit einem Tippen an: montags und donnerstags *Aufwärmen 15 Minuten*, dienstags und freitags den *Doppel-Tag*, mittwochs und sonntags den *Checkout-Tag* und samstags die *JDC-Woche*. Hast du ihn geschafft, sagt das Angebot das, und du kannst ihn noch einmal starten. Ein eigener Plan mit `weekdays` tritt an diesen Tagen an seine Stelle.
 
-**Deine eigenen Pläne** sind eine Liste in YAML, entweder in den Optionen des Boards (*Einstellungen → Geräte & Dienste → HomeDarts → Konfigurieren*) oder in der Aktion [`homedarts.start_plan`](entities.de.md#trainingspläne-homedartsstart_plan):
+**Deine eigenen Pläne** entstehen im Editor der [Trainingskarte](cards.de.md#trainingskarte): Ein Administrator tippt in ihrem Kopf auf *Trainingspläne* und bekommt jeden eigenen Plan des Boards, jeden mit seinem Namen, den Wochentagen, an denen er der Plan des Tages ist, als Chips, und seinen Schritten als Zeilen aus einem Trainingsspiel, einer Anzahl und dem, was sie zählt (Darts, Aufnahmen oder das Ende seines Spiels). *Plan hinzufügen* und *Schritt hinzufügen* legen einen weiteren an, das × entfernt einen Schritt, und *Speichern* übernimmt die Pläne sofort für das Board, ohne es neu zu laden, sodass ein Spiel oder ein Plan auf dem Board weiterläuft. Der Editor nennt einen Plan ohne Namen, einen Namen, den es zweimal gibt, oder eine Anzahl außerhalb der Grenzen, bevor er speichert, und die Integration prüft den Rest und sagt in deiner Sprache, was falsch ist. Benutzer ohne Administratorrechte bekommen den Knopf nicht, denn die Pläne gehören zum Board.
+
+Die Pläne sind dieselbe Liste in YAML, die die Optionen des Boards (*Einstellungen → Geräte & Dienste → HomeDarts → Konfigurieren*) zeigen, und die Aktion [`homedarts.start_plan`](entities.de.md#trainingspläne-homedartsstart_plan) nimmt einen für einen einzelnen Durchgang:
 
 ```yaml
 - name: Dienstagabend
@@ -567,7 +569,9 @@ Ein Plan hat einen Namen und bis zu 12 Schritte, ein Board bis zu 20 eigene Plä
 - `rounds`: nach so vielen Aufnahmen;
 - `until: finished`: mit dem Ende des Spiels, die Vorgabe. Das Checkout-Training und das 121-Checkout enden nie von selbst und brauchen deshalb `darts` oder `rounds`.
 
-Mit `options` bleibt das Checkout-Training bei den Finishes von `low` bis `high`.
+Mit `options` bleibt das Checkout-Training bei den Finishes von `low` bis `high`. Der Editor behält sie, solange der Schritt ein Checkout-Training bleibt; setze sie in YAML.
+
+Ist eine Liste nicht gültig, behalten die Optionen des Boards sie im Formular und sagen, welcher Plan und welcher Schritt falsch ist und warum, etwa *Plan 2 (Dienstagabend), Schritt 3: darts_at_bull ist kein Trainingsspiel*, gefolgt von den Spielen, die es sind. Derselbe Text erscheint im Editor der Trainingskarte.
 
 Ein Plan ist wie jedes Trainingsspiel für einen Spieler und geht nach einem Neustart von Home Assistant mitten in einem Schritt weiter. Eine Aufnahme, die einen Schritt beendet hat, lässt sich nicht [zurücknehmen](#korrekturen-und-von-hand-eingegebene-darts), weil dann schon das nächste Spiel läuft. Ein anderes Spiel, das du auf dem Board startest, beendet den Plan, und während eines Turniers startet kein Plan. [`plan_step_finished` und `plan_finished`](entities.de.md#board-ereignisse) melden die Ergebnisse, der [Wochenbericht](entities.de.md#wochenbericht) und der [Trainingskalender](entities.de.md#trainingskalender) zählen die beendeten Pläne, und der [Erfolg](entities.de.md#erfolge) *Trainingspläne* hat seine Stufen bei 1, 10 und 100.
 

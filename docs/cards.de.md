@@ -129,6 +129,7 @@ highlight_color: "#00e5ff"
   - *Session starten* und *Session beenden* schalten die [Trainingssession](entities.de.md#trainingssession) ein und aus. Das Beenden braucht einen zweiten Tipp zur Bestätigung.
   - *Neue Session* beendet die laufende Session und startet die nächste, ebenfalls nach einem zweiten Tipp.
   - Die Zeile neben den Tasten zeigt, ob eine Session läuft oder wann die letzte endete.
+- **Trainingspläne:** Für Administratoren öffnet *Trainingspläne* im Kopf den Editor der eigenen [Trainingspläne](games.de.md#trainingspläne) des Boards: Namen, die Wochentage des Plans des Tages und Schritte aus Trainingsspielen mit ihren Grenzen. Er speichert sie in den Optionen des Boards, wo YAML sie weiterhin findet.
 
 ### Optionen
 

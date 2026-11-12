@@ -49,7 +49,7 @@ from .online import (
     bridge_url,
     effects_csv,
 )
-from .plans import own_plans
+from .plans import PlanError, read_plans
 from .repairs import address_title, async_offer_address
 
 if TYPE_CHECKING:
@@ -597,8 +597,10 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
         if user_input is not None:
             # An editor that was emptied gives an empty object.
             plans = user_input.get(CONF_PLANS) or []
-            if own_plans(plans) is None:
-                return self._options_form({**options, **user_input}, invalid=True)
+            try:
+                read_plans(plans)
+            except PlanError as error:
+                return self._options_form({**options, **user_input}, error)
             self._options = dict(options)
             if plans:
                 self._options[CONF_PLANS] = plans
@@ -624,11 +626,12 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
         return self._options_form(options)
 
     def _options_form(
-        self, values: Mapping[str, Any], invalid: bool = False
+        self, values: Mapping[str, Any], error: PlanError | None = None
     ) -> ConfigFlowResult:
-        """The form of the options; `invalid` when the own plans are not valid,
-        which stay in the form to be corrected. The fields of the bridge show
-        only for a board with a host, the plans for every board."""
+        """The form of the options; with the error of the own plans when they
+        are not valid, which names the plan and the step at fault, and the plans
+        stay in the form to be corrected. The fields of the bridge show only for
+        a board with a host, the plans for every board."""
         schema: dict[vol.Marker, Any] = {}
         if self._has_bridge:
             schema[
@@ -649,7 +652,8 @@ class AutodartsOptionsFlow(OptionsFlowWithReload):
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(schema),
-            errors={CONF_PLANS: "invalid_plans"} if invalid else None,
+            errors={CONF_PLANS: error.reason} if error else None,
+            description_placeholders=error.placeholders() if error else None,
         )
 
     async def async_step_online_bridge(

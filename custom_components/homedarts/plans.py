@@ -220,78 +220,159 @@ def _checkout_range(options: object) -> tuple[int, int] | None:
     return low, high
 
 
-def parse_step(raw: object) -> Step | None:
-    """A step as written in YAML, None if it is not valid. At most one of darts,
-    rounds and until ends it; until: finished is the default, which a game
-    that never ends cannot use."""
+def _short(text: str) -> str:
+    """What the user typed, cut short where it is long, for an error."""
+    return text if len(text) <= MAX_NAME else f"{text[: MAX_NAME - 1]}…"
+
+
+class PlanError(ValueError):
+    """Why own plans are not valid, for the error of the options: its reason,
+    one of the errors of the options, the plan and the step by their number
+    from 1, the plan's name and the value at fault, where there are."""
+
+    def __init__(self, reason: str, value: object = None) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.value = value
+        self.plan = 0
+        self.name = ""
+        self.step = 0
+
+    def placeholders(self) -> dict[str, str]:
+        """What the text of the error fills in."""
+        plan = f"{self.plan} ({_short(self.name)})" if self.name else str(self.plan)
+        value = self.value if isinstance(self.value, str) else repr(self.value)
+        return {
+            "plan": plan,
+            "step": str(self.step),
+            "value": _short(value),
+            "drills": ", ".join(DRILLS),
+            "plans": str(MAX_PLANS),
+        }
+
+
+def read_step(raw: object) -> Step:
+    """A step as written in YAML; PlanError tells why it is not valid. At most
+    one of darts, rounds and until ends it; until: finished is the default,
+    which a game that never ends cannot use."""
     if not isinstance(raw, dict) or set(raw) - STEP_KEYS:
-        return None
+        raise PlanError("step_fields")
     drill = raw.get("drill")
+    # A step without its game says what a step has, not that None is no game.
+    if drill is None:
+        raise PlanError("step_fields")
     if drill not in DRILLS:
-        return None
+        raise PlanError("step_drill", drill)
     darts, rounds, until = raw.get("darts"), raw.get("rounds"), raw.get("until")
-    ends = [end for end in (darts, rounds, until) if end is not None]
-    if len(ends) > 1 or (until is not None and until != "finished"):
-        return None
-    if darts is not None and _limit(darts, MAX_DARTS) is None:
-        return None
-    if rounds is not None and _limit(rounds, MAX_ROUNDS) is None:
-        return None
+    if len([end for end in (darts, rounds, until) if end is not None]) > 1:
+        raise PlanError("step_limits")
+    if (
+        (until is not None and until != "finished")
+        or (darts is not None and _limit(darts, MAX_DARTS) is None)
+        or (rounds is not None and _limit(rounds, MAX_ROUNDS) is None)
+    ):
+        raise PlanError("step_limit")
     if drill in ENDLESS and darts is None and rounds is None:
-        return None
+        raise PlanError("step_endless", drill)
     low, high = LOWEST_CHECKOUT, HIGHEST_CHECKOUT
     if (options := raw.get("options")) is not None:
         checkout = _checkout_range(options) if drill == "checkout" else None
         if checkout is None:
-            return None
+            raise PlanError("step_options")
         low, high = checkout
     return Step(drill, darts, rounds, low, high)
 
 
-def parse_plan(raw: object) -> Plan | None:
-    """A plan as written in YAML or as stored, None if it is not valid."""
-    if not isinstance(raw, dict) or set(raw) - PLAN_KEYS:
+def parse_step(raw: object) -> Step | None:
+    """A step as written in YAML, None if it is not valid."""
+    try:
+        return read_step(raw)
+    except PlanError:
         return None
+
+
+def read_plan(raw: object) -> Plan:
+    """A plan as written in YAML or as stored; PlanError tells why it is not
+    valid, and which of its steps."""
+    if not isinstance(raw, dict) or set(raw) - PLAN_KEYS:
+        raise PlanError("plan_fields")
     name, steps, days = raw.get("name"), raw.get("steps"), raw.get("weekdays", [])
     if not isinstance(name, str) or not 1 <= len(name.strip()) <= MAX_NAME:
-        return None
+        raise PlanError("plan_name")
     if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_STEPS:
-        return None
-    parsed = [parse_step(step) for step in steps]
-    if not isinstance(days, list) or any(day not in WEEKDAYS for day in days):
-        return None
-    if None in parsed:
-        return None
+        raise PlanError("plan_steps")
+    parsed = []
+    for number, step in enumerate(steps, 1):
+        try:
+            parsed.append(read_step(step))
+        except PlanError as error:
+            error.step = number
+            raise
+    if not isinstance(days, list):
+        raise PlanError("plan_weekdays", days)
+    if wrong := [day for day in days if day not in WEEKDAYS]:
+        raise PlanError("plan_weekdays", wrong[0])
     key = raw.get("key", name.strip())
     if not isinstance(key, str):
-        return None
+        raise PlanError("plan_fields")
     return Plan(
         key,
         name.strip(),
-        tuple(cast("list[Step]", parsed)),
+        tuple(parsed),
         tuple(sorted({WEEKDAYS.index(day) for day in days})),
     )
+
+
+def parse_plan(raw: object) -> Plan | None:
+    """A plan as written in YAML or as stored, None if it is not valid."""
+    try:
+        return read_plan(raw)
+    except PlanError:
+        return None
+
+
+def read_plans(raw: object) -> tuple[Plan, ...]:
+    """The own plans of a board as written in its options; PlanError tells
+    which plan is not valid or takes the name of another plan, and why."""
+    if not isinstance(raw, list) or len(raw) > MAX_PLANS:
+        raise PlanError("plans_list")
+    plans = []
+    taken = {key.casefold() for key in PRESETS}
+    for number, item in enumerate(raw, 1):
+        name = item.get("name") if isinstance(item, dict) else None
+        try:
+            if not isinstance(item, dict):
+                raise PlanError("plan_fields")
+            # The name is the key of an own plan, whatever else the YAML says.
+            plan = read_plan(
+                {key: value for key, value in item.items() if key != "key"}
+            )
+            if plan.key.casefold() in taken:
+                raise PlanError("plan_name_taken", plan.name)
+        except PlanError as error:
+            error.plan = number
+            error.name = name.strip() if isinstance(name, str) else ""
+            raise
+        taken.add(plan.key.casefold())
+        plans.append(plan)
+    return tuple(plans)
+
+
+def own_stored(plans: tuple[Plan, ...]) -> list[dict[str, Any]]:
+    """Own plans as the options keep them: by their name, which is their key."""
+    return [
+        {key: value for key, value in plan.stored().items() if key != "key"}
+        for plan in plans
+    ]
 
 
 def own_plans(raw: object) -> tuple[Plan, ...] | None:
     """The own plans of a board as written in its options, None if one is not
     valid or takes the name of another plan."""
-    if not isinstance(raw, list) or len(raw) > MAX_PLANS:
+    try:
+        return read_plans(raw)
+    except PlanError:
         return None
-    plans = []
-    taken = {key.casefold() for key in PRESETS}
-    for item in raw:
-        # The name is the key of an own plan, whatever else the YAML says.
-        plan = (
-            parse_plan({key: value for key, value in item.items() if key != "key"})
-            if isinstance(item, dict)
-            else None
-        )
-        if plan is None or plan.key.casefold() in taken:
-            return None
-        taken.add(plan.key.casefold())
-        plans.append(plan)
-    return tuple(plans)
 
 
 class PlanRunner:
