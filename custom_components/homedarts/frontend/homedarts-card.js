@@ -513,10 +513,21 @@ function holdPage(card, hold) {
   }
 }
 
-// Leaving the overlay, which covers the dashboard's own controls: back to the page before
-// it, or, opened on its own as in OBS, to the dashboard's first view.
+// Whether the entry before the tab's current one is a page of this Home Assistant: only
+// once Home Assistant put the current one there by a navigation of its own. A page opened
+// from an address, a link or a bookmark, or reached by the browser's back or forward, may
+// have another site before it, or the page that a new tab starts with.
+let backInside = false;
+globalThis.window?.addEventListener("location-changed", (event) => {
+  if (!event.detail?.replace) backInside = true;
+});
+globalThis.window?.addEventListener("popstate", () => (backInside = false));
+
+// Leaving the overlay, which covers the dashboard's own controls, always ends on a page of
+// Home Assistant: back to the page before it when Home Assistant led there, otherwise, as
+// in OBS or opened from a bookmark, to the dashboard's first view.
 function leaveOverlay() {
-  if (window.history.length > 1) {
+  if (backInside && window.history.length > 1) {
     window.history.back();
     return;
   }
