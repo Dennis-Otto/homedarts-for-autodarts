@@ -37,6 +37,7 @@ from custom_components.homedarts.takeover import (
     ISSUE_RESTART,
     OLD_DOMAIN,
     async_finish,
+    async_take_over,
 )
 
 from .local_helpers import local_entry_data, mock_board_v2
@@ -472,10 +473,10 @@ async def test_a_finish_that_fails_runs_again_at_the_next_setup(
 async def test_a_finish_that_a_stop_interrupted_runs_at_the_next_start(
     hass, hass_storage, config_dir
 ):
-    # The old entry is gone, but Home Assistant stopped before the finish was done.
     media = config_dir / "media"
     (media / OLD_DOMAIN / "highlights").mkdir(parents=True)
     folder = old_folder(config_dir)
+    old_board(hass, hass_storage)
     entry = MockConfigEntry(
         domain=DOMAIN,
         version=2,
@@ -483,6 +484,20 @@ async def test_a_finish_that_a_stop_interrupted_runs_at_the_next_start(
         data={**DATA, CONF_TAKEOVER: "old-entry"},
     )
     entry.add_to_hass(hass)
+    # Home Assistant stops while the takeover is finishing: the old entry is gone,
+    # but the takeover stays in the data of the new one.
+    with (
+        patch(
+            "custom_components.homedarts.takeover._async_update_dashboards",
+            side_effect=asyncio.CancelledError,
+        ),
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await async_take_over(hass, entry)
+    assert hass.config_entries.async_get_entry("old-entry") is None
+    assert entry.data[CONF_TAKEOVER] == "old-entry"
+
+    # The next start finishes it.
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert (media / DOMAIN / "highlights").is_dir()

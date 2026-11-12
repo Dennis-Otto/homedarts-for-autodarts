@@ -56,7 +56,7 @@ Ignoriere die Reparatur danach.
 
 **Ist HomeDarts ein Angebot von Autodarts?** Nein. HomeDarts for Autodarts ist ein inoffizielles Community-Projekt ohne Verbindung zu Autodarts. Es arbeitet mit Autodarts-Boards über die Schnittstelle, die der Board Manager in deinem Netzwerk anbietet.
 
-**Was, wenn sich eine Mediendatei nicht verschieben lässt oder Home Assistant während der Übernahme stoppt?** HomeDarts verschiebt alles andere und lässt die Datei im alten Ordner `autodarts`, mit einer Warnung im Protokoll; verschiebe sie selbst. Eine Übernahme, die vor ihrem Ende anhält, mit einem Fehler im Protokoll oder weil Home Assistant neu startet, geht beim nächsten Start von Home Assistant weiter; das Board funktioniert solange.
+**Was, wenn sich eine Mediendatei nicht verschieben lässt oder Home Assistant während der Übernahme stoppt?** HomeDarts verschiebt alles andere und lässt die Datei, wo sie ist, mit einer Warnung im Protokoll, die sie nennt; verschiebe sie selbst. Eine Übernahme, die vor ihrem Ende anhält, mit einem Fehler im Protokoll oder weil Home Assistant neu startet, geht beim nächsten Start von Home Assistant weiter; das Board funktioniert solange.
 
 **Muss ich etwas neu einrichten?** Nein. Die Übernahme behält jedes Board mit seinen Entitäten und Statistiken. Nur Automationen, Skripte und YAML-Dashboards, die die alten Aktionen oder Karten nutzen, brauchen die neuen Namen.
 
