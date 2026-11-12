@@ -50,7 +50,7 @@ Was du selbst geschrieben hast, kann die Übernahme nicht ändern. Eine Reparatu
 - **Automationen und Skripte**, die eine Aktion der alten Integration aufrufen: Ersetze `autodarts.` durch `homedarts.`, zum Beispiel `homedarts.next_player`.
 - **Dashboards in YAML**: Ersetze bei den Typen der Karten und der Strategie `custom:autodarts` durch `custom:homedarts` und `board_style: autodarts` durch `board_style: flat`.
 
-Ignoriere die Reparatur danach.
+Die Reparatur bleibt über die Neustarts erhalten und sieht bei jedem Start von Home Assistant erneut nach: Was du geändert hast, verschwindet aus der Liste, und sobald nichts mehr übrig ist, verschwindet die Reparatur von selbst. Willst du etwas so lassen, wie es ist, ignoriere die Reparatur.
 
 ## Fragen
 
