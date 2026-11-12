@@ -1624,7 +1624,7 @@
         },
         "folder": {
           "name": "Folder",
-          "description": "Optional. A folder relative to the configuration folder, or an absolute path, where Home Assistant allows writing: www, a media folder or a folder listed in allowlist_external_dirs. Without a folder: the highlight gallery, homedarts/highlights in the media folder."
+          "description": "Optional. A folder relative to the configuration folder, or an absolute path, where Home Assistant allows writing: www, a media folder or a folder listed in allowlist_external_dirs. Files in www are available at /local/ without a login. Without a folder: the highlight gallery, homedarts/highlights in the media folder."
         },
         "player": {
           "name": "Player",

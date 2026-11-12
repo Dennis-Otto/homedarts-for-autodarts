@@ -1624,7 +1624,7 @@
         },
         "folder": {
           "name": "Map",
-          "description": "Optioneel. Een map ten opzichte van de configuratiemap, of een absoluut pad, waarin Home Assistant mag schrijven: www, een mediamap of een map uit allowlist_external_dirs. Zonder map: de highlightgalerij, homedarts/highlights in de mediamap."
+          "description": "Optioneel. Een map ten opzichte van de configuratiemap, of een absoluut pad, waarin Home Assistant mag schrijven: www, een mediamap of een map uit allowlist_external_dirs. Bestanden in www zijn zonder aanmelding bereikbaar via /local/. Zonder map: de highlightgalerij, homedarts/highlights in de mediamap."
         },
         "player": {
           "name": "Speler",

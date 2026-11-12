@@ -100,8 +100,9 @@ blueprint:
             /media/homedarts/highlights on Home Assistant OS and in a container.
             Another folder must be one Home Assistant may write to, for example
             /media/darts on Home Assistant OS or a folder of
-            allowlist_external_dirs; outside the media folder, the photos get no
-            `photo_url`.
+            allowlist_external_dirs; outside the media folder and www, the photos
+            get no `photo_url`. Files in www are available at /local/ without a
+            login.
           default: ""
           selector:
             text: {}

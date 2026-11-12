@@ -1624,7 +1624,7 @@
         },
         "folder": {
           "name": "Ordner",
-          "description": "Optional. Ein Ordner relativ zum Konfigurationsordner oder ein absoluter Pfad, in den Home Assistant schreiben darf: www, ein Medienordner oder ein Ordner aus allowlist_external_dirs. Ohne Ordner: die Highlight-Galerie, homedarts/highlights im Medienordner."
+          "description": "Optional. Ein Ordner relativ zum Konfigurationsordner oder ein absoluter Pfad, in den Home Assistant schreiben darf: www, ein Medienordner oder ein Ordner aus allowlist_external_dirs. Dateien in www sind ohne Anmeldung unter /local/ erreichbar. Ohne Ordner: die Highlight-Galerie, homedarts/highlights im Medienordner."
         },
         "player": {
           "name": "Spieler",
