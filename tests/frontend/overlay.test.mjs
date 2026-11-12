@@ -202,6 +202,15 @@ test("Escape or a double click leaves the overlay for the page before it or the 
     history.replaceState(null, "", "/lovelace/0");
   });
   const key = (name) => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: name }));
+  const stage = () => $(card, ".stage").dispatchEvent(new window.MouseEvent("dblclick", { bubbles: true }));
+  // How Home Assistant navigates: a new entry of the tab, then the event.
+  const navigate = (path, replace = false) => {
+    if (replace) history.replaceState(null, "", path);
+    else history.pushState(null, "", path);
+    window.dispatchEvent(new window.CustomEvent("location-changed", { detail: { replace } }));
+  };
+  // The browser's back or forward reached the overlay: what came before is unknown.
+  window.dispatchEvent(new window.PopStateEvent("popstate"));
   const { card } = setup(game(), { overlay: "chroma" });
   key("Enter");
   assert.deepEqual(changed, []);
@@ -209,15 +218,40 @@ test("Escape or a double click leaves the overlay for the page before it or the 
   key("Escape");
   assert.deepEqual(changed, [["/lovelace", { replace: false }]]);
   assert.equal(back.mock.callCount(), 0);
-  // With a page before it, the overlay goes back there.
+  // Opened from a bookmark in a tab that showed another site before, it does too, rather
+  // than going back to that site.
+  window.dispatchEvent(new window.PopStateEvent("popstate"));
+  history.replaceState(null, "", "/lovelace/0");
   length = 2;
-  $(card, ".stage").dispatchEvent(new window.MouseEvent("dblclick", { bubbles: true }));
+  stage();
+  assert.equal(back.mock.callCount(), 0);
+  assert.deepEqual(changed.at(-1), ["/lovelace", { replace: false }]);
+  // A page that Home Assistant only replaced still doesn't know what came before it.
+  window.dispatchEvent(new window.PopStateEvent("popstate"));
+  navigate("/lovelace/0", true);
+  key("Escape");
+  assert.equal(back.mock.callCount(), 0);
+  // Led there by Home Assistant, the overlay goes back to the page before it.
+  navigate("/lovelace/0");
+  changed.length = 0;
+  stage();
   assert.equal(back.mock.callCount(), 1);
+  key("Escape");
+  assert.equal(back.mock.callCount(), 2);
+  assert.deepEqual(changed, []);
+  // With no entry before it at all, it still leaves for the dashboard.
+  length = 1;
+  key("Escape");
+  assert.deepEqual(changed, [["/lovelace", { replace: false }]]);
+  assert.equal(back.mock.callCount(), 2);
+  length = 2;
+  stage();
+  assert.equal(back.mock.callCount(), 3);
   // Inside the card, in the editor, neither leaves.
   card.preview = true;
   key("Escape");
-  $(card, ".stage").dispatchEvent(new window.MouseEvent("dblclick", { bubbles: true }));
-  assert.equal(back.mock.callCount(), 1);
+  stage();
+  assert.equal(back.mock.callCount(), 3);
   // At the root of the site, the overlay leaves for the root.
   card.preview = false;
   length = 1;
