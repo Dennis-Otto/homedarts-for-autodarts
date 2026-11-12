@@ -813,6 +813,33 @@ test("the screen that opens by itself waits the idle time before idle mode takes
   assert.equal(choosing(early.card), false);
 });
 
+test("a renamed name or start score field keeps its seat, which its entity tells", () => {
+  const game = { "number.practice_players": "3", "select.practice_game": { state: "501", attributes: { options: OPTIONS } } };
+  const hass = withPeople(makeHass({ states: { ...READY, ...BOARD, ...PROFILES, ...game } }));
+  const field = (id, key, state, attributes) => {
+    hass.entities[id] = { entity_id: id, platform: "homedarts", device_id: DEVICE, translation_key: key };
+    hass.states[id] = { entity_id: id, state, attributes };
+  };
+  // The fields of seat 1 are renamed, so that their IDs sort after those of the other seats.
+  field("text.dartboard_spieler_eins", "practice_player", "Alex", { seat: 1 });
+  field("text.dartboard_practice_player_2", "practice_player", "Sam", { seat: 2 });
+  field("text.dartboard_practice_player_3", "practice_player", "Kim", { seat: 3 });
+  field("number.dartboard_start_eins", "practice_start", "301", { seat: 1 });
+  field("number.dartboard_practice_start_score_player_2", "practice_start", "701", { seat: 2 });
+  // A field that does not tell its seat follows the others.
+  field("number.dartboard_practice_start_score_player_3", "practice_start", "0", {});
+  const card = mount("homedarts-scoreboard-card", hass);
+  tap(card, ".lobby-toggle");
+  assert.deepEqual(players(card), ["Alex", "Sam", "Kim"]);
+  assert.deepEqual(
+    $$(card, ".lobby-start b").map((start) => start.textContent),
+    ["301", "701", "501"]
+  );
+  tap(card, ".lobby .start");
+  const [[, , data]] = started(hass);
+  assert.deepEqual([data.players, data.start_scores], [["Alex", "Sam", "Kim"], [301, 701, 0]]);
+});
+
 test("the new game screen speaks German and names newer games as Home Assistant does", () => {
   const { hass, card } = setup(
     { "select.practice_game": { state: "off", attributes: { options: [...OPTIONS, "bingo"] } } },

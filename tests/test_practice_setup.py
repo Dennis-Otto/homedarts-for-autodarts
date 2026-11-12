@@ -3,6 +3,10 @@
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.homedarts.number import AutodartsStartScore
+from custom_components.homedarts.practice import MAX_PLAYERS, PARTY_PLAYERS
+from custom_components.homedarts.text import AutodartsPlayerName
+
 from .local_helpers import (
     BULL,
     OUTER_BULL,
@@ -402,3 +406,28 @@ async def test_party_games_rules_and_the_bull_off_in_home_assistant(
     await switch(hass, "practice_double_in", True)
     assert coordinator.games.practice.double_in is True
     assert coordinator.games.practice.snapshot()["remaining"] == 1001
+
+
+async def test_names_and_start_scores_tell_their_seat_under_any_entity_id(
+    hass, aioclient_mock
+):
+    """The card seats a name and a start score by the attribute seat, not by the
+    order of the entity IDs, which a user may rename."""
+    await setup_local(hass, aioclient_mock, state=board())
+    registry = er.async_get(hass)
+    renamed = registry.async_update_entity(
+        entity_id(hass, "text", "practice_player_1"),
+        new_entity_id="text.spieler_eins",
+    ).entity_id
+    await hass.async_block_till_done()
+    assert hass.states.get(renamed).attributes["seat"] == 1
+    # Eight seats have a name, the four of X01 a start score as well.
+    fields = [("text", "practice_player", PARTY_PLAYERS)]
+    fields.append(("number", "practice_start", MAX_PLAYERS))
+    for platform, key, seats in fields:
+        for seat in range(1, seats + 1):
+            found = hass.states.get(entity_id(hass, platform, f"{key}_{seat}"))
+            assert found.attributes["seat"] == seat
+    # The seat never changes, so the history keeps it not.
+    assert "seat" in AutodartsPlayerName._unrecorded_attributes
+    assert "seat" in AutodartsStartScore._unrecorded_attributes
