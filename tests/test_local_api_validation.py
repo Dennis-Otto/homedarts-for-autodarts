@@ -1,14 +1,21 @@
 """Reject malformed Board Manager answers instead of passing them to entities."""
 
+import gzip
+import json
 from copy import deepcopy
 from unittest.mock import Mock
 
 import aiohttp
 import pytest
+from aiohttp import web
+from aiohttp.test_utils import TestServer
 
 from custom_components.homedarts.errors import AutodartsConnectionError
 from custom_components.homedarts.local_api import (
+    MAX_ANSWER,
+    MAX_PICTURE,
     AutodartsEndpointMissing,
+    AutodartsLocalClient,
     AutodartsProtocolError,
 )
 
@@ -148,3 +155,145 @@ async def test_texts_of_the_board_are_checked(client, aioclient_mock):
     host = await client.get_host()
     assert host["os"] is None
     assert host["vision_version"] is None
+
+
+# A board state, with spaces to one byte beyond the limit: once announced by its
+# Content-Length and once without one, as a chunked or a compressed answer comes.
+PADDED = json.dumps(STATE).encode().ljust(MAX_ANSWER + 1)
+OVERSIZED = [
+    pytest.param(
+        {"json": STATE, "headers": {"Content-Length": str(MAX_ANSWER + 1)}},
+        id="announced",
+    ),
+    pytest.param({"content": PADDED}, id="unannounced"),
+]
+
+
+@pytest.mark.parametrize("answer", OVERSIZED)
+@pytest.mark.parametrize(
+    ("method", "path", "read"),
+    [
+        ("get", "/api/state", lambda client: client.get_state()),
+        ("get", "/api/version", lambda client: client.get_version()),
+        ("put", "/api/start", lambda client: client.command("start")),
+    ],
+)
+async def test_answers_beyond_the_limit_are_not_read(
+    client, aioclient_mock, answer, method, path, read
+):
+    getattr(aioclient_mock, method)(f"{BASE}{path}", **answer)
+    with pytest.raises(AutodartsProtocolError) as error:
+        await read(client)
+    assert error.value.path == path
+
+
+async def test_an_answer_of_the_largest_size_is_read(client, aioclient_mock):
+    aioclient_mock.get(f"{BASE}/api/version", text="1" * MAX_ANSWER)
+    # Read, but far too long for a version.
+    assert await client.get_version() is None
+
+
+async def test_an_unreadable_content_length_is_a_protocol_error(client, aioclient_mock):
+    aioclient_mock.get(
+        f"{BASE}/api/state", json=STATE, headers={"Content-Length": "many"}
+    )
+    with pytest.raises(AutodartsProtocolError):
+        await client.get_state()
+
+
+@pytest.mark.parametrize(
+    ("kind", "expected"),
+    [
+        ("application/json; charset=utf-8", STATE),
+        ("application/vnd.autodarts+json", STATE),
+        ("text/html", None),
+        ("application/octet-stream", None),
+    ],
+)
+async def test_only_answers_that_say_they_are_json_are_parsed(
+    client, aioclient_mock, kind, expected
+):
+    aioclient_mock.get(f"{BASE}/api/state", json=STATE, headers={"Content-Type": kind})
+    if expected is None:
+        with pytest.raises(AutodartsProtocolError):
+            await client.get_state()
+    else:
+        assert await client.get_state() == expected
+
+
+async def test_an_empty_json_answer_is_no_object(client, aioclient_mock):
+    aioclient_mock.get(f"{BASE}/api/state", content=b" \n")
+    with pytest.raises(AutodartsProtocolError):
+        await client.get_state()
+
+
+async def test_json_nested_too_deep_for_python_is_a_protocol_error(
+    client, aioclient_mock
+):
+    depth = 200_000
+    aioclient_mock.get(f"{BASE}/api/state", text="[" * depth + "]" * depth)
+    with pytest.raises(AutodartsProtocolError):
+        await client.get_state()
+
+
+@pytest.mark.parametrize(
+    ("content", "length"),
+    [
+        pytest.param(b"jpeg", {"Content-Length": str(MAX_PICTURE + 1)}, id="announced"),
+        pytest.param(b"j" * (MAX_PICTURE + 1), {}, id="unannounced"),
+    ],
+)
+async def test_camera_pictures_beyond_the_limit_are_not_read(
+    client, aioclient_mock, content, length
+):
+    aioclient_mock.get(
+        f"{BASE}/api/img/cams/0",
+        content=content,
+        headers={"Content-Type": "image/jpeg", **length},
+    )
+    with pytest.raises(AutodartsProtocolError):
+        await client.get_camera_image(0)
+
+
+async def test_a_camera_picture_of_the_largest_size_is_read(client, aioclient_mock):
+    picture = b"j" * MAX_PICTURE
+    aioclient_mock.get(
+        f"{BASE}/api/img/cams/0",
+        content=picture,
+        headers={"Content-Type": "image/jpeg"},
+    )
+    assert await client.get_camera_image(0) == picture
+
+
+@pytest.mark.usefixtures("socket_enabled")
+async def test_a_compressed_answer_counts_by_its_inflated_size():
+    """A few kilobytes on the wire, more than the limit once inflated."""
+    compressed = gzip.compress(PADDED)
+    assert len(compressed) < MAX_ANSWER // 100
+
+    async def state(_request: web.Request) -> web.Response:
+        return web.Response(
+            body=compressed,
+            content_type="application/json",
+            headers={"Content-Encoding": "gzip"},
+        )
+
+    async def version(_request: web.Request) -> web.Response:
+        return web.Response(
+            body=gzip.compress(b"2.1.0"), headers={"Content-Encoding": "gzip"}
+        )
+
+    app = web.Application()
+    app.router.add_get("/api/state", state)
+    app.router.add_get("/api/version", version)
+    server = TestServer(app)
+    await server.start_server()
+    try:
+        async with aiohttp.ClientSession() as session:
+            board = AutodartsLocalClient("127.0.0.1", server.port, session)
+            with pytest.raises(AutodartsProtocolError):
+                await board.get_state()
+            # A small compressed answer is read as before.
+            assert await board.get_version() == "2.1.0"
+    finally:
+        await server.close()
