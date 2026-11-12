@@ -8062,9 +8062,10 @@ ${balancedCss(".profiles", 210, 10, 36)}
     padding: 6px 0; border-top: 1px solid var(--divider-color, rgba(127,127,127,.2)); font-size: 13px;
   }
   .match .game { font-weight: 700; }
-  /* A match whose summary the history keeps opens it with a tap on its row. */
+  /* A match whose summary the history keeps opens it with a tap on its row, big enough for a finger. */
   button.match {
-    grid-template-columns: auto auto minmax(0, 1fr) auto; width: 100%; margin: 0; border-width: 1px 0 0;
+    grid-template-columns: auto auto minmax(0, 1fr) auto; width: 100%; min-height: 44px; margin: 0; border-width: 1px 0 0;
+    align-items: center;
     border-radius: 0; background: none; color: inherit; font: inherit; font-size: 13px; text-align: start; cursor: pointer;
   }
   button.match:focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
