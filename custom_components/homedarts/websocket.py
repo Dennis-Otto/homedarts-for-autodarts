@@ -1,5 +1,6 @@
-"""Dart positions for the cards, thousands of them too many for attributes, and
-the sounds of a voice pack for the caller of the scoreboard."""
+"""Dart positions for the cards, thousands of them too many for attributes, the
+sounds of a voice pack for the caller of the scoreboard, and the own training
+plans of a board for the editor of the training card."""
 
 from __future__ import annotations
 
@@ -9,9 +10,20 @@ from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.translation import async_get_translations
 
 from .const import DOMAIN
 from .games_coordinator import AutodartsGamesCoordinator
+from .plans import (
+    MAX_DARTS,
+    MAX_NAME,
+    MAX_PLANS,
+    MAX_ROUNDS,
+    MAX_STEPS,
+    PlanError,
+    own_stored,
+    read_plans,
+)
 from .profiles import NAME_LENGTH
 from .voices import PACK_LENGTH, async_voice_pack
 
@@ -27,6 +39,14 @@ else:
 def async_setup_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_positions)
     websocket_api.async_register_command(hass, ws_voice_pack)
+    websocket_api.async_register_command(hass, ws_plans)
+    websocket_api.async_register_command(hass, ws_save_plans)
+
+
+def _no_board(connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    connection.send_error(
+        msg["id"], websocket_api.ERR_NOT_FOUND, "No loaded Autodarts board"
+    )
 
 
 def _board(hass: HomeAssistant, device_id: str) -> AutodartsGamesCoordinator | None:
@@ -60,9 +80,7 @@ async def ws_positions(
     their aim model when asked."""
     board = _board(hass, msg["device_id"])
     if board is None:
-        connection.send_error(
-            msg["id"], websocket_api.ERR_NOT_FOUND, "No loaded Autodarts board"
-        )
+        _no_board(connection, msg)
         return
     player = msg.get("player")
     aim = await board.async_aim(player) if msg["aim"] else None
@@ -89,3 +107,94 @@ async def ws_voice_pack(
         )
         return
     connection.send_result(msg["id"], {"pack": msg["pack"], "sounds": sounds})
+
+
+# The limits of own plans, for the fields of the editor.
+PLAN_LIMITS = {
+    "plans": MAX_PLANS,
+    "steps": MAX_STEPS,
+    "name": MAX_NAME,
+    "darts": MAX_DARTS,
+    "rounds": MAX_ROUNDS,
+}
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/plans",
+        vol.Required("device_id"): str,
+        # The language of the user, for the error; else that of Home Assistant.
+        vol.Optional("language"): vol.All(str, vol.Length(min=2, max=35)),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_plans(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """The own training plans of a board as its options keep them, with their
+    limits; for administrators, who change them. Options that are not valid,
+    such as a hand-edited store, are refused with the error that tells why, so
+    that the editor never offers an empty list that would overwrite them."""
+    board = _board(hass, msg["device_id"])
+    if board is None:
+        _no_board(connection, msg)
+        return
+    try:
+        plans = read_plans(board.plan_options)
+    except PlanError as error:
+        language = msg.get("language") or hass.config.language
+        connection.send_error(
+            msg["id"],
+            websocket_api.ERR_INVALID_FORMAT,
+            await _plan_error(hass, error, language),
+        )
+        return
+    connection.send_result(
+        msg["id"], {"plans": own_stored(plans), "limits": PLAN_LIMITS}
+    )
+
+
+async def _plan_error(hass: HomeAssistant, error: PlanError, language: str) -> str:
+    """The error of the options that tells which plan and step is wrong, in
+    the language of the user, with its placeholders filled in."""
+    texts = await async_get_translations(hass, language, "options", [DOMAIN])
+    text = texts.get(f"component.{DOMAIN}.options.error.{error.reason}", error.reason)
+    for key, value in error.placeholders().items():
+        text = text.replace(f"{{{key}}}", value)
+    return text
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/save_plans",
+        vol.Required("device_id"): str,
+        vol.Required("plans"): list,
+        # The language of the user, for the error; else that of Home Assistant.
+        vol.Optional("language"): vol.All(str, vol.Length(min=2, max=35)),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_save_plans(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Keep the own training plans of a board, which the options of the board
+    show in YAML as well; an invalid list is refused with an error that tells
+    which plan and step is wrong and why."""
+    board = _board(hass, msg["device_id"])
+    if board is None:
+        _no_board(connection, msg)
+        return
+    try:
+        plans = read_plans(msg["plans"])
+    except PlanError as error:
+        language = msg.get("language") or hass.config.language
+        connection.send_error(
+            msg["id"],
+            websocket_api.ERR_INVALID_FORMAT,
+            await _plan_error(hass, error, language),
+        )
+        return
+    await board.async_save_plans(plans)
+    connection.send_result(msg["id"], {"plans": own_stored(plans)})

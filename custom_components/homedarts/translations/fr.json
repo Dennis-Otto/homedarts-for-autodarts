@@ -130,7 +130,7 @@
           "online_bridge": "Ouvre une adresse de webhook secrète pour l'extension de navigateur. L'étape suivante l'affiche.",
           "online_bridge_remote": "Uniquement pour une adresse https via Home Assistant Cloud ou votre propre domaine. Désactivé\u00a0: seuls les appareils de votre réseau domestique peuvent appeler l'adresse.",
           "online_bridge_new_address": "L'adresse actuelle cessera de fonctionner. Saisissez la nouvelle dans Tools for Autodarts.",
-          "plans": "Une liste en YAML\u00a0: chaque plan avec un `name`, ses `steps` et, si vous le souhaitez, les `weekdays` où il est le plan du jour. La page Plans d'entraînement de la documentation donne un exemple. Une liste vide signifie aucun plan."
+          "plans": "Une liste en YAML\u00a0: chaque plan avec un `name`, ses `steps` et, si vous le souhaitez, les `weekdays` où il est le plan du jour. La page Plans d'entraînement de la documentation donne un exemple. Une liste vide signifie aucun plan. La carte d'entraînement a aussi un éditeur pour eux."
         }
       },
       "online_bridge": {
@@ -139,7 +139,18 @@
       }
     },
     "error": {
-      "invalid_plans": "Ces plans ne sont pas valides. Chaque plan a besoin d'un nom bien à lui et d'une à douze étapes. Chaque étape nomme un jeu d'entraînement avec `drill` et au plus un de `darts`, `rounds` et `until`. L'entraînement au checkout et l'échelle 121 ne s'arrêtent jamais d'eux-mêmes et ont besoin de `darts` ou `rounds`."
+      "plans_list": "Les plans sont une liste d'au plus {plans} plans. Commencez chaque plan par `- name:`.",
+      "plan_fields": "Le plan {plan} n'est pas valide\u00a0: un plan a un `name`, ses `steps` et, si vous le souhaitez, des `weekdays`, et rien d'autre.",
+      "plan_name": "Le plan {plan} a besoin d'un `name` de 1 à 40 caractères.",
+      "plan_name_taken": "Plan {plan}\u00a0: le nom {value} est déjà pris par un autre plan ou par un plan livré avec HomeDarts. Chaque plan a besoin d'un nom bien à lui.",
+      "plan_steps": "Le plan {plan} a besoin d'une liste de 1 à 12 `steps`.",
+      "plan_weekdays": "Plan {plan}\u00a0: {value} n'est pas un jour de la semaine. Écrivez les `weekdays` comme une liste de monday à sunday.",
+      "step_fields": "Plan {plan}, étape {step}\u00a0: elle n'est pas valide. Une étape a un `drill`, au plus un de `darts`, `rounds` et `until`, et des `options` seulement dans l'entraînement au checkout.",
+      "step_drill": "Plan {plan}, étape {step}\u00a0: {value} n'est pas un jeu d'entraînement. Écrivez l'un de ceux-ci\u00a0: {drills}.",
+      "step_limits": "Plan {plan}, étape {step}\u00a0: elle a plus d'une limite. Gardez un seul de `darts`, `rounds` et `until`.",
+      "step_limit": "Plan {plan}, étape {step}\u00a0: `darts` est un nombre entier de 1 à 1000, `rounds` un de 1 à 300, et `until` ne peut être que `finished`.",
+      "step_endless": "Plan {plan}, étape {step}\u00a0: {value} ne s'arrête jamais de lui-même et a besoin de `darts` ou `rounds`.",
+      "step_options": "Plan {plan}, étape {step}\u00a0: seul `checkout` a des `options`, un `low` et un `high` de 2 à 170 avec entre eux un finish en trois fléchettes."
     }
   },
   "entity": {

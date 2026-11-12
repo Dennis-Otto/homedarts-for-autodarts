@@ -25,17 +25,21 @@ from custom_components.homedarts.plans import (
     PRESETS,
     ROTATION,
     WEEKDAYS,
+    PlanError,
     PlanRunner,
     Step,
     own_plans,
+    own_stored,
     parse_plan,
     parse_step,
     plan_name,
+    read_plans,
 )
 from custom_components.homedarts.practice import PracticeGame
 from custom_components.homedarts.report import WeeklyReport
 
 from .local_helpers import MISS, board, entity_id, record, setup_local, state
+from .test_progress_setup import device_id
 
 # A Thursday.
 NOW = datetime(2026, 10, 1, 20, 0, tzinfo=UTC)
@@ -236,6 +240,177 @@ def test_own_plans_are_read_from_the_options():
 )
 def test_own_plans_that_cannot_be_told_apart_are_refused(raw):
     assert own_plans(raw) is None
+
+
+EVENING = {"name": "Evening", "steps": [{"drill": "doubles"}]}
+
+
+def wrong(*steps: object, **plan: object) -> list:
+    """Own plans whose second plan has these steps or fields."""
+    return [EVENING, {"name": "Late", "steps": list(steps), **plan}]
+
+
+@pytest.mark.parametrize(
+    ("raw", "reason", "plan", "step", "value"),
+    [
+        ("plans", "plans_list", "0", "0", "None"),
+        ([EVENING] * (MAX_PLANS + 1), "plans_list", "0", "0", "None"),
+        ([EVENING, "plan"], "plan_fields", "2", "0", "None"),
+        (
+            [EVENING, {**EVENING, "name": "Late", "colour": "red"}],
+            "plan_fields",
+            "2 (Late)",
+            "0",
+            "None",
+        ),
+        ([{**EVENING, "name": 3}], "plan_name", "1", "0", "None"),
+        ([{**EVENING, "name": " "}], "plan_name", "1", "0", "None"),
+        ([{**EVENING, "name": "x" * 50}], "plan_name", f"1 ({'x' * 39}…)", "0", "None"),
+        ([{"name": "Evening"}], "plan_steps", "1 (Evening)", "0", "None"),
+        (wrong(), "plan_steps", "2 (Late)", "0", "None"),
+        (
+            wrong({"drill": "doubles"}, weekdays="monday"),
+            "plan_weekdays",
+            "2 (Late)",
+            "0",
+            "monday",
+        ),
+        (
+            wrong({"drill": "doubles"}, weekdays=["monday", "payday"]),
+            "plan_weekdays",
+            "2 (Late)",
+            "0",
+            "payday",
+        ),
+        # The name of a plan of the integration, or of another plan in any case.
+        (
+            [{**EVENING, "name": "WARM_UP"}],
+            "plan_name_taken",
+            "1 (WARM_UP)",
+            "0",
+            "WARM_UP",
+        ),
+        (
+            [EVENING, {**EVENING, "name": " evening "}],
+            "plan_name_taken",
+            "2 (evening)",
+            "0",
+            "evening",
+        ),
+        (
+            wrong({"drill": "doubles"}, "doubles"),
+            "step_fields",
+            "2 (Late)",
+            "2",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles", "colour": "red"}),
+            "step_fields",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles"}, {"drill": "501"}),
+            "step_drill",
+            "2 (Late)",
+            "2",
+            "501",
+        ),
+        (wrong({"darts": 3}), "step_fields", "2 (Late)", "1", "None"),
+        (wrong({"drill": None}), "step_fields", "2 (Late)", "1", "None"),
+        (wrong({"drill": "y" * 60}), "step_drill", "2 (Late)", "1", f"{'y' * 39}…"),
+        (
+            wrong({"drill": "doubles", "darts": 3, "rounds": 3}),
+            "step_limits",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles", "rounds": 3, "until": "finished"}),
+            "step_limits",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles", "until": "tomorrow"}),
+            "step_limit",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles", "darts": 1001}),
+            "step_limit",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "doubles", "rounds": 0}),
+            "step_limit",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong({"drill": "checkout_121"}),
+            "step_endless",
+            "2 (Late)",
+            "1",
+            "checkout_121",
+        ),
+        (
+            wrong({"drill": "doubles", "options": {"low": 2}}),
+            "step_options",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+        (
+            wrong(
+                {"drill": "checkout", "rounds": 3, "options": {"low": 100, "high": 40}}
+            ),
+            "step_options",
+            "2 (Late)",
+            "1",
+            "None",
+        ),
+    ],
+)
+def test_own_plans_that_are_not_valid_say_which_plan_and_step_and_why(
+    raw, reason, plan, step, value
+):
+    with pytest.raises(PlanError) as error:
+        read_plans(raw)
+    assert own_plans(raw) is None
+    assert error.value.reason == reason
+    placeholders = error.value.placeholders()
+    assert (placeholders["plan"], placeholders["step"], placeholders["value"]) == (
+        plan,
+        step,
+        value,
+    )
+    assert placeholders["drills"] == ", ".join(DRILLS)
+    assert placeholders["plans"] == str(MAX_PLANS)
+
+
+def test_own_plans_are_kept_by_their_name():
+    plans = read_plans(
+        [
+            {"name": " Late ", "steps": [{"drill": "checkout", "rounds": 3}]},
+            {**EVENING, "weekdays": ["sunday", "monday"]},
+        ]
+    )
+    assert own_stored(plans) == [
+        {"name": "Late", "steps": [{"drill": "checkout", "rounds": 3}]},
+        {**EVENING, "weekdays": ["monday", "sunday"]},
+    ]
+    # What the options keep reads the same.
+    assert read_plans(own_stored(plans)) == plans
 
 
 def test_every_plan_of_the_integration_is_valid_and_named_in_every_language():
@@ -1045,7 +1220,11 @@ async def test_the_options_keep_own_plans(hass, aioclient_mock):
         },
     )
     assert result["step_id"] == "init"
-    assert result["errors"] == {"plans": "invalid_plans"}
+    # The error names the plan, the step and the value at fault.
+    assert result["errors"] == {"plans": "step_drill"}
+    placeholders = result["description_placeholders"]
+    assert (placeholders["plan"], placeholders["step"]) == ("1 (Evening)", "1")
+    assert placeholders["value"] == "501"
     defaults = {str(key): key.default() for key in result["data_schema"].schema}
     assert defaults["online_bridge_remote"] is True
     assert defaults["plans"][0]["name"] == "Evening"
@@ -1073,3 +1252,92 @@ async def test_the_options_keep_own_plans(hass, aioclient_mock):
     await hass.async_block_till_done()
     assert "plans" not in entry.options
     assert entry.runtime_data.local.games.plans.custom == ()
+
+
+async def plans_command(client, kind: str, **data) -> dict:
+    await client.send_json_auto_id({"type": f"homedarts/{kind}", **data})
+    return await client.receive_json()
+
+
+async def test_the_training_card_keeps_own_plans(hass, aioclient_mock, hass_ws_client):
+    entry = await setup_local(hass, aioclient_mock)
+    coordinator = entry.runtime_data.local
+    client = await hass_ws_client(hass)
+    device = device_id(hass, entry)
+    empty = await plans_command(client, "plans", device_id=device)
+    assert empty["result"] == {
+        "plans": [],
+        "limits": {"plans": 20, "steps": 12, "name": 40, "darts": 1000, "rounds": 300},
+    }
+
+    plans = [
+        {
+            "name": "Evening",
+            "steps": [{"drill": "doubles", "darts": 30}],
+            "weekdays": list(WEEKDAYS),
+        }
+    ]
+    saved = await plans_command(client, "save_plans", device_id=device, plans=plans)
+    assert saved["result"] == {"plans": plans}
+    await hass.async_block_till_done()
+    # In the options, where YAML finds them too, and in use at once, without
+    # loading the board again.
+    assert entry.options["plans"] == plans
+    assert entry.runtime_data.local is coordinator
+    assert [plan.name for plan in coordinator.games.plans.custom] == ["Evening"]
+    assert coordinator.data["practice"]["plan_of_the_day"]["plan"] == "Evening"
+    read = await plans_command(client, "plans", device_id=device)
+    assert read["result"]["plans"] == plans
+
+    # A list that is not valid stays out, and the error says why in the
+    # language of the user, or else in that of Home Assistant.
+    taken = [*plans, {"name": "evening", "steps": [{"drill": "doubles"}]}]
+    refused = await plans_command(
+        client, "save_plans", device_id=device, plans=taken, language="de"
+    )
+    assert (refused["success"], refused["error"]["code"]) == (False, "invalid_format")
+    assert refused["error"]["message"].startswith(
+        "Plan 2 (evening): Der Name evening gehört schon einem anderen Plan"
+    )
+    unknown = [{"name": "Late", "steps": [{"drill": "501"}]}]
+    refused = await plans_command(client, "save_plans", device_id=device, plans=unknown)
+    assert refused["error"]["message"] == (
+        "Plan 1 (Late), step 1: 501 is not a training game. Write one of "
+        f"{', '.join(DRILLS)}."
+    )
+    assert entry.options["plans"] == plans
+
+    # Without plans, the option goes again.
+    emptied = await plans_command(client, "save_plans", device_id=device, plans=[])
+    assert emptied["result"] == {"plans": []}
+    assert "plans" not in entry.options
+    assert coordinator.games.plans.custom == ()
+
+    # Options that are not valid, written by hand, are not offered as an
+    # empty list that a save would overwrite: the editor hears why.
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "plans": [{"name": "Late", "steps": [{}]}]}
+    )
+    await hass.async_block_till_done()
+    broken = await plans_command(client, "plans", device_id=device, language="en")
+    assert (broken["success"], broken["error"]["code"]) == (False, "invalid_format")
+    assert broken["error"]["message"].startswith("Plan 1 (Late), step 1 is not valid")
+    assert entry.options["plans"] == [{"name": "Late", "steps": [{}]}]
+
+
+# Home Assistant logs every refused command as an error.
+@pytest.mark.expected_errors
+async def test_only_administrators_change_own_plans(
+    hass, aioclient_mock, hass_ws_client, hass_read_only_access_token
+):
+    entry = await setup_local(hass, aioclient_mock)
+    device = device_id(hass, entry)
+    commands = (("plans", {}), ("save_plans", {"plans": []}))
+    user = await hass_ws_client(hass, hass_read_only_access_token)
+    for kind, data in commands:
+        answer = await plans_command(user, kind, device_id=device, **data)
+        assert answer["error"]["code"] == "unauthorized"
+    admin = await hass_ws_client(hass)
+    for kind, data in commands:
+        answer = await plans_command(admin, kind, device_id="nothing", **data)
+        assert answer["error"]["code"] == "not_found"
