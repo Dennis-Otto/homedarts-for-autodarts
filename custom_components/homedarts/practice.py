@@ -1250,7 +1250,6 @@ class PracticeGame:
         allows it: the player at the board passes. A training game books
         every visit, a match none after its end.
         """
-        decided = self.winner is not None
         events: Events = []
         # Every double hit counts, in a game or not and whatever the dart was aimed
         # at; the bot's darts count for nobody.
@@ -1260,8 +1259,6 @@ class PracticeGame:
             events = self.mode.book(now)
         elif self.winner is None and (self._thrown() or (empty and self.passes())):
             events = self._book_bull_off() if self.bulling else self.mode.book(now)
-        if self.winner is not None and not decided:
-            self.summary = self._summary(self.winner, now)
         self._visit, self._skip, self._announced = [], 0, None
         return self._summarized(events, True, now)
 
@@ -1425,6 +1422,8 @@ class PracticeGame:
             for index in side:
                 self.players[index].remaining = winner.remaining if rounds else 0
             self.winner = self.current
+            # The summary goes with the match into the history, which keeps it.
+            self.summary = self._summary(self.current, now)
             self.profiles.match(
                 self.mode.kind,
                 self._match_entries(),
@@ -1435,6 +1434,7 @@ class PracticeGame:
                 self.match_started,
                 now=now,
                 rated=self._rated(),
+                summary=self.summary,
             )
             return
         players = len(self.players)

@@ -155,7 +155,7 @@ Die Regeln jedes Spiels, von X01 und dem Ausbullen bis zu den Party- und Trainin
 
 ## Match-Zusammenfassung
 
-Endet ein Match mehrerer Spieler, fasst das Übungsspiel es für jeden Spieler zusammen. `match_won` meldet die Zahlen im Moment des entscheidenden Darts so, wie sie nach dem Buchen der Aufnahme sind; das Attribut `summary` behält sie, bis das nächste Match endet.
+Endet ein Match mehrerer Spieler, fasst das Übungsspiel es für jeden Spieler zusammen. `match_won` meldet die Zahlen im Moment des entscheidenden Darts so, wie sie nach dem Buchen der Aufnahme sind; das Attribut `summary` behält sie, bis das nächste Match endet. Der Match-Verlauf der Spielerprofile behält sie mit dem Match, für die letzten 50 Matches; der Sensor *Letztes Match* nennt nur, ob ein Match sie hat, weil die Zahlen von 50 Zusammenfassungen zu viel für seine Attribute wären, und die Spielerkarte liest sie mit dem WebSocket-Befehl `homedarts/match_summary` (`device_id` und `ended` des Matches), wenn ein Match geöffnet wird.
 
 - **Legs, Sätze und Darts:** die im ganzen Match gewonnenen Legs, die Sätze und jeder im Match geworfene Dart.
 - **3-Dart-Average:** Punkte pro drei Darts des ganzen Matches; Darts einer überworfenen Aufnahme zählen, ihre Punkte nicht.
@@ -285,7 +285,7 @@ Alles, was die Integration speichert, liegt im Ordner `.storage` von Home Assist
 
 | Speicher | Inhalt |
 | --- | --- |
-| `homedarts.<entry>.training` | Die Trainingssession mit ihren Einstellungen, die letzten 20 Sessions und die letzten 10 Aufnahmen; das Übungsspiel mit Regeln, Teams, Startpunkten, Spielernamen und den letzten 10 Legs; die Bestleistungen, die Trainingsserie und die Darts des Tages; die Spielerprofile mit Statistik, Bestleistungen, Doubles und verknüpften Personen, die letzten 20 Matches und die direkten Vergleiche; der Fortschritt jedes Spielers mit Wochensummen, Erfolgen und den Positionen seiner letzten 1000 Darts; die Doppelanalyse; das Turnier mit seinen Ergebnissen |
+| `homedarts.<entry>.training` | Die Trainingssession mit ihren Einstellungen, die letzten 20 Sessions und die letzten 10 Aufnahmen; das Übungsspiel mit Regeln, Teams, Startpunkten, Spielernamen und den letzten 10 Legs; die Bestleistungen, die Trainingsserie und die Darts des Tages; die Spielerprofile mit Statistik, Bestleistungen, Doubles und verknüpften Personen, die letzten 50 Matches mit den Zahlen ihrer Zusammenfassungen und die direkten Vergleiche; der Fortschritt jedes Spielers mit Wochensummen, Erfolgen und den Positionen seiner letzten 1000 Darts; die Doppelanalyse; das Turnier mit seinen Ergebnissen |
 | `homedarts.<entry>.report` | Die laufende Woche und der letzte Wochenbericht |
 | `homedarts.<entry>.journal` | Sessions und Matches des Trainingskalenders, 365 Tage, höchstens je 3.000 |
 

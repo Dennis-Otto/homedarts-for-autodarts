@@ -18,6 +18,7 @@ from custom_components.homedarts.const import DOMAIN
 from custom_components.homedarts.doubles import DOUBLES
 from custom_components.homedarts.positions import AIMS
 from custom_components.homedarts.practice import GAMES
+from custom_components.homedarts.profiles import MATCH_HISTORY
 from custom_components.homedarts.progress import TREND_WEEKS, WEEK_FIELDS
 from custom_components.homedarts.records import RECORDS
 from custom_components.homedarts.report import REPORT_BESTS
@@ -74,6 +75,8 @@ def match(index: int) -> dict:
             for seat, name in enumerate(NAMES[:4])
         ],
         "winners": [1, 3],
+        # The history keeps the numbers of the summary, which no sensor lists.
+        "summary": {"double_out": True, "players": summary()["players"]},
     }
 
 
@@ -227,7 +230,7 @@ async def busy_home(hass, aioclient_mock):
     profiles.restore(
         {
             "players": [profile(name) for name in NAMES],
-            "matches": [match(index) for index in range(20)],
+            "matches": [match(index) for index in range(MATCH_HISTORY)],
             "head_to_head": {
                 f"{first.casefold()}\x00{second.casefold()}": [99, 99]
                 for first in NAMES

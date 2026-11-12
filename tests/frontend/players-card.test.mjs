@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { $, $$, loadCards, makeHass, mount, settle, text, update, window } from "./dom.mjs";
+import { $, $$, DEVICE, loadCards, makeHass, mount, settle, text, update, window } from "./dom.mjs";
 
 await loadCards();
 
@@ -691,4 +691,176 @@ test("the open menu and its dialog pass axe-core's WCAG 2.1 A and AA rules", asy
     if (field) assert.ok(checked.passes.includes(field), action);
     dialog.close();
   }
+});
+
+// A match of the history that keeps its summary, and the numbers the integration answers for it.
+const KEPT = {
+  ended: "2026-11-11T20:00:00+00:00",
+  game: 501,
+  legs_to_win: 2,
+  sets_to_win: 1,
+  winner: 2,
+  details: true,
+  players: [
+    { name: "Alex", legs: 1, sets: 0, match_legs: 1, average: 58.3 },
+    { name: "Lea", legs: 2, sets: 1, match_legs: 2, average: 61.2 },
+  ],
+};
+const NUMBERS = {
+  ended: KEPT.ended,
+  double_out: true,
+  players: [
+    {
+      player: 1,
+      name: "Alex",
+      legs: 1,
+      sets: 0,
+      darts: 51,
+      average: 58.3,
+      first_9_average: 70.1,
+      checkouts: 1,
+      darts_at_double: 4,
+      checkout_rate: 25,
+      scores_180: 1,
+      best_leg: 21,
+    },
+    {
+      player: 2,
+      name: "Lea",
+      legs: 2,
+      sets: 1,
+      darts: 48,
+      average: 61.2,
+      first_9_average: 65,
+      checkouts: 2,
+      darts_at_double: 3,
+      checkout_rate: 66.7,
+      scores_180: 0,
+      best_leg: 18,
+    },
+  ],
+};
+// The integration's answers, one after the other, the last one for every further
+// question: numbers, or an error that it throws.
+function summaries(...answers) {
+  const requests = [];
+  const callWS = (message) => {
+    requests.push(message);
+    const answer = answers.length > 1 ? answers.shift() : answers[0];
+    return answer instanceof Error ? Promise.reject(answer) : Promise.resolve(structuredClone(answer));
+  };
+  return { requests, callWS };
+}
+const summaryText = (card) => text(card, ".match-summary");
+const opener = (card) => $(card, "button.match");
+const asked = (requests) => requests.map((request) => [request.type, request.device_id, request.ended]);
+
+test("a tap on a match of the history opens its summary, as the integration answers for it", async () => {
+  const { requests, callWS } = summaries(NUMBERS);
+  const states = { ...profiles(ALEX, LEA), ...lastMatch({ matches: [KEPT, MATCHES[1]] }) };
+  let { hass, card } = setup(states, {}, { callWS });
+  // A match whose summary the history does not keep stays a plain row.
+  assert.deepEqual(
+    $$(card, ".match").map((row) => row.tagName),
+    ["BUTTON", "DIV"]
+  );
+  assert.equal(opener(card).getAttribute("aria-expanded"), "false");
+  assert.equal($(card, ".match-summary"), null);
+  opener(card).click();
+  assert.equal(opener(card).getAttribute("aria-expanded"), "true");
+  assert.equal(summaryText(card), "Loading the summary …");
+  // Another render while it loads asks no second time.
+  card.hass = hass = update(hass, profiles(ALEX));
+  await settle();
+  assert.deepEqual(asked(requests), [["homedarts/match_summary", DEVICE, KEPT.ended]]);
+  const table = $(card, ".match-summary table.summary");
+  assert.deepEqual(
+    [...table.querySelectorAll("thead th")].map((cell) => cell.textContent),
+    ["Match summary", "Alex", "Lea Winner"]
+  );
+  assert.deepEqual(
+    [...table.querySelectorAll("tbody tr")].slice(0, 2).map((row) => [...row.children].map((cell) => cell.textContent)),
+    [
+      ["Legs", "1", "2"],
+      ["3-dart avg.", "58.3", "61.2"],
+    ]
+  );
+  // Closed and opened again, the card shows what it has without asking again.
+  opener(card).click();
+  assert.equal($(card, ".match-summary"), null);
+  opener(card).click();
+  assert.ok($(card, ".match-summary table"));
+  assert.equal(requests.length, 1);
+  // A renamed profile renames the history, and the card asks for the summary anew.
+  const renamed = { ...KEPT, players: [{ ...KEPT.players[0], name: "Alexa" }, KEPT.players[1]] };
+  card.hass = hass = update(hass, lastMatch({ matches: [renamed] }));
+  await settle();
+  assert.equal(requests.length, 2);
+  assert.ok($(card, ".match-summary table"));
+  // A match that left the history closes, and stays closed when it shows again.
+  card.hass = hass = update(hass, lastMatch({ matches: [] }));
+  card.hass = hass = update(hass, lastMatch({ matches: [renamed] }));
+  assert.equal(opener(card).getAttribute("aria-expanded"), "false");
+  assert.equal($(card, ".match-summary"), null);
+  // A tap beside the rows does nothing.
+  $(card, ".matches").click();
+  assert.equal(opener(card).getAttribute("aria-expanded"), "false");
+});
+
+test("a summary that did not load says so, and a tap on its match asks again", async () => {
+  const { requests, callWS } = summaries(new Error("not_found"), NUMBERS);
+  const { card } = setup({ ...profiles(ALEX), ...lastMatch({ matches: [KEPT] }) }, {}, { callWS });
+  opener(card).click();
+  await settle();
+  assert.equal(summaryText(card), "The summary did not load. Tap the match to try again.");
+  assert.equal($(card, ".match-summary p").getAttribute("role"), "alert");
+  opener(card).click();
+  assert.equal(opener(card).getAttribute("aria-expanded"), "true");
+  assert.equal(summaryText(card), "Loading the summary …");
+  await settle();
+  assert.ok($(card, ".match-summary table"));
+  assert.equal(requests.length, 2);
+  // Without Home Assistant's connection, nothing loads; another match opens beside it.
+  const matches = [KEPT, { ...KEPT, ended: "2026-11-10T20:00:00+00:00" }];
+  const offline = setup({ ...profiles(ALEX), ...lastMatch({ matches }) }).card;
+  $$(offline, "button.match")[0].click();
+  assert.equal(summaryText(offline), "The summary did not load. Tap the match to try again.");
+  $$(offline, "button.match")[1].click();
+  assert.deepEqual(
+    $$(offline, "button.match").map((button) => button.getAttribute("aria-expanded")),
+    ["true", "true"]
+  );
+});
+
+test("the card lists the latest ten matches, and all of them with the link below", () => {
+  const matches = Array.from({ length: 12 }, (_, index) => ({
+    ...KEPT,
+    ended: `2026-11-${String(index + 1).padStart(2, "0")}T20:00:00+00:00`,
+  }));
+  const { card } = setup({ ...profiles(ALEX), ...lastMatch({ matches }) }, {}, { language: "de" });
+  assert.equal($$(card, ".match").length, 10);
+  const link = () => $(card, ".more-matches");
+  assert.equal(link().textContent, "Alle 12 Matches");
+  assert.equal(link().getAttribute("aria-expanded"), "false");
+  link().click();
+  assert.equal($$(card, ".match").length, 12);
+  assert.equal(link().textContent, "Weniger anzeigen");
+  link().click();
+  assert.equal($$(card, ".match").length, 10);
+});
+
+test("the open summary of a match passes axe-core's WCAG 2.1 A and AA rules", async () => {
+  if (!window.axe) window.eval(readFileSync(new URL("../../node_modules/axe-core/axe.min.js", import.meta.url), "utf8"));
+  const { callWS } = summaries(NUMBERS);
+  const { card } = setup({ ...profiles(ALEX, LEA), ...lastMatch({ matches: [KEPT] }) }, {}, { callWS });
+  opener(card).click();
+  await settle();
+  const result = await window.axe.run($(card, ".matches-section"), {
+    runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  });
+  assert.deepEqual(
+    Array.from(result.violations, (rule) => rule.id),
+    []
+  );
+  assert.ok(Array.from(result.passes, (rule) => rule.id).includes("button-name"));
 });
