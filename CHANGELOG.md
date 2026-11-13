@@ -4,6 +4,38 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.4.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.1...v2.4.0) (2026-11-13)
+
+
+### Features
+
+* **blueprints:** remind of an open daily goal and a streak that ends tonight ([#721](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/721)) ([08d1d42](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/08d1d42626bc247dc3cc24a59e6828c0745e6681))
+* **cards:** edit own training plans in the training card, and name the plan and step of an error ([#704](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/704)) ([22fb244](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/22fb244a14f5c00764ae1bbac307881a43a15734))
+* **players:** open the summary of a match of the history again ([#703](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/703)) ([ed38fd2](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/ed38fd21dc69e3907c1f75d50e4c1df354a91e5a))
+
+
+### Bug fixes
+
+* **backup:** offer a re-added dartboard without Autodarts its backup ([#706](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/706)) ([06a044d](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/06a044d497bc59a928a4bcab1eabb97d5a08b536))
+* **bot:** the bot wins Wild Mouse with three in a bed at every level ([#710](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/710)) ([4db9452](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/4db9452cdd95ad7b0913d109827874f8c598a6f5))
+* call the legs that win a set by that name, and bound the highlight gallery ([#718](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/718)) ([f9545cd](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/f9545cd0586b350af675da6d3a0dbf83281fcc68))
+* **cards:** keep the new game screen and the running tournament when a start is refused ([#697](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/697)) ([a08961c](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/a08961cbfa0261111102557065e15b854cef82b7))
+* **cards:** leaving the stream overlay always ends on a page of Home Assistant ([#708](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/708)) ([63e5fc6](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/63e5fc6026add56856e6454004da6f98dfe2d6fe))
+* **cards:** seat player names and start scores by their seat, not their entity IDs ([#713](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/713)) ([dd34a23](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/dd34a23585a9e7b1b20194fcd0c845507cd87b8c))
+* **cards:** two scoreboards of one board call every call once ([#714](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/714)) ([eeb65df](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/eeb65df395501948ec0aa481b5f79cdf29c106d7))
+* **discovery:** list no board at an address that no board can have ([#723](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/723)) ([c348137](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/c34813729cca8222974d2f2aaffc268bc1347ff5))
+* **highlights:** give a photo in www a name that cannot be guessed ([#711](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/711)) ([aae6587](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/aae65874ac37ada0df3c21a84d79b69a8d5af79b))
+* **local:** read at most 1 MB of an answer of a board ([#691](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/691)) ([3a1b7f5](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/3a1b7f5946ce60e21e18994f7d19c5e9ed1d1137))
+* name the browsers the cards need and keep the project's own name ([#717](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/717)) ([b9a8b5f](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/b9a8b5f1e08d5bdb8f18181c1b2152b4b6ed81d1))
+* **setup:** a dartboard without Autodarts keeps own training plans ([#695](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/695)) ([760ecb3](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/760ecb32ae5cfec766b2a1cb5799434a5e08f09d))
+* **setup:** connect a board whose discovery was ignored, and compare and merge names as the integration does ([#724](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/724)) ([43957a4](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/43957a408da2b0e4e12232eb420fb3b53adeff30))
+* **setup:** finish a takeover that fails or is interrupted at the next setup ([#694](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/694)) ([9eeb14e](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/9eeb14e71475ec00af5920617f70d331db1968d3))
+* **setup:** finish the switch to HomeDarts with an entry left that it can't take over ([#716](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/716)) ([44504b1](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/44504b1245d9d105f396e2b5f2abfad85632773e))
+* **setup:** set a board up by search or address while its discovery waits ([#707](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/707)) ([57fd0d5](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/57fd0d54626c46093c8d30393a37742815d40992))
+* **setup:** take over a board of the old integration found by the search or its address ([#698](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/698)) ([4237547](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/423754778ddae932534f647b740911dab1d9e99c))
+* **setup:** the list of what still uses the old name outlasts the restart ([#692](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/692)) ([7d10a04](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/7d10a0411b97e07d21e0508b6466bc280593e3b4))
+* **training:** a merged visit never sets the highest visit of a session ([#712](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/712)) ([c85f1ce](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/c85f1ce6d98d3f4937a8ce82c0b87044534399ee))
+
 ## [2.3.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.0...v2.3.1) (2026-11-09)
 
 ### Bug fixes
