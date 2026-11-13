@@ -9,13 +9,20 @@ committed before the run against those rendered. It writes, into the output fold
   visual check;
 - summary.md: the same as a table, for the summary of the workflow run;
 - for every changed image, the image before and after and, when both have the same
-  size and frames, a picture of the difference as `difference` in the report: the
-  image after in its own colours behind a light veil of its average colour, every
-  changed pixel in red and a red frame around each
-  place of change, which still shows a single changed pixel when a phone shows the
-  picture scaled down to about 1000 pixels wide. It is the picture that the
-  blueprint's screenshot tool draws (.github/blueprint/screenshots.py), so that the
-  differences of every repository look alike, in the artifact and in the pager.
+  size and frames, two pictures of the pair of frames with the most changed pixels,
+  which the report names with the number of that frame, from 1, as `frame` of
+  `frames`:
+  - `comparison`: the place of the change before and after in one picture, of that
+    same frame, in the colours of the image, with a red frame around each change on
+    both sides, so that one look on a phone tells what changed;
+  - `difference`: the image after in its own colours behind a light veil of its
+    average colour, every changed pixel in red and a red frame around each place of
+    change, which still shows a single changed pixel when a phone shows the picture
+    scaled down to about 1000 pixels wide.
+  They are the pictures that the blueprint's screenshot tool draws
+  (.github/blueprint/screenshots.py), under the names of its report, so that the
+  changes of every repository look alike, in the artifact, in the comment and in the
+  pager.
 
 Animated WebP images compare frame by frame, with the time each frame shows.
 An image whose file changed but whose pixels did not counts as unchanged; with
@@ -37,10 +44,11 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageSequence
 
 # The blueprint's screenshot tool, which keeps the pictures of the screenshot bot of
-# every repository made from the blueprint, draws the picture of a difference; its
-# package is next to the settings tool in .github/, which the blueprint keeps current.
+# every repository made from the blueprint, draws the comparison and the difference;
+# its package is next to the settings tool in .github/, which the blueprint keeps
+# current.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github"))
-from blueprint.screenshots import difference
+from blueprint.screenshots import drawing, most_changed, side_by_side
 
 SUFFIXES = (".png", ".webp")
 
@@ -108,6 +116,37 @@ def keep(source: Path, output: Path, name: str, kind: str) -> str:
     return kept
 
 
+def drawings(old: bytes, new: bytes, output: Path, name: str) -> dict:
+    """The comparison and the difference of an image that changed, drawn into the
+    output folder, of the pair of frames with the most changed pixels, as its entry
+    of the report names them: with the number of that frame, from 1, and how many
+    frames the image has, as the blueprint's screenshot tool counts them. Nothing for
+    another size or other frames, or when only the time that a frame shows changed:
+    the pixels of each frame alone tell nothing then."""
+    # Pillow reads both images once for both pictures; an animation has many frames.
+    most = most_changed(old, new)
+    if most is None:
+        return {}
+    stem = name.rsplit(".", 1)[0]
+    entry = {
+        "comparison": f"{stem}.comparison.png",
+        "frame": most.frame,
+        "frames": most.frames,
+        "difference": f"{stem}.difference.png",
+    }
+    (output / entry["comparison"]).write_bytes(side_by_side(most))
+    (output / entry["difference"]).write_bytes(drawing(most))
+    return entry
+
+
+def change(entry: dict) -> str:
+    """How an image changed, for a table: for an animation, also the frame that its
+    comparison shows."""
+    if entry.get("frames", 1) > 1:
+        return f"{entry['status']}, most in frame {entry['frame']} of {entry['frames']}"
+    return entry["status"]
+
+
 def run(
     before_folder: Path,
     after_folder: Path,
@@ -139,12 +178,7 @@ def run(
             entry |= {"status": "changed", "share": share}
             entry["before"] = keep(before[name], output, name, "before")
             entry["after"] = keep(after[name], output, name, "after")
-            # None for another size or other frames, or when only the time that a
-            # frame shows changed: the pixels of each frame alone tell nothing then.
-            drawn = difference(old, new)
-            if drawn is not None:
-                entry["difference"] = f"{name.rsplit('.', 1)[0]}.difference.png"
-                (output / entry["difference"]).write_bytes(drawn)
+            entry |= drawings(old, new, output, name)
         report["images"].append(entry)
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     (output / "summary.md").write_text(summary(report))
@@ -179,7 +213,7 @@ def summary(report: dict) -> str:
     ]
     for entry in entries:
         lines.append(
-            f"| `{entry['path']}` | {entry['status']} | {percent(entry['share'])} |"
+            f"| `{entry['path']}` | {change(entry)} | {percent(entry['share'])} |"
         )
     lines.append("")
     return "\n".join(lines)
@@ -230,7 +264,7 @@ def twice_summary(report: dict) -> str:
     ]
     for entry in entries:
         lines.append(
-            f"| `{entry['path']}` | {entry['status']} | {percent(entry['share'])} |"
+            f"| `{entry['path']}` | {change(entry)} | {percent(entry['share'])} |"
         )
     lines += ["", TWICE_FIX, ""]
     return "\n".join(lines)

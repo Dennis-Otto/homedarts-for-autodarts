@@ -1535,6 +1535,81 @@ def test_the_comment_lists_the_language_that_rendered_when_the_other_failed(comm
 
 
 @needs_jq
+def test_the_comment_links_the_comparison_and_names_the_frame_of_an_animation(comment):
+    # The comparison shows the place of the change before and after of the same
+    # frame; the table names that frame of an animation, whose first frame is what a
+    # phone shows of it, and links the artifact that holds the comparison.
+    root, env = comment
+    animation = {
+        "path": "de/setup.webp",
+        "status": "changed",
+        "share": 0.0066,
+        "comparison": "de/setup.comparison.png",
+        "frame": 4,
+        "frames": 25,
+    }
+    still = {
+        "path": "de/card.png",
+        "status": "changed",
+        "share": 0.25,
+        "comparison": "de/card.comparison.png",
+        "frame": 1,
+        "frames": 1,
+    }
+    report_of(root, "de", [animation, still], unchanged=10)
+
+    result, text, _ = write_comment(root, env, "success")
+
+    assert result.returncode == 0, result.stderr
+    artifact = "https://github.com/owner/repo/actions/runs/99/artifacts/102"
+    assert "| Image | Change | Pixels changed | Before and after |" in text
+    assert (
+        "| `docs/images/de/setup.webp` | changed, most in frame 4 of 25 | 0.66 % "
+        f"| [`de/setup.comparison.png`]({artifact}) |"
+    ) in text
+    assert (
+        "| `docs/images/de/card.png` | changed | 25.00 % "
+        f"| [`de/card.comparison.png`]({artifact}) |"
+    ) in text
+    assert "Each comparison shows the place of the change before and after" in text
+
+
+@needs_jq
+@pytest.mark.parametrize(
+    "named",
+    [
+        {"comparison": "de/other.comparison.png", "frame": 4, "frames": 25},
+        {"comparison": "../setup.comparison.png", "frame": 4, "frames": 25},
+        {"comparison": "de/setup.comparison.png", "frame": 26, "frames": 25},
+        {"comparison": "de/setup.comparison.png", "frame": 0, "frames": 25},
+        {"comparison": "de/setup.comparison.png", "frame": True, "frames": 25},
+        {"comparison": "de/setup.comparison.png", "frame": 4.0, "frames": 25},
+        {"comparison": "de/setup.comparison.png", "frame": "4", "frames": "25"},
+    ],
+    ids=["other", "outside", "past", "zero", "bool", "float", "text"],
+)
+def test_the_comment_takes_only_a_comparison_and_a_frame_that_check_out(comment, named):
+    # The report comes from a run of the code of the pull request: the comment takes
+    # only the comparison at the place that compare.py gives it and a whole frame of
+    # the animation, and leaves out the rest.
+    root, env = comment
+    entry = {"path": "de/setup.webp", "status": "changed", "share": 0.5} | named
+    report_of(root, "de", [entry], unchanged=10)
+
+    result, text, _ = write_comment(root, env, "success")
+
+    assert result.returncode == 0, result.stderr
+    good_place = named["comparison"] == "de/setup.comparison.png"
+    good_frame = type(named["frame"]) is int and 1 <= named["frame"] <= 25
+    row = "| `docs/images/de/setup.webp` | changed"
+    assert (row + ", most in frame 4 of 25 |" in text) == good_frame
+    assert (row + " | 50.00 % |" in text) == (not good_frame)
+    assert ("[`de/setup.comparison.png`](" in text) == good_place
+    assert "other.comparison" not in text
+    assert "../" not in text
+
+
+@needs_jq
 def test_the_comment_asks_to_delete_an_image_that_no_group_renders_any_more(comment):
     # Each shard of the screenshot bot renders one group and deletes nothing, so the
     # pull request that drops an image deletes it.

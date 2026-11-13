@@ -2,7 +2,9 @@ name: Visual check comment
 
 # The second half of the visual check (visual.yml). When the check of a pull request
 # ends, this workflow posts or updates one comment on the pull request: the images
-# that look different, with the share of their pixels that changed, and links to the
+# that look different, with the share of their pixels that changed, for an animation
+# the frame that their comparison shows, and links to the comparison of each (the
+# place of the change before and after in one picture, of the same frame) and to the
 # images before and after. When one language failed to render, the comment still
 # lists the images of the other one and names the language that failed. It may
 # comment, so it never checks out or runs the code of the pull request: it reads only
@@ -148,6 +150,26 @@ jobs:
                   if name in (f"visual-{code}" for code in languages) and number.isdigit():
                       links[name[-2:]] = f"{base}/artifacts/{number}"
 
+          def counted(value):
+              # A whole number from 1, as a frame and a number of frames are.
+              return type(value) is int and value >= 1
+
+          def change(entry, status):
+              # For an animation, the frame that its comparison shows, as the screenshot
+              # bot of the blueprint names it in its pull request.
+              frame, frames = entry.get("frame"), entry.get("frames")
+              if status == "changed" and counted(frame) and counted(frames) and 1 < frames and frame <= frames:
+                  return f"{status}, most in frame {frame} of {frames}"
+              return status
+
+          def comparison(entry, code, path, status):
+              # The comparison that compare.py names, at its place in the artifact, as a
+              # link to the artifact that holds it.
+              name = f"{path.rsplit('.', 1)[0]}.comparison.png"
+              if status == "changed" and entry.get("comparison") == name and code in links:
+                  return f"[`{name}`]({links[code]})"
+              return ""
+
           def percent(share):
               if share >= 1:
                   return "100 %"
@@ -176,7 +198,10 @@ jobs:
                       and status in statuses
                       and isinstance(share, (int, float)) and 0 <= share <= 1
                   ):
-                      rows.append(f"| `docs/images/{path}` | {status} | {percent(share)} |")
+                      rows.append(
+                          f"| `docs/images/{path}` | {change(entry, status)} | {percent(share)} "
+                          f"| {comparison(entry, code, path, status)} |"
+                      )
                       if status == "removed":
                           removed.append(f"`docs/images/{path}`")
           # A language whose report is missing failed to render; the other one still
@@ -197,14 +222,19 @@ jobs:
                   f"Rendered from the demo with its frozen clock for {sha}: {len(rows)} of "
                   f"{len(rows) + unchanged} {which}images look different from the committed ones.",
                   "",
-                  "| Image | Change | Pixels changed |",
-                  "| --- | --- | ---: |",
+                  "| Image | Change | Pixels changed | Before and after |",
+                  "| --- | --- | ---: | --- |",
                   *rows,
                   "",
               ]
               if links:
                   shown = " · ".join(f"[{languages[code]}]({link})" for code, link in sorted(links.items()))
-                  lines.append(f"The images before and after, with every changed pixel in red: {shown}.")
+                  lines.append(
+                      "Each comparison shows the place of the change before and after in one "
+                      "picture, of the same frame, with a red frame around each change; the "
+                      "artifacts also hold the images before and after and the difference, "
+                      f"with every changed pixel in red: {shown}."
+                  )
               lines.append(
                   "This check only reports. When the change is intended, the screenshot bot "
                   "updates `docs/images` after the merge."
