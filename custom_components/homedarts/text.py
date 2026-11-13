@@ -53,11 +53,15 @@ class AutodartsPlayerName(AutodartsStoredEntity, TextEntity):
     _attr_translation_key = "practice_player"
     _attr_native_min = 0
     _attr_native_max = NAME_LENGTH
+    # The seat never changes, so the history needs it not.
+    _unrecorded_attributes = frozenset({"seat"})
 
     def __init__(self, coordinator: AutodartsGamesCoordinator, index: int) -> None:
         super().__init__(coordinator, f"practice_player_{index + 1}")
         self._attr_translation_key = "practice_player"
         self._attr_translation_placeholders = {"number": str(index + 1)}
+        # The card finds the seat of a name here, as a user may rename the entity ID.
+        self._attr_extra_state_attributes = {"seat": index + 1}
         self._index = index
 
     @property

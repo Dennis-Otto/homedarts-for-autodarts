@@ -283,6 +283,34 @@ test("a renamed board is left out of the row names too", () => {
   assert.deepEqual(config.views.find((view) => view.path === "games").sections[0].cards[1].entities, [{ entity: "number.b_players", name: "Players" }]);
 });
 
+test("the names and start scores of the players are listed by seat, whatever their entity IDs", () => {
+  // Seat 1 has IDs of the user's own, which sort after the others; a field without its seat comes last.
+  const fields = [
+    ["number.b_players", "practice_players", undefined],
+    ["text.b_player_2", "practice_player", 2],
+    ["text.b_spieler_eins", "practice_player", 1],
+    ["number.b_start_2", "practice_start", 2],
+    ["number.b_start_3", "practice_start", undefined],
+    ["number.b_start_eins", "practice_start", 1],
+  ];
+  const config = dashboardStrategy({
+    locale: { language: "en" },
+    entities: Object.fromEntries(fields.map(([id, key]) => [id, entity(id, key, "dev1")])),
+    devices: { dev1: { name: "Autodarts Board" } },
+    states: Object.fromEntries(
+      fields.map(([id, , seat]) => [id, { entity_id: id, state: "0", attributes: seat ? { seat } : {} }])
+    ),
+  });
+  const [, , names, starts] = config.views.find((view) => view.path === "games").sections[0].cards;
+  assert.deepEqual(
+    [names.entities, starts.entities],
+    [
+      ["text.b_spieler_eins", "text.b_player_2"],
+      ["number.b_start_eins", "number.b_start_2", "number.b_start_3"],
+    ]
+  );
+});
+
 test("the game settings set up and start tournaments, with the tournament's stage as a tile", () => {
   const keys = [
     ["sensor.b_tournament", "tournament", "Autodarts Board Tournament"],
