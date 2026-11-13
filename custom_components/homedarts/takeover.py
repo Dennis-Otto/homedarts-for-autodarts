@@ -140,12 +140,17 @@ def async_report_duplicates(hass: HomeAssistant) -> None:
 @callback
 def async_watch_duplicates(hass: HomeAssistant) -> None:
     """Report the boards set up twice now and whenever an entry of either domain
-    is added, changed or removed."""
+    is added, changed or removed; finish the switch when the user deletes the
+    last board of the old integration instead of taking it over."""
 
     @callback
     def changed(change: ConfigEntryChange, entry: ConfigEntry) -> None:
         if entry.domain in (DOMAIN, OLD_DOMAIN):
             async_report_duplicates(hass)
+        if change is ConfigEntryChange.REMOVED and entry.domain == OLD_DOMAIN:
+            hass.async_create_task(
+                async_finish_left(hass), f"{DOMAIN} finish the switch"
+            )
 
     async_dispatcher_connect(hass, SIGNAL_CONFIG_ENTRY_CHANGED, changed)
     async_report_duplicates(hass)
@@ -168,6 +173,13 @@ async def async_take_over(hass: HomeAssistant, entry: ConfigEntry) -> None:
     finishes, and otherwise once the finish has returned. A finish that fails, or
     that a stop of Home Assistant interrupts, so runs again at the next setup of
     the board, and finds done what is done.
+
+    Other boards of the old integration are those left to take over and those
+    set up anew beside it, whose repair finishes the switch once confirmed. An
+    entry that the integration can never take over stays out of the count: one
+    of the first version, which the old integration never migrated because its
+    board did not answer, and one of another integration with the domain
+    autodarts. None of them is loaded by the old integration while it finishes.
     """
     old_id = entry.data[CONF_TAKEOVER]
     if (old := hass.config_entries.async_get_entry(old_id)) is not None:
@@ -176,18 +188,10 @@ async def async_take_over(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _move_registries(hass, old, entry.entry_id)
         await _async_copy_stores(hass, old_id, entry.entry_id)
         await hass.config_entries.async_remove(old_id)
-    if not hass.config_entries.async_entries(OLD_DOMAIN, include_ignore=False):
-        try:
-            await async_finish(hass)
-        # Whatever stops the finish must not stop the board, which has everything
-        # it needs by now: the finish runs again at its next setup.
-        except Exception:
-            _LOGGER.exception(
-                "The takeover of the boards of the integration Autodarts is not "
-                "finished; it continues when %s sets up again",
-                entry.title,
-            )
-            return
+    if not _boards(hass) and not await _async_try_finish(
+        hass, f"when {entry.title} sets up again"
+    ):
+        return
     hass.config_entries.async_update_entry(
         entry,
         data={key: value for key, value in entry.data.items() if key != CONF_TAKEOVER},
@@ -250,6 +254,43 @@ async def _async_copy_stores(hass: HomeAssistant, old_id: str, new_id: str) -> N
             await new.async_save(data)
 
 
+async def async_finish_left(hass: HomeAssistant) -> None:
+    """Finish a switch that is done but not finished: HomeDarts holds a board, the
+    old integration none, and its folder is still there. So it comes when the user
+    deletes the last board of the old integration rather than taking it over, and
+    at each start, for a switch that an earlier version left unfinished because an
+    entry that it could not take over was left, or whose finish failed. Without
+    the folder of the old integration nothing is looked at: a start costs nothing
+    once the switch is finished, or when there never was one."""
+    if (
+        _boards(hass)
+        or not (
+            entries := hass.config_entries.async_entries(DOMAIN, include_ignore=False)
+        )
+        # A board that takes its old one over finishes by itself.
+        or any(CONF_TAKEOVER in entry.data for entry in entries)
+        or not await hass.async_add_executor_job(_is_old_folder, _old_folder(hass))
+    ):
+        return
+    await _async_try_finish(hass, "at the next start of Home Assistant")
+
+
+async def _async_try_finish(hass: HomeAssistant, again: str) -> bool:
+    """Finish the switch, or log why not and when it runs again."""
+    try:
+        await async_finish(hass)
+    # Whatever stops the finish must not stop the board, which has everything it
+    # needs by now: the finish runs again.
+    except Exception:
+        _LOGGER.exception(
+            "The takeover of the boards of the integration Autodarts is not "
+            "finished; it continues %s",
+            again,
+        )
+        return False
+    return True
+
+
 async def async_finish(hass: HomeAssistant) -> None:
     """With the last board taken over: the media, the dashboards and the folder of
     the old integration; then the repairs for what still names the old actions
@@ -262,9 +303,18 @@ async def async_finish(hass: HomeAssistant) -> None:
         references = await _async_references(hass)
         await async_remove_modules(hass, *OLD_MODULES, folder=OLD_DOMAIN)
         _report_references(hass, references)
-        if await hass.async_add_executor_job(
-            _remove_old_folder, Path(hass.config.path("custom_components", OLD_DOMAIN))
+        for entry in hass.config_entries.async_entries(
+            OLD_DOMAIN, include_ignore=False
         ):
+            # One of the first version whose board never answered, or one of
+            # another integration with the domain autodarts.
+            _LOGGER.warning(
+                "%s of the domain %s is no board that HomeDarts can take over and "
+                "stays as it is: delete it once you no longer need it",
+                entry.title,
+                OLD_DOMAIN,
+            )
+        if await hass.async_add_executor_job(_remove_old_folder, _old_folder(hass)):
             ir.async_create_issue(
                 hass,
                 DOMAIN,
@@ -401,19 +451,30 @@ def _automations_and_scripts(hass: HomeAssistant) -> list[str]:
     return sorted(found)
 
 
-def _remove_old_folder(folder: Path) -> bool:
-    """Delete the folder of the integration under its former name, which HACS left
-    behind: only that one, recognized by its manifest, never another integration
-    with the domain autodarts."""
+@callback
+def _old_folder(hass: HomeAssistant) -> Path:
+    """Where HACS installed the integration under its former name."""
+    return Path(hass.config.path("custom_components", OLD_DOMAIN))
+
+
+def _is_old_folder(folder: Path) -> bool:
+    """Whether the folder is that of the integration under its former name, which
+    HACS left behind, recognized by its manifest: never another integration with
+    the domain autodarts."""
     try:
         manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return False
-    if not (
+    return (
         isinstance(manifest, dict)
         and manifest.get("domain") == OLD_DOMAIN
         and "@Dennis-Otto" in manifest.get("codeowners", [])
-    ):
+    )
+
+
+def _remove_old_folder(folder: Path) -> bool:
+    """Delete the folder of the integration under its former name, and only that."""
+    if not _is_old_folder(folder):
         return False
     shutil.rmtree(folder)
     return True
