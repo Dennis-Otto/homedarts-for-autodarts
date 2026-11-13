@@ -85,7 +85,7 @@ HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relación
 
     ---
 
-    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Dieciséis blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, locutores de dardos y de entrenamiento, fotos destacadas, informes, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
+    Eventos de la diana para cada dardo, tirada, retirada de dardos, bust, leg y partido ganados, y el comienzo y el final de cada partida. Diecisiete blueprints (planos, en Home Assistant): espectáculo de luces, música de entrada, pantalla de puntuación, locutores de dardos y de entrenamiento, fotos destacadas, informes, un recordatorio de entrenamiento, avisos, rutinas, partidas iniciadas y dardos introducidos por voz, y respuestas de Assist sobre tus dardos.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -131,7 +131,7 @@ Todo ocurre en tu red, en menos de un segundo: el Board Manager nombra el sector
 Frente a la aplicación de Autodarts con la extensión Tools for Autodarts, darts-caller y darts-wled, y las otras integraciones de Home Assistant para Autodarts:
 
 - **Sin nube:** HomeDarts habla con la interfaz local del Board Manager y no necesita una cuenta de Autodarts.
-- **Entidades y eventos en Home Assistant:** un evento para cada dardo, tirada, retirada de dardos, bust, leg y partido, y dieciséis blueprints que hacen algo con ellos desde el principio.
+- **Entidades y eventos en Home Assistant:** un evento para cada dardo, tirada, retirada de dardos, bust, leg y partido, y diecisiete blueprints que hacen algo con ellos desde el principio.
 - **Estadísticas en casa:** medias, mapas de calor, perfiles y un año de historial, guardados en Home Assistant.
 - **También sin diana Autodarts:** en un teclado numérico o con una Granboard por Bluetooth *(experimental)*.
 - **Gratis:** código abierto con licencia MIT, sin versión de pago.
@@ -153,7 +153,7 @@ En inglés:
 - :material-bullseye-arrow: [**Games and rules**](games.md): cada juego de un vistazo, cuatro formas de empezar uno, partidos, equipos, hándicaps, el bull-off y los torneos
 - :material-television: [**Scoreboard at the board**](scoreboard.md): una tableta o un televisor junto a la diana, en horizontal y en vertical, la pantalla de nueva partida, el locutor y el modo de espera
 - :material-chart-line: [**Statistics and players**](statistics.md): sesiones, récords personales, mapas de calor, dónde apuntar, progreso, perfiles, logros y la clasificación
-- :material-home-automation: [**Automations**](automations.md): dieciséis blueprints, sus ajustes, los eventos de la diana y ejemplos listos para usar
+- :material-home-automation: [**Automations**](automations.md): diecisiete blueprints, sus ajustes, los eventos de la diana y ejemplos listos para usar
 - :material-play-network: [**Online matches**](online-matches.md): busts, legs y partidos ganados de los partidos en línea como eventos de la diana, con Tools for Autodarts *(experimental)*
 
 ## Referencia

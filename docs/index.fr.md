@@ -85,7 +85,7 @@ HomeDarts for Autodarts est un projet communautaire non officiel, sans lien avec
 
     ---
 
-    Des événements de la cible pour chaque fléchette, volée, retrait, bust, manche et match gagnés, le début et la fin de chaque partie. Seize blueprints : spectacle lumineux, musique d'entrée, affichage du score, annonceurs des fléchettes et de l'entraînement, photos de temps forts, rapports, alertes, routines, parties lancées et fléchettes saisies à la voix, et réponses d'Assist sur vos fléchettes.
+    Des événements de la cible pour chaque fléchette, volée, retrait, bust, manche et match gagnés, le début et la fin de chaque partie. Dix-sept blueprints : spectacle lumineux, musique d'entrée, affichage du score, annonceurs des fléchettes et de l'entraînement, photos de temps forts, rapports, un rappel d'entraînement, alertes, routines, parties lancées et fléchettes saisies à la voix, et réponses d'Assist sur vos fléchettes.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -131,7 +131,7 @@ Tout se passe dans votre réseau, en moins d'une seconde : le Board Manager nom
 Par rapport à l'application Autodarts avec l'extension Tools for Autodarts, à darts-caller et darts-wled, et aux autres intégrations Home Assistant pour Autodarts :
 
 - **Sans cloud :** HomeDarts parle à l'interface locale du Board Manager et n'a besoin d'aucun compte Autodarts.
-- **Entités et événements dans Home Assistant :** un événement pour chaque fléchette, volée, retrait, bust, manche et match, et seize blueprints qui en font quelque chose tout de suite.
+- **Entités et événements dans Home Assistant :** un événement pour chaque fléchette, volée, retrait, bust, manche et match, et dix-sept blueprints qui en font quelque chose tout de suite.
 - **Statistiques à la maison :** moyennes, cartes de chaleur, profils et un an d'historique, enregistrés dans Home Assistant.
 - **Même sans cible Autodarts :** sur un pavé numérique ou avec une Granboard via Bluetooth *(expérimental)*.
 - **Gratuit :** open source sous licence MIT, sans version payante.
@@ -153,7 +153,7 @@ En anglais :
 - :material-bullseye-arrow: [**Games and rules**](games.md) : chaque jeu en un coup d'œil, quatre façons d'en lancer un, les matchs, les équipes, les handicaps, le bull-off et les tournois
 - :material-television: [**Scoreboard at the board**](scoreboard.md) : une tablette ou une télévision à côté de la cible, en paysage et en portrait, l'écran de nouvelle partie, l'annonceur et le mode veille
 - :material-chart-line: [**Statistics and players**](statistics.md) : les sessions, les records personnels, les cartes de chaleur, où viser, les progrès, les profils, les succès et le classement
-- :material-home-automation: [**Automations**](automations.md) : seize blueprints, leurs réglages, les événements de la cible et des exemples prêts à l'emploi
+- :material-home-automation: [**Automations**](automations.md) : dix-sept blueprints, leurs réglages, les événements de la cible et des exemples prêts à l'emploi
 - :material-play-network: [**Online matches**](online-matches.md) : les busts, manches et matchs gagnés des matchs en ligne comme événements de la cible, avec Tools for Autodarts *(expérimental)*
 
 ## Référence

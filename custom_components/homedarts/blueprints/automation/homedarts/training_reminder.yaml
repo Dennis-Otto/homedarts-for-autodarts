@@ -1,0 +1,143 @@
+blueprint:
+  name: "HomeDarts: training reminder"
+  description: >-
+    Reminds you at a fixed time while today's daily goal is still open, or
+    while your training streak ends tonight because no dart was thrown
+    today, for example with a notification at 7 pm. A day on which the goal
+    is reached, or a day with darts and no goal, stays quiet.
+
+
+    Your actions can use the variables `left` (the darts still missing to
+    the goal), `goal`, `darts_today`, `streak` and `reminder` (a ready-made
+    sentence in the language of Home Assistant, from the "Darts today" and
+    "Training streak" sensors of the board).
+
+
+    [Settings and examples in the guide](https://dennis-otto.github.io/homedarts-for-autodarts/automations.html#training-reminder)
+  domain: automation
+  author: Dennis Otto
+  source_url: https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/main/blueprints/automation/homedarts/training_reminder.yaml
+  homeassistant:
+    min_version: "2026.8.0"
+  input:
+    board:
+      name: Board
+      description: >-
+        Your Autodarts board, whose "Darts today" and "Training streak"
+        sensors the reminder reads. Set the daily goal with its "Daily goal"
+        setting.
+      selector:
+        device:
+          filter:
+            - integration: homedarts
+    schedule:
+      name: Schedule
+      icon: mdi:clock-outline
+      input:
+        reminder_time:
+          name: Time
+          description: >-
+            When the reminder is sent. Leave time to train: darts count for
+            the day on which they are thrown.
+          default: "19:00:00"
+          selector:
+            time: {}
+        weekdays:
+          name: Weekdays
+          description: The days on which you want a reminder.
+          default: [mon, tue, wed, thu, fri, sat, sun]
+          selector:
+            select:
+              multiple: true
+              options:
+                - label: Monday
+                  value: mon
+                - label: Tuesday
+                  value: tue
+                - label: Wednesday
+                  value: wed
+                - label: Thursday
+                  value: thu
+                - label: Friday
+                  value: fri
+                - label: Saturday
+                  value: sat
+                - label: Sunday
+                  value: sun
+        minimum_streak:
+          name: Minimum streak
+          description: >-
+            Remind about the streak on a day without darts only from this many
+            days in a row. The open daily goal reminds you in any case.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 365
+              mode: box
+              unit_of_measurement: days
+    reminder:
+      name: Reminder
+      icon: mdi:bell-ring-outline
+      input:
+        reminder_actions:
+          name: Actions
+          description: For example a notification with the `reminder`.
+          selector:
+            action: {}
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input reminder_time
+
+variables:
+  board: !input board
+  minimum_streak: !input minimum_streak
+  # The "Darts today" and "Training streak" sensors of the board, by the
+  # attributes only they have.
+  today_sensor: >-
+    {{ expand(device_entities(board or ''))
+       | selectattr('domain', 'eq', 'sensor')
+       | selectattr('attributes.goal_reached', 'defined')
+       | map(attribute='entity_id') | first | default('') }}
+  streak_sensor: >-
+    {{ expand(device_entities(board or ''))
+       | selectattr('domain', 'eq', 'sensor')
+       | selectattr('attributes.trained_today', 'defined')
+       | map(attribute='entity_id') | first | default('') }}
+  darts_today: "{{ states(today_sensor) | int(0) }}"
+  goal: "{{ state_attr(today_sensor, 'goal') | int(0) }}"
+  left: >-
+    {{ 0 if state_attr(today_sensor, 'goal_reached')
+       else [goal - darts_today, 0] | max }}
+  streak: "{{ states(streak_sensor) | int(0) }}"
+  # A streak ends at midnight without a dart today.
+  streak_ends: "{{ darts_today == 0 and streak >= minimum_streak }}"
+  # In the language of Home Assistant from the sensors; in English where they
+  # have no reminder, as with a release before the one that added it.
+  reminder: >-
+    {% set ns = namespace(parts=[]) %}
+    {%- if left > 0 %}
+    {%- set said = state_attr(today_sensor, 'reminder') %}
+    {%- set ns.parts = ns.parts + [said or (left ~ (' dart' if left == 1 else ' darts')
+      ~ ' left to your daily goal of ' ~ goal ~ '.')] %}
+    {%- endif %}
+    {%- if streak_ends %}
+    {%- set said = state_attr(streak_sensor, 'reminder') %}
+    {%- set ns.parts = ns.parts + [said or ('Throw a dart today to keep your streak of '
+      ~ streak ~ (' day.' if streak == 1 else ' days.'))] %}
+    {%- endif %}
+    {{- ns.parts | join(' ') }}
+
+conditions:
+  - alias: A day of the reminder
+    condition: time
+    weekday: !input weekdays
+  - alias: The daily goal is open, or the streak ends tonight
+    condition: template
+    value_template: "{{ left > 0 or streak_ends }}"
+
+actions: !input reminder_actions

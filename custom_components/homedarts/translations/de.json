@@ -1255,6 +1255,18 @@
     },
     "training_summary_180": {
       "message": "{darts} Darts, 3-Dart-Average {average}, höchste Aufnahme {highest}, {count} × 180."
+    },
+    "reminder_goal_dart": {
+      "message": "Noch 1 Dart bis zu deinem Tagesziel von {goal}."
+    },
+    "reminder_goal_darts": {
+      "message": "Noch {count} Darts bis zu deinem Tagesziel von {goal}."
+    },
+    "reminder_streak_day": {
+      "message": "Wirf heute einen Dart, um deine Serie von 1 Tag zu halten."
+    },
+    "reminder_streak_days": {
+      "message": "Wirf heute einen Dart, um deine Serie von {count} Tagen zu halten."
     }
   },
   "issues": {

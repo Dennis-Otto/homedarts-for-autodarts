@@ -58,8 +58,8 @@ Home Assistant keeps the best value of every record and fires `personal_best` wh
 | Bob's 27, 121 checkout, Catch 40, JDC Challenge, singles training | The highest score |
 | Longest streak | Days in a row with at least one dart |
 
-- **Training streak:** the days in a row with at least one dart. Today does not break it; a whole day without darts does.
-- **Daily goal:** set *Daily goal* to the darts you want to throw every day. The training card shows a bar towards it, and `daily_goal_reached` fires once a day when you reach it.
+- **Training streak:** the days in a row with at least one dart. Today does not break it; a whole day without darts does. The [training reminder](automations.md#training-reminder) blueprint reminds you in the evening of a day without darts.
+- **Daily goal:** set *Daily goal* to the darts you want to throw every day. The training card shows a bar towards it, and `daily_goal_reached` fires once a day when you reach it; the training reminder reminds you while it is open.
 - The first value of each record sets it quietly; equal values do not count as new bests.
 - An [undone visit](games.md#corrections-and-darts-entered-by-hand) takes back the personal bests it set, so a misread 180 is no record once corrected; its darts still count for the day, the streak and the daily goal.
 

@@ -3,11 +3,13 @@ language of Home Assistant.
 
 Home Assistant translates no blueprint, so the board events bring the words with
 them: a `call` on the events that the dart caller and the practice caller speak,
-and a `title` and a `summary` on the weekly report. The training report runs on a
-timer that no event starts, so the "Training darts" sensor holds its `summary`.
-Their blueprints say them by default. The words are those of the scoreboard's
-caller and of the voice packs that the integration records; in English, they are
-the words the blueprints said before they had these.
+and a `title` and a `summary` on the weekly report. The training report and the
+training reminder run on a timer that no event starts, so the "Training darts"
+sensor holds the report's `summary`, and the "Darts today" and "Training streak"
+sensors hold the reminder's `reminder`. Their blueprints say them by default. The
+words are those of the scoreboard's caller and of the voice packs that the
+integration records; in English, they are the words the blueprints said before
+they had these.
 """
 
 from __future__ import annotations
@@ -288,4 +290,37 @@ class Caller:
             )
         except (KeyError, IndexError, ValueError) as error:
             self._broken("the summary of the training report", error)
+            return None
+
+    # -- the training reminder ---------------------------------------------------
+
+    def goal_reminder(self, records: Mapping[str, Any]) -> str | None:
+        """What is left of today's goal, as the training reminder says it: "12
+        darts left to your daily goal of 100." None without a goal, once it is
+        reached, before the words are loaded, or where the message fails to
+        format: the blueprint then says its own."""
+        goal = _number(records.get("goal"))
+        left = goal - _number(records.get("darts_today"))
+        if not self.say or records.get("goal_reached") or left <= 0:
+            return None
+        try:
+            if left == 1:
+                return self.say["reminder_goal_dart"].format(goal=goal)
+            return self.say["reminder_goal_darts"].format(count=left, goal=goal)
+        except (KeyError, IndexError, ValueError) as error:
+            self._broken("the goal of the training reminder", error)
+            return None
+
+    def streak_reminder(self, records: Mapping[str, Any]) -> str | None:
+        """The streak that a day without darts ends, as the training reminder
+        says it: "Throw a dart today to keep your streak of 5 days." None once a
+        dart was thrown today, without a streak, before the words are loaded, or
+        where the message fails to format."""
+        streak = _number(records.get("streak"))
+        if not self.say or records.get("trained_today") or not streak:
+            return None
+        try:
+            return self._counted("reminder_streak_day", "reminder_streak_days", streak)
+        except (KeyError, IndexError, ValueError) as error:
+            self._broken("the streak of the training reminder", error)
             return None

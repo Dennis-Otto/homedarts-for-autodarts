@@ -1255,6 +1255,18 @@
     },
     "training_summary_180": {
       "message": "{darts} fléchettes, moyenne 3 fléchettes {average}, meilleure volée {highest}, {count} × 180."
+    },
+    "reminder_goal_dart": {
+      "message": "Encore 1 fléchette pour atteindre votre objectif quotidien de {goal}."
+    },
+    "reminder_goal_darts": {
+      "message": "Encore {count} fléchettes pour atteindre votre objectif quotidien de {goal}."
+    },
+    "reminder_streak_day": {
+      "message": "Lancez une fléchette aujourd'hui pour garder votre série de 1 jour."
+    },
+    "reminder_streak_days": {
+      "message": "Lancez une fléchette aujourd'hui pour garder votre série de {count} jours."
     }
   },
   "issues": {

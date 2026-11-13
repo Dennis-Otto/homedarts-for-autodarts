@@ -58,8 +58,8 @@ Home Assistant behält den besten Wert jeder Bestleistung und meldet `personal_b
 | Bob's 27, 121-Checkout, Catch 40, JDC Challenge, Singles-Training | Der höchsten Punktzahl |
 | Längste Serie | Tagen in Folge mit mindestens einem Dart |
 
-- **Trainingsserie:** die Tage in Folge mit mindestens einem Dart. Der heutige Tag unterbricht sie nicht; ein ganzer Tag ohne Darts schon.
-- **Tagesziel:** Stelle *Tagesziel* auf die Darts, die du jeden Tag werfen willst. Die Trainingskarte zeigt einen Balken bis dorthin, und `daily_goal_reached` meldet einmal am Tag, wenn du es erreichst.
+- **Trainingsserie:** die Tage in Folge mit mindestens einem Dart. Der heutige Tag unterbricht sie nicht; ein ganzer Tag ohne Darts schon. Der Blueprint [Training reminder](automations.de.md#training-reminder) erinnert dich am Abend eines Tages ohne Darts.
+- **Tagesziel:** Stelle *Tagesziel* auf die Darts, die du jeden Tag werfen willst. Die Trainingskarte zeigt einen Balken bis dorthin, und `daily_goal_reached` meldet einmal am Tag, wenn du es erreichst; der Training reminder erinnert dich, solange es offen ist.
 - Der erste Wert jeder Bestleistung setzt sie still; gleiche Werte zählen nicht als neue Bestleistung.
 - Eine [zurückgenommene Aufnahme](games.de.md#korrekturen-und-von-hand-eingegebene-darts) nimmt die Bestleistungen zurück, die sie aufgestellt hat, eine falsch erkannte 180 ist nach der Korrektur also kein Rekord; ihre Darts zählen weiter für den Tag, die Serie und das Tagesziel.
 

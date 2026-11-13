@@ -12,7 +12,7 @@ Dein Board ist schnell genug für Automationen, die *während* des Spiels passie
 
 ## Blueprints
 
-Blueprints sind fertige Automationen, und die Integration bringt alle sechzehn mit: Sobald dein erstes Board eingerichtet ist, stehen sie auf der Blueprint-Seite, **Einstellungen → Automationen & Szenen → Blueprints**. Blueprint wählen, Board und Geräte auswählen, fertig. Sie brauchen Home Assistant ab 2026.8, und jedes Update der Integration bringt ihre neuen Versionen mit, siehe [Updates der Blueprints](#updates-der-blueprints).
+Blueprints sind fertige Automationen, und die Integration bringt alle siebzehn mit: Sobald dein erstes Board eingerichtet ist, stehen sie auf der Blueprint-Seite, **Einstellungen → Automationen & Szenen → Blueprints**. Blueprint wählen, Board und Geräte auswählen, fertig. Sie brauchen Home Assistant ab 2026.8, und jedes Update der Integration bringt ihre neuen Versionen mit, siehe [Updates der Blueprints](#updates-der-blueprints).
 
 [![Home Assistant öffnen und deine Blueprints anzeigen.](https://my.home-assistant.io/badges/blueprints.svg)](https://my.home-assistant.io/redirect/blueprints/)
 
@@ -20,7 +20,7 @@ Du weißt nicht, welcher passt? Geh davon aus, was dein Zuhause tun soll:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/de/choose-blueprint-dark.png">
-  <img src="images/de/choose-blueprint-light.png" alt="Welcher Blueprint passt: Für Licht, Musik, eine Pixelanzeige, Fotos und Jubel nimm die Blueprints Light show, Walk-on music, Score display, Celebrate a visit score, Highlight photo oder Takeout actions. Zum Ansagen der Darts nimm den Dart caller für jedes Spiel außer dem Übungsspiel, auch Online-Matches, und den Practice caller für das Übungsspiel; der Caller der Anzeigetafel braucht keine Lautsprecher in Home Assistant. Für ein Board, das sich selbst versorgt, nimm Start and stop detection automatically, Board problem alert oder Training session routine. Für eine Zusammenfassung deines Trainings nimm den Training report jeden Tag oder den Weekly report. Um mit Assist zu sprechen, nimm Start a game by voice, Enter darts by voice oder Ask Assist about your darts." width="560">
+  <img src="images/de/choose-blueprint-light.png" alt="Welcher Blueprint passt: Für Licht, Musik, eine Pixelanzeige, Fotos und Jubel nimm die Blueprints Light show, Walk-on music, Score display, Celebrate a visit score, Highlight photo oder Takeout actions. Zum Ansagen der Darts nimm den Dart caller für jedes Spiel außer dem Übungsspiel, auch Online-Matches, und den Practice caller für das Übungsspiel; der Caller der Anzeigetafel braucht keine Lautsprecher in Home Assistant. Für ein Board, das sich selbst versorgt, nimm Start and stop detection automatically, Board problem alert oder Training session routine. Für eine Zusammenfassung deines Trainings oder eine Erinnerung daran nimm den Training report jeden Tag, den Weekly report oder den Training reminder. Um mit Assist zu sprechen, nimm Start a game by voice, Enter darts by voice oder Ask Assist about your darts." width="560">
 </picture>
 
 | Blueprint | Was er macht | Import |
@@ -31,6 +31,7 @@ Du weißt nicht, welcher passt? Geh davon aus, was dein Zuhause tun soll:
 | **Start and stop detection automatically** | Startet die Erkennung, sobald jemand am Board ist, und stoppt sie nach einer frei wählbaren Pause. Kameras und Board-PC können so ruhen. | [![Blueprint „Start and stop detection automatically“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fauto_detection.yaml) |
 | **Board problem alert** | Warnt nach einer Karenzzeit, wenn das Board offline geht oder eine Kamera ausfällt, und auf Wunsch, wenn ein Board mit Board Manager 2 seine Kalibrierung verliert. Eine Entwarnung kommt nur nach einer echten Warnung. Die Aktionen können `problem` und `recovered` nutzen. | [![Blueprint „Board problem alert“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fboard_alert.yaml) |
 | **Training report** | Tägliche Zusammenfassung mit Darts, 3-Dart-Average, höchster Aufnahme und 180ern; Tage ohne Darts werden übersprungen. Die Variable `summary` enthält den fertigen Satz. | [![Blueprint „Training report“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_report.yaml) |
+| **Training reminder** | Erinnert dich zu einer Uhrzeit deiner Wahl, standardmäßig um 19 Uhr, solange das Tagesziel von heute offen ist oder deine Trainingsserie heute Nacht endet, weil heute noch kein Dart geworfen wurde. Die Variable `reminder` enthält den fertigen Satz. | [![Blueprint „Training reminder“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_reminder.yaml) |
 | **Training session routine** | Beginnt eine [Trainingssession](entities.de.md#trainingssession), führt sie deine Aktionen aus, schaltet die Erkennung ein und kalibriert nach kurzer Wartezeit die Kameras. Endet sie, schaltet sie die Erkennung aus und führt deine Aktionen mit `reason`, `darts`, `average` und `duration_minutes` aus. Erkennungsschalter und Kalibrierungstaste sind optional. | [![Blueprint „Training session routine“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_session.yaml) |
 | **Practice caller** | Sagt das [Übungsspiel](entities.de.md#übungsspiel) auf deinen Lautsprechern an: "Sam, you require 81", wenn ein Checkout möglich ist, "No score" nach dem Überwerfen, den Game shot eines Legs oder Matches und auf Wunsch den Rest, den ein Stellwurf stellt, wenn kein Checkout möglich ist, und das Ausbullen. Die Texte sind Vorlagen. | [![Blueprint „Practice caller“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fpractice_caller.yaml) |
 | **Weekly report** | Schickt deine [Trainingswoche](entities.de.md#wochenbericht), wenn das Board sie beendet, standardmäßig montags um Mitternacht: Darts, Trainingszeit, Sessions, den 3-Dart-Average und seine Veränderung zur Vorwoche, beste Aufnahme, 180er, Checkout-Quote, Serie und neue Bestleistungen. Die Nachricht ist eine Vorlage; ohne eigene Aktionen erscheint der Bericht in den Benachrichtigungen von Home Assistant. | [![Blueprint „Weekly report“ importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fweekly_report.yaml) |
@@ -46,7 +47,7 @@ Die Buttons importieren einen Blueprint von GitHub, etwa einen, den du gelöscht
 
 Die Blueprints sind auf Englisch beschriftet. Ihre Ansagen, der Trainings- und der Wochenbericht sprechen von sich aus die [Sprache von Home Assistant](#ansagen-in-der-sprache-von-home-assistant), und ihre Texte kannst du beim Anlegen frei wählen.
 
-<img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den sechzehn HomeDarts-Blueprints, von den Fragen an Assist zu deinen Darts bis zum Wochenbericht, und ihren Dateinamen" width="760">
+<img src="images/de/blueprints.png" alt="Die Blueprint-Seite von Home Assistant mit den siebzehn HomeDarts-Blueprints, von den Fragen an Assist zu deinen Darts bis zum Wochenbericht, und ihren Dateinamen" width="760">
 
 ### Updates der Blueprints
 
@@ -165,6 +166,20 @@ Was dieser Blueprint und die [automatische Erkennung](#start-and-stop-detection-
 Eine beendete Session behält ihre Summen bis zur nächsten. Deshalb prüft der Bericht den Sensor *Darts heute* desselben Boards und überspringt Tage ohne Darts. Ist dieser Sensor deaktiviert, entscheiden die Darts der Session. Für jeden Tag eine neue Session füge *Neue Trainingssession* deines Boards als letzte Aktion hinzu.
 
 Kein Ereignis des Boards startet den Bericht. Deshalb nimmt er `summary` aus dem Attribut `summary` des Sensors *Training Darts*: Der Satz beschreibt die Sitzung dieses Sensors, auch wenn die anderen Sensoren des Berichts von einem anderen Board kommen, und steht in der Sprache von Home Assistant (siehe [Ansagen in der Sprache von Home Assistant](#ansagen-in-der-sprache-von-home-assistant)). Ohne das Attribut, etwa mit einer Version der Integration vor der, die es eingeführt hat, schreibt er den Satz auf Englisch.
+
+### Training reminder
+
+| Einstellung | Standard | Was sie bewirkt |
+| --- | --- | --- |
+| Board | | Dein Board, dessen Sensoren *Darts heute* und *Trainingsserie* die Erinnerung liest. Das Ziel stellst du mit der Einstellung *Tagesziel* des Boards ein. |
+| Time | 19:00 | Wann die Erinnerung kommt. Lass Zeit zum Trainieren: Darts zählen für den Tag, an dem sie geworfen werden. |
+| Weekdays | jeden Tag | Die Tage, an denen du eine Erinnerung willst. |
+| Minimum streak | 2 Tage | Erinnert an einem Tag ohne Darts erst ab so vielen Tagen in Folge an die Serie. An das offene Tagesziel erinnert sie in jedem Fall. |
+| Actions | | Zum Beispiel eine Benachrichtigung mit `reminder`, etwa „Noch 10 Darts bis zu deinem Tagesziel von 10. Wirf heute einen Dart, um deine Serie von 2 Tagen zu halten.“ in der Sprache von Home Assistant. Nutzbar sind auch `left` (die Darts, die noch zum Ziel fehlen), `goal`, `darts_today` und `streak`. |
+
+An einem Tag mit erreichtem Ziel bleibt die Erinnerung still, ebenso an einem Tag mit Darts und ohne Ziel: Ein einziger Dart hält die Serie, die erst ein [ganzer Tag ohne Darts](statistics.de.md#bestleistungen-serie-und-tagesziel) beendet. Ohne *Tagesziel* erinnert sie nur an die Serie.
+
+Kein Ereignis des Boards startet die Erinnerung. Deshalb nimmt sie `reminder` aus den Attributen `reminder` der Sensoren *Darts heute* und *Trainingsserie*, die den Satz enthalten, solange das Ziel offen ist und bis zum ersten Dart des Tages, in der Sprache von Home Assistant (siehe [Ansagen in der Sprache von Home Assistant](#ansagen-in-der-sprache-von-home-assistant)). Ohne die Attribute, etwa mit einer Version der Integration vor der, die sie eingeführt hat, schreibt sie den Satz auf Englisch.
 
 ### Training session routine
 
@@ -530,7 +545,7 @@ data:
 
 ### Ansagen in der Sprache von Home Assistant
 
-Home Assistant übersetzt keine Blueprints. Deshalb gibt die Integration jedem Ereignis, das ein Caller ansagt, seine Worte in der Sprache von Home Assistant mit, und die Caller sagen sie standardmäßig: `call` bei den Ereignissen des Dart- und des Übungs-Callers, `title` und `summary` beim Wochenbericht und das Attribut `summary` des Sensors *Training Darts* für den Trainingsbericht, der nach Uhrzeit läuft. Sie folgen einer neuen Sprache von Home Assistant sofort, auf Deutsch, Englisch, Niederländisch, Französisch und Spanisch; eine regionale Variante wie `de-CH` spricht ihre Sprache, jede andere Sprache Englisch. Es sind die Worte des [Callers der Anzeigetafel](scoreboard.de.md#der-caller) und der Voice-Packs, die `homedarts.generate_voice_pack` aufnimmt.
+Home Assistant übersetzt keine Blueprints. Deshalb gibt die Integration jedem Ereignis, das ein Caller ansagt, seine Worte in der Sprache von Home Assistant mit, und die Caller sagen sie standardmäßig: `call` bei den Ereignissen des Dart- und des Übungs-Callers, `title` und `summary` beim Wochenbericht, das Attribut `summary` des Sensors *Training Darts* für den Trainingsbericht und die Attribute `reminder` der Sensoren *Darts heute* und *Trainingsserie* für die Trainingserinnerung, die beide nach Uhrzeit laufen. Sie folgen einer neuen Sprache von Home Assistant sofort, auf Deutsch, Englisch, Niederländisch, Französisch und Spanisch; eine regionale Variante wie `de-CH` spricht ihre Sprache, jede andere Sprache Englisch. Es sind die Worte des [Callers der Anzeigetafel](scoreboard.de.md#der-caller) und der Voice-Packs, die `homedarts.generate_voice_pack` aufnimmt.
 
 | Ereignis | `call` auf Deutsch | `call` auf Englisch |
 | --- | --- | --- |

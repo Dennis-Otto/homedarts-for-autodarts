@@ -1255,6 +1255,18 @@
     },
     "training_summary_180": {
       "message": "{darts} dardos, media de 3 dardos {average}, tirada más alta {highest}, {count} × 180."
+    },
+    "reminder_goal_dart": {
+      "message": "Te falta 1 dardo para tu objetivo diario de {goal}."
+    },
+    "reminder_goal_darts": {
+      "message": "Te faltan {count} dardos para tu objetivo diario de {goal}."
+    },
+    "reminder_streak_day": {
+      "message": "Lanza un dardo hoy para mantener tu racha de 1 día."
+    },
+    "reminder_streak_days": {
+      "message": "Lanza un dardo hoy para mantener tu racha de {count} días."
     }
   },
   "issues": {
