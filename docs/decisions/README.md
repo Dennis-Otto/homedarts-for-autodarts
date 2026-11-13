@@ -1,5 +1,5 @@
 ---
-description: "The decisions that shape Autodarts for Home Assistant, each with its context, the options and the reasons, from the local API of the board to the releases."
+description: "The decisions that shape HomeDarts for Autodarts, each with its context, the options and the reasons, from the local API of the board to the releases."
 ---
 
 # Decisions

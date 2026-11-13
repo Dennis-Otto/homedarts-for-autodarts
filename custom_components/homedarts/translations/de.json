@@ -1314,7 +1314,7 @@
     },
     "unsupported_response": {
       "title": "Autodarts-Board antwortet in einem unbekannten Format",
-      "description": "Das Board beantwortet {reads} in einem Format, das diese Version der Integration nicht versteht, zum Beispiel nach einem Update des Board Managers. Werte aus diesen Abfragen werden nicht aktualisiert. Aktualisiere die Autodarts-Integration; bleibt der Hinweis, melde ihn zusammen mit den Diagnosedaten."
+      "description": "Das Board beantwortet {reads} in einem Format, das diese Version der Integration nicht versteht, zum Beispiel nach einem Update des Board Managers. Werte aus diesen Abfragen werden nicht aktualisiert. Aktualisiere HomeDarts for Autodarts; bleibt der Hinweis, melde ihn zusammen mit den Diagnosedaten."
     },
     "board_moved": {
       "title": "Autodarts-Board unter neuer Adresse gefunden",

@@ -14,9 +14,15 @@ Ein Tablet oder Fernseher neben dem Board macht deinen Dartraum zur Bühne: der 
 
 ## Was du brauchst
 
-- **Einen Bildschirm mit Browser:** ein Tablet an der Wand, einen Fernseher mit Browser oder einem kleinen PC, ein altes Handy. Alles, was dein Home Assistant öffnet, funktioniert, und ein Fernseher mit Chromecast [über Home Assistant Cast](#auf-dem-fernseher-mit-home-assistant-cast).
+- **Einen Bildschirm mit Browser:** ein Tablet an der Wand, einen Fernseher mit Browser oder einem kleinen PC, ein altes Handy. Jeder davon funktioniert, dessen Browser dein Home Assistant öffnet und [neu genug](#browser) ist, und ein Fernseher mit Chromecast [über Home Assistant Cast](#auf-dem-fernseher-mit-home-assistant-cast).
 - **Einen Home-Assistant-Benutzer für den Bildschirm.** Ein eigener Benutzer ohne Administratorrechte verhindert, dass am Bildschirm deine Einstellungen geändert werden. Der Bildschirm zeigt das Dashboard in der Sprache dieses Benutzers: Deutsch, Englisch, Niederländisch, Französisch oder Spanisch, andere [Sprachen](README.de.md#sprachen) auf Englisch.
 - **Die Karten der Integration,** die sich von selbst laden. Auf dem Bildschirm musst du nichts installieren.
+
+### Browser
+
+Die Karten sind für **Safari 16.4** und neuer gemacht (iPhone und iPad ab iOS und iPadOS 16.4), für **Chrome, Edge und das Android System WebView 111** und neuer und für **Firefox 121** und neuer. Ein Browser, der sich selbst aktualisiert, gehört immer dazu, und ebenso ein Kiosk-Browser wie Fully Kiosk Browser, solange das Android System WebView, mit dem er die Seite zeigt, seine Updates aus dem Play Store bekommt.
+
+Ein älterer Browser, etwa der eines iPads, das bei iPadOS 15 endet (iPad Air 2, iPad mini 4), oder eines Android-Tablets, dessen WebView keine Updates mehr bekommt, zeigt die Karten noch, aber in schlichten Farben ohne ihre Tönungen, in ihrem schmalsten Layout und mit Schrift, die nicht mit dem Bildschirm wächst. Bevor du ein altes Tablet an die Wand hängst, öffne die Anzeigetafel einmal darauf; unter Android zeigt *Einstellungen → Apps → Android System WebView* die Version des WebView.
 
 ## Den Bildschirm einrichten
 

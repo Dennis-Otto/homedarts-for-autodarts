@@ -1314,7 +1314,7 @@
     },
     "unsupported_response": {
       "title": "La diana Autodarts responde en un formato desconocido",
-      "description": "La diana responde a {reads} en un formato que esta versión de la integración no entiende, por ejemplo tras una actualización de Board Manager. Los valores de estas consultas no se actualizan. Actualiza la integración Autodarts; si el aviso no desaparece, comunícalo junto con los diagnósticos."
+      "description": "La diana responde a {reads} en un formato que esta versión de la integración no entiende, por ejemplo tras una actualización de Board Manager. Los valores de estas consultas no se actualizan. Actualiza HomeDarts for Autodarts; si el aviso no desaparece, comunícalo junto con los diagnósticos."
     },
     "board_moved": {
       "title": "Diana Autodarts encontrada en una nueva dirección",

@@ -1314,7 +1314,7 @@
     },
     "unsupported_response": {
       "title": "Autodarts-bord antwoordt in een onbekend formaat",
-      "description": "Het bord antwoordt op {reads} in een formaat dat deze versie van de integratie niet begrijpt, bijvoorbeeld na een update van Board Manager. Waarden uit deze opvragingen worden niet bijgewerkt. Werk de Autodarts-integratie bij; blijft de melding staan, meld het probleem dan samen met de diagnostische gegevens."
+      "description": "Het bord antwoordt op {reads} in een formaat dat deze versie van de integratie niet begrijpt, bijvoorbeeld na een update van Board Manager. Waarden uit deze opvragingen worden niet bijgewerkt. Werk HomeDarts for Autodarts bij; blijft de melding staan, meld het probleem dan samen met de diagnostische gegevens."
     },
     "board_moved": {
       "title": "Autodarts-bord gevonden op een nieuw adres",

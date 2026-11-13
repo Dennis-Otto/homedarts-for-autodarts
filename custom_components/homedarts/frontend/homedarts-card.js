@@ -1,5 +1,5 @@
 /*
- * Autodarts cards for Home Assistant, served by the Autodarts integration.
+ * The cards of HomeDarts for Autodarts, served by the HomeDarts integration.
  *
  * - homedarts-card: the current visit on a dartboard drawn with the geometry of
  *   the Autodarts Board Manager. Hit beds blink, darts appear at their detected
@@ -6645,6 +6645,22 @@ const BASE_CSS = `
     --ad-slow: 240ms;
     --ad-ease: cubic-bezier(.2, .7, .2, 1);
   }
+  /* A browser older than the floor of the cards (docs/scoreboard.md#browsers) knows no
+     color-mix(): a property made of one is void there, and its text loses its colour.
+     Plain colours of the theme keep it readable, without the fine tints. */
+  @supports not (color: color-mix(in srgb, red, blue)) {
+    :host {
+      --ad-ok-text: ${STATUS_COLORS.ready};
+      --ad-error-text: ${STATUS_COLORS.problem};
+      --ad-warn-text: var(--primary-text-color, #212121);
+      --ad-gold-text: var(--primary-text-color, #212121);
+      --ad-accent-text: var(--ad-accent);
+      --ad-accent-fill: var(--ad-accent);
+      --ad-muted-text: var(--secondary-text-color);
+      --ad-hover: rgba(127, 127, 127, .12);
+      --ad-press: rgba(127, 127, 127, .24);
+    }
+  }
   [hidden] { display: none !important; }
   /* Read by assistive technology, not shown. */
   .visually-hidden {
@@ -7249,7 +7265,11 @@ const TRAINING_CSS = `${BASE_CSS}${DIALOG_CSS}
   /* The rows share their columns, so that every bar ends where the others do. */
   .top { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) auto; gap: 6px 10px; }
   .top > .empty-hint { grid-column: 1 / -1; }
-  .top-row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; font-size: 13px; }
+  /* The columns of .top again before subgrid, for a browser that doesn't know it. */
+  .top-row {
+    display: grid; grid-column: 1 / -1; grid-template-columns: 3.2em minmax(0, 1fr) auto;
+    grid-template-columns: subgrid; column-gap: 10px; align-items: center; font-size: 13px;
+  }
   .top-row .count { text-align: right; }
   .top-row .key { font-weight: 800; color: var(--primary-text-color); }
   .top-row .bar { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); overflow: hidden; }
@@ -8156,6 +8176,9 @@ ${compactPlayers(".scoreboard.full .players:is(.n3, .n4)", 280)}
     --ad-error-text: #ff8a80;
     position: relative; container-type: size; aspect-ratio: 16 / 9; overflow: hidden;
     color: var(--primary-text-color); background: var(--ad-key, transparent);
+  }
+  @supports not (color: color-mix(in srgb, red, blue)) {
+    .stage { --ad-accent-text: #ffffff; --ad-accent-fill: var(--ad-accent); }
   }
   /* In the card editor, what is see-through shows as a checkerboard, as in an image editor. */
   .stage[data-mode="transparent"]:not(.taken) {

@@ -1,4 +1,4 @@
-"""Base entities for the Autodarts integration."""
+"""Base entities for the HomeDarts integration."""
 
 from __future__ import annotations
 
