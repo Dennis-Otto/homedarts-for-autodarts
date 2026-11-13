@@ -869,20 +869,24 @@ MINIMUM_RELEASE = re.compile(
 )
 
 
+def documentation_pages() -> list[Path]:
+    """The pages that say what HomeDarts supports today. The changelog and the
+    decisions keep the versions of their time."""
+    return [
+        path
+        for path in sorted(ROOT.glob("*.md")) + sorted((ROOT / "docs").glob("*.md"))
+        if path.name != "CHANGELOG.md"
+    ]
+
+
 def test_the_documentation_names_the_oldest_supported_home_assistant():
     """A new minimum starts in hacs.json, and every page follows it
     (docs/decisions/0022-home-assistant-2026-8-as-the-oldest-release.md)."""
     hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
     oldest = ".".join(hacs["homeassistant"].split(".")[:2])
-    # The changelog and the decisions keep the releases of their time.
-    pages = [
-        path
-        for path in sorted(ROOT.glob("*.md")) + sorted((ROOT / "docs").glob("*.md"))
-        if path.name != "CHANGELOG.md"
-    ]
     named: Counter[str] = Counter()
     wrong = []
-    for path in pages:
+    for path in documentation_pages():
         page = path.relative_to(ROOT).as_posix()
         lines = path.read_text(encoding="utf-8").splitlines()
         for number, line in enumerate(lines, 1):
@@ -909,6 +913,84 @@ def test_the_documentation_names_the_oldest_supported_home_assistant():
         "docs/installation.es.md",
     ):
         assert named[page], page
+
+
+# How the pages name the newest Board Manager that the tests answer like: "tested up
+# to 2.1.0", "getestet bis 2.1.0", "bis 2.1.0 getestet", "getest tot 2.1.0", "testé
+# jusqu'à la version 2.1.0", "probado hasta la versión 2.1.0" and "still answers on
+# Autodarts 2.1.0", "antwortet mit Autodarts 2.1.0".
+NEWEST_BOARD_MANAGER = re.compile(
+    r"(?:tested up to|getestet bis|getest tot|testé jusqu['’]à la version"
+    r"|probado hasta la versión|still answers on Autodarts|antwortet mit Autodarts)"
+    r" (\d+\.\d+\.\d+)"
+    r"|\bbis (\d+\.\d+\.\d+) getestet"
+)
+# A row of the table of supported devices: "| Board Manager 2: … | 2.x | 2.0.0, 2.0.2
+# and 2.1.0 |", whose last cell lists the versions that the tests answer like.
+BOARD_MANAGER_ROW = re.compile(r"^\| Board Manager (\d)\b[^|]*\| \1\.x \| ([^|]+) \|$")
+
+
+def recorded_board_managers() -> list[tuple[int, ...]]:
+    """The versions of the Board Manager recorded in tests/fixtures/board_manager."""
+    folders = (ROOT / "tests" / "fixtures" / "board_manager").iterdir()
+    return sorted(
+        tuple(map(int, folder.name.split(".")))
+        for folder in folders
+        if folder.is_dir() and re.fullmatch(r"\d+\.\d+\.\d+", folder.name)
+    )
+
+
+def test_the_documentation_names_the_newest_recorded_board_manager():
+    """The pages say "tested up to" the newest recording of tests/fixtures/board_manager:
+    a recording of a new version moves every sentence, which a person would forget."""
+    recorded = recorded_board_managers()
+    newest = ".".join(map(str, recorded[-1]))
+    named: Counter[str] = Counter()
+    wrong = []
+    for path in documentation_pages():
+        page = path.relative_to(ROOT).as_posix()
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for number, line in enumerate(lines, 1):
+            for match in NEWEST_BOARD_MANAGER.finditer(line):
+                named[page] += 1
+                if next(group for group in match.groups() if group) != newest:
+                    wrong.append(f"{page}:{number}: {match[0]}")
+    assert not wrong, (
+        f"The newest recording in tests/fixtures/board_manager is {newest}, but these "
+        f"lines name another version as the newest one tested; write {newest}:\n"
+        + "\n".join(wrong)
+    )
+    # The pattern still finds what each language says on its pages.
+    for page in (
+        "README.md",
+        "docs/README.md",
+        "docs/README.de.md",
+        *(
+            f"docs/{name}{language}.md"
+            for name in ("installation", "faq")
+            for language in ("", ".de", ".nl", ".fr", ".es")
+        ),
+        *(f"docs/index{language}.md" for language in (".nl", ".fr", ".es")),
+    ):
+        assert named[page], page
+
+
+@pytest.mark.parametrize("page", ["docs/README.md", "docs/README.de.md"])
+def test_the_table_of_devices_lists_the_recorded_board_managers(page):
+    """The column "Tested with" of each Board Manager lists its recordings."""
+    lines = (ROOT / page).read_text(encoding="utf-8").splitlines()
+    rows = {
+        int(match[1]): re.findall(r"\d+\.\d+\.\d+", match[2])
+        for match in map(BOARD_MANAGER_ROW.match, lines)
+        if match
+    }
+    recorded: dict[int, list[str]] = {}
+    for version in recorded_board_managers():
+        recorded.setdefault(version[0], []).append(".".join(map(str, version)))
+    assert rows == recorded, (
+        f"{page}: the table of supported devices lists {rows}, the recordings in "
+        f"tests/fixtures/board_manager are {recorded}"
+    )
 
 
 def test_each_lock_file_is_compiled_for_its_own_python():

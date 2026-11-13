@@ -14,11 +14,13 @@ from homeassistant.config_entries import (
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homedarts.const import DISCOVERY_URL
+from custom_components.homedarts.discovery import async_discover_boards
 from custom_components.homedarts.local_api import MAX_ANSWER
 
 from .local_helpers import (
@@ -164,6 +166,31 @@ async def test_announcement_without_usable_address_is_ignored(hass, aioclient_mo
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "cannot_connect_local"
     assert not aioclient_mock.mock_calls
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "127.0.0.1",
+        "::1",
+        "0.0.0.0",
+        "::",
+        "224.0.0.251",
+        "ff02::fb",
+        "169.254.10.20",
+        "fe80::10",
+        "::ffff:127.0.0.1",
+    ],
+)
+async def test_lookup_lists_no_board_at_an_address_of_no_board(
+    hass, aioclient_mock, address
+):
+    """The lookup checks an address as an announcement does: Home Assistant itself,
+    no host, a group of hosts and a link-local address are never a board's."""
+    listed = [{"boardId": "board-2", "ip": address}, LISTED[0]]
+    aioclient_mock.get(DISCOVERY_URL, json=listed)
+    boards = await async_discover_boards(async_get_clientsession(hass))
+    assert [board["board_id"] for board in boards] == ["board-1"]
 
 
 @pytest.mark.parametrize(
