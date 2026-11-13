@@ -9,7 +9,7 @@ blueprint:
 
 
     The photo is saved to the highlight gallery, which the media browser shows
-    under Autodarts, and your actions can send it on: they can use `photo_url`
+    under HomeDarts, and your actions can send it on: they can use `photo_url`
     (the address of the saved photo, for example `data: {image: "{{ photo_url
     or image }}"}` in a notification of the Home Assistant app), `photo` (the
     saved file), `image` (the live camera picture), `message`, `score`,

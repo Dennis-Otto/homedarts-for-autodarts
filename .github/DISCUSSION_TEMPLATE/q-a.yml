@@ -15,4 +15,4 @@ body:
     attributes:
       label: Versions
       description: Integration, Home Assistant and Board Manager, if relevant.
-      placeholder: "1.7.0, 2026.9.3, Board Manager 2.0.0"
+      placeholder: "2.3.1, 2026.11.1, Board Manager 2.1.0"

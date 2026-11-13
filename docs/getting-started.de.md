@@ -17,7 +17,7 @@ Du spielst auf einem Autodarts-Board und hast noch nie Home Assistant benutzt? D
 - **Dein Autodarts-Board,** eingerichtet und funktionsfähig. Die getesteten Setups stehen unter [Unterstützte Geräte](README.de.md#unterstützte-geräte). Kein Autodarts? [Spiele ohne Autodarts](without-autodarts.de.md) an jeder Dartscheibe und gib deine Darts auf einem Tastenfeld ein.
 - **Ein Gerät für Home Assistant,** das ständig läuft, im selben Netzwerk wie das Board: ein Raspberry Pi 4 oder 5, ein Mini-PC oder eine virtuelle Maschine auf einem Rechner, der immer an ist. Home Assistant verkauft auch fertige Geräte. Nimm ein eigenes Gerät: Der Board-PC braucht seine Leistung für die Erkennung.
 - **Ein kostenloses GitHub-Konto,** über das HACS Integrationen herunterlädt.
-- **Einen Bildschirm für die Anzeigetafel,** wenn du einen möchtest: ein Tablet, einen Fernseher mit Browser oder ein altes Handy.
+- **Einen Bildschirm für die Anzeigetafel,** wenn du einen möchtest: ein Tablet, einen Fernseher mit Browser oder ein altes Handy, mit [einem aktuellen Browser](scoreboard.de.md#browser).
 
 ## 1. Home Assistant installieren
 

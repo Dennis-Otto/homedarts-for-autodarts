@@ -14,9 +14,15 @@ A tablet or a TV next to the board turns your darts room into a stage: the score
 
 ## What you need
 
-- **A screen with a browser:** a tablet on the wall, a TV with a browser or a small PC, an old phone. Anything that opens your Home Assistant works, and a TV with a Chromecast [through Home Assistant Cast](#on-a-tv-with-home-assistant-cast).
+- **A screen with a browser:** a tablet on the wall, a TV with a browser or a small PC, an old phone. Any of them works whose browser opens your Home Assistant and is [recent enough](#browsers), and a TV with a Chromecast [through Home Assistant Cast](#on-a-tv-with-home-assistant-cast).
 - **A Home Assistant user for the screen.** A user of its own, without administrator rights, keeps the screen from changing your settings. The screen shows the dashboard in that user's language: English, German, Dutch, French or Spanish, other [languages](README.md#languages) in English.
 - **The integration's cards,** which load by themselves. There is nothing to install on the screen.
+
+### Browsers
+
+The cards are made for **Safari 16.4** and newer (iPhone and iPad from iOS and iPadOS 16.4), **Chrome, Edge and the Android System WebView 111** and newer, and **Firefox 121** and newer. A browser that updates itself is always among them, and so is a kiosk browser such as Fully Kiosk Browser while the Android System WebView, which it shows the page with, gets its updates from the Play Store.
+
+An older browser, such as that of an iPad that ends at iPadOS 15 (iPad Air 2, iPad mini 4) or of an Android tablet whose WebView no longer updates, still shows the cards, but in plain colours without their tints, in their narrowest layout, and with text that doesn't grow with the screen. Before you mount an old tablet on the wall, open the scoreboard on it once; on Android, *Settings → Apps → Android System WebView* shows the version of the WebView.
 
 ## Set up the screen
 

@@ -64,7 +64,7 @@ Wer auf zwei Boards wirft, hat auf jedem ein Profil. [`homedarts.restore`](entit
 
 ### Kann ich die Anzeigetafel auf einem Fernseher oder einem Fire-Tablet zeigen?
 
-Ja: auf jedem Bildschirm, dessen Browser dein Home Assistant öffnet, etwa einem Tablet an der Wand, auch einem Fire-Tablet, einem Fernseher mit Browser, einem kleinen PC oder einem alten Handy. Installieren musst du darauf nichts. Gib dem Bildschirm einen eigenen Home-Assistant-Benutzer und öffne die Ansicht *Anzeigetafel* des automatischen Dashboards, im Vollbild oder in einem Kiosk-Browser. Ein Fernseher mit Chromecast oder ein Google Nest Hub zeigt sie über Home Assistant Cast, ohne eigenen Browser. [Den Bildschirm einrichten](scoreboard.de.md#den-bildschirm-einrichten) · [Home Assistant Cast](scoreboard.de.md#auf-dem-fernseher-mit-home-assistant-cast)
+Ja: auf jedem Bildschirm, dessen Browser dein Home Assistant öffnet und [neu genug](scoreboard.de.md#browser) ist (Safari 16.4, Chrome 111, Firefox 121 oder neuer), etwa einem Tablet an der Wand, auch einem Fire-Tablet, einem Fernseher mit Browser, einem kleinen PC oder einem alten Handy. Installieren musst du darauf nichts. Gib dem Bildschirm einen eigenen Home-Assistant-Benutzer und öffne die Ansicht *Anzeigetafel* des automatischen Dashboards, im Vollbild oder in einem Kiosk-Browser. Ein Fernseher mit Chromecast oder ein Google Nest Hub zeigt sie über Home Assistant Cast, ohne eigenen Browser. [Den Bildschirm einrichten](scoreboard.de.md#den-bildschirm-einrichten) · [Home Assistant Cast](scoreboard.de.md#auf-dem-fernseher-mit-home-assistant-cast)
 
 ### Welche Sprachen spricht sie, und welche Stimmen hat der Caller?
 

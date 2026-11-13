@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are provided for the latest release of the Autodarts integration. Older versions receive no fixes; update through HACS to stay protected.
+Security fixes are provided for the latest release of HomeDarts for Autodarts. Older versions receive no fixes; update through HACS to stay protected.
 
 ## Reporting a vulnerability
 

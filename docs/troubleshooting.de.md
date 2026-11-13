@@ -170,6 +170,7 @@ Der Status bleibt *Darts werden entnommen*, obwohl das Board leer ist, und neue 
 - **Custom element doesn't exist: homedarts-card:** Starte Home Assistant nach der Installation neu und lade die Seite neu.
 - **Eine leere Stelle, wo eine Karte sein sollte:** Die Karten wurden nicht geladen. Die Browser-Konsole meldet `HomeDarts: the card module did not load` mit dem Grund. Lade die Seite neu; hinter einem Proxy prüfst du, ob er die große Datei `homedarts-card.js` abschneidet.
 - **Nichts oder *Custom element doesn't exist* bei Home Assistant Cast:** Starte Home Assistant nach der Installation oder einem Update der Integration einmal neu und streame dann noch einmal. *Einstellungen → Dashboards → ⋮ → Ressourcen* listet `homedarts-strategy.js` unter `/homedarts/`, im Ordner der Version; mit Ressourcen in YAML trägst du die [Zeilen](cards.de.md#home-assistant-cast) selbst ein.
+- **Farben fehlen, alles ist schmal, die Schrift wächst nicht mit dem Bildschirm:** Der Browser ist älter, als die Karten brauchen (Safari 16.4, Chrome 111, Firefox 121 oder neuer, siehe [Browser](scoreboard.de.md#browser)). Aktualisiere ihn, unter Android das *Android System WebView* im Play Store, oder nimm ein anderes Gerät.
 - **Alte Kartenversion nach einem Update:** Lade die Seite neu. In der Companion-App hilft *Einstellungen → Companion-App → Fehlerbehebung → Frontend-Cache zurücksetzen*.
 - **Der Aufnahmeverlauf ist leer:** Er kommt aus dem Recorder und braucht daher die Integration `recorder` (standardmäßig aktiv). Er füllt sich mit abgeschlossenen Aufnahmen.
 

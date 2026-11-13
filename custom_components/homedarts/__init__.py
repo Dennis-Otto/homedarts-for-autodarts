@@ -1,4 +1,4 @@
-"""The Autodarts integration: local boards and dartboards without Autodarts."""
+"""The HomeDarts integration: local boards and dartboards without Autodarts."""
 
 from __future__ import annotations
 

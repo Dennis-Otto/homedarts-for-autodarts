@@ -17,7 +17,7 @@ description: "De cero al marcador en una tableta junto a tu diana Autodarts en u
 - **Tu diana Autodarts,** instalada y funcionando. [Dispositivos compatibles](index.es.md#dispositivos-compatibles) enumera los equipos probados. ¿Sin Autodarts? [Juega sin Autodarts](without-autodarts.md) en cualquier diana e introduce tus dardos en un teclado numérico.
 - **Un dispositivo para Home Assistant** que esté siempre encendido, en la misma red que la diana: una Raspberry Pi 4 o 5, un mini PC o una máquina virtual en un ordenador que esté siempre en marcha. Home Assistant también vende dispositivos listos para usar. Usa un dispositivo aparte: el PC de la diana necesita su potencia para la detección.
 - **Una cuenta gratuita de GitHub,** que HACS usa para descargar integraciones.
-- **Una pantalla para el marcador,** si quieres una: una tableta, un televisor con navegador o un teléfono viejo.
+- **Una pantalla para el marcador,** si quieres una: una tableta, un televisor con navegador o un teléfono viejo, con [un navegador reciente](scoreboard.md#browsers).
 
 ## 1. Instalar Home Assistant
 

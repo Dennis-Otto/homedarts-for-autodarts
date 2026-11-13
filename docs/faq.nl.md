@@ -64,7 +64,7 @@ Een speler die op twee borden gooit, heeft op elk een profiel. [`homedarts.resto
 
 ### Kan ik het scorebord op een tv of een Fire-tablet tonen?
 
-Ja: op elk scherm waarvan de browser je Home Assistant opent, zoals een tablet aan de muur, ook een Fire-tablet, een tv met een browser, een kleine pc of een oude telefoon. Er hoeft niets op geïnstalleerd te worden. Geef het scherm een eigen gebruiker in Home Assistant en open de weergave *Scorebord* van het automatische dashboard, op volledig scherm of in een kioskbrowser. Een tv met een Chromecast of een Google Nest Hub toont het via Home Assistant Cast, zonder eigen browser. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
+Ja: op elk scherm waarvan de browser je Home Assistant opent en [recent genoeg](scoreboard.md#browsers) is (Safari 16.4, Chrome 111, Firefox 121 of nieuwer), zoals een tablet aan de muur, ook een Fire-tablet, een tv met een browser, een kleine pc of een oude telefoon. Er hoeft niets op geïnstalleerd te worden. Geef het scherm een eigen gebruiker in Home Assistant en open de weergave *Scorebord* van het automatische dashboard, op volledig scherm of in een kioskbrowser. Een tv met een Chromecast of een Google Nest Hub toont het via Home Assistant Cast, zonder eigen browser. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
 
 ### Welke talen spreekt het, en welke stemmen heeft de caller?
 

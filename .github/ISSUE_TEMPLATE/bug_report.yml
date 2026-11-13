@@ -36,6 +36,8 @@ body:
       options:
         - Setup, discovery or reconfiguration
         - Connection to the board
+        - Dartboard without Autodarts (every dart entered by hand)
+        - Granboard over Bluetooth
         - Entities or board events
         - Training sessions and statistics
         - X01 practice game or match
@@ -67,7 +69,7 @@ body:
     id: integration_version
     attributes:
       label: Integration version
-      placeholder: "1.7.0"
+      placeholder: "2.3.1"
     validations:
       required: true
   - type: input
@@ -75,7 +77,7 @@ body:
     attributes:
       label: Last version that worked
       description: Leave empty if it never worked or you don't know.
-      placeholder: "1.5.0"
+      placeholder: "2.2.3"
   - type: input
     id: home_assistant_version
     attributes:
@@ -97,11 +99,14 @@ body:
   - type: dropdown
     id: board_manager
     attributes:
-      label: Autodarts software on the board PC
+      label: Board and its software
+      description: For an Autodarts board, the Autodarts software on its board PC.
       options:
         - Board Manager 2 (headless)
         - Autodarts Desktop
         - Board Manager 1 (classic app)
+        - Dartboard without Autodarts (every dart entered by hand)
+        - Granboard over Bluetooth
         - I don't know
     validations:
       required: true
@@ -115,7 +120,7 @@ body:
     id: diagnostics
     attributes:
       label: Diagnostics
-      description: Settings → Devices & services → Autodarts → ⋮ → Download diagnostics. Drag the file here.
+      description: Settings → Devices & services → HomeDarts for Autodarts → ⋮ → Download diagnostics. Drag the file here.
   - type: textarea
     id: logs
     attributes:

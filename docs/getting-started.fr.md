@@ -17,7 +17,7 @@ Vous jouez sur une cible Autodarts et n'avez jamais utilisé Home Assistant ? C
 - **Votre cible Autodarts,** installée et en état de marche. [Appareils pris en charge](index.fr.md#appareils-pris-en-charge) liste les installations testées. Pas d'Autodarts ? [Jouez sans Autodarts](without-autodarts.md) sur n'importe quelle cible, en saisissant vos fléchettes sur un pavé numérique.
 - **Un appareil pour Home Assistant** qui reste allumé, sur le même réseau que la cible : un Raspberry Pi 4 ou 5, un mini PC ou une machine virtuelle sur un ordinateur toujours allumé. Home Assistant vend aussi des appareils prêts à l'emploi. Prenez un appareil dédié : le PC de la cible a besoin de sa puissance pour la détection.
 - **Un compte GitHub gratuit,** que HACS utilise pour télécharger les intégrations.
-- **Un écran pour le tableau des scores,** si vous en voulez un : une tablette, une télévision avec un navigateur ou un vieux téléphone.
+- **Un écran pour le tableau des scores,** si vous en voulez un : une tablette, une télévision avec un navigateur ou un vieux téléphone, avec [un navigateur récent](scoreboard.md#browsers).
 
 ## 1. Installer Home Assistant
 
