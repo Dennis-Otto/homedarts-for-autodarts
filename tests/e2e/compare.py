@@ -10,7 +10,8 @@ committed before the run against those rendered. It writes, into the output fold
 - summary.md: the same as a table, for the summary of the workflow run;
 - for every changed image, the image before and after and, when both have the same
   size and frames, a picture of the difference as `difference` in the report: the
-  image after in pale grey, every changed pixel in red and a red frame around each
+  image after in its own colours behind a light veil of its average colour, every
+  changed pixel in red and a red frame around each
   place of change, which still shows a single changed pixel when a phone shows the
   picture scaled down to about 1000 pixels wide. It is the picture that the
   blueprint's screenshot tool draws (.github/blueprint/screenshots.py), so that the
