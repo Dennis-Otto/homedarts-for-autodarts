@@ -3,12 +3,13 @@ language of Home Assistant.
 
 Home Assistant translates no blueprint, so the board events bring the words with
 them: a `call` on the events that the dart caller and the practice caller speak,
-and a `title` and a `summary` on the weekly report. The training report runs on a
-timer that no event starts, so the "Training darts" sensor holds its `summary`;
-so does the training reminder, whose words are the `reminder` of the "Darts today"
-and the "Training streak" sensors. Their blueprints say them by default. The words are those of the scoreboard's
-caller and of the voice packs that the integration records; in English, they are
-the words the blueprints said before they had these.
+and a `title` and a `summary` on the weekly report. The training report and the
+training reminder run on a timer that no event starts, so the "Training darts"
+sensor holds the report's `summary`, and the "Darts today" and "Training streak"
+sensors hold the reminder's `reminder`. Their blueprints say them by default. The
+words are those of the scoreboard's caller and of the voice packs that the
+integration records; in English, they are the words the blueprints said before
+they had these.
 """
 
 from __future__ import annotations
