@@ -637,6 +637,63 @@ test("a scoreboard that comes back to an unchanged game calls the very next dart
   said();
 });
 
+test("two scoreboards of one board in a view call every call once", () => {
+  // A large scoreboard and a smaller one beside it, both with the caller; one tap unlocks both.
+  const { hass, card } = setup(x01(501), { caller: true });
+  const beside = mount("homedarts-scoreboard-card", hass, { caller: true, full_height: false });
+  tap(card);
+  said();
+  const show = (states) => {
+    card.hass = states;
+    beside.hass = states;
+    return said();
+  };
+  let next = update(hass, { ...visit(T20, T20, dart(20, 1)), ...x01(361, ["T20", "T20", "S20"]) });
+  assert.deepEqual(show(next), ["140"]);
+  next = update(next, { ...visit(), ...x01(40, [], { player: 2, name: "Sam", checkout: "D20" }) });
+  assert.deepEqual(show(next), ["Sam, you require 40"]);
+  next = update(next, {
+    ...visit(dart(20, 1), dart(20, 1), dart(5, 1)),
+    ...x01(40, ["S20", "S20", "S5"], { player: 2, name: "Sam", checkout: "D20", bust: true }),
+  });
+  assert.deepEqual(show(next), ["No score"]);
+  // A call that only the card beside makes is still made, once.
+  card.setConfig({ type: "custom:homedarts-scoreboard-card", caller: true, call_checkouts: false });
+  next = update(next, { ...visit(), ...x01(40, [], { player: 2, name: "Sam", checkout: "D20" }) });
+  card.hass = next;
+  assert.deepEqual(said(), []);
+  beside.hass = next;
+  assert.deepEqual(said(), ["Sam, you require 40"]);
+  tap(card);
+  said();
+  beside.remove();
+});
+
+test("two scoreboards of one board that word a dart or a route differently call it once", () => {
+  const { hass, card } = setup(x01(100, [], { checkout: "T20 D20" }), {
+    caller: true,
+    call_darts: "bed",
+    call_route: true,
+  });
+  const beside = mount("homedarts-scoreboard-card", hass, {
+    caller: true,
+    call_darts: "score",
+    call_route: true,
+    call_checkouts: false,
+    full_height: false,
+  });
+  tap(card);
+  said();
+  const next = update(hass, { ...visit(T20), ...x01(40, ["T20"], { checkout: "D20" }) });
+  card.hass = next;
+  beside.hass = next;
+  // The card beside would say the dart as its score, 60: the first card said it as its bed.
+  assert.deepEqual(said(), ["Treble 20", "40: Double 20"]);
+  tap(card);
+  said();
+  beside.remove();
+});
+
 test("before the opening double a visit is no score, and without double out 180 can be required", () => {
   const { hass, card } = setup(x01(501, [], { opened: false }), { caller: true });
   tap(card);

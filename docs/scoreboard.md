@@ -201,6 +201,8 @@ It calls only what counts, in the language of the screen's user: English, German
 
 A screen that was away, on another view or without its connection to Home Assistant, calls and celebrates nothing that happened meanwhile, such as a match that ended in the minutes before; it calls the game again from its return.
 
+Two scoreboards of one board in a view, such as a large one and a smaller one beside it, call each call once: one tap on **Caller** switches the caller on for both, and what one of them called the other leaves out. A call that only one of them makes, because the other has that kind of call switched off, is called by that one. A dart or a route that the two word differently, such as a dart by its bed on one and by its score on the other, is called once, in the words of one of them.
+
 `call_scores`, `call_checkouts`, `call_results` and `call_sounds` switch each kind of call on or off. Which voice speaks depends on the browser and the operating system: offline voices of the operating system keep the calls in your home; some browsers use online voices that send the text to their provider. A [voice pack](#voice-packs) gives the caller a real voice instead. For speakers in the room, use the [dart caller and practice caller blueprints](automations.md#which-caller), which play voice packs, too.
 
 ### For blind and low-vision players
