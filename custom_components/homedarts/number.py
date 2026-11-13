@@ -168,11 +168,15 @@ class AutodartsStartScore(AutodartsStoredEntity, NumberEntity):
     _attr_native_max_value = MAX_START
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
+    # The seat never changes, so the history needs it not.
+    _unrecorded_attributes = frozenset({"seat"})
 
     def __init__(self, coordinator: AutodartsGamesCoordinator, index: int) -> None:
         super().__init__(coordinator, f"practice_start_{index + 1}")
         self._attr_translation_key = "practice_start"
         self._attr_translation_placeholders = {"number": str(index + 1)}
+        # The card finds the seat of a start score here, as of a name.
+        self._attr_extra_state_attributes = {"seat": index + 1}
         self._index = index
 
     @property

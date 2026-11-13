@@ -709,6 +709,17 @@ function entityIndex(hass, deviceId) {
   return index;
 }
 
+// The name or start score fields of the players in the order of their seats. Each tells its seat in
+// the attribute seat, as a user may rename its entity ID; a field that does not, such as one whose state
+// is missing, follows the others in the order of the entity IDs.
+function bySeat(hass, ids = []) {
+  const seat = (id) => {
+    const value = hass.states?.[id]?.attributes?.seat;
+    return Number.isInteger(value) ? value : Infinity;
+  };
+  return [...ids].sort((a, b) => seat(a) - seat(b) || a.localeCompare(b, "en", { numeric: true }));
+}
+
 function resolveKeys(index, keys) {
   return Object.fromEntries(Object.entries(keys).map(([name, key]) => [name, index[key]?.[0]]));
 }
@@ -5965,6 +5976,8 @@ function boardContext(hass, t, deviceId, number, count) {
     t,
     index,
     id,
+    // The entities of a key that each player has one of, by seat.
+    seats: (key) => bySeat(hass, index[key]),
     // The state of an entity of the board by its key.
     state: (key) => hass.states?.[id(key)],
     row,
@@ -5998,8 +6011,8 @@ function liveDashboardView(board) {
 function gamesDashboardView(board) {
   const { t } = board;
   const practice = board.rows(PRACTICE_KEYS, "practice");
-  const names = (board.index["text.practice_player"] ?? []).map((entity) => board.row(entity, "practice"));
-  const starts = (board.index["number.practice_start"] ?? []).map((entity) => board.row(entity, "practice"));
+  const names = board.seats("text.practice_player").map((entity) => board.row(entity, "practice"));
+  const starts = board.seats("number.practice_start").map((entity) => board.row(entity, "practice"));
   const controls = [
     { type: "heading", heading: t("practice") },
     { type: "entities", entities: practice },
@@ -11168,18 +11181,14 @@ function createElements(Base) {
       this._tournamentCall = tournamentCallState(tournamentView(this._state("tournament")));
     }
 
-    // The four player name fields, in their order.
+    // The player name fields, in the order of their seats.
     _nameIds() {
-      return [...(this._index?.["text.practice_player"] ?? [])].sort((a, b) =>
-        a.localeCompare(b, "en", { numeric: true })
-      );
+      return bySeat(this._hass, this._index?.["text.practice_player"]);
     }
 
-    // The start scores of the players, in the same order as the names.
+    // The start scores of the players, by seat as the names.
     _startIds() {
-      return [...(this._index?.["number.practice_start"] ?? [])].sort((a, b) =>
-        a.localeCompare(b, "en", { numeric: true })
-      );
+      return bySeat(this._hass, this._index?.["number.practice_start"]);
     }
 
     _watched() {
