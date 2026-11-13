@@ -19,6 +19,17 @@ ARTIFACTS="${E2E_ARTIFACTS:-${SCRIPT_DIR}/artifacts}/live-demo"
 mkdir -p "${ARTIFACTS}"
 ARTIFACTS_MOUNT="$(cd "${ARTIFACTS}" && (pwd -W 2>/dev/null || pwd))"
 
+# pull_images, and a signal that stops the run at once.
+# shellcheck source=tests/e2e/diagnose.sh
+. "${SCRIPT_DIR}/diagnose.sh"
+
+# The image before the browser starts, as in browser.sh: inside "docker run", a pull
+# that the registry cuts off, such as "connection reset by peer" from
+# mcr.microsoft.com, would end the live demo at once.
+if ! "${DOCKER_BIN}" image inspect "${PLAYWRIGHT_IMAGE}" >/dev/null 2>&1; then
+	in_background pull_images "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
+fi
+
 "${DOCKER_BIN}" run --rm \
 	--env "LIVE_DEMO_ARTIFACTS=/artifacts" \
 	--volume "${ROOT_MOUNT}:/repo:ro" \

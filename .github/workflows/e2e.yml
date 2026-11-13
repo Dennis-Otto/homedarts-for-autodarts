@@ -127,10 +127,11 @@ jobs:
           # tests/test_consistency.py keeps it in step with the mounts.
           tested='^(custom_components/|blueprints/|tests/e2e/|tests/fixtures/board_manager/|package(-lock)?\.json$|\.github/workflows/e2e\.yml$)'
           # What the live demo plays: the cards, the page of the website with its
-          # branding and hook, its browser test and this workflow. A pull request that
+          # branding and hook, its browser test with the pull of its image
+          # (diagnose.sh) and this workflow. A pull request that
           # changes only these, such as one of the screenshot bot with a new recording,
           # starts the one job of the live demo, not the Home Assistant jobs.
-          demo='^(custom_components/homedarts/frontend/|docs/demo/|docs/branding/|scripts/mkdocs_hooks\.py$|tests/e2e/(live_demo\.(py|sh)|requirements-browser\.txt)$|\.github/workflows/e2e\.yml$)'
+          demo='^(custom_components/homedarts/frontend/|docs/demo/|docs/branding/|scripts/mkdocs_hooks\.py$|tests/e2e/(live_demo\.(py|sh)|diagnose\.sh|requirements-browser\.txt)$|\.github/workflows/e2e\.yml$)'
           # When in doubt, the tests run.
           run=true
           demo_run=true
@@ -595,7 +596,7 @@ jobs:
           persist-credentials: false
       - name: Play the live demo in a real browser
         timeout-minutes: 7
-        run: bash tests/e2e/live_demo.sh
+        run: exec bash tests/e2e/live_demo.sh
       - name: Keep the screenshots of a failed run
         if: failure() && steps.blocks.outcome != 'failure'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

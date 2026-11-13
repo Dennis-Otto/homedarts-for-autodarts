@@ -1,7 +1,8 @@
 # shellcheck shell=bash
-# Sourced by run.sh, browser.sh and screenshots.sh: what a run that failed or was
-# stopped prints about the containers of its Compose project, and how a signal stops
-# it (docs/development.md#when-a-step-hangs), and how a run pulls its images.
+# Sourced by run.sh, browser.sh, screenshots.sh and live_demo.sh: what a run that
+# failed or was stopped prints about the containers of its Compose project, and how a
+# signal stops it (docs/development.md#when-a-step-hangs), and how a run pulls its
+# images.
 
 # Run a command that pulls images, three times at most: a pull that the registry cuts
 # off, such as "unexpected EOF" from ghcr.io or "context deadline exceeded" from

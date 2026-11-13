@@ -231,6 +231,8 @@ def test_a_pull_request_that_changes_only_the_live_demo_runs_only_its_job(
         ("custom_components/homedarts/frontend/homedarts-card.js", "true"),
         ("custom_components/homedarts/sensor.py", "false"),
         ("tests/e2e/live_demo.sh", "true"),
+        # It pulls the image of the browser with pull_images of diagnose.sh.
+        ("tests/e2e/diagnose.sh", "true"),
         ("tests/e2e/requirements-browser.txt", "true"),
         ("tests/e2e/scenario.py", "false"),
         ("tests/fixtures/board_manager/1.0.7/state.json", "false"),
@@ -411,7 +413,7 @@ WATCHDOG_SPEC.loader.exec_module(watchdog)
 # The workflows that run the scripts of tests/e2e, and the scripts that print the
 # state of their containers when a signal stops them (tests/e2e/diagnose.sh).
 TESTED_WORKFLOWS = ("e2e.yml", "visual.yml", "twice.yml")
-DIAGNOSED = ("run.sh", "browser.sh", "screenshots.sh")
+DIAGNOSED = ("run.sh", "browser.sh", "screenshots.sh", "live_demo.sh")
 
 
 def long_steps() -> list[tuple[str, dict, dict]]:

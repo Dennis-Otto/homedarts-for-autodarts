@@ -32,8 +32,8 @@ of the log of Home Assistant (`diagnose.sh`); see
 
 The scenario, the browser test and the screenshot tool pull the image of Home
 Assistant before the containers start, up to three times 10 seconds apart, so that a
-pull the registry cuts off doesn't fail them. The browser test does the same with the
-image of Playwright.
+pull the registry cuts off doesn't fail them. The browser test and the live demo do
+the same with the image of Playwright.
 
 The scenario talks to Home Assistant only through its public REST and WebSocket APIs,
 apart from reading the icon list of its frontend, and verifies:
