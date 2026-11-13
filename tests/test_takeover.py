@@ -41,6 +41,7 @@ from custom_components.homedarts.takeover import (
     ISSUE_RESTART,
     OLD_DOMAIN,
     async_finish,
+    async_finish_left,
     async_take_over,
 )
 
@@ -573,6 +574,129 @@ async def test_the_old_folder_stays_until_the_last_board_is_taken_over(
         assert (
             ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
         ) is left
+
+
+def left_entry(hass, **kwargs) -> MockConfigEntry:
+    """An entry of the old domain that the takeover can't take over: by default
+    one of the first version, whose board never answered, so the old integration
+    never migrated it."""
+    entry = MockConfigEntry(
+        domain=OLD_DOMAIN,
+        title="Autodarts (Keller)",
+        **{"version": 1, "unique_id": "v1", "data": {"host": "10.0.0.9"}, **kwargs},
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.mark.parametrize(
+    "left",
+    [
+        {},
+        # One of another integration with the domain autodarts.
+        {"version": 2, "unique_id": "cloud", "data": {"email": "a@example.com"}},
+    ],
+)
+async def test_an_entry_that_cannot_be_taken_over_does_not_stop_the_finish(
+    hass, hass_storage, config_dir, caplog, left
+):
+    folder = old_folder(config_dir)
+    entry = left_entry(hass, **left)
+    old_board(hass, hass_storage)
+    await take_over(hass)
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
+    assert CONF_TAKEOVER not in hass.config_entries.async_entries(DOMAIN)[0].data
+    # The entry stays, and the log says which one it is.
+    assert hass.config_entries.async_get_entry(entry.entry_id) is entry
+    assert "Autodarts (Keller) of the domain autodarts is no board" in caplog.text
+
+
+async def test_a_board_set_up_anew_keeps_the_old_integration_until_its_old_entry_goes(
+    hass, hass_storage, config_dir
+):
+    folder = old_folder(config_dir)
+    old, _ = await set_up_twice(hass, hass_storage)
+    old_board(hass, hass_storage, "manual_other", "old-other", "Keller")
+    await take_over(hass)
+    # The old integration still holds the board set up anew, whose repair offers
+    # its takeover.
+    assert folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, DUPLICATE)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+    # The user deletes the old entry instead: the switch finishes.
+    await hass.config_entries.async_remove(old.entry_id)
+    await hass.async_block_till_done()
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
+
+
+async def test_a_switch_left_unfinished_finishes_at_the_next_start(
+    hass, hass_storage, config_dir
+):
+    # An earlier version took the last board over and left the switch unfinished,
+    # because of an entry of the first version.
+    media = config_dir / "media"
+    (media / OLD_DOMAIN / "highlights").mkdir(parents=True)
+    folder = old_folder(config_dir)
+    entry = left_entry(hass)
+    fresh = fresh_board(hass)
+    assert await hass.config_entries.async_setup(fresh.entry_id)
+    await hass.async_block_till_done()
+    assert (media / DOMAIN / "highlights").is_dir()
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
+    assert hass.config_entries.async_get_entry(entry.entry_id) is entry
+
+
+@pytest.mark.parametrize(
+    "case", ["foreign folder", "old board", "takeover waiting", "no board"]
+)
+async def test_a_start_leaves_a_switch_alone_that_is_not_done(
+    hass, hass_storage, config_dir, case
+):
+    # The original integration of Trkal has the same domain.
+    folder = old_folder(
+        config_dir, "@Trkal" if case == "foreign folder" else "@Dennis-Otto"
+    )
+    left_entry(hass)
+    if case == "old board":
+        old_board(hass, hass_storage, "manual_other", "old-other", "Keller")
+    if case != "no board":
+        MockConfigEntry(
+            domain=DOMAIN,
+            version=2,
+            unique_id=BOARD_ID,
+            data={**DATA, CONF_TAKEOVER: "gone"}
+            if case == "takeover waiting"
+            else DATA,
+            # So that it doesn't set up, and a takeover waits.
+            disabled_by=ConfigEntryDisabler.USER,
+        ).add_to_hass(hass)
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    assert folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART) is None
+
+
+@pytest.mark.expected_errors
+async def test_a_finish_at_the_start_that_fails_runs_again_at_the_next(
+    hass, hass_storage, config_dir, caplog
+):
+    folder = old_folder(config_dir)
+    left_entry(hass)
+    fresh_board(hass)
+    with patch(
+        "custom_components.homedarts.takeover._async_update_dashboards",
+        side_effect=OSError(28, "No space left on device"),
+    ):
+        assert await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+    assert "it continues at the next start of Home Assistant" in caplog.text
+    assert folder.exists()
+    await async_finish_left(hass)
+    assert not folder.exists()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_RESTART)
 
 
 async def test_boards_that_end_at_once_finish_one_after_the_other(hass):
