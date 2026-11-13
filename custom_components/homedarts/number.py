@@ -125,7 +125,8 @@ class AutodartsDailyGoal(AutodartsStoredEntity, NumberEntity):
 
 
 class AutodartsPracticeNumber(AutodartsStoredEntity, NumberEntity):
-    """Players of a practice match, legs per set and sets to win."""
+    """Players of a practice match, the legs that win a set and the sets that
+    win the match."""
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_native_min_value = 1
@@ -136,6 +137,16 @@ class AutodartsPracticeNumber(AutodartsStoredEntity, NumberEntity):
         super().__init__(coordinator, key)
         self._key = key
         self._attr_native_max_value = PRACTICE_NUMBERS[key]
+
+    @property
+    def suggested_object_id(self) -> str | None:
+        # The legs were called "Practice legs per set" before they became
+        # "Practice legs to win a set": a new board gets the entity ID that every
+        # board has had, number.<board>_practice_legs_per_set, which automations,
+        # dashboards and the documentation name.
+        if self._key == "practice_legs":
+            return "Practice legs per set"
+        return super().suggested_object_id
 
     @property
     def native_value(self) -> int:

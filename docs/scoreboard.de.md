@@ -100,14 +100,14 @@ Tippe zwischen den Spielen auf **Neues Spiel** unter dem Punktestand, während e
 
 Neben **Neues Spiel** startet ein Tippen den [Plan des Tages](games.de.md#trainingspläne). Während ein Plan läuft, nennt die Kopfzeile den aktuellen Schritt, und **Überspringen** und **Stoppen** unter dem Punktestand verlassen den Schritt oder beenden den Plan, jeweils nach einem zweiten Tippen.
 
-<img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet öffnet Neues Spiel die Spielauswahl, Cricket wird gewählt, Sam kommt zu Alex dazu, die Legs pro Satz steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
+<img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet öffnet Neues Spiel die Spielauswahl, Cricket wird gewählt, Sam kommt zu Alex dazu, die Legs zum Satzgewinn steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
 
 1. **Spiel:** X01, die Cricket-Spiele, die Partyspiele und die Trainingsspiele, in Gruppen. `lobby_games` beschränkt die Auswahl auf die Spiele, die ihr spielt. Unter den Spielen erklärt *So wird gespielt* das gewählte Spiel in ein, zwei Sätzen, für Gäste, die es noch nie gespielt haben, und *Alle Regeln* öffnet seine Regeln auf der Dokumentations-Website.
 2. **Spieler:** Tippe auf einen Namen, um den Spieler hinzuzufügen, auf ▲ und ▼, um die Reihenfolge zu ändern, und auf ✕, um ihn zu entfernen. Spieler, die mit einer [Person verknüpft](statistics.de.md#spieler-und-personen) sind, die zu Hause ist, stehen vorn, mit ihrem Bild. Tippe einen neuen Namen ein oder füge einen Gast ohne Namen hinzu. Bei X01 setzen − und + neben einem Spieler [eigene Startpunkte](games.de.md#startpunkte-handicap), und **Fairer Start** unter den Optionen rechnet sie aus den [Averages](games.de.md#fairer-start) aus. Bei X01 und den Cricket-Spielen setzt **+ Bot** den [Bot](games.de.md#gegen-den-bot-spielen) nach den Spielern dazu; − und + daneben ändern seine Stärke, und *Auf meinem Niveau* stellt sie auf den Average der Spieler.
-3. **Format und Optionen:** Legs pro Satz und Sätze zum Sieg; Double-Out und Double-In für X01; das [Ausbullen](games.de.md#ausbullen); *Teams* für vier Spieler bei X01 oder Cricket; *Three in a Bed* für [Wild Mouse](games.de.md#wild-mouse).
+3. **Format und Optionen:** Legs zum Satzgewinn und Sätze zum Sieg; Double-Out und Double-In für X01; das [Ausbullen](games.de.md#ausbullen); *Teams* für vier Spieler bei X01 oder Cricket; *Three in a Bed* für [Wild Mouse](games.de.md#wild-mouse).
 4. **Starten.** Die Anzeigetafel zeigt das Spiel sofort. Ist die Erkennung gestoppt, schaltet der Start sie ein, und die Auswahl sagt es vorher über der Taste. Die Starttaste bleibt am unteren Bildschirmrand, während die Seite scrollt. Während eines Spiels beendet *Spiel beenden* es nach einem zweiten Tippen.
 
-<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301, drei Legs pro Satz, Double-Out und die Start-Taste" width="760">
+<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301, drei Legs zum Satzgewinn, Double-Out und die Start-Taste" width="760">
 
 Die Auswahl startet das Spiel mit [`homedarts.start_game`](entities.de.md#übungsspiel-starten-homedartsstart_game), genau wie eine Automation oder ein Sprachbefehl. Die [Anleitung zu Spielen](games.de.md#ein-spiel-starten) zeigt die anderen Wege.
 
@@ -279,7 +279,7 @@ Ein Dart, ein neues Spiel oder ein Tippen irgendwohin beendet den Ruhemodus; ein
 
 Streame deine Spiele: Die Anzeigetafel allein, ohne ihre Karte, liegt über dem Bild deines Streams in OBS Studio, Streamlabs oder jeder anderen Software mit einer Browserquelle. Sie zeigt das Spiel und sein Format, die Punkte jedes Spielers, den Checkout-Weg des Spielers am Board, die Darts der Aufnahme, den Sieger und das Konfetti der großen Momente, und zwischen den Spielen gar nichts.
 
-<img src="images/de/scoreboard-overlay.png" alt="Das Stream-Overlay am unteren Rand des Bildes vom Board: Übungsspiel 501 mit drei Legs pro Satz, Alex am Board mit 84 Rest und dem Weg T20 D12, Sam mit 375, und daneben die Aufnahme mit T20 und 60 Punkten" width="760">
+<img src="images/de/scoreboard-overlay.png" alt="Das Stream-Overlay am unteren Rand des Bildes vom Board: Übungsspiel 501 mit drei Legs zum Satzgewinn, Alex am Board mit 84 Rest und dem Weg T20 D12, Sam mit 375, und daneben die Aufnahme mit T20 und 60 Punkten" width="760">
 
 1. **Ein Benutzer für OBS.** Lege unter **Einstellungen → Personen** eine Person mit *Anmelden erlauben* an, ohne Administratorrechte und mit *Kann sich nur aus dem lokalen Netzwerk anmelden*, damit OBS deine Einstellungen nicht ändern kann.
 2. **Die Ansicht.** Das [automatische Dashboard](cards.de.md#automatisches-dashboard) hat eine Ansicht *Stream-Overlay*, die bei seinen Tabs nicht steht. Ihre Adresse ist die des Dashboards mit `/overlay` am Ende, etwa `http://homeassistant.local:8123/dashboard-homedarts/overlay`; bei mehreren Boards `/overlay-1`, `/overlay-2` und so weiter.

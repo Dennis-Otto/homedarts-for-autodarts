@@ -596,7 +596,7 @@
         "name": "Übungsspiel Spielerzahl"
       },
       "practice_legs": {
-        "name": "Übungsspiel Legs pro Satz"
+        "name": "Übungsspiel Legs zum Satzgewinn"
       },
       "practice_sets": {
         "name": "Übungsspiel Sätze zum Sieg"
@@ -883,6 +883,9 @@
     },
     "highlight_failed": {
       "message": "Das Highlight-Foto konnte nicht gespeichert werden: {error}"
+    },
+    "highlight_limit": {
+      "message": "In der letzten Stunde wurden {count} Highlight-Fotos gespeichert, mehr speichert die Integration nicht. Versuche es später erneut."
     },
     "voice_pack_no_score": {
       "message": "Keine Punkte"
@@ -1423,7 +1426,7 @@
           "description": "Namen von einem bis vier Spielern in Wurfreihenfolge. Ohne Namen bleibt die Spielerzahl, wie sie ist."
         },
         "legs": {
-          "name": "Legs pro Satz",
+          "name": "Legs zum Satzgewinn",
           "description": "Legs, die im Match einen Satz gewinnen."
         },
         "sets": {
@@ -1645,6 +1648,10 @@
         "clip_duration": {
           "name": "Sekunden danach",
           "description": "Optional. Wie viel des Clips auf das Foto folgt. Standard 8."
+        },
+        "keep": {
+          "name": "Behaltene Highlights",
+          "description": "Optional. Die neuesten Highlights, die nach dem Speichern eines Fotos in der Galerie bleiben; ältere Fotos werden mit ihren Clips gelöscht. 0 behält alle. Ein eigener Ordner wird nie aufgeräumt. Standard 1000."
         }
       }
     },
@@ -1763,8 +1770,8 @@
           "description": "X01 von 101 bis 1001 Punkten, Cricket, Cut-Throat Cricket oder Tactics."
         },
         "legs": {
-          "name": "Legs pro Satz",
-          "description": "Legs, die in jedem Match einen Satz gewinnen. Ohne Angabe gelten die Legs pro Satz des Übungsspiels."
+          "name": "Legs zum Satzgewinn",
+          "description": "Legs, die in jedem Match einen Satz gewinnen. Ohne Angabe gelten die Legs zum Satzgewinn des Übungsspiels."
         },
         "sets": {
           "name": "Sätze zum Sieg",

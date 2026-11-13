@@ -2272,6 +2272,7 @@ async def test_highlight_photo_gallery_folder_and_saving_can_change(hass, freeze
                 {
                     **PHOTO,
                     "gallery_folder": " /config/media/darts/ ",
+                    "kept_highlights": 50,
                     "checkouts": False,
                 },
             ),
@@ -2290,13 +2291,19 @@ async def test_highlight_photo_gallery_folder_and_saving_can_change(hass, freeze
     fire(hass, "visit_thrown", score=180, darts=3, name="Lea")
     await photo_taken(hass, freezer)
     # Without a folder of its own, the photo goes to the gallery, wherever the
-    # media folder is.
+    # media folder is. The number of highlights kept goes only when it is not the
+    # action's own, which older versions lack.
     assert sorted(
-        (call.data["folder"], call.data["camera"], call.data["player"])
+        (
+            call.data["folder"],
+            call.data["camera"],
+            call.data["player"],
+            call.data.get("keep"),
+        )
         for call in snapshots
     ) == [
-        ("", "camera.autodarts_board_camera_2", "Lea"),
-        ("/config/media/darts/", "camera.autodarts_board_camera_1", "Lea"),
+        ("", "camera.autodarts_board_camera_2", "Lea", None),
+        ("/config/media/darts/", "camera.autodarts_board_camera_1", "Lea", 50),
     ]
     assert len(photos) == 2
 
@@ -2350,6 +2357,7 @@ async def test_highlight_photo_records_a_clip_beside_the_photo(hass, freezer):
                     "clip_camera": "camera.stream",
                     "clip_lookback": 2,
                     "clip_duration": 20,
+                    "kept_highlights": 0,
                 },
             ),
             # Without a clip camera, or without a saved photo, there is no clip,
@@ -2365,9 +2373,14 @@ async def test_highlight_photo_records_a_clip_beside_the_photo(hass, freezer):
             call.data.get("clip_camera", ""),
             call.data.get("clip_lookback"),
             call.data.get("clip_duration"),
+            call.data.get("keep"),
         )
         for call in saved
-    ) == [("", None, None), ("camera.room", 5, 8), ("camera.stream", 2, 20)]
+    ) == [
+        ("", None, None, None),
+        ("camera.room", 5, 8, None),
+        ("camera.stream", 2, 20, 0),
+    ]
     assert all(call.data["camera"] == PHOTO["camera"] for call in saved)
     assert sorted((call.data["clip"], call.data["clip_url"]) for call in photos) == [
         ("", ""),

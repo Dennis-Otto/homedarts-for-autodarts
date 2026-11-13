@@ -41,7 +41,7 @@ test("an X01 match shows every player, the player at the board and the route", (
       },
     },
   });
-  assert.deepEqual([match.title, match.meta, match.banner], ["practice 501", "3 legs_per_set", ""]);
+  assert.deepEqual([match.title, match.meta, match.banner], ["practice 501", "3 legs_to_win_set", ""]);
   assert.match(match.main, /<div class="players n2">/);
   assert.match(
     match.main,

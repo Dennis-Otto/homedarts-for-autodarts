@@ -57,7 +57,7 @@ const PEOPLE = {
   "person.kim": { state: "home", attributes: { entity_picture: "/api/image/serve/kim/512x512" } },
   "person.lea": { state: "not_home", attributes: {} },
 };
-// The practice game as the board has it between games: two players, three legs per set.
+// The practice game as the board has it between games: two players, three legs to win a set.
 const BOARD = {
   "sensor.local_visit_score": { state: "0", attributes: { throws: [] } },
   "select.practice_game": { state: "off", attributes: { options: OPTIONS } },
@@ -374,9 +374,9 @@ test("between games a big button opens the new game screen with the board's sett
     ["suggestion bot", "+ Bot"],
   ]);
   assert.equal($(card, ".suggestion.home .home").getAttribute("aria-label"), "at home");
-  assert.deepEqual(steppers(card), ["Legs per set−3+", "Sets to win−1+", "Max rounds−No limit+"]);
+  assert.deepEqual(steppers(card), ["Legs to win a set−3+", "Sets to win−1+", "Max rounds−No limit+"]);
   assert.equal($(card, '[data-lobby="sets"][data-value="-1"]').disabled, true);
-  assert.equal($(card, '[data-lobby="legs"][data-value="-1"]').getAttribute("aria-label"), "Fewer: Legs per set");
+  assert.equal($(card, '[data-lobby="legs"][data-value="-1"]').getAttribute("aria-label"), "Fewer: Legs to win a set");
   assert.deepEqual(choices(card), [
     ["In", "Straight*", "Double", "Master"],
     ["Out", "Straight", "Double*", "Master"],
@@ -418,8 +418,8 @@ test("the format stops at the limits of a match, and a name field without a stat
   assert.deepEqual(players(card), ["Alex", "Player 2"]);
   assert.equal($(card, '[data-lobby="legs"][data-value="1"]').disabled, true);
   assert.equal($(card, '[data-lobby="sets"][data-value="1"]').disabled, true);
-  assert.equal($(card, '[data-lobby="legs"][data-value="1"]').getAttribute("aria-label"), "More: Legs per set");
-  assert.deepEqual(steppers(card), ["Legs per set−11+", "Sets to win−7+", "Max rounds−50+"]);
+  assert.equal($(card, '[data-lobby="legs"][data-value="1"]').getAttribute("aria-label"), "More: Legs to win a set");
+  assert.deepEqual(steppers(card), ["Legs to win a set−11+", "Sets to win−7+", "Max rounds−50+"]);
   assert.equal($(card, '[data-lobby="max_rounds"][data-value="1"]').disabled, true);
   assert.equal($(card, '[data-lobby="max_rounds"][data-value="-1"]').disabled, false);
 });
@@ -452,7 +452,7 @@ test("the new game screen starts the chosen game with players, format and rules"
   lobbyTap(card, "legs", "1");
   lobbyTap(card, "sets", "1");
   lobbyTap(card, "toggle", "bull_off");
-  assert.deepEqual(steppers(card), ["Legs per set−4+", "Sets to win−2+"]);
+  assert.deepEqual(steppers(card), ["Legs to win a set−4+", "Sets to win−2+"]);
   assert.deepEqual(options(card), [["bull_off", "true"]]);
   // Without the switch for it, the board has no bull-off by distance.
   assert.equal($(card, '[data-value="bull_off_distance"]'), null);
@@ -1048,7 +1048,7 @@ test("the start stays at the bottom below both columns, and a live region reads 
   const said = $(card, ".said");
   assert.deepEqual([said.getAttribute("role"), said.parentElement, said.className], ["status", $(card, ".scoreboard"), "visually-hidden said"]);
   lobbyTap(card, "legs", "1");
-  assert.equal(said.textContent, "Legs per set 4");
+  assert.equal(said.textContent, "Legs to win a set 4");
   lobbyTap(card, "sets", "1");
   assert.equal(said.textContent, "Sets to win 2");
   lobbyTap(card, "raise", "0");

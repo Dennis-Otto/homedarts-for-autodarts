@@ -8,7 +8,7 @@ description: "Von null bis zur Anzeigetafel auf einem Tablet an deinem Autodarts
 
 Du spielst auf einem Autodarts-Board und hast noch nie Home Assistant benutzt? Diese Anleitung bringt dich von null bis zur Anzeigetafel auf einem Tablet neben deinem Board. Home Assistant, HACS und die Integration sind kostenlos. Rechne mit etwa einer Stunde; das meiste davon ist die Einrichtung von Home Assistant selbst.
 
-<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit gewähltem 501, Alex und Sam mit ihren Bildern, Sam startet mit 301, drei Legs pro Satz, Double-Out und die Starttaste" width="760">
+<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit gewähltem 501, Alex und Sam mit ihren Bildern, Sam startet mit 301, drei Legs zum Satzgewinn, Double-Out und die Starttaste" width="760">
 
 **Auf dieser Seite:** [Was du brauchst](#was-du-brauchst) · [1. Home Assistant installieren](#1-home-assistant-installieren) · [2. HACS installieren](#2-hacs-installieren) · [3. Die Integration installieren](#3-die-integration-installieren) · [4. Board hinzufügen](#4-board-hinzufügen) · [5. Dashboard anlegen](#5-dashboard-anlegen) · [6. Anzeigetafel neben das Board](#6-anzeigetafel-neben-das-board) · [7. Das erste Spiel](#7-das-erste-spiel) · [Wie es weitergeht](#wie-es-weitergeht) · [Wenn etwas nicht klappt](#wenn-etwas-nicht-klappt)
 

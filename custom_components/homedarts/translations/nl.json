@@ -596,7 +596,7 @@
         "name": "Oefenspel aantal spelers"
       },
       "practice_legs": {
-        "name": "Oefenspel legs per set"
+        "name": "Oefenspel legs om een set te winnen"
       },
       "practice_sets": {
         "name": "Oefenspel sets om te winnen"
@@ -883,6 +883,9 @@
     },
     "highlight_failed": {
       "message": "De highlightfoto kon niet worden opgeslagen: {error}"
+    },
+    "highlight_limit": {
+      "message": "In het afgelopen uur zijn {count} highlightfoto's opgeslagen, meer slaat de integratie niet op. Probeer het later opnieuw."
     },
     "voice_pack_no_score": {
       "message": "Geen score"
@@ -1423,7 +1426,7 @@
           "description": "Namen van één tot vier spelers, in gooivolgorde. Zonder namen blijft het aantal spelers ongewijzigd."
         },
         "legs": {
-          "name": "Legs per set",
+          "name": "Legs om een set te winnen",
           "description": "Aantal legs dat je nodig hebt om een set te winnen."
         },
         "sets": {
@@ -1645,6 +1648,10 @@
         "clip_duration": {
           "name": "Seconden erna",
           "description": "Optioneel. Hoeveel van de clip na de foto komt. Standaard 8."
+        },
+        "keep": {
+          "name": "Bewaarde highlights",
+          "description": "Optioneel. De nieuwste highlights die na het opslaan van een foto in de galerij blijven; oudere foto's worden met hun clips verwijderd. 0 bewaart ze allemaal. Een eigen map wordt nooit opgeruimd. Standaard 1000."
         }
       }
     },
@@ -1763,8 +1770,8 @@
           "description": "X01 van 101 tot 1001 punten, Cricket, Cut-Throat Cricket of Tactics."
         },
         "legs": {
-          "name": "Legs per set",
-          "description": "Aantal legs dat je in elke wedstrijd nodig hebt om een set te winnen. Zonder waarde gelden de legs per set van het oefenspel."
+          "name": "Legs om een set te winnen",
+          "description": "Aantal legs dat je in elke wedstrijd nodig hebt om een set te winnen. Zonder waarde gelden de legs om een set te winnen van het oefenspel."
         },
         "sets": {
           "name": "Sets om te winnen",

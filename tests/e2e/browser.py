@@ -1192,7 +1192,7 @@ def lobby(browser: Browser) -> None:
     heads = page.locator(f"{card} .cricket thead .avatar").count()
     check(heads == 2, f"{heads} pictures on the chalkboard")
     legs = page.evaluate(STATE_OF, "practice_legs")
-    check(legs in ("2", "2.0"), f"Legs per set {legs!r}")
+    check(legs in ("2", "2.0"), f"Legs to win a set {legs!r}")
 
     # During a game the header opens the screen; ending the game needs a second tap.
     page.locator(f"{card} .lobby-toggle").click()

@@ -8,7 +8,7 @@ description: "De cero al marcador en una tableta junto a tu diana Autodarts en u
 
 ¿Juegas en una diana Autodarts y nunca has usado Home Assistant? Esta guía te lleva de cero al marcador en una tableta junto a tu diana. Home Assistant, HACS y la integración son gratis. Calcula una hora más o menos; la mayor parte se va en instalar Home Assistant.
 
-<img src="images/en/scoreboard-lobby.png" alt="La pantalla de nueva partida en una tableta en horizontal: los juegos por grupo con 501 elegido, Alex y Sam con su foto, Sam empieza desde 301, tres legs por set, double out y el botón de inicio" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="La pantalla de nueva partida en una tableta en horizontal: los juegos por grupo con 501 elegido, Alex y Sam con su foto, Sam empieza desde 301, tres legs para ganar un set, double out y el botón de inicio" width="760">
 
 **En esta página:** [Qué necesitas](#qué-necesitas) · [1. Instalar Home Assistant](#1-instalar-home-assistant) · [2. Instalar HACS](#2-instalar-hacs) · [3. Instalar la integración](#3-instalar-la-integración) · [4. Añadir tu diana](#4-añadir-tu-diana) · [5. Crear el panel](#5-crear-el-panel) · [6. Poner el marcador junto a la diana](#6-poner-el-marcador-junto-a-la-diana) · [7. Jugar tu primera partida](#7-jugar-tu-primera-partida) · [Y después](#y-después) · [Si algo no funciona](#si-algo-no-funciona)
 

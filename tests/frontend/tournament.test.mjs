@@ -561,7 +561,7 @@ const pressed = (hass) => hass.calls.filter(([domain]) => domain === "button").m
 
 test("the match view names the round of the tournament", () => {
   const { hass, card } = setup({ ...PLAYING, ...practice(["Alex", "Kim"]) });
-  assert.equal(text(card, ".meta"), "Tournament · Round 2 · Match 2 of 3 · 2 legs per set");
+  assert.equal(text(card, ".meta"), "Tournament · Round 2 · Match 2 of 3 · 2 legs to win a set");
   assert.equal(shown(card), false);
   // The result of the match keeps its round until the darts are pulled.
   card.hass = update(hass, practice(["Alex", "Kim"], 1));
@@ -569,13 +569,13 @@ test("the match view names the round of the tournament", () => {
   assert.match(text(card, ".meta"), /^Tournament · Round 2 · Match 2 of 3/);
   // Another game on the board is no match of the tournament.
   card.hass = update(hass, practice(["Sam", "Lea"]));
-  assert.equal(text(card, ".meta"), "2 legs per set");
+  assert.equal(text(card, ".meta"), "2 legs to win a set");
 });
 
 test("between matches the result shows, then the table with the next match and a countdown", (context) => {
   clock(context);
   const { hass, card } = setup({ ...OPENING, ...practice(["Kim", "Sam"]) });
-  assert.equal(text(card, ".meta"), "Tournament · Round 1 · Match 1 of 3 · 2 legs per set");
+  assert.equal(text(card, ".meta"), "Tournament · Round 1 · Match 1 of 3 · 2 legs to win a set");
   card.hass = update(hass, { ...summarized(practice(["Kim", "Sam"], 2)), ...tournament() });
   // First the summary of the match, with its round.
   assert.equal(shown(card), false);

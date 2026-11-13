@@ -596,7 +596,7 @@
         "name": "Practice players"
       },
       "practice_legs": {
-        "name": "Practice legs per set"
+        "name": "Practice legs to win a set"
       },
       "practice_sets": {
         "name": "Practice sets to win"
@@ -883,6 +883,9 @@
     },
     "highlight_failed": {
       "message": "The highlight photo could not be saved: {error}"
+    },
+    "highlight_limit": {
+      "message": "{count} highlight photos were saved in the last hour, as many as the integration saves. Try again later."
     },
     "voice_pack_no_score": {
       "message": "No score"
@@ -1423,7 +1426,7 @@
           "description": "Names of one to four players, in throwing order. Without names, the number of players stays as it is."
         },
         "legs": {
-          "name": "Legs per set",
+          "name": "Legs to win a set",
           "description": "Legs that win a set in a match."
         },
         "sets": {
@@ -1645,6 +1648,10 @@
         "clip_duration": {
           "name": "Seconds after",
           "description": "Optional. How much of the clip follows the photo. Default 8."
+        },
+        "keep": {
+          "name": "Highlights kept",
+          "description": "Optional. In the gallery, the newest highlights that stay after a photo is saved; older photos are deleted with their clips. 0 keeps every one. A folder of your own is never pruned. Default 1000."
         }
       }
     },
@@ -1763,8 +1770,8 @@
           "description": "X01 from 101 to 1001 points, Cricket, Cut-Throat Cricket or Tactics."
         },
         "legs": {
-          "name": "Legs per set",
-          "description": "Legs that win a set in every match. Without it, the legs per set of the practice game apply."
+          "name": "Legs to win a set",
+          "description": "Legs that win a set in every match. Without it, the legs to win a set of the practice game apply."
         },
         "sets": {
           "name": "Sets to win",

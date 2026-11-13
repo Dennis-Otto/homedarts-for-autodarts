@@ -8,7 +8,7 @@ description: "Van nul tot het scorebord op een tablet bij je Autodarts-bord in o
 
 Je speelt op een Autodarts-bord en hebt Home Assistant nog nooit gebruikt? Deze handleiding brengt je van nul tot het scorebord op een tablet naast je bord. Home Assistant, HACS en de integratie zijn gratis. Reken op ongeveer een uur; de meeste tijd gaat zitten in het installeren van Home Assistant zelf.
 
-<img src="images/en/scoreboard-lobby.png" alt="Het scherm voor een nieuw spel op een liggende tablet: de spellen per groep met 501 gekozen, Alex en Sam met hun foto, Sam begint vanaf 301, drie legs per set, double out en de startknop" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="Het scherm voor een nieuw spel op een liggende tablet: de spellen per groep met 501 gekozen, Alex en Sam met hun foto, Sam begint vanaf 301, drie legs om een set te winnen, double out en de startknop" width="760">
 
 **Op deze pagina:** [Wat je nodig hebt](#wat-je-nodig-hebt) · [1. Home Assistant installeren](#1-home-assistant-installeren) · [2. HACS installeren](#2-hacs-installeren) · [3. De integratie installeren](#3-de-integratie-installeren) · [4. Je bord toevoegen](#4-je-bord-toevoegen) · [5. Het dashboard maken](#5-het-dashboard-maken) · [6. Het scorebord naast het bord zetten](#6-het-scorebord-naast-het-bord-zetten) · [7. Je eerste spel spelen](#7-je-eerste-spel-spelen) · [En dan?](#en-dan) · [Als iets niet werkt](#als-iets-niet-werkt)
 

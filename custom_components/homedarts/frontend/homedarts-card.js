@@ -2431,11 +2431,11 @@ function x01Rules(practice, t) {
   return rules;
 }
 
-// Legs per set and sets to win of a match.
+// The legs that win a set and the sets that win a match.
 const matchFormat = (game, t) =>
   game.scores.length > 1
     ? [
-        game.legsToWin > 1 ? `${game.legsToWin} ${t("legs_per_set")}` : "",
+        game.legsToWin > 1 ? `${game.legsToWin} ${t("legs_to_win_set")}` : "",
         game.setsToWin > 1 ? `${game.setsToWin} ${t("sets_to_win")}` : "",
       ]
     : [];

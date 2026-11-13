@@ -106,6 +106,18 @@ blueprint:
           default: ""
           selector:
             text: {}
+        kept_highlights:
+          name: Highlights kept
+          description: >-
+            How many of the newest photos the highlight gallery keeps, each with
+            its clip: after a photo is saved, older ones are deleted. 0 keeps
+            every photo. A folder of your own above is never pruned.
+          default: 1000
+          selector:
+            number:
+              min: 0
+              max: 100000
+              mode: box
     photo:
       name: Photo
       icon: mdi:cellphone-message
@@ -214,6 +226,7 @@ variables:
        | regex_replace('[{}%#\x00-\x1f]+', '') | trim }}
   save_photo: !input save_photo
   gallery_folder: !input gallery_folder
+  kept_highlights: !input kept_highlights
   clip_camera: !input clip_camera
   clip_lookback: !input clip_lookback
   clip_duration: !input clip_duration
@@ -244,13 +257,17 @@ actions:
       # next highlight does not cut it short. A camera without a stream, or one
       # that records already, leaves the photo without a clip. The clip fields
       # go only with a clip camera, so that without one an integration older
-      # than the clips still saves the photo.
+      # than the clips still saves the photo; the number of highlights kept goes
+      # only when it is not the action's own 1000, for the same reason.
       - variables:
           saving:
             camera: "{{ camera_entity }}"
             folder: "{{ gallery_folder }}"
             player: "{{ who }}"
             label: "{{ 'checkout-' ~ checkout if trigger.id == 'checkout' else score }}"
+          keeping: >-
+            {{ {} if kept_highlights | int(1000) == 1000
+               else {'keep': kept_highlights | int(1000)} }}
           clipping:
             clip_camera: "{{ clip_camera }}"
             clip_lookback: "{{ clip_lookback | int(5) }}"
@@ -261,7 +278,9 @@ actions:
       # not write to, must not stop the actions: they get the live picture.
       - action: homedarts.save_highlight
         continue_on_error: true
-        data: "{{ dict(saving, **clipping) if clip_camera else saving }}"
+        data: >-
+          {{ dict(dict(saving, **keeping), **clipping) if clip_camera
+             else dict(saving, **keeping) }}
         response_variable: highlight
   # Only a saved photo has a file, and an address when it is in a media folder.
   # Its clip goes beside it, under its name with .mp4, where the gallery finds it.

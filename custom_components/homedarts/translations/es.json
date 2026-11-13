@@ -596,7 +596,7 @@
         "name": "Jugadores de la partida"
       },
       "practice_legs": {
-        "name": "Legs por set de la partida"
+        "name": "Legs para ganar un set de la partida"
       },
       "practice_sets": {
         "name": "Sets para ganar la partida"
@@ -883,6 +883,9 @@
     },
     "highlight_failed": {
       "message": "No se ha podido guardar la foto destacada: {error}"
+    },
+    "highlight_limit": {
+      "message": "En la última hora se guardaron {count} fotos destacadas, el máximo de la integración. Inténtalo de nuevo más tarde."
     },
     "voice_pack_no_score": {
       "message": "Sin puntos"
@@ -1423,7 +1426,7 @@
           "description": "Nombres de uno a cuatro jugadores, en orden de lanzamiento. Sin nombres, el número de jugadores no cambia."
         },
         "legs": {
-          "name": "Legs por set",
+          "name": "Legs para ganar un set",
           "description": "Legs necesarios para ganar un set en un partido."
         },
         "sets": {
@@ -1645,6 +1648,10 @@
         "clip_duration": {
           "name": "Segundos después",
           "description": "Opcional. Cuánto del clip sigue a la foto. 8 por defecto."
+        },
+        "keep": {
+          "name": "Destacados conservados",
+          "description": "Opcional. Los destacados más recientes que quedan en la galería después de guardar una foto; las fotos más antiguas se borran con sus clips. 0 los conserva todos. Una carpeta propia nunca se limpia. 1000 por defecto."
         }
       }
     },
@@ -1763,8 +1770,8 @@
           "description": "X01 de 101 a 1001 puntos, Cricket, Cut-Throat Cricket o Tactics."
         },
         "legs": {
-          "name": "Legs por set",
-          "description": "Legs necesarios para ganar un set en cada partido. Si no se indica, se usan los legs por set de la partida."
+          "name": "Legs para ganar un set",
+          "description": "Legs necesarios para ganar un set en cada partido. Si no se indica, se usan los legs para ganar un set de la partida."
         },
         "sets": {
           "name": "Sets para ganar",
