@@ -29,8 +29,8 @@ PHONE = 1000
 
 
 def is_red(pixel) -> bool:
-    """Whether a pixel of a picture reads as the red of a difference, not as the pale
-    grey around it."""
+    """Whether a pixel of a picture reads as the red of a difference, not as the
+    picture around it."""
     red, green, blue = pixel[:3]
     return red > 150 and red - green > 100 and red - blue > 100
 
@@ -208,11 +208,12 @@ def test_a_single_changed_pixel_stays_in_sight_on_a_phone(folders, size, method)
         assert drawn.size == size
         difference = drawn.convert("RGB")
     assert difference.getpixel(spot) == RED
-    # The new picture in pale grey, so that only the changes are red.
-    assert all(
-        colour == RED or (colour[0] == colour[1] == colour[2] and colour[0] >= 191)
-        for _, colour in difference.getcolors(maxcolors=257)
-    )
+    # The new picture in its own colours behind a veil of its average colour, which
+    # leaves a plain picture as it is, so that only the changes are red.
+    assert {colour for _, colour in difference.getcolors(maxcolors=257)} == {
+        RED,
+        (20, 30, 40),
+    }
     assert red_pixels(on_a_phone(difference, method)) > 0
     # The changed pixel alone, without its frame, vanishes there.
     alone = Image.new("RGB", size, difference.getpixel((0, 0)))
