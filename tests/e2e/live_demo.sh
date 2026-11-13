@@ -19,9 +19,17 @@ ARTIFACTS="${E2E_ARTIFACTS:-${SCRIPT_DIR}/artifacts}/live-demo"
 mkdir -p "${ARTIFACTS}"
 ARTIFACTS_MOUNT="$(cd "${ARTIFACTS}" && (pwd -W 2>/dev/null || pwd))"
 
-# pull_images, and a signal that stops the run at once.
+# pull_images, and a signal that stops the run at once: the pull and the browser run
+# with in_background, and the trap on EXIT ends the one that a signal stopped.
 # shellcheck source=tests/e2e/diagnose.sh
 . "${SCRIPT_DIR}/diagnose.sh"
+
+cleanup() {
+	trap - EXIT
+	keep_cleaning
+	end_background
+}
+trap cleanup EXIT
 
 # The image before the browser starts, as in browser.sh: inside "docker run", a pull
 # that the registry cuts off, such as "connection reset by peer" from
@@ -30,7 +38,7 @@ if ! "${DOCKER_BIN}" image inspect "${PLAYWRIGHT_IMAGE}" >/dev/null 2>&1; then
 	in_background pull_images "${DOCKER_BIN}" pull --quiet "${PLAYWRIGHT_IMAGE}" >/dev/null
 fi
 
-"${DOCKER_BIN}" run --rm \
+in_background "${DOCKER_BIN}" run --rm \
 	--env "LIVE_DEMO_ARTIFACTS=/artifacts" \
 	--volume "${ROOT_MOUNT}:/repo:ro" \
 	--volume "${ARTIFACTS_MOUNT}:/artifacts" \
