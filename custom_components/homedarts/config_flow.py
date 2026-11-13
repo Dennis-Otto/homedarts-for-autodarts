@@ -38,7 +38,7 @@ from .const import (
     DEFAULT_PORT,
     DOMAIN,
 )
-from .discovery import async_discover_boards
+from .discovery import async_discover_boards, is_board_address
 from .errors import AutodartsApiError, AutodartsConnectionError
 from .local_api import AutodartsLocalAuthError, AutodartsLocalClient, board_generation
 from .online import (
@@ -78,14 +78,7 @@ def _announced_host(discovery_info: ZeroconfServiceInfo) -> str | None:
     announcement never makes Home Assistant contact another host.
     """
     usable = [
-        address
-        for address in discovery_info.ip_addresses
-        if not (
-            address.is_loopback
-            or address.is_unspecified
-            or address.is_multicast
-            or address.is_link_local
-        )
+        address for address in discovery_info.ip_addresses if is_board_address(address)
     ]
     advertised = discovery_info.properties.get("ip")
     for address in usable:

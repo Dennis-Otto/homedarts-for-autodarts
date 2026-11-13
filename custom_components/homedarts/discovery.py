@@ -3,13 +3,30 @@
 from __future__ import annotations
 
 import asyncio
-from ipaddress import ip_address
+from ipaddress import IPv4Address, IPv6Address, ip_address
 from typing import Any
 
 import aiohttp
 
 from .const import DEFAULT_PORT, DISCOVERY_URL
 from .errors import AutodartsConnectionError
+
+
+def is_board_address(address: IPv4Address | IPv6Address) -> bool:
+    """Whether a board may be at an address that an announcement or the lookup names.
+
+    Never Home Assistant's own host, an address of no host or of a group of hosts,
+    or a link-local one, which needs a zone; an IPv4 address written as IPv6 counts
+    as the IPv4 address.
+    """
+    if isinstance(address, IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    return not (
+        address.is_loopback
+        or address.is_unspecified
+        or address.is_multicast
+        or address.is_link_local
+    )
 
 
 def _port(value: Any) -> int:
@@ -38,8 +55,10 @@ async def async_discover_boards(session: aiohttp.ClientSession) -> list[dict[str
         if not isinstance(board_id, str) or not board_id or not isinstance(host, str):
             continue
         try:
-            ip_address(host)
+            address = ip_address(host)
         except ValueError:
+            continue
+        if not is_board_address(address):
             continue
         name, version = board.get("name"), board.get("version")
         boards.append(
