@@ -8,7 +8,7 @@ description: "De zéro au tableau des scores sur une tablette à côté de votre
 
 Vous jouez sur une cible Autodarts et n'avez jamais utilisé Home Assistant ? Ce guide vous mène de zéro jusqu'au tableau des scores sur une tablette à côté de votre cible. Home Assistant, HACS et l'intégration sont gratuits. Comptez environ une heure ; l'essentiel de ce temps passe dans l'installation de Home Assistant lui-même.
 
-<img src="images/en/scoreboard-lobby.png" alt="Écran de nouvelle partie sur une tablette en paysage : les jeux par groupe avec 501 choisi, Alex et Sam avec leur photo, Sam qui part de 301, trois manches par set, double out et le bouton de démarrage" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="Écran de nouvelle partie sur une tablette en paysage : les jeux par groupe avec 501 choisi, Alex et Sam avec leur photo, Sam qui part de 301, trois manches pour gagner un set, double out et le bouton de démarrage" width="760">
 
 **Sur cette page :** [Ce qu'il vous faut](#ce-quil-vous-faut) · [1. Installer Home Assistant](#1-installer-home-assistant) · [2. Installer HACS](#2-installer-hacs) · [3. Installer l'intégration](#3-installer-lintégration) · [4. Ajouter votre cible](#4-ajouter-votre-cible) · [5. Créer le tableau de bord](#5-créer-le-tableau-de-bord) · [6. Placer le tableau des scores à côté de la cible](#6-placer-le-tableau-des-scores-à-côté-de-la-cible) · [7. Jouer votre première partie](#7-jouer-votre-première-partie) · [Et ensuite](#et-ensuite) · [Si quelque chose ne marche pas](#si-quelque-chose-ne-marche-pas)
 
