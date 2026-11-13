@@ -1,4 +1,4 @@
-"""Constants for the Autodarts integration."""
+"""Constants for the HomeDarts integration."""
 
 from typing import Final
 

@@ -1,4 +1,4 @@
-"""Sensor platform for the Autodarts integration."""
+"""Sensor platform for the HomeDarts integration."""
 
 from __future__ import annotations
 

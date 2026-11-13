@@ -1317,7 +1317,7 @@
     },
     "unsupported_response": {
       "title": "Autodarts board answers in an unknown format",
-      "description": "The board answers {reads} in a format this version of the integration does not understand, for example after a Board Manager update. Values from these reads are not updated. Update the Autodarts integration; if the notice stays, report it together with the diagnostics."
+      "description": "The board answers {reads} in a format this version of the integration does not understand, for example after a Board Manager update. Values from these reads are not updated. Update HomeDarts for Autodarts; if the notice stays, report it together with the diagnostics."
     },
     "board_moved": {
       "title": "Autodarts board found at a new address",

@@ -33,7 +33,7 @@ The integration has been one of the default repositories of HACS since 20 Octobe
 
 #### Betas for testers
 
-Every change for users becomes a beta of the next release a few minutes after it reaches `main`, such as `1.10.0-beta.2`. To test them, open **Settings → Devices & services → HACS**, select the device **HomeDarts for Autodarts**, enable its entity **Pre-release**, which HACS adds switched off and disabled, and turn it on. HACS then offers every beta as an update, with its notes; turn the switch off, and the next release brings you back. A beta may have faults that the release won't: please report them in a [tester report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=tester_report.yml).
+Every change for users becomes a beta of the next release a few minutes after it reaches `main`, such as `2.4.0-beta.2`. To test them, open **Settings → Devices & services → HACS**, select the device **HomeDarts for Autodarts**, enable its entity **Pre-release**, which HACS adds switched off and disabled, and turn it on. HACS then offers every beta as an update, with its notes; turn the switch off, and the next release brings you back. A beta may have faults that the release won't: please report them in a [tester report](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/new?template=tester_report.yml).
 
 ### Manually
 

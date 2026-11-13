@@ -1,7 +1,7 @@
 {
   "name": "hacs-homedarts-development",
   "private": true,
-  "description": "Development tooling for the Autodarts dashboard cards and the translation bot. Nothing here is published or shipped.",
+  "description": "Development tooling for the dashboard cards of HomeDarts for Autodarts and the translation bot. Nothing here is published or shipped.",
   "license": "MIT",
   "type": "module",
   "engines": {

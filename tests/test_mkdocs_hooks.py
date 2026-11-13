@@ -404,8 +404,8 @@ def test_the_name_of_the_website_is_written_as_html():
 
 
 def test_any_other_page_keeps_its_head():
-    config = SimpleNamespace(site_name="Autodarts for Home Assistant")
-    title = "Cards - Autodarts for Home Assistant"
+    config = SimpleNamespace(site_name="HomeDarts for Autodarts")
+    title = "Cards - HomeDarts for Autodarts"
     for other in (ENGLISH, GERMAN, page("decisions/README.md", "decisions/index.html")):
         output = head(title, f"{SITE}cards.html", shared(title))
         assert hooks.on_post_page(output, other, config) == output

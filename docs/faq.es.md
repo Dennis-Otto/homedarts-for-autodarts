@@ -64,7 +64,7 @@ Un jugador que lanza en dos dianas tiene un perfil en cada una. [`homedarts.rest
 
 ### ¿Puedo mostrar el marcador en un televisor o una tableta Fire?
 
-Sí: en cualquier pantalla cuyo navegador abra tu Home Assistant, como una tableta en la pared, también una tableta Fire, un televisor con navegador, un PC pequeño o un teléfono viejo. No hay que instalar nada en ella. Dale a la pantalla un usuario propio de Home Assistant y abre la vista *Marcador* del panel automático, a pantalla completa o en un navegador de quiosco. Un televisor con Chromecast o un Google Nest Hub la muestra con Home Assistant Cast, sin navegador propio. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
+Sí: en cualquier pantalla cuyo navegador abra tu Home Assistant y sea [lo bastante reciente](scoreboard.md#browsers) (Safari 16.4, Chrome 111, Firefox 121 o posterior), como una tableta en la pared, también una tableta Fire, un televisor con navegador, un PC pequeño o un teléfono viejo. No hay que instalar nada en ella. Dale a la pantalla un usuario propio de Home Assistant y abre la vista *Marcador* del panel automático, a pantalla completa o en un navegador de quiosco. Un televisor con Chromecast o un Google Nest Hub la muestra con Home Assistant Cast, sin navegador propio. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
 
 ### ¿Qué idiomas habla y qué voces tiene el locutor?
 

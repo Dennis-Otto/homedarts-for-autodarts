@@ -64,7 +64,7 @@ Un joueur qui lance sur deux cibles a un profil sur chacune. [`homedarts.restore
 
 ### Puis-je afficher le tableau des scores sur une télévision ou une tablette Fire ?
 
-Oui : sur n'importe quel écran dont le navigateur ouvre votre Home Assistant, comme une tablette au mur, une tablette Fire comprise, une télévision avec un navigateur, un petit PC ou un vieux téléphone. Il n'y a rien à installer dessus. Donnez à l'écran son propre utilisateur Home Assistant et ouvrez la vue *Tableau des scores* du tableau de bord automatique, en plein écran ou dans un navigateur kiosque. Une télévision avec un Chromecast ou un Google Nest Hub l'affiche par Home Assistant Cast, sans navigateur propre. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
+Oui : sur n'importe quel écran dont le navigateur ouvre votre Home Assistant et est [assez récent](scoreboard.md#browsers) (Safari 16.4, Chrome 111, Firefox 121 ou plus récent), comme une tablette au mur, une tablette Fire comprise, une télévision avec un navigateur, un petit PC ou un vieux téléphone. Il n'y a rien à installer dessus. Donnez à l'écran son propre utilisateur Home Assistant et ouvrez la vue *Tableau des scores* du tableau de bord automatique, en plein écran ou dans un navigateur kiosque. Une télévision avec un Chromecast ou un Google Nest Hub l'affiche par Home Assistant Cast, sans navigateur propre. [Set up the screen](scoreboard.md#set-up-the-screen) · [Home Assistant Cast](scoreboard.md#on-a-tv-with-home-assistant-cast)
 
 ### Quelles langues parle-t-elle, et quelles voix a l'annonceur ?
 

@@ -17,7 +17,7 @@ Je speelt op een Autodarts-bord en hebt Home Assistant nog nooit gebruikt? Deze 
 - **Je Autodarts-bord,** ingesteld en werkend. [Ondersteunde apparaten](index.nl.md#ondersteunde-apparaten) noemt de geteste opstellingen. Geen Autodarts? [Speel zonder Autodarts](without-autodarts.md) op elk dartbord en voer je darts in op een toetsenblok.
 - **Een apparaat voor Home Assistant** dat altijd aan staat, in hetzelfde netwerk als het bord: een Raspberry Pi 4 of 5, een mini-pc of een virtuele machine op een computer die altijd draait. Home Assistant verkoopt ook kant-en-klare apparaten. Gebruik een apart apparaat: de bord-pc heeft zijn rekenkracht nodig voor de detectie.
 - **Een gratis GitHub-account,** waarmee HACS integraties downloadt.
-- **Een scherm voor het scorebord,** als je er een wilt: een tablet, een tv met een browser of een oude telefoon.
+- **Een scherm voor het scorebord,** als je er een wilt: een tablet, een tv met een browser of een oude telefoon, met [een recente browser](scoreboard.md#browsers).
 
 ## 1. Home Assistant installeren
 

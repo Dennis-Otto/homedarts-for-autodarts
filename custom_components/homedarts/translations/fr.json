@@ -1317,7 +1317,7 @@
     },
     "unsupported_response": {
       "title": "La cible Autodarts répond dans un format inconnu",
-      "description": "La cible répond aux requêtes {reads} dans un format que cette version de l'intégration ne comprend pas, par exemple après une mise à jour de Board Manager. Les valeurs issues de ces requêtes ne sont pas mises à jour. Mettez à jour l'intégration Autodarts\u00a0; si le message persiste, signalez-le en joignant les diagnostics."
+      "description": "La cible répond aux requêtes {reads} dans un format que cette version de l'intégration ne comprend pas, par exemple après une mise à jour de Board Manager. Les valeurs issues de ces requêtes ne sont pas mises à jour. Mettez à jour HomeDarts for Autodarts\u00a0; si le message persiste, signalez-le en joignant les diagnostics."
     },
     "board_moved": {
       "title": "Cible Autodarts trouvée à une nouvelle adresse",

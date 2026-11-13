@@ -8,6 +8,6 @@ Where things are:
 - `CHANGELOG.md` lists the changes of every release with the numbers of their pull requests; `custom_components/homedarts/manifest.json` has the version on main.
 - The tests are in `tests/`, the card tests in `tests/frontend/`.
 
-What matters in a bug report: the version of the integration, the version of Home Assistant and its installation type, the Autodarts software on the board PC (Board Manager 2, Autodarts Desktop or Board Manager 1) and its version, which the board's device page in Home Assistant shows, the diagnostics (Settings → Devices & services → HomeDarts for Autodarts → ⋮ → Download diagnostics) and, for errors, log lines with debug logging for `custom_components.homedarts`. Problems of the board itself, its detection or an Autodarts account belong to Autodarts support.
+What matters in a bug report: the version of the integration, the version of Home Assistant and its installation type, the board and its software (Board Manager 2, Autodarts Desktop or Board Manager 1 on the board PC of an Autodarts board, or a dartboard without Autodarts or a Granboard, which have no such software) and the version of that software, which the board's device page in Home Assistant shows, the diagnostics (Settings → Devices & services → HomeDarts for Autodarts → ⋮ → Download diagnostics) and, for errors, log lines with debug logging for `custom_components.homedarts`. Problems of the board itself, its detection or an Autodarts account belong to Autodarts support.
 
 In German, address the reporter with "du", as the German documentation does.
