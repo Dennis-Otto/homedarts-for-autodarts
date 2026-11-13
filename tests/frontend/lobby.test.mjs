@@ -16,6 +16,7 @@ const {
   lobbyChoice,
   lobbyGames,
   lobbySuggestions,
+  nameKey,
   personLinks,
   pictureUrl,
   startGameData,
@@ -1123,6 +1124,21 @@ test("a name is added as the integration keeps it, and once in any upper and low
   }
   // Twenty characters at most, without a space at the end.
   assert.deepEqual(lobbyChange(choice, "add", "\u0001100% Darts ab sofort und immer").players.at(-1), "100 Darts ab sofort");
+});
+
+test("names are one player where the integration takes them for one", () => {
+  // The integration's test reads the same cases (tests/test_profiles.py).
+  const cases = JSON.parse(readFileSync(new URL("../fixtures/name_keys.json", import.meta.url), "utf8"));
+  for (const names of cases.same) {
+    assert.equal(new Set(names.map(nameKey)).size, 1, names.join(" | "));
+  }
+  for (const [first, second] of cases.different) {
+    assert.notEqual(nameKey(first), nameKey(second), `${first} | ${second}`);
+  }
+  // A name cut to twenty characters keeps its last emoji whole.
+  const smiles = "\u{1F600}".repeat(21);
+  const choice = lobbyChange(lobbyChoice({ game: "501", players: 1, names: ["Anna"] }, ["501"]), "add", smiles);
+  assert.equal(choice.players.at(-1), "\u{1F600}".repeat(20));
 });
 
 test("a typed name with a number sign plays without it", () => {

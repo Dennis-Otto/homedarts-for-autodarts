@@ -1,0 +1,16 @@
+{
+  "why": "Names that are one player, and names that are two, for the integration (_key of profiles.py) and the cards (nameKey of homedarts-card.js) alike.",
+  "same": [
+    ["Weiß", "WEISS", "weiss", "WEIẞ", " Weiß "],
+    ["Tom 2", "tom 2", "Tom #2", "TOM 2\u0085", "Tom {2}", "%Tom\u0007 2"],
+    ["ΟΔΟΣ", "οδος", "οδοσ"],
+    ["Ǆemal", "ǅemal", "ǆemal"],
+    ["😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀", "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"],
+    ["Abcdefghijklmnopqrst", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
+  ],
+  "different": [
+    ["Anna", "Anne"],
+    ["Tom 2", "Tom 3"],
+    ["😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀", "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"]
+  ]
+}

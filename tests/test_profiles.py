@@ -1,6 +1,8 @@
 """Player profiles, the match history and head-to-head records."""
 
+import json
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from homeassistant.core import split_entity_id, valid_entity_id
@@ -12,12 +14,29 @@ from custom_components.homedarts.profiles import (
     MATCH_HISTORY,
     Profile,
     Profiles,
+    _key,
     _person,
     match_summary,
 )
 
 from .local_helpers import NOW, throw
 from .test_teams_and_handicap import teams
+
+# The cards compare names as the integration does; their test reads the same cases.
+NAME_KEYS = json.loads(
+    (Path(__file__).parent / "fixtures" / "name_keys.json").read_text("utf-8")
+)
+
+
+@pytest.mark.parametrize("names", NAME_KEYS["same"])
+def test_names_that_are_one_player(names: list[str]) -> None:
+    assert len({_key(name) for name in names}) == 1
+
+
+@pytest.mark.parametrize("names", NAME_KEYS["different"])
+def test_names_that_are_two_players(names: list[str]) -> None:
+    first, second = names
+    assert _key(first) != _key(second)
 
 
 def named(game: int | str, *names: str, legs: int = 1) -> PracticeGame:

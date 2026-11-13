@@ -1155,6 +1155,14 @@ def test_a_renamed_player_keeps_the_name_of_a_tournament_being_played():
     assert tournament.tournament.players == ["Alex", "Samuel", "Kim"]
     tournament.rename("Sammy", "Samuel")
     assert tournament.setup.players == ["Alex", "Samuel", "Kim"]
+    # A merge of two of its players leaves a finished tournament as it was played,
+    # so that its table, bracket and podium don't show one name twice; a new spelling
+    # of one name still reaches it.
+    tournament.rename("samuel", "Kim")
+    assert tournament.tournament.players == ["Alex", "Samuel", "Kim"]
+    assert tournament.setup.players == ["Alex", "Kim"]
+    tournament.rename("kim", "KIM")
+    assert tournament.tournament.players == ["Alex", "Samuel", "KIM"]
 
 
 def test_player_names_never_carry_template_characters():

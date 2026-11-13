@@ -702,3 +702,54 @@ def test_a_sitemap_without_its_compressed_copy_is_written_alone(tmp_path):
         site / "sitemap.xml"
     ).read_text("utf-8")
     assert not (site / "sitemap.xml.gz").exists()
+
+
+def test_the_live_demo_gets_the_previews_of_a_shared_link_and_its_sitemap_entry(
+    tmp_path,
+):
+    """As Material gives them to each page of MkDocs, with the card of the start page."""
+    site = built(tmp_path, **{"index.html": ""})
+    (site / "demo").mkdir()
+    source = (ROOT / "docs" / "demo" / "index.html").read_text("utf-8")
+    (site / "demo" / "index.html").write_text(source, "utf-8")
+    build(site)
+    demo = (site / "demo" / "index.html").read_text("utf-8")
+    head = demo.partition("</head>")[0]
+    url = f"{SITE}demo/index.html"
+    card = f"{SITE}assets/images/social/index.png"
+    title = "Live demo of the cards – HomeDarts for Autodarts"
+    description = re.search(r'<meta name="description" content="([^"]*)">', source)
+    assert description
+    for tag in (
+        f'<link rel="canonical" href="{url}">',
+        f'<meta property="og:url" content="{url}">',
+        f'<meta property="og:title" content="{title}">',
+        f'<meta property="og:description" content="{description[1]}">',
+        f'<meta property="og:image" content="{card}">',
+        '<meta property="og:image:width" content="1200">',
+        '<meta property="og:image:height" content="630">',
+        '<meta property="twitter:card" content="summary_large_image">',
+        f'<meta property="twitter:title" content="{title}">',
+        f'<meta property="twitter:image" content="{card}">',
+    ):
+        assert head.count(tag) == 1, tag
+    # Everything else of the page stays as it is.
+    assert demo.replace(head, "") == source.replace(source.partition("</head>")[0], "")
+    entry = f"    <url>\n        <loc>{url}</loc>\n    </url>\n</urlset>"
+    listed = SITEMAP.replace("</urlset>", entry)
+    assert (site / "sitemap.xml").read_text("utf-8") == listed
+    assert gzip.decompress((site / "sitemap.xml.gz").read_bytes()).decode() == listed
+    # mkdocs serve builds into the same folder again, which has them already.
+    build(site)
+    assert (site / "demo" / "index.html").read_text("utf-8") == demo
+    assert (site / "sitemap.xml").read_text("utf-8") == listed
+    # The start page has its preview card because the social plugin draws one.
+    assert "social" in MKDOCS["plugins"]
+
+
+def test_a_website_without_its_address_gives_the_demo_no_previews(tmp_path):
+    (tmp_path / "demo").mkdir()
+    page_text = "<html><head><title>Demo</title></head><body></body></html>"
+    (tmp_path / "demo" / "index.html").write_text(page_text, "utf-8")
+    hooks.on_post_build(SimpleNamespace(site_dir=str(tmp_path), site_url=None))
+    assert (tmp_path / "demo" / "index.html").read_text("utf-8") == page_text

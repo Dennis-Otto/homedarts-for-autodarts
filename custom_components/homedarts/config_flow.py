@@ -356,7 +356,12 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
             boards = await async_discover_boards(async_get_clientsession(self.hass))
         except AutodartsConnectionError:
             return await self.async_step_local(error="discovery_failed")
-        configured = {entry.unique_id for entry in self._async_current_entries()}
+        # A board whose discovery was ignored is offered still: the user asks
+        # for the boards here, as for those the search finds.
+        configured = {
+            entry.unique_id
+            for entry in self._async_current_entries(include_ignore=False)
+        }
         if self.source == SOURCE_RECONFIGURE:
             # The board being reconfigured may have moved; keep offering it.
             configured.discard(self._get_reconfigure_entry().unique_id)
@@ -478,7 +483,9 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
                     elif self.source == SOURCE_RECONFIGURE:
                         entry = self._get_reconfigure_entry()
                         if entry.data.get(CONF_MANUAL_BOARD):
-                            return self._connect_board(entry, host, port, identity)
+                            return await self._async_connect_board(
+                                entry, host, port, identity
+                            )
                         if board_id != entry.data[CONF_BOARD_ID]:
                             return self.async_abort(reason="wrong_board")
                         return self.async_update_reload_and_abort(
@@ -527,7 +534,7 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    def _connect_board(
+    async def _async_connect_board(
         self, entry: ConfigEntry, host: str, port: int, identity: dict[str, Any]
     ) -> ConfigFlowResult:
         """A dartboard without Autodarts gets its Autodarts board.
@@ -541,7 +548,12 @@ class AutodartsConfigFlow(ConfigFlow, domain=DOMAIN):
             DOMAIN, board_id
         )
         if known is not None:
-            return self.async_abort(reason="already_configured")
+            if known.source != SOURCE_IGNORE:
+                return self.async_abort(reason="already_configured")
+            # An ignored discovery of the board gives way, as one does when the
+            # board gets an entry of its own; otherwise two entries would share
+            # the board's ID.
+            await self.hass.config_entries.async_remove(known.entry_id)
         old = entry.data[CONF_BOARD_ID]
         entities = er.async_get(self.hass)
         for item in er.async_entries_for_config_entry(entities, entry.entry_id):
