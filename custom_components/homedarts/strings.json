@@ -1255,6 +1255,18 @@
     },
     "training_summary_180": {
       "message": "{darts} darts, 3-dart average {average}, highest visit {highest}, {count} × 180."
+    },
+    "reminder_goal_dart": {
+      "message": "1 dart left to your daily goal of {goal}."
+    },
+    "reminder_goal_darts": {
+      "message": "{count} darts left to your daily goal of {goal}."
+    },
+    "reminder_streak_day": {
+      "message": "Throw a dart today to keep your streak of 1 day."
+    },
+    "reminder_streak_days": {
+      "message": "Throw a dart today to keep your streak of {count} days."
     }
   },
   "issues": {

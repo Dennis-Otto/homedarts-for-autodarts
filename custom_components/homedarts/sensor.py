@@ -858,8 +858,11 @@ class AutodartsPersonalBest(AutodartsRecordsEntity):
 
 
 class AutodartsDailyDarts(AutodartsRecordsEntity):
-    """Darts detected today, towards the daily goal."""
+    """Darts detected today, towards the daily goal, with what is left of it as
+    the training reminder says it."""
 
+    # The reminder is for the blueprint, which reads it when it runs.
+    _unrecorded_attributes = frozenset({"reminder"})
     _attr_native_unit_of_measurement = "darts"
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
@@ -874,12 +877,19 @@ class AutodartsDailyDarts(AutodartsRecordsEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         records = self._records()
-        return {key: records[key] for key in ("goal", "goal_reached", "progress")}
+        attributes = {key: records[key] for key in ("goal", "goal_reached", "progress")}
+        # Home Assistant translates no blueprint, and no board event starts the
+        # reminder; without the words, the blueprint says its own.
+        if reminder := self.coordinator.caller.goal_reminder(records):
+            attributes["reminder"] = reminder
+        return attributes
 
 
 class AutodartsStreak(AutodartsRecordsEntity):
-    """Days in a row with at least one dart; today does not break it yet."""
+    """Days in a row with at least one dart; today does not break it yet. Until
+    the first dart of the day, it holds the words of the training reminder."""
 
+    _unrecorded_attributes = frozenset({"reminder"})
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.DAYS
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -895,9 +905,12 @@ class AutodartsStreak(AutodartsRecordsEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         records = self._records()
-        return {
+        attributes = {
             key: records[key] for key in ("best_streak", "trained_today", "last_day")
         }
+        if reminder := self.coordinator.caller.streak_reminder(records):
+            attributes["reminder"] = reminder
+        return attributes
 
 
 class AutodartsPlayerProfiles(AutodartsStoredEntity, SensorEntity):

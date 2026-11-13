@@ -154,8 +154,8 @@ Home Assistant keeps your best values, the days you trained and your darts per d
 | Entity | Type | Description |
 | --- | --- | --- |
 | Last personal best | Sensor, timestamp | When the last personal best fell; *unknown* before the first. Attributes: `record`, `value`, `previous` and `name` of that best, and the best value of every record under its key, for example `highest_checkout`. |
-| Darts today | Sensor, darts, total | Darts detected today; starts from 0 at midnight. Attributes: `goal`, `goal_reached`, `progress` (percent of the goal). |
-| Training streak | Sensor, duration in days | Days in a row with at least one dart. It stays until a whole day passes without darts. Attributes: `best_streak`, `trained_today`, `last_day`. |
+| Darts today | Sensor, darts, total | Darts detected today; starts from 0 at midnight. Attributes: `goal`, `goal_reached`, `progress` (percent of the goal) and, while the goal is open, `reminder`, the sentence of the [training reminder](automations.md#training-reminder) in the language of Home Assistant. |
+| Training streak | Sensor, duration in days | Days in a row with at least one dart. It stays until a whole day passes without darts. Attributes: `best_streak`, `trained_today`, `last_day` and, until the first dart of a day that would end the streak, `reminder`, the sentence of the [training reminder](automations.md#training-reminder). |
 | Daily goal | Number, darts, *Configuration* | Darts to throw every day, 0–2000 in steps of 10; `0`, the default, sets no goal. When today's darts reach it, `daily_goal_reached` fires once. A higher goal set after that is reached anew, with the event again. |
 
 ## Weekly report

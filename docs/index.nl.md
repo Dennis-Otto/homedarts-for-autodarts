@@ -85,7 +85,7 @@ HomeDarts for Autodarts is een onofficieel communityproject, niet verbonden aan 
 
     ---
 
-    Bordgebeurtenissen voor elke dart, beurt, verwijdering van de darts, bust, gewonnen leg en wedstrijd, en het begin en einde van elk spel. Zestien blueprints: lichtshow, opkomstmuziek, scoreweergave, dart- en oefencallers, highlightfoto's, rapporten, meldingen, routines, spellen starten en darts invoeren met je stem, en antwoorden van Assist over je darts.
+    Bordgebeurtenissen voor elke dart, beurt, verwijdering van de darts, bust, gewonnen leg en wedstrijd, en het begin en einde van elk spel. Zeventien blueprints: lichtshow, opkomstmuziek, scoreweergave, dart- en oefencallers, highlightfoto's, rapporten, een trainingsherinnering, meldingen, routines, spellen starten en darts invoeren met je stem, en antwoorden van Assist over je darts.
 
     [:octicons-arrow-right-24: Automations](automations.md)
 
@@ -131,7 +131,7 @@ Alles gebeurt in je eigen netwerk, in minder dan een seconde: de Board Manager b
 Anders dan de Autodarts-app met de browserextensie Tools for Autodarts, darts-caller en darts-wled, en de andere integraties van Home Assistant voor Autodarts:
 
 - **Zonder cloud:** HomeDarts praat met de lokale interface van de Board Manager en heeft geen Autodarts-account nodig.
-- **Entiteiten en gebeurtenissen in Home Assistant:** een gebeurtenis voor elke dart, beurt, verwijdering van de darts, bust, leg en wedstrijd, en zestien blueprints die er meteen iets mee doen.
+- **Entiteiten en gebeurtenissen in Home Assistant:** een gebeurtenis voor elke dart, beurt, verwijdering van de darts, bust, leg en wedstrijd, en zeventien blueprints die er meteen iets mee doen.
 - **Statistieken thuis:** gemiddelden, heatmaps, profielen en een jaar geschiedenis, opgeslagen in Home Assistant.
 - **Ook zonder Autodarts-bord:** op een toetsenblok of met een Granboard via Bluetooth *(experimenteel)*.
 - **Gratis:** open source onder de MIT-licentie, zonder betaalde versie.
@@ -153,7 +153,7 @@ In het Engels:
 - :material-bullseye-arrow: [**Games and rules**](games.md): elk spel in één oogopslag, vier manieren om er een te starten, wedstrijden, teams, handicaps, de bull-off en toernooien
 - :material-television: [**Scoreboard at the board**](scoreboard.md): een tablet of tv naast het bord, liggend en staand, het scherm voor een nieuw spel, de caller en de rustmodus
 - :material-chart-line: [**Statistics and players**](statistics.md): sessies, persoonlijke records, heatmaps, waar je moet mikken, vooruitgang, profielen, prestaties en de ranglijst
-- :material-home-automation: [**Automations**](automations.md): zestien blueprints, hun instellingen, bordgebeurtenissen en kant-en-klare voorbeelden
+- :material-home-automation: [**Automations**](automations.md): zeventien blueprints, hun instellingen, bordgebeurtenissen en kant-en-klare voorbeelden
 - :material-play-network: [**Online matches**](online-matches.md): busts, gewonnen legs en wedstrijden van onlinewedstrijden als bordgebeurtenissen, met Tools for Autodarts *(experimenteel)*
 
 ## Naslag

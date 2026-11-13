@@ -1255,6 +1255,18 @@
     },
     "training_summary_180": {
       "message": "{darts} darts, 3-dart-gemiddelde {average}, hoogste beurt {highest}, {count} × 180."
+    },
+    "reminder_goal_dart": {
+      "message": "Nog 1 dart tot je dagdoel van {goal}."
+    },
+    "reminder_goal_darts": {
+      "message": "Nog {count} darts tot je dagdoel van {goal}."
+    },
+    "reminder_streak_day": {
+      "message": "Gooi vandaag een dart om je reeks van 1 dag te houden."
+    },
+    "reminder_streak_days": {
+      "message": "Gooi vandaag een dart om je reeks van {count} dagen te houden."
     }
   },
   "issues": {

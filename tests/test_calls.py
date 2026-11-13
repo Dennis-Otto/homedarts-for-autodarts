@@ -352,6 +352,10 @@ async def test_every_language_formats_every_call_and_summary(hass, language):
         assert words["summary"]
     for session in (SESSION, {**SESSION, "scores_180": 0}):
         assert spoken.training(session)
+    for records in (OPEN, {**OPEN, "darts_today": 9}):
+        assert spoken.goal_reminder(records)
+    for records in (OPEN, {**OPEN, "streak": 1}):
+        assert spoken.streak_reminder(records)
     assert not spoken._failed
 
 
@@ -382,3 +386,73 @@ async def test_a_broken_training_summary_leaves_the_blueprint_its_own(hass, capl
     assert spoken.training({**SESSION, "scores_180": 0}) is None
     assert caplog.text.count("cannot be formatted") == 1
     assert "the summary of the training report" in caplog.text
+
+
+# The "Darts today" and "Training streak" sensors of a board on the evening of a
+# day without darts: the daily goal is open, and the streak ends at midnight.
+OPEN = {"darts_today": 0, "goal": 10, "goal_reached": False, "streak": 4}
+
+
+async def test_the_english_training_reminder(hass):
+    english = await caller(hass, "en")
+    assert english.goal_reminder(OPEN) == "10 darts left to your daily goal of 10."
+    assert english.goal_reminder({**OPEN, "darts_today": 9}) == (
+        "1 dart left to your daily goal of 10."
+    )
+    assert english.streak_reminder(OPEN) == (
+        "Throw a dart today to keep your streak of 4 days."
+    )
+    assert english.streak_reminder({**OPEN, "streak": 1}) == (
+        "Throw a dart today to keep your streak of 1 day."
+    )
+    # Nothing to remind of: no goal, the goal reached or passed after it was
+    # lowered, a dart today, no streak.
+    for records in (
+        {**OPEN, "goal": 0},
+        {**OPEN, "goal_reached": True},
+        {**OPEN, "darts_today": 12},
+    ):
+        assert english.goal_reminder(records) is None
+    for records in ({**OPEN, "trained_today": True}, {**OPEN, "streak": 0}):
+        assert english.streak_reminder(records) is None
+    # Before the words are loaded, the blueprint says its own.
+    assert Caller().goal_reminder(OPEN) is None
+    assert Caller().streak_reminder(OPEN) is None
+
+
+@pytest.mark.parametrize(
+    ("language", "goal", "streak"),
+    [
+        (
+            "de-CH",
+            "Noch 10 Darts bis zu deinem Tagesziel von 10.",
+            "Wirf heute einen Dart, um deine Serie von 4 Tagen zu halten.",
+        ),
+        (
+            "es-419",
+            "Te faltan 10 dardos para tu objetivo diario de 10.",
+            "Lanza un dardo hoy para mantener tu racha de 4 días.",
+        ),
+        (
+            "nl",
+            "Nog 10 darts tot je dagdoel van 10.",
+            "Gooi vandaag een dart om je reeks van 4 dagen te houden.",
+        ),
+    ],
+)
+async def test_the_training_reminder_speaks_the_language(hass, language, goal, streak):
+    spoken = await caller(hass, language)
+    assert (spoken.goal_reminder(OPEN), spoken.streak_reminder(OPEN)) == (goal, streak)
+
+
+async def test_a_broken_training_reminder_leaves_the_blueprint_its_own(hass, caplog):
+    spoken = await caller(hass, "es")
+    spoken.say["reminder_goal_darts"] = "{count} {"
+    del spoken.say["reminder_streak_days"]
+    assert spoken.goal_reminder(OPEN) is None
+    assert spoken.streak_reminder(OPEN) is None
+    # The other messages still speak, and the failure is logged once.
+    assert spoken.goal_reminder({**OPEN, "darts_today": 9})
+    assert spoken.streak_reminder({**OPEN, "streak": 1})
+    assert caplog.text.count("cannot be formatted") == 1
+    assert "the goal of the training reminder" in caplog.text

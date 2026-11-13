@@ -12,7 +12,7 @@ Your board is fast enough for automations that happen *while* you play. The ligh
 
 ## Blueprints
 
-Blueprints are ready-made automations, and the integration brings all sixteen along: once your first board is added, they are on the blueprints page, **Settings → Automations & scenes → Blueprints**. Choose one, select your board and the devices to use, and you're done. They require Home Assistant 2026.8 or newer, and every update of the integration brings their new versions, see [updates of the blueprints](#updates-of-the-blueprints).
+Blueprints are ready-made automations, and the integration brings all seventeen along: once your first board is added, they are on the blueprints page, **Settings → Automations & scenes → Blueprints**. Choose one, select your board and the devices to use, and you're done. They require Home Assistant 2026.8 or newer, and every update of the integration brings their new versions, see [updates of the blueprints](#updates-of-the-blueprints).
 
 [![Open your Home Assistant instance and show your blueprints.](https://my.home-assistant.io/badges/blueprints.svg)](https://my.home-assistant.io/redirect/blueprints/)
 
@@ -20,7 +20,7 @@ Not sure which one you need? Start from what your home should do:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/en/choose-blueprint-dark.png">
-  <img src="images/en/choose-blueprint-light.png" alt="Which blueprint fits: For lights, music, a pixel display, photos and celebrations, take the Light show, Walk-on music, Score display, Celebrate a visit score, Highlight photo or Takeout actions. To call the darts, take the Dart caller for every game but the practice game, online matches too, and the Practice caller for the practice game; the caller of the scoreboard card needs no speakers in Home Assistant. For a board that looks after itself, take Start and stop detection automatically, the Board problem alert or the Training session routine. For a summary of your training, take the Training report each day or the Weekly report. To talk to Assist, take Start a game by voice, Enter darts by voice or Ask Assist about your darts." width="560">
+  <img src="images/en/choose-blueprint-light.png" alt="Which blueprint fits: For lights, music, a pixel display, photos and celebrations, take the Light show, Walk-on music, Score display, Celebrate a visit score, Highlight photo or Takeout actions. To call the darts, take the Dart caller for every game but the practice game, online matches too, and the Practice caller for the practice game; the caller of the scoreboard card needs no speakers in Home Assistant. For a board that looks after itself, take Start and stop detection automatically, the Board problem alert or the Training session routine. For a summary of your training or a reminder to train, take the Training report each day, the Weekly report or the Training reminder. To talk to Assist, take Start a game by voice, Enter darts by voice or Ask Assist about your darts." width="560">
 </picture>
 
 | Blueprint | What it does | Import |
@@ -31,6 +31,7 @@ Not sure which one you need? Start from what your home should do:
 | **Start and stop detection automatically** | Starts the detection when someone is at the board and stops it after an idle time you choose, so the cameras and board PC can rest. | [![Import the automatic detection blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fauto_detection.yaml) |
 | **Board problem alert** | Alerts you after a grace period when the board goes offline or a camera fails, and if you like when a board with Board Manager 2 loses its calibration. An optional all-clear is sent only after a real alert. The actions can use `problem` and `recovered`. | [![Import the board problem alert blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fboard_alert.yaml) |
 | **Training report** | Sends a daily summary of darts, 3-dart average, highest visit and 180s, skipping days without darts. The `summary` variable has the sentence ready. | [![Import the training report blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_report.yaml) |
+| **Training reminder** | Reminds you at a time you choose, by default at 7 pm, while today's daily goal is open or while your training streak ends tonight because no dart was thrown today. The `reminder` variable has the sentence ready. | [![Import the training reminder blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_reminder.yaml) |
 | **Training session routine** | When a [training session](entities.md#training-session) starts, runs your actions, turns on the detection and calibrates the cameras after a short wait; when it ends, turns off the detection and runs your actions with `reason`, `darts`, `average` and `duration_minutes`. The detection switch and the calibration button are optional. | [![Import the training session routine blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Ftraining_session.yaml) |
 | **Practice caller** | Calls the [practice game](games.md) on your speakers: "Sam, you require 81" when a checkout is possible, "No score" after a bust, the game shot of a leg or the match, and optionally the score to leave when no checkout is possible and the bull-off. The messages are templates. | [![Import the practice caller blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fpractice_caller.yaml) |
 | **Weekly report** | Sends your [training week](entities.md#weekly-report) when the board ends it, by default on Monday at midnight: darts, training time, sessions, the 3-dart average and its change since the week before, best visit, 180s, checkout rate, streak and new personal bests. The message is a template; by default the report appears in Home Assistant's notifications. | [![Import the weekly report blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FDennis-Otto%2Fhomedarts-for-autodarts%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhomedarts%2Fweekly_report.yaml) |
@@ -44,7 +45,7 @@ Not sure which one you need? Start from what your home should do:
 
 The buttons import a blueprint from GitHub, for example one you deleted. Without My Home Assistant, go to **Settings → Automations & scenes → Blueprints → Import blueprint** and paste the link to the file in [`blueprints/automation/homedarts`](https://github.com/Dennis-Otto/homedarts-for-autodarts/tree/main/blueprints/automation/homedarts). An imported blueprint is kept up to date like the others.
 
-<img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the sixteen HomeDarts blueprints, from asking Assist about your darts to the weekly report, and their file names" width="760">
+<img src="images/en/blueprints.png" alt="The blueprints page of Home Assistant with the seventeen HomeDarts blueprints, from asking Assist about your darts to the weekly report, and their file names" width="760">
 
 ### Updates of the blueprints
 
@@ -163,6 +164,20 @@ What this blueprint and the [automatic detection](#start-and-stop-detection-auto
 A finished session keeps its totals until the next one starts, so the report checks the *Darts today* sensor of the same board and skips days without darts. If that sensor is disabled, the darts of the session decide. To start a new session every day, add *New training session* of your board as the last action.
 
 No board event starts the report, so it takes `summary` from the `summary` attribute of the *Training darts* sensor: the sentence describes that sensor's session, even when the other sensors of the report come from another board, and it is in the language of Home Assistant (see [calls in the language of Home Assistant](#calls-in-the-language-of-home-assistant)). Without the attribute, as with a release of the integration before the one that added it, it writes the sentence in English.
+
+### Training reminder
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Board | | Your board, whose *Darts today* and *Training streak* sensors the reminder reads. Set the goal with the board's *Daily goal* setting. |
+| Time | 19:00 | When the reminder is sent. Leave time to train: darts count for the day on which they are thrown. |
+| Weekdays | every day | The days on which you want a reminder. |
+| Minimum streak | 2 days | Reminds you of the streak on a day without darts only from this many days in a row. The open daily goal reminds you in any case. |
+| Actions | | For example a notification with `reminder`, such as "10 darts left to your daily goal of 10. Throw a dart today to keep your streak of 2 days." in the language of Home Assistant. They can also use `left` (the darts still missing to the goal), `goal`, `darts_today` and `streak`. |
+
+The reminder stays quiet on a day whose goal is reached, and on a day with darts and no goal: a single dart keeps the streak, which only a [whole day without darts](statistics.md#personal-bests-streak-and-daily-goal) ends. Without a *Daily goal*, it reminds you only of the streak.
+
+No board event starts the reminder, so it takes `reminder` from the `reminder` attributes of the *Darts today* and *Training streak* sensors, which hold the sentence while the goal is open and until the first dart of the day, in the language of Home Assistant (see [calls in the language of Home Assistant](#calls-in-the-language-of-home-assistant)). Without the attributes, as with a release of the integration before the one that added them, it writes the sentence in English.
 
 ### Training session routine
 
@@ -502,7 +517,7 @@ For example, in words of your own:
 
 ### Calls in the language of Home Assistant
 
-Home Assistant translates no blueprint, so the integration gives each event that a caller speaks the words for it, in the language of Home Assistant, and the callers say them by default: `call` on the events of the dart caller and the practice caller, `title` and `summary` on the weekly report, and the `summary` attribute of the *Training darts* sensor for the training report, which runs on a timer. They follow a new language of Home Assistant at once, in English, German, Dutch, French and Spanish; a regional variant such as `de-CH` speaks its language, and another language English. The words are those of the [scoreboard's caller](scoreboard.md#the-caller) and of the voice packs that `homedarts.generate_voice_pack` records.
+Home Assistant translates no blueprint, so the integration gives each event that a caller speaks the words for it, in the language of Home Assistant, and the callers say them by default: `call` on the events of the dart caller and the practice caller, `title` and `summary` on the weekly report, the `summary` attribute of the *Training darts* sensor for the training report, and the `reminder` attributes of the *Darts today* and *Training streak* sensors for the training reminder, both of which run on a timer. They follow a new language of Home Assistant at once, in English, German, Dutch, French and Spanish; a regional variant such as `de-CH` speaks its language, and another language English. The words are those of the [scoreboard's caller](scoreboard.md#the-caller) and of the voice packs that `homedarts.generate_voice_pack` records.
 
 | Event | `call` in English | `call` in German |
 | --- | --- | --- |
