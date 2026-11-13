@@ -179,8 +179,8 @@ def test_animations_compare_frame_by_frame_with_their_times(folders):
     entries = {entry["path"]: entry for entry in report["images"]}
     # Only the time of a frame changed, or the number of frames: no pair of frames
     # tells what changed.
-    assert "difference" not in entries["en/slower.webp"]
-    assert "difference" not in entries["en/longer.webp"]
+    for name in ("en/slower.webp", "en/longer.webp"):
+        assert not {"difference", "comparison", "frame", "frames"} & set(entries[name])
     assert entries["en/dot.webp"]["difference"] == "en/dot.difference.png"
     with Image.open(output / "en/dot.difference.png") as drawn:
         assert drawn.size == (8, 8)
@@ -266,6 +266,82 @@ def test_an_animation_shows_its_frame_with_the_most_changes(folders):
     assert difference.getpixel((5, 5)) == difference.getpixel((6, 6)) == RED
     # The first frame, with its one change, isn't the one shown.
     assert not is_red(difference.getpixel((0, 0)))
+
+
+def colours_of(image: Image.Image) -> set[tuple[int, int, int]]:
+    image = image.convert("RGB")
+    return {colour for _, colour in image.getcolors(image.size[0] * image.size[1])}
+
+
+def test_the_comparison_of_an_animation_shows_one_later_frame_on_both_sides(folders):
+    # Telegram and a pull request show the first frame of an animation, while its
+    # change may be in a later one: the comparison shows the place of the change
+    # before and after of that one frame, in the colours of the image, so that one
+    # look tells what changed, and the report names the frame.
+    before, after, output = folders
+    colours = [(0, 0, 80), (0, 80, 0), (80, 0, 0), (80, 80, 0), (0, 80, 80)]
+    changed = (250, 200, 0)
+    for folder in (before, after):
+        frames = [Image.new("RGB", (120, 80), colour) for colour in colours]
+        if folder == after:
+            frames[3].paste(changed, (50, 30, 60, 40))
+        path = folder / "en" / "clip.webp"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        frames[0].save(
+            path, save_all=True, append_images=frames[1:], duration=100, lossless=True
+        )
+
+    report = compare.run(before, after, output, ["en"])
+
+    (entry,) = report["images"]
+    assert entry["comparison"] == "en/clip.comparison.png"
+    assert (entry["frame"], entry["frames"]) == (4, 5)
+    with Image.open(output / entry["comparison"]) as drawn:
+        assert drawn.format == "PNG"
+        comparison = drawn.convert("RGB")
+    # The place before and the place after, at the size of the image, side by side or
+    # one above the other with a strip between them, the one before first.
+    width, height = comparison.size
+    assert max(width, height) < 2 * 120
+    if width > height:
+        first = comparison.crop((0, 0, width // 2, height))
+        second = comparison.crop(((width + 1) // 2, 0, width, height))
+    else:
+        first = comparison.crop((0, 0, width, height // 2))
+        second = comparison.crop((0, (height + 1) // 2, width, height))
+    # Both show the fourth frame, in its own colour, and only the one after its
+    # change; the first frame, which a phone shows of the animation, is nowhere.
+    assert colours[3] in colours_of(first) & colours_of(second)
+    assert colours[0] not in colours_of(comparison)
+    assert changed not in colours_of(first)
+    assert changed in colours_of(second)
+    # The same red frame around the change on both.
+    assert red_pixels(first) == red_pixels(second) > 0
+    # The difference shows the same frame.
+    with Image.open(output / entry["difference"]) as drawn:
+        difference = drawn.convert("RGB")
+    assert difference.getpixel((55, 35)) == RED
+    assert not is_red(difference.getpixel((5, 5)))
+    assert (
+        "| `en/clip.webp` | changed, most in frame 4 of 5 | 0.21 % |"
+        in (output / "summary.md").read_text()
+    )
+
+
+def test_a_picture_of_one_frame_names_no_frame_in_the_tables(folders):
+    before, after, output = folders
+    picture(before / "en" / "card.png")
+    picture(after / "en" / "card.png", dots=[(5, 5)])
+
+    (entry,) = compare.run(before, after, output, ["en"])["images"]
+
+    assert (entry["comparison"], entry["frame"], entry["frames"]) == (
+        "en/card.comparison.png",
+        1,
+        1,
+    )
+    assert (output / entry["comparison"]).is_file()
+    assert "| `en/card.png` | changed | 1.00 % |" in (output / "summary.md").read_text()
 
 
 @pytest.mark.parametrize(
