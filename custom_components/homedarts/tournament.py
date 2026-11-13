@@ -1297,7 +1297,9 @@ class TournamentDirector:
         a finished tournament and in the player slots the practice game gets
         back after the tournament; a player renamed into one who is in the
         setup already is there once. A player of the tournament being played
-        keeps the name, and so does the tournament."""
+        keeps the name, and so does the tournament, as does a finished one
+        when the player is renamed into another of its players: two entrants
+        of one name would leave its table, bracket and podium unreadable."""
         self.check(name)
         names = (name, new_name)
         keys = {player.strip().casefold() for player in names}
@@ -1308,13 +1310,23 @@ class TournamentDirector:
             elif new_name not in players:
                 players.append(new_name)
         self.setup.players = players
-        if self.tournament is not None and not self.running:
+        if (
+            self.tournament is not None
+            and not self.running
+            and not self._merges_entrants(self.tournament, keys)
+        ):
             self.tournament.players = [
                 new_name if player.casefold() in keys else player
                 for player in self.tournament.players
             ]
         if self.saved:
             self.saved["names"] = renamed_slots(self.saved["names"], names, new_name)
+
+    @staticmethod
+    def _merges_entrants(tournament: Tournament, keys: set[str]) -> bool:
+        """Whether a rename merges two players who both played the tournament."""
+        entrants = {player.casefold() for player in tournament.players}
+        return len(keys) > 1 and keys <= entrants
 
     def next_match(
         self, practice: PracticeGame, now: datetime, board: str | None = None

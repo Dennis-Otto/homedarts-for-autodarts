@@ -54,6 +54,9 @@ They also give search engines and the previews of shared links what they need:
   so does the search of the website.
 - A page that asks search engines to leave it out, with <meta name="robots"
   content="noindex">, leaves the sitemap too, which lists the pages to index.
+- The live demo is no page of MkDocs, so it gets after the build what Material
+  gives each of its pages: its canonical address, the previews of a shared link,
+  with the preview card of the start page, and its entry in the sitemap.
 
 A link to a page that doesn't exist fails the build, as it does in the Markdown.
 """
@@ -65,7 +68,7 @@ import logging
 import posixpath
 import re
 import shutil
-from html import escape
+from html import escape, unescape
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
@@ -110,6 +113,39 @@ CARDS = (
 )
 CARD_TEXTS = CARDS.parent / "text"
 DEMO = "demo"
+# The page of the live demo, from the root of the website.
+DEMO_PAGE = f"{DEMO}/index.html"
+# The title and the description of the live demo, in its head.
+DEMO_TITLE = re.compile(r"<title>([^<]*)</title>")
+DEMO_DESCRIPTION = re.compile(r'<meta name="description" content="([^"]*)">')
+# The preview card of the start page, 1200 x 630, which the social plugin of Material
+# draws with the name and the icon of the project: a shared link to the demo shows it.
+SOCIAL_CARD = "assets/images/social/index.png"
+# The canonical address and the previews of a shared link, as Material writes them in
+# the head of each of its pages.
+SHARED_HEAD = """
+    <link rel="canonical" href="{url}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{description}">
+    <meta property="og:image" content="{image}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="{url}">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{title}">
+    <meta property="twitter:description" content="{description}">
+    <meta property="twitter:image" content="{image}">
+  </head>"""
+# The end of the head of a page, with the indentation of its line.
+END_OF_HEAD = re.compile(r"\n?[ \t]*</head>")
+# The entry of a page in the sitemap, before its end.
+SITEMAP_ENTRY = """\
+    <url>
+        <loc>{url}</loc>
+    </url>
+</urlset>"""
 
 # The key of the front matter of a page that moved, with the page that took its
 # place, and the one that the hooks give it with the address of that page.
@@ -431,6 +467,49 @@ def on_post_page(output: str, page: Any, config: Any) -> str:
     return output
 
 
+def write_sitemap(site: Path, text: str) -> None:
+    """Write the sitemap, once as text and, where MkDocs wrote one, compressed."""
+    (site / "sitemap.xml").write_bytes(text.encode("utf-8"))
+    compressed = site / "sitemap.xml.gz"
+    if compressed.is_file():
+        compressed.write_bytes(gzip.compress(text.encode("utf-8"), mtime=0))
+
+
+def in_head(pattern: re.Pattern[str], head: str) -> str:
+    """The text that the pattern finds in the head of a page, for an attribute."""
+    found = pattern.search(head)
+    return escape(unescape(found[1])) if found else ""
+
+
+def share_demo(site: Path, site_url: str) -> None:
+    """Give the live demo its canonical address, the previews of a shared link and
+    its entry in the sitemap, as Material gives them to each page of MkDocs.
+
+    mkdocs serve builds the website again into the same folder, where the demo may
+    have them already.
+    """
+    demo = site / DEMO_PAGE
+    url = urljoin(site_url, DEMO_PAGE)
+    text = demo.read_text("utf-8")
+    head = text.partition("</head>")[0]
+    if 'property="og:url"' not in head:
+        shared = SHARED_HEAD.format(
+            url=url,
+            title=in_head(DEMO_TITLE, head),
+            description=in_head(DEMO_DESCRIPTION, head),
+            image=urljoin(site_url, SOCIAL_CARD),
+        )
+        shown = END_OF_HEAD.sub(lambda _: shared, text, count=1)
+        demo.write_bytes(shown.encode("utf-8"))
+    sitemap = site / "sitemap.xml"
+    if not sitemap.is_file():
+        return
+    listed = sitemap.read_bytes().decode("utf-8")
+    if f"<loc>{url}</loc>" not in listed:
+        entry = SITEMAP_ENTRY.format(url=url)
+        write_sitemap(site, listed.replace("</urlset>", entry, 1))
+
+
 def unlist(site: Path, site_url: str) -> None:
     """Leave the pages that ask search engines not to index them out of the sitemap.
 
@@ -449,15 +528,13 @@ def unlist(site: Path, site_url: str) -> None:
     kept = LISTED.sub(lambda match: "" if match[1] in hidden else match[0], listed)
     if kept == listed:
         return
-    sitemap.write_bytes(kept.encode("utf-8"))
-    compressed = site / "sitemap.xml.gz"
-    if compressed.is_file():
-        compressed.write_bytes(gzip.compress(kept.encode("utf-8"), mtime=0))
+    write_sitemap(site, kept)
 
 
 def on_post_build(config: Any) -> None:
-    """The cards of the integration next to the page of the live demo, and the
-    sitemap without the pages that search engines are to leave out.
+    """The cards of the integration next to the page of the live demo, with its
+    previews of a shared link and its entry in the sitemap, and the sitemap without
+    the pages that search engines are to leave out.
 
     The hooks of the blueprint, listed after these in mkdocs.yml, copy the sitemap
     into every folder of pages afterwards.
@@ -468,4 +545,6 @@ def on_post_build(config: Any) -> None:
     if (demo / "index.html").is_file():
         shutil.copyfile(CARDS, demo / CARDS.name)
         shutil.copytree(CARD_TEXTS, demo / CARD_TEXTS.name, dirs_exist_ok=True)
+        if config.site_url:
+            share_demo(site, config.site_url)
     unlist(site, config.site_url or "")

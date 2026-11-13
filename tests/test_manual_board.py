@@ -6,7 +6,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
+from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
@@ -478,6 +478,53 @@ async def test_a_board_of_another_entry_stays_where_it_is(hass, aioclient_mock):
     )
     assert result["errors"] == {"base": "cannot_connect_local"}
     assert entry.data == DATA
+
+
+def ignore_board(hass) -> MockConfigEntry:
+    """The discovery of board-1, which the user ignored."""
+    ignored = MockConfigEntry(
+        domain="homedarts", unique_id="board-1", source=SOURCE_IGNORE, data={}
+    )
+    ignored.add_to_hass(hass)
+    return ignored
+
+
+async def test_an_ignored_discovery_gives_way_to_the_dartboard(hass, aioclient_mock):
+    ignored = ignore_board(hass)
+    entry = await setup_manual(hass)
+    result = await reconfigure(hass, entry, "local")
+    mock_board(aioclient_mock)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"host": "192.0.2.10", "port": 3180}
+    )
+    await hass.async_block_till_done()
+    assert result["reason"] == "board_connected"
+    assert entry.unique_id == "board-1"
+    assert hass.config_entries.async_get_entry(ignored.entry_id) is None
+    assert [
+        item.entry_id for item in hass.config_entries.async_entries("homedarts")
+    ] == [entry.entry_id]
+
+
+async def test_the_board_search_offers_a_board_whose_discovery_was_ignored(
+    hass, aioclient_mock
+):
+    ignored = ignore_board(hass)
+    entry = await setup_manual(hass)
+    aioclient_mock.get(
+        DISCOVERY_URL,
+        json=[{"boardId": "board-1", "name": "Garage", "ip": "192.0.2.10"}],
+    )
+    mock_board(aioclient_mock)
+    result = await reconfigure(hass, entry, "discover")
+    assert result["step_id"] == "discover"
+    assert list(result["data_schema"].schema["board_id"].container) == ["board-1"]
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"board_id": "board-1"}
+    )
+    await hass.async_block_till_done()
+    assert result["reason"] == "board_connected"
+    assert hass.config_entries.async_get_entry(ignored.entry_id) is None
 
 
 async def test_removing_a_dartboard_without_autodarts_removes_its_training(

@@ -2726,14 +2726,23 @@ const avatarHtml = (picture) =>
 // eslint-disable-next-line no-control-regex -- the control characters are what it excludes
 const NAME_EXCLUDED = /[{}%#\u0000-\u001f\u007f-\u009f]/g;
 
-// A player name as the integration keeps it (clean_name): without those characters,
-// trimmed and at most 20 characters long.
-const cleanName = (name) => String(name ?? "").replace(NAME_EXCLUDED, "").trim().slice(0, LOBBY_LIMITS.name).trim();
+// A player name as clean_name of the integration makes it: without those characters,
+// trimmed and at most 20 characters long, counted as Python counts them, by code point,
+// so that an emoji is never cut in half.
+const cutName = (name) =>
+  Array.from(String(name ?? "").replace(NAME_EXCLUDED, "").trim())
+    .slice(0, LOBBY_LIMITS.name)
+    .join("");
 
-// Names are the same player regardless of upper and lower case, as in the integration,
-// which compares them case-folded: the lower case of the upper case folds Weiß and WEISS
-// into one name, as Python's casefold does.
-const nameKey = (name) => cleanName(name).toUpperCase().toLowerCase();
+// A name that the new game screen adds: as the integration keeps it, without a space at
+// the end where the cut leaves one.
+const cleanName = (name) => cutName(name).trim();
+
+// Names are the same player regardless of upper and lower case, as _key of the
+// integration compares them, case-folded: the lower case of the upper case of the lower
+// case folds Weiß, WEISS and WEIẞ into one name, as Python's casefold does. The tests of
+// both read their cases from tests/fixtures/name_keys.json.
+const nameKey = (name) => cutName(name).toLowerCase().toUpperCase().toLowerCase();
 
 // The person each player is linked to, with the picture and whether they are home.
 function personLinks(hass, profiles) {
@@ -12874,6 +12883,7 @@ export {
   lobbyHtml,
   lobbySuggestions,
   matchResult,
+  nameKey,
   padBed,
   padHtml,
   NORM,
