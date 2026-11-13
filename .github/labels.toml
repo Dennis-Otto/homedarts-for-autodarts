@@ -67,7 +67,7 @@ group = "type"
 [[label]]
 name = "area: setup"
 color = "bfdadc"
-description = "Setup, discovery, the connection to the board, dartboards without Autodarts, Granboard"
+description = "Setup, discovery, reconfiguration, board connection, dartboards without Autodarts, Granboard"
 group = "area"
 form_options = [
   "Setup, discovery or reconfiguration",

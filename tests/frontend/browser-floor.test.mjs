@@ -103,10 +103,10 @@ test("the fallbacks the table promises are in the cards", () => {
 test("a colour made with color-mix() keeps a plain colour in a browser without it", () => {
   // A custom property made of color-mix() is void in an older browser, and the text that
   // takes its colour from it loses it. Each one gets a plain colour of the theme there.
-  const mixed = new Set([...CARDS.matchAll(/(--[a-z-]+): color-mix\(/g)].map((match) => match[1]));
+  const mixed = new Set([...CARDS.matchAll(/(--[a-z0-9-]+): color-mix\(/g)].map((match) => match[1]));
   const plain = new Set();
   for (const block of CARDS.matchAll(/@supports not \(color: color-mix\(in srgb, red, blue\)\) \{([\s\S]*?)\n {2}\}/g)) {
-    for (const [, name, value] of block[1].matchAll(/(--[a-z-]+): ([^;]+);/g)) {
+    for (const [, name, value] of block[1].matchAll(/(--[a-z0-9-]+): ([^;]+);/g)) {
       assert.doesNotMatch(value, /color-mix/);
       plain.add(name);
     }
