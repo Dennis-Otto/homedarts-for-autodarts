@@ -151,7 +151,7 @@ test("an X01 match shows every player, the legs and sets to win and the visit", 
     ...game({ remaining: 81, checkout: "T15 D18", legs_to_win: 3, sets_to_win: 2 }),
   });
   assert.equal(text(card, ".title"), "Practice 501");
-  assert.equal(text(card, ".meta"), "3 legs per set · 2 sets to win");
+  assert.equal(text(card, ".meta"), "3 legs to win a set · 2 sets to win");
   assert.equal($(card, ".main .players").getAttribute("class"), "players n2");
   assert.deepEqual(
     $$(card, ".main .player").map((tile) => [tile.className, tile.querySelector(".name").textContent]),
@@ -245,7 +245,7 @@ test("status, visit and full height follow the options", () => {
 test("the scoreboard speaks German", () => {
   const { card } = setup({ ...STATS, ...game({ remaining: 81, legs_to_win: 3 }) }, {}, { language: "de" });
   assert.equal(text(card, ".title"), "Übungsspiel 501");
-  assert.equal(text(card, ".meta"), "3 Legs pro Satz");
+  assert.equal(text(card, ".meta"), "3 Legs zum Satzgewinn");
   assert.deepEqual(sum(card), ["Zuletzt", "–"]);
   assert.equal(text(card, ".pill"), "Bereit – wirf!");
 });
@@ -296,7 +296,7 @@ test("party games on the scoreboard show lives, targets and the winner", () => {
       tile.querySelector(".details").textContent,
     ]);
   const { hass, card } = setup(killer({}));
-  assert.equal(text(card, ".meta"), "2 legs per set · 2 sets to win");
+  assert.equal(text(card, ".meta"), "2 legs to win a set · 2 sets to win");
   assert.deepEqual(tiles(card), [
     [
       "player active",

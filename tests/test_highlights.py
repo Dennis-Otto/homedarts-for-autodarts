@@ -389,6 +389,142 @@ async def test_a_clip_records_beside_the_photo_without_holding_up_the_answer(
     assert "clip" not in saved
 
 
+# What the gallery has before the photo of 2026-09-26 21:05:33: highlights of
+# HomeDarts, a clip with its photo, a copy, one dated later by a clock that was
+# wrong, and files that are not its own.
+OLDER = [
+    "2026-09-24_20-00-00_Alex_180.jpg",
+    "2026-09-24_20-00-00_Alex_180.mp4",
+    "2026-09-25_20-00-00_Sam_140.png",
+    "2026-09-25_20-00-00_Sam_140 (2).jpg",
+    "2026-09-26_21-05-30_Kim.webp",
+    "2026-09-26_21-05-31.jpg",
+    "2027-01-01_00-00-00_Lea_checkout-121.jpg",
+]
+FOREIGN = [
+    "holiday.jpg",
+    # Named as the gallery reads, but not as HomeDarts writes.
+    "2026-09-20_Alex_180.jpg",
+    "2026-09-20_10-00_Alex_180.jpg",
+    "2026-09-21_10-00-00_Alex_180.mov",
+    "2026-09-22_10-00-00_Alex_180-0123456789abcdef_x_y.jpg",
+    "notes.txt",
+]
+
+
+def gallery_files(gallery: Path) -> set[str]:
+    return {path.name for path in gallery.iterdir() if path.is_file()}
+
+
+async def test_the_gallery_keeps_the_newest_highlights_each_with_its_clip(
+    hass, aioclient_mock, tmp_path, freezer
+):
+    """A bound like that of the exports and backups: the newest stay, a clip goes
+    with its photo, and files that HomeDarts did not write stay."""
+    freezer.move_to(TAKEN)
+    gallery = folders(hass, tmp_path / "config", tmp_path / "media")
+    gallery.mkdir(parents=True)
+    for name in OLDER + FOREIGN:
+        (gallery / name).write_bytes(JPEG)
+    # A folder named like a photo is no photo.
+    (gallery / "2026-09-01_10-00-00_Alex_180.jpg").mkdir()
+    camera, *_ = await setup_cameras(hass, aioclient_mock, 0)
+    camera_picture(aioclient_mock, 0)
+
+    # 0 keeps every one.
+    saved = await save(hass, camera=camera, player="Alex", label="180", keep=0)
+    new = Path(saved["photo"]).name
+    assert new == f"{STAMP}_Alex_180.jpg"
+    assert gallery_files(gallery) == {*OLDER, *FOREIGN, new}
+
+    # A folder of the user's own is never pruned, the gallery's own folder neither
+    # when the action names it.
+    saved = await save(hass, camera=camera, folder=str(gallery), label="60", keep=1)
+    copy = Path(saved["photo"]).name
+    assert gallery_files(gallery) == {*OLDER, *FOREIGN, new, copy}
+
+    # The photo just saved counts among the newest and stays, even when a wrong
+    # clock dated another one later; then the newest by their names.
+    saved = await save(hass, camera=camera, player="Alex", label="180", keep=4)
+    third = Path(saved["photo"]).name
+    assert third == f"{STAMP}_Alex_180 (2).jpg"
+    assert gallery_files(gallery) == {
+        third,
+        "2027-01-01_00-00-00_Lea_checkout-121.jpg",
+        copy,
+        new,
+        *FOREIGN,
+    }
+    assert (gallery / "2026-09-01_10-00-00_Alex_180.jpg").is_dir()
+
+
+async def test_the_gallery_keeps_a_thousand_highlights_by_default(
+    hass, aioclient_mock, tmp_path, freezer
+):
+    freezer.move_to(TAKEN)
+    gallery = folders(hass, tmp_path / "config", tmp_path / "media")
+    gallery.mkdir(parents=True)
+    for name in OLDER:
+        (gallery / name).write_bytes(JPEG)
+    camera, *_ = await setup_cameras(hass, aioclient_mock, 0)
+    camera_picture(aioclient_mock, 0)
+    assert SAVE_HIGHLIGHT_SCHEMA({"camera": camera, "keep": "1000"})["keep"] == 1000
+    for keep in (-1, 100_001):
+        with pytest.raises(vol.Invalid):
+            SAVE_HIGHLIGHT_SCHEMA({"camera": camera, "keep": keep})
+    await save(hass, camera=camera)
+    assert len(gallery_files(gallery)) == len(OLDER) + 1
+    with patch("custom_components.homedarts.services.KEPT_HIGHLIGHTS", 2):
+        saved = await save(hass, camera=camera)
+    assert gallery_files(gallery) == {
+        Path(saved["photo"]).name,
+        "2027-01-01_00-00-00_Lea_checkout-121.jpg",
+    }
+
+
+async def test_a_photo_is_saved_when_older_ones_cannot_be_deleted(
+    hass, aioclient_mock, tmp_path, caplog
+):
+    gallery = folders(hass, tmp_path / "config", tmp_path / "media")
+    camera, *_ = await setup_cameras(hass, aioclient_mock, 0)
+    camera_picture(aioclient_mock, 0)
+    with patch.object(Path, "unlink", side_effect=PermissionError("read-only")):
+        gallery.mkdir(parents=True)
+        (gallery / OLDER[0]).write_bytes(JPEG)
+        saved = await save(hass, camera=camera, keep=1)
+    assert gallery_files(gallery) == {Path(saved["photo"]).name, OLDER[0]}
+    assert "Older highlights not deleted: read-only" in caplog.text
+
+
+async def test_highlight_photos_are_limited_per_hour(hass, aioclient_mock, tmp_path):
+    """A looping automation cannot fill the disk, as with the exports."""
+    gallery = folders(hass, tmp_path / "config", tmp_path / "media")
+    camera, *_ = await setup_cameras(hass, aioclient_mock, 0)
+    camera_picture(aioclient_mock, 0)
+    with (
+        patch("custom_components.homedarts.highlights.HIGHLIGHT_LIMIT", 2),
+        patch("custom_components.homedarts.highlights.monotonic", return_value=1000.0),
+    ):
+        await save(hass, camera=camera, label="1")
+        # A photo that was not saved does not count.
+        with pytest.raises(ServiceValidationError):
+            await save(hass, camera="camera.kitchen")
+        await save(hass, camera=camera, label="2")
+        with pytest.raises(ServiceValidationError) as error:
+            await save(hass, camera=camera, label="3")
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "highlight_limit"
+    assert error.value.translation_placeholders == {"count": "2"}
+    assert len(gallery_files(gallery)) == 2
+    # An hour later, the next photo is saved.
+    with (
+        patch("custom_components.homedarts.highlights.HIGHLIGHT_LIMIT", 2),
+        patch("custom_components.homedarts.highlights.monotonic", return_value=4600.0),
+    ):
+        await save(hass, camera=camera, label="4")
+    assert len(gallery_files(gallery)) == 3
+
+
 def test_names_and_labels_become_safe_parts_of_a_file_name():
     taken = datetime(2026, 9, 26, 21, 5, 33, tzinfo=UTC)
     assert photo_stem(taken, "", "") == STAMP

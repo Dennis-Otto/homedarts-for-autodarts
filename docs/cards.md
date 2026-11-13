@@ -253,11 +253,11 @@ The [automatic dashboard](#automatic-dashboard) has a *Scoreboard* view that sho
 
 Choose the next game at the board, without a phone: tap **New game** below the score between games, or at the top right during a game. A few seconds after a match or a training game ends, or after its [match summary](#match-summary), the screen also opens by itself, with the last choice ready for a rematch; a dart thrown instead closes it again.
 
-<img src="images/en/lobby.webp" alt="Animation: on the tablet, New game opens the screen, Cricket is chosen, Sam joins Alex, the legs per set go up to three and the game starts on the scoreboard" width="760">
+<img src="images/en/lobby.webp" alt="Animation: on the tablet, New game opens the screen, Cricket is chosen, Sam joins Alex, the legs to win a set go up to three and the game starts on the scoreboard" width="760">
 
 - **Game:** every game of *Practice game*, grouped into X01, Cricket, party games and training games. `lobby_games` limits the choice.
 - **Players:** up to four, in a party game up to eight, in throwing order. Tap a name to add the player, ▲ and ▼ to move them, ✕ to remove them. The names come from the player profiles and the player name fields; players [linked to a person](entities.md#link-a-player-to-a-person-homedartslink_player) who is at home come first, with their picture and ⌂. Type a new name, or add a guest without one; a typed name goes in as the integration keeps it, without curly brackets, percent or number signs (*Tom #2* plays as *Tom 2*), and once in any upper and lower case (*WEISS* is *Weiß*). With nobody chosen, one player without a name throws. In X01 and the Cricket games, *+ Bot* seats the [bot](entities.md#bot) after the players, at level 60; − and + change its level in steps of 10, from 20 to 120, and ✕ sends it home. With the bot, up to three players play. Killer needs two players; training games take the first player only. In X01, − and + beside a player set a [start score](games.md#start-scores-handicap) of their own in steps of 100, from 101 to 1001.
-- **Format:** legs per set and sets to win, for a match of several players.
+- **Format:** legs to win a set and sets to win, for a match of several players.
 - **Options:** for X01 the in and out mode, *Straight*, *Double* or *Master*, the bull mode *25/50* or *50/50* and *Max rounds* in steps up to 50, a tournament straight or double in and out alone; and the bull-off for a match, with bull-off by distance where the board offers it. With four players of X01 or a Cricket game, *Teams* plays 1 and 3 against 2 and 4. In X01, *Fair start* works the [start scores](games.md#fair-start) out from the averages.
 - **Start:** starts the game with [`homedarts.start_game`](entities.md#start-a-practice-game-homedartsstart_game), and the scoreboard shows it as soon as the integration started it. If the integration refuses the start, the screen stays with its players and shows why above the button. If detection is stopped, the start switches it on once the game started, because no dart counts without it; the screen says so above the button. The start stays at the bottom of the screen while the page scrolls. During a game, *End game* stops it after a second tap.
 
@@ -265,7 +265,7 @@ The screen never opens in the preview of the card editor.
 
 <img src="images/en/lobby-bot.png" alt="The new game screen with 501 chosen: Alex and the bot at level 70 with − and + to change it" width="760">
 
-<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs per set, double out and the start button" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs to win a set, double out and the start button" width="760">
 
 ### Correcting and entering darts
 

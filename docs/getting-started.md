@@ -8,7 +8,7 @@ description: "From no Home Assistant to the scoreboard on a tablet at your Autod
 
 You play on an Autodarts board and have never used Home Assistant? This guide takes you from nothing to the scoreboard on a tablet next to your board. Home Assistant, HACS and the integration are free. Plan about an hour; most of it is setting up Home Assistant itself.
 
-<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs per set, double out and the start button" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs to win a set, double out and the start button" width="760">
 
 **On this page:** [What you need](#what-you-need) · [1. Install Home Assistant](#1-install-home-assistant) · [2. Install HACS](#2-install-hacs) · [3. Install the integration](#3-install-the-integration) · [4. Add your board](#4-add-your-board) · [5. Create the dashboard](#5-create-the-dashboard) · [6. Put the scoreboard next to the board](#6-put-the-scoreboard-next-to-the-board) · [7. Play your first game](#7-play-your-first-game) · [What next](#what-next) · [If something doesn't work](#if-something-doesnt-work)
 

@@ -596,7 +596,7 @@
         "name": "Nombre de joueurs de la partie"
       },
       "practice_legs": {
-        "name": "Manches par set de la partie"
+        "name": "Manches pour gagner un set de la partie"
       },
       "practice_sets": {
         "name": "Sets pour gagner la partie"
@@ -883,6 +883,9 @@
     },
     "highlight_failed": {
       "message": "Impossible d'enregistrer la photo de temps fort\u00a0: {error}"
+    },
+    "highlight_limit": {
+      "message": "{count} photos de temps fort ont été enregistrées au cours de la dernière heure, le maximum pour l'intégration. Réessayez plus tard."
     },
     "voice_pack_no_score": {
       "message": "Aucun point"
@@ -1423,7 +1426,7 @@
           "description": "Noms d'un à quatre joueurs, dans l'ordre de lancer. Si aucun nom n'est indiqué, le nombre de joueurs reste inchangé."
         },
         "legs": {
-          "name": "Manches par set",
+          "name": "Manches pour gagner un set",
           "description": "Manches à gagner pour remporter un set dans un match."
         },
         "sets": {
@@ -1645,6 +1648,10 @@
         "clip_duration": {
           "name": "Secondes après",
           "description": "Facultatif. La part du clip après la photo. 8 par défaut."
+        },
+        "keep": {
+          "name": "Temps forts conservés",
+          "description": "Facultatif. Les temps forts les plus récents qui restent dans la galerie après l'enregistrement d'une photo\u00a0; les photos plus anciennes sont supprimées avec leurs clips. 0 les conserve tous. Un dossier choisi par vous n'est jamais nettoyé. 1000 par défaut."
         }
       }
     },
@@ -1763,8 +1770,8 @@
           "description": "X01 de 101 à 1001 points, Cricket, Cut-Throat Cricket ou Tactics."
         },
         "legs": {
-          "name": "Manches par set",
-          "description": "Manches à gagner pour remporter un set dans chaque match. Sans valeur, les manches par set de la partie s'appliquent."
+          "name": "Manches pour gagner un set",
+          "description": "Manches à gagner pour remporter un set dans chaque match. Sans valeur, les manches pour gagner un set de la partie s'appliquent."
         },
         "sets": {
           "name": "Sets pour gagner",

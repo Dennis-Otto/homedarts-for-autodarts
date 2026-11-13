@@ -253,11 +253,11 @@ Das [automatische Dashboard](#automatisches-dashboard) hat eine Ansicht *Anzeige
 
 Wähle das nächste Spiel direkt am Board, ohne Handy: Tippe zwischen den Spielen auf **Neues Spiel** unter den Punkten, während eines Spiels oben rechts. Einige Sekunden nach dem Ende eines Matches oder Trainingsspiels, oder nach seiner [Match-Zusammenfassung](#match-zusammenfassung), öffnet sich die Auswahl auch von selbst, mit der letzten Wahl für eine Revanche; wirft stattdessen jemand einen Dart, schließt sie sich wieder.
 
-<img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet öffnet Neues Spiel die Auswahl, Cricket wird gewählt, Sam kommt zu Alex, die Legs pro Satz steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
+<img src="images/de/lobby.webp" alt="Animation: Auf dem Tablet öffnet Neues Spiel die Auswahl, Cricket wird gewählt, Sam kommt zu Alex, die Legs zum Satzgewinn steigen auf drei und das Spiel startet auf der Anzeigetafel" width="760">
 
 - **Spiel:** jedes Spiel von *Übungsspiel*, gruppiert in X01, Cricket, Partyspiele und Trainingsspiele. `lobby_games` schränkt die Auswahl ein.
 - **Spieler:** bis zu vier, bei einem Partyspiel bis zu acht, in Wurfreihenfolge. Tippe auf einen Namen, um den Spieler hinzuzufügen, auf ▲ und ▼, um ihn zu verschieben, und auf ✕, um ihn zu entfernen. Die Namen kommen aus den Spielerprofilen und den Namensfeldern der Spieler; Spieler, die [mit einer Person verknüpft](entities.de.md#spieler-mit-einer-person-verknüpfen-homedartslink_player) sind, die zu Hause ist, stehen vorn, mit ihrem Bild und ⌂. Tippe einen neuen Namen ein oder füge einen Gast ohne Namen hinzu; ein getippter Name kommt so hinein, wie die Integration ihn behält, ohne geschweifte Klammern, Prozentzeichen und Rauten (*Tom #2* spielt als *Tom 2*), und nur einmal, gleich in welcher Groß- und Kleinschreibung (*WEISS* ist *Weiß*). Ist niemand gewählt, wirft ein Spieler ohne Namen. Bei X01 und den Cricket-Spielen setzt *+ Bot* den [Bot](entities.de.md#bot) nach den Spielern dazu, mit Stärke 60; − und + ändern seine Stärke in Zehnerschritten von 20 bis 120, und ✕ schickt ihn nach Hause. Mit dem Bot spielen bis zu drei Spieler. Killer braucht zwei Spieler; Trainingsspiele nehmen nur den ersten Spieler. Bei X01 stellen − und + neben einem Spieler eigene [Startpunkte](games.de.md#startpunkte-handicap) in Schritten von 100 ein, von 101 bis 1001.
-- **Format:** Legs pro Satz und Sätze zum Sieg, für ein Match mehrerer Spieler.
+- **Format:** Legs zum Satzgewinn und Sätze zum Sieg, für ein Match mehrerer Spieler.
 - **Optionen:** bei X01 der In- und Out-Modus, *Straight*, *Double* oder *Master*, der Bull-Modus *25/50* oder *50/50* und *Maximale Runden* in Stufen bis 50, bei einem Turnier nur Straight oder Double In und Out; und das Ausbullen für ein Match, mit Ausbullen nach Abstand, wo das Board es anbietet. Mit vier Spielern bei X01 oder einem Cricket-Spiel spielt *Teams* Spieler 1 und 3 gegen 2 und 4. Bei X01 rechnet *Fairer Start* die [Startpunkte](games.de.md#fairer-start) aus den Averages aus.
 - **Start:** startet das Spiel mit [`homedarts.start_game`](entities.de.md#übungsspiel-starten-homedartsstart_game), und die Anzeigetafel zeigt es, sobald die Integration es gestartet hat. Lehnt die Integration den Start ab, bleibt die Auswahl mit ihren Spielern offen und zeigt über der Taste, warum. Ist die Erkennung gestoppt, schaltet der Start sie ein, sobald das Spiel läuft, denn ohne sie zählt kein Dart; die Auswahl sagt es vorher über der Taste. Die Starttaste bleibt am unteren Bildschirmrand, während die Seite scrollt. Während eines Spiels beendet *Spiel beenden* es nach einem zweiten Tippen.
 
@@ -265,7 +265,7 @@ In der Vorschau des Karteneditors öffnet sich die Auswahl nie.
 
 <img src="images/de/lobby-bot.png" alt="Die Spielauswahl mit 501: Alex und der Bot mit Stärke 70 und − und + zum Ändern" width="760">
 
-<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301 Startpunkten, drei Legs pro Satz, Double-Out und die Starttaste" width="760">
+<img src="images/de/scoreboard-lobby.png" alt="Die Spielauswahl auf einem Tablet im Querformat: die Spiele nach Gruppen mit 501 gewählt, Alex und Sam mit ihren Bildern, Sam ab 301 Startpunkten, drei Legs zum Satzgewinn, Double-Out und die Starttaste" width="760">
 
 ### Darts korrigieren und eingeben
 

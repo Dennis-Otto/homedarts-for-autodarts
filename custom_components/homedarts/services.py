@@ -35,7 +35,7 @@ from .const import DOMAIN, LANGUAGES
 from .cricket import CRICKET_GAMES
 from .export import EXPORT_CONTENTS, EXPORT_FORMATS, async_export
 from .games_coordinator import AutodartsGamesCoordinator
-from .highlights import async_save_highlight
+from .highlights import KEPT_HIGHLIGHTS, MAX_KEPT, async_save_highlight
 from .manual import parse_bed
 from .party import GOLF_HOLES, GOTCHA_TARGETS, MAX_ROUNDS, PARTY_GAMES, WORLD_ORDERS
 from .positions import MAX_DISTANCE
@@ -333,6 +333,8 @@ SAVE_HIGHLIGHT_SCHEMA = vol.Schema(
         vol.Optional("clip_duration"): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=60)
         ),
+        # The newest highlights the gallery keeps; 0 keeps every one.
+        vol.Optional("keep"): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_KEPT)),
     }
 )
 
@@ -1039,6 +1041,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             call.data.get("clip_camera", ""),
             call.data.get("clip_lookback", 5),
             call.data.get("clip_duration", 8),
+            call.data.get("keep", KEPT_HIGHLIGHTS),
         )
         return saved if call.return_response else None
 

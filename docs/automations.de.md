@@ -226,6 +226,7 @@ Die Nachricht kann `darts`, `visits`, `sessions`, `training_minutes`, `average`,
 | Checkouts | an | Auch ein Foto, wenn ein Übungsleg mit einem Checkout gewonnen wird. Beendet derselbe Dart eine Aufnahme und ein Leg, bekommst du ein Foto, mit dem Checkout-Text. |
 | Save to the gallery | an | Speichert jedes Foto mit [`homedarts.save_highlight`](entities.de.md#highlight-foto-speichern-homedartssave_highlight), standardmäßig in der [Highlight-Galerie](#highlight-galerie) der Medienansicht. |
 | Folder | leer | Leer für die Highlight-Galerie: `homedarts/highlights` im Medienordner, `/media/homedarts/highlights` unter Home Assistant OS und im Container, `/config/media/homedarts/highlights` in anderen Installationen. Ein anderer Ordner muss einer sein, in den Home Assistant schreiben darf, etwa `/media/darts` unter Home Assistant OS oder ein Ordner aus `allowlist_external_dirs`; außerhalb des Medienordners und von `www` hat ein Foto keine `photo_url`. Dateien in `www` sind ohne Anmeldung unter `/local/` erreichbar, deshalb bekommt ein Foto dort einen zufälligen Teil im Namen ([Datenschutz](entities.de.md#highlight-foto-speichern-homedartssave_highlight)). |
+| Highlights kept | 1000 | Wie viele der neuesten Fotos die [Highlight-Galerie](#highlight-galerie) behält, jedes mit seinem Clip: Nach dem Speichern eines Fotos dort werden ältere gelöscht. `0` behält jedes Foto. Ein eigener Ordner wird nie aufgeräumt. |
 | Actions | keine | Zum Beispiel eine Benachrichtigung, siehe [unten](#highlight-foto-aufs-handy). Optional, solange die Fotos in die Galerie gehen. |
 | Message for a visit | `{{ score }}!` | Die `message` eines Aufnahme-Fotos. |
 | Message for a checkout | `Checkout {{ checkout }}{{ ' by ' ~ who if who }}!` | Die `message` eines Checkout-Fotos. |
@@ -577,7 +578,8 @@ Das Highlight-Foto speichert jedes Bild als Datei, benannt nach Zeitpunkt, Spiel
 
 - Die Galerie zeigt den Ordner `homedarts/highlights` im Medienordner von Home Assistant, also `/media/homedarts/highlights` unter Home Assistant OS und im Container. [So funktioniert die Galerie](how-it-works.de.md#highlight-galerie).
 - Fotos, die du selbst dorthin kopierst, erscheinen auch; ohne einen solchen Namen mit ihrem Dateinamen und der Zeit, zu der sie gespeichert wurden.
-- Um ein Foto zu löschen, öffne **Medien → Meine Medien → homedarts → highlights**.
+- Die Galerie behält die neuesten 1000 Fotos, jedes mit seinem Clip, und löscht ältere, nachdem sie ein Foto gespeichert hat; *Highlights kept* des Highlight-Fotos oder `keep` von [`homedarts.save_highlight`](entities.de.md#highlight-foto-speichern-homedartssave_highlight) ändert die Zahl, und `0` behält jedes Foto. Es gehen nur Fotos und Clips, die HomeDarts benannt hat, nie eine Datei, die du selbst dorthin kopiert hast, und ein eigener Ordner wird nie aufgeräumt. Höchstens 120 Fotos werden pro Stunde gespeichert, damit eine Automation in einer Schleife die Festplatte nicht füllen kann.
+- Um ein Foto selbst zu löschen, öffne **Medien → Meine Medien → homedarts → highlights**.
 - Die Galerie braucht die Medienansicht, die zur Standardkonfiguration von Home Assistant gehört.
 
 ### Highlight-Clips

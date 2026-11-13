@@ -1677,7 +1677,7 @@ def tournament_lobby(page: Page) -> None:
 
 
 def lobby_screen(page: Page) -> None:
-    """The new game screen: two players at home, Sam from 301, three legs per set."""
+    """The new game screen: two players at home, Sam from 301, three legs to win a set."""
     pull_darts()
     game(page, "off")
     for index, name in enumerate(("Alex", "Sam")):

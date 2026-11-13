@@ -212,7 +212,7 @@ Play X01, [Cricket](#cricket) or a [party game](#party-games) on the local board
 - **Bull-off:** with *Practice bull-off* and two or more players, a match starts with one dart per player at the bull. As in the official rules, the bullseye beats the outer bull, which beats every other bed; two darts in the same bull bed throw again, in reverse order. Outside the bull, and inside it with *Practice bull-off by distance*, the dart closest to the center wins, measured from the dart positions the board reports; a dart without a position never beats a measured one. [The bull-off rules](games.md#bull-off).
 - **Visits:** a visit ends when you pull the darts. After a bust, the score of the visit start stays. Darts after a bust or after the winning dart do not count.
 - **Checkout:** the route for the darts left in the visit, for example `T20 T20 BULL` for 170. [How the route is chosen](how-it-works.md#practice-game).
-- **Matches:** set *Practice players* to 2, 3 or 4. After a visit, the next player throws; a bust passes the turn too. The first player to win *Practice legs per set* legs wins the set, and the first to win *Practice sets to win* sets wins the match. The first throw passes every leg within a set, and every set starts with the next player. The result, with the legs of the deciding set, stays on the card until the next dart, which starts a new match. With one player, legs count up; there are no sets and no match. [The match rules](games.md#matches-legs-and-sets).
+- **Matches:** set *Practice players* to 2, 3 or 4. After a visit, the next player throws; a bust passes the turn too. The first player to win as many legs as *Practice legs to win a set* says wins the set, and the first to win *Practice sets to win* sets wins the match. The first throw passes every leg within a set, and every set starts with the next player. The result, with the legs of the deciding set, stays on the card until the next dart, which starts a new match. With one player, legs count up; there are no sets and no match. [The match rules](games.md#matches-legs-and-sets).
 - **Match summary:** a finished match of several players is summed up for every player: legs, sets and darts; in X01 the 3-dart and first-9 average, the checkout rate, the highest checkout, 100+, 140+ and 180 visits, the best leg and the darts at a double; in Cricket the marks per round and the marks. The [scoreboard](cards.md#match-summary) shows it after an X01 or Cricket match, `match_won` announces it, and *Practice remaining score* keeps it in `summary` until the next match ends. [How the numbers are counted](how-it-works.md#match-summary).
 - **Sessions:** the practice game and [training sessions](#training-session) are independent. A dart counts in both.
 - **Corrections and darts entered by hand:** a dart the board read wrong is corrected with an action or a tap on the scoreboard, missed darts are entered by hand, and the last visit can be taken back; see [Corrections and darts entered by hand](#corrections-and-darts-entered-by-hand).
@@ -233,7 +233,7 @@ Play X01, [Cricket](#cricket) or a [party game](#party-games) on the local board
 | Practice doubles rate | Sensor, % | The same darts at a double together with the last 10 results of the doubles training and Bob's 27. |
 | Practice legs played | Sensor, total | Legs finished in X01, the Cricket games and the party games; its long-term statistics show the legs per day. An undone visit that won a leg takes the leg back. |
 | Practice players | Number, *Configuration* | 1–4 players, in a [party game](#party-games) and before a game is chosen 1–8; with the [bot](#bot), 1–3 besides it. Choosing X01, a Cricket or a training game leaves the first four. A change starts a new match. |
-| Practice legs per set | Number, *Configuration* | 1–11 legs win a set. A change starts a new match. |
+| Practice legs to win a set | Number, *Configuration* | 1–11 legs win a set. A change starts a new match. |
 | Practice sets to win | Number, *Configuration* | 1–7 sets win the match. A change starts a new match. |
 | Practice player *N* | Text, *Configuration* | Name of player 1–8, at most 20 characters, for the scoreboard and the events. Without a name, the card shows *Player N*. A name that another player in the game already has, in any case, is refused; a player slot outside the game, beyond *Practice players* or on the bot's seat, gives such a name up. Attribute `seat`: the number of the player, by which the cards seat the name even under an entity ID of your own. |
 | Practice in mode | Select, *Configuration* | How X01 legs open: `straight` with any dart, the default, `double` with a double or the bullseye, `master` with a double, a triple or the bullseye. A change starts a new match. |
@@ -480,7 +480,7 @@ A tournament for three to 32 named players at one board or [on several boards at
 | Tournament summary duration | Number, seconds, *Configuration* | 0–60 seconds the summary of a match shows before the pause begins, 8 by default. A change applies at once. |
 | Tournament third-place match | Switch, *Configuration* | In a knockout of four players or more, also after the groups, the losers of the semi-finals play for third place. Off by default. |
 | Tournament random draw | Switch, *Configuration* | Draws the order of the players at random instead of taking the order of the names. Off by default. |
-| Start tournament | Button | Starts a tournament with these settings and the legs per set, sets to win and rules of the [practice game](#practice-game). |
+| Start tournament | Button | Starts a tournament with these settings and the legs to win a set, sets to win and rules of the [practice game](#practice-game). |
 | Next tournament match | Button | Starts the next match without waiting for the pause to end. |
 | Stop tournament | Button | Ends the tournament. |
 
@@ -912,6 +912,7 @@ Saves what a camera sees as a photo for the [highlight gallery](automations.md#h
 | `clip_camera` | camera entity | A camera with a video stream that also records the moment as a [clip](automations.md#highlight-clips) beside the photo, under its name with `.mp4`. The recording runs in the background, so the action does not wait for it. Empty or left out: no clip |
 | `clip_lookback` | 0 to 10 seconds | How much of the clip comes before the photo, from what the running stream keeps; default 5 |
 | `clip_duration` | 1 to 60 seconds | How much of the clip follows the photo; default 8 |
+| `keep` | 0 to 100000 | How many of the newest highlights the gallery keeps, each a photo with its clip: after the photo is saved in the gallery, older photos and clips that HomeDarts named are deleted, never a file of your own. `0` keeps every one. A `folder` of your own is never pruned; default 1000 |
 
 ```yaml
 action: homedarts.save_highlight

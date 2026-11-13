@@ -78,7 +78,7 @@ test("the overlay shows the game on plates of its own, without the card and its 
   assert.equal($(card, ".scoreboard").className, "scoreboard overlay");
   // The game, its format, the scores, the route of the player at the board and the visit.
   assert.equal(text(card, ".title"), "Practice 501");
-  assert.equal(text(card, ".meta"), "2 legs per set");
+  assert.equal(text(card, ".meta"), "2 legs to win a set");
   assert.deepEqual(
     $$(card, ".player .big").map((big) => big.textContent),
     ["81", "301"]

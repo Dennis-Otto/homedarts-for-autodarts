@@ -224,6 +224,7 @@ The message can use `darts`, `visits`, `sessions`, `training_minutes`, `average`
 | Checkouts | on | Also a photo when a practice leg is won with a checkout. When the same dart finishes a visit and a leg, you get one photo, with the checkout message. |
 | Save to the gallery | on | Saves every photo with [`homedarts.save_highlight`](entities.md#save-a-highlight-photo-homedartssave_highlight), by default to the [highlight gallery](#highlight-gallery) of the media browser. |
 | Folder | empty | Empty for the highlight gallery: `homedarts/highlights` in the media folder, `/media/homedarts/highlights` on Home Assistant OS and in a container, `/config/media/homedarts/highlights` in other installations. Another folder must be one Home Assistant may write to, such as `/media/darts` on Home Assistant OS or a folder of `allowlist_external_dirs`; outside the media folder and `www`, a photo has no `photo_url`. Files in `www` are available at `/local/` without a login, so a photo there gets a random part in its name ([privacy](entities.md#save-a-highlight-photo-homedartssave_highlight)). |
+| Highlights kept | 1000 | How many of the newest photos the [highlight gallery](#highlight-gallery) keeps, each with its clip: after a photo is saved there, older ones are deleted. `0` keeps every photo. A folder of your own is never pruned. |
 | Actions | none | For example a notification, see [below](#highlight-photo-on-your-phone). Optional while the photos go to the gallery. |
 | Message for a visit | `{{ score }}!` | The `message` of a visit photo. |
 | Message for a checkout | `Checkout {{ checkout }}{{ ' by ' ~ who if who }}!` | The `message` of a checkout photo. |
@@ -549,7 +550,8 @@ The highlight photo saves every picture as a file named by the moment, the playe
 
 - The gallery shows the folder `homedarts/highlights` of the media folder of Home Assistant, which is `/media/homedarts/highlights` on Home Assistant OS and in a container. [How the gallery works](how-it-works.md#highlight-gallery).
 - Photos you copy there yourself show, too; without a name of this kind, by their file name and the time they were saved.
-- To delete a photo, open **Media → My media → homedarts → highlights**.
+- The gallery keeps the newest 1000 photos, each with its clip, and deletes older ones after it saves a photo; *Highlights kept* of the highlight photo, or `keep` of [`homedarts.save_highlight`](entities.md#save-a-highlight-photo-homedartssave_highlight), changes the number, and `0` keeps every photo. Only photos and clips that HomeDarts named go, never a file you copied there, and a folder of your own is never pruned. At most 120 photos are saved in an hour, so that an automation that loops cannot fill the disk.
+- To delete a photo yourself, open **Media → My media → homedarts → highlights**.
 - The gallery needs the media browser, which the default configuration of Home Assistant includes.
 
 ### Highlight clips

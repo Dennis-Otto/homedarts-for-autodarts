@@ -94,14 +94,14 @@ Tap **New game** below the score between games, or at the top right during a gam
 
 Beside **New game**, one tap starts the [plan of the day](games.md#training-plans). While a plan runs, the header says which step you are on, and **Skip** and **Stop** below the score leave the step or end the plan, each after a second tap.
 
-<img src="images/en/lobby.webp" alt="Animation: on the tablet, New game opens the screen, Cricket is chosen, Sam joins Alex, the legs per set go up to three and the game starts on the scoreboard" width="760">
+<img src="images/en/lobby.webp" alt="Animation: on the tablet, New game opens the screen, Cricket is chosen, Sam joins Alex, the legs to win a set go up to three and the game starts on the scoreboard" width="760">
 
 1. **Game:** X01, the Cricket games, the party games and the training games, grouped. `lobby_games` limits the choice to the games you play. Below the games, *How to play* explains the chosen game in a sentence or two, for guests who have never played it, and *All rules* opens its rules on the documentation website.
 2. **Players:** tap a name to add the player, ▲ and ▼ to change the order, ✕ to remove them. Players [linked to a person](statistics.md#players-and-persons) who is at home come first, with their picture. Type a new name, or add a guest without one. In X01, − and + beside a player set a [start score](games.md#start-scores-handicap) of their own, and **Fair start** among the options works them out from the [averages](games.md#fair-start). In X01 and the Cricket games, **+ Bot** seats the [bot](games.md#playing-against-the-bot) after the players; − and + beside it change its level, and *At my level* sets it to the players' average.
-3. **Format and options:** legs per set and sets to win; double out and double in for X01; the [bull-off](games.md#bull-off); *Teams* for four players of X01 or Cricket; *Three in a bed* for [Wild Mouse](games.md#wild-mouse).
+3. **Format and options:** legs to win a set and sets to win; double out and double in for X01; the [bull-off](games.md#bull-off); *Teams* for four players of X01 or Cricket; *Three in a bed* for [Wild Mouse](games.md#wild-mouse).
 4. **Start.** The scoreboard shows the game at once. If detection is stopped, the start switches it on, and the screen says so above the button beforehand. The start button stays at the bottom of the screen while the page scrolls. During a game, *End game* stops it after a second tap.
 
-<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs per set, double out and the start button" width="760">
+<img src="images/en/scoreboard-lobby.png" alt="The new game screen on a landscape tablet: the games by group with 501 chosen, Alex and Sam with their pictures, Sam starting from 301, three legs to win a set, double out and the start button" width="760">
 
 The screen starts the game with [`homedarts.start_game`](entities.md#start-a-practice-game-homedartsstart_game), exactly like an automation or a voice command would. The [games guide](games.md#start-a-game) shows the other ways.
 
@@ -273,7 +273,7 @@ A dart, a new game or a tap anywhere ends idle mode; a new game screen you had o
 
 Stream your games: the scoreboard alone, without its card, lies over the picture of your stream in OBS Studio, Streamlabs or any other software with a browser source. It shows the game and its format, every player's score, the checkout route of the player at the board, the darts of the visit, the winner and the confetti of the big moments, and between games nothing at all.
 
-<img src="images/en/scoreboard-overlay.png" alt="The stream overlay along the bottom of the picture of the board: Practice 501 with three legs per set, Alex at the board with 84 left and the route T20 D12, Sam with 375, and beside them the visit with T20 and 60 points" width="760">
+<img src="images/en/scoreboard-overlay.png" alt="The stream overlay along the bottom of the picture of the board: Practice 501 with three legs to win a set, Alex at the board with 84 left and the route T20 D12, Sam with 375, and beside them the visit with T20 and 60 points" width="760">
 
 1. **A user for OBS.** In **Settings → People**, add a person with *Allow login*, without administrator rights and with *Can only log in from the local network*, so that OBS can't change your settings.
 2. **The view.** The [automatic dashboard](cards.md#automatic-dashboard) has a *Stream overlay* view that its tabs leave out. Its address is the one of the dashboard with `/overlay` at its end, such as `http://homeassistant.local:8123/dashboard-homedarts/overlay`; with several boards `/overlay-1`, `/overlay-2` and so on.
