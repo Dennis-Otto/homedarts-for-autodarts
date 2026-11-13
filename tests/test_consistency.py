@@ -591,6 +591,7 @@ def test_pull_requests_run_the_live_demo_for_every_file_it_plays():
     assert {"docs/demo", "custom_components/homedarts/frontend"} <= used
     used |= {
         ".github/workflows/e2e.yml",
+        "tests/e2e/diagnose.sh",
         "tests/e2e/live_demo.py",
         "tests/e2e/live_demo.sh",
         "tests/e2e/requirements-browser.txt",

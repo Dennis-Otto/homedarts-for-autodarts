@@ -626,7 +626,7 @@ bot with a new recording, starts that one job and none of Home Assistant:
 | --- | --- |
 | `custom_components/homedarts/frontend/` | the cards that it plays |
 | `docs/demo/`, `docs/branding/`, `scripts/mkdocs_hooks.py` | the page, its recording and what the website gives it |
-| `tests/e2e/live_demo.py`, `tests/e2e/live_demo.sh`, `tests/e2e/requirements-browser.txt` | its browser test |
+| `tests/e2e/live_demo.py`, `tests/e2e/live_demo.sh`, `tests/e2e/diagnose.sh`, `tests/e2e/requirements-browser.txt` | its browser test, and how it pulls the image of the browser |
 | `.github/workflows/e2e.yml` | the workflow itself |
 
 A renamed file counts by its old name too. When the API fails, or a pull request
