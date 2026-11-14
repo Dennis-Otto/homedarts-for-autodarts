@@ -3,7 +3,7 @@
 `tests/test_voice_blueprints.py` talks to Home Assistant's own Assist, whose
 packages (hassil, home-assistant-intents, gazetteer-matcher) the conversation
 manifest of Home Assistant names with exact versions. Renovate leaves them alone.
-When pytest-homeassistant-custom-component brings a new Home Assistant, that test
+When pytest-homeassistant brings a new Home Assistant, that test
 fails, and this script writes the versions of its manifest into
 `requirements-test.in` and compiles `requirements-test.txt` again with the
 blueprint's `locks --compile --fix`: uv, which `requirements-test.txt` installs,

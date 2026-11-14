@@ -4,7 +4,7 @@ import random
 from unittest.mock import patch
 
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.homedarts.board import RADIUS_MM
 from custom_components.homedarts.const import DOMAIN

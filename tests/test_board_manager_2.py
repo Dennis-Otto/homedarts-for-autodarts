@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.homedarts.diagnostics import async_get_config_entry_diagnostics
 from custom_components.homedarts.local_api import (

@@ -3,7 +3,7 @@
 import pytest
 import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.homedarts.const import DOMAIN
 from custom_components.homedarts.practice import PracticeGame

@@ -64,6 +64,3 @@ allow-dependencies-licenses:
   # The URI parser of ESLint, a tool of the checks that no release ships: BSD-2-Clause,
   # which the review reads as BSD-2-Clause AND BSD-2-Clause-Views.
   - pkg:npm/uri-js
-  # PyGithub, which pytest-homeassistant-custom-component brings into the tests only:
-  # LGPL-3.0-only, which the review reads as GPL-3.0 AND LGPL-3.0 since 2.10.0.
-  - pkg:pypi/pygithub

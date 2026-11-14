@@ -3,6 +3,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["."]
+# Home Assistant puts its httpx2 in place of httpx when it is imported, which has to
+# come before the plugin of respx imports httpx: the tests use respx directly.
+addopts = "-p no:respx"
 # A hanging test fails instead of blocking the run, locally as in CI.
 timeout = 30
 # Warnings of the integration's own code are errors.

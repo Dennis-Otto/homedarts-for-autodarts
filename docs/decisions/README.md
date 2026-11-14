@@ -40,3 +40,4 @@ Copy [the template](https://github.com/Dennis-Otto/homedarts-for-autodarts/blob/
 | [0028](0028-the-cards-load-on-first-use.md) | Load the cards on their first use, with stand-ins that become the cards | accepted |
 | [0029](0029-the-images-render-with-the-screenshot-bot-of-the-blueprint.md) | Render the images with the screenshot bot of the blueprint, in shards | accepted |
 | [0030](0030-a-release-changes-the-package.md) | A release changes the package that HACS installs, which the check release type keeps | accepted |
+| [0031](0031-the-tests-run-on-home-assistants-own-test-plugin.md) | Run the tests on Home Assistant's own test plugin, pytest-homeassistant | accepted |

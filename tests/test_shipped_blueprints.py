@@ -13,7 +13,7 @@ from homeassistant.const import EVENT_CALL_SERVICE
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from homeassistant.util.yaml import parse_yaml
-from pytest_homeassistant_custom_component.common import async_capture_events
+from pytest_homeassistant.common import async_capture_events
 from yaml import safe_dump
 
 from custom_components.homedarts import shipped_blueprints

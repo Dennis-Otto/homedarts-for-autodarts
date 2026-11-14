@@ -5,7 +5,7 @@ import pytest
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import async_capture_events
+from pytest_homeassistant.common import async_capture_events
 
 from custom_components.homedarts.progress import WEEK
 
