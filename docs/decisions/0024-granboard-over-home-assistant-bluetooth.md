@@ -30,6 +30,6 @@ Option 2, with the darts on the path of a dartboard without Autodarts: a Granboa
 
 ## Consequences
 
-- The tests import Home Assistant's Bluetooth, which depends on its usb integration: `requirements-test.in` names the packages of that integration, which `pytest-homeassistant-custom-component` does not bring. The tests replay recorded frames against stand-ins for Bleak and the Bluetooth of Home Assistant; no test needs an adapter.
+- The tests import Home Assistant's Bluetooth, which depends on its usb integration: `requirements-test.in` names the packages of that integration, which `pytest-homeassistant-custom-component` does not bring. Since [decision 0031](0031-the-tests-run-on-home-assistants-own-test-plugin.md), the `bluetooth` extra of `pytest-homeassistant` brings them. The tests replay recorded frames against stand-ins for Bleak and the Bluetooth of Home Assistant; no test needs an adapter.
 - The lights of the board's ring stay off: no app documents how to set them reliably. Darts of a Granboard have no position, so the inner and the outer single count alike and the dart positions leave them out.
 - The label *experimental* goes with a pull request that names the tester and the board, once every bed and the button are checked on a real Granboard.
