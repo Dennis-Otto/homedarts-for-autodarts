@@ -31,6 +31,14 @@ needs_signals = pytest.mark.skipif(
 )
 
 
+# A step that hangs fails soon after its budget: never before it, and long before the
+# 30 s of pytest-timeout (pyproject.toml) would end the test instead. "Soon" leaves a
+# busy runner its stalls: with a worker of pytest-xdist on each of its four cores, the
+# timer of a budget of 0.2 s once rang 4.5 s late, and a test that asked for 2 s failed
+# with nothing wrong in the watchdog (#701).
+SOON = 10.0
+
+
 class Hung(AssertionError):
     """A failure of a kind of its own, as BrowserFailure of browser.py."""
 
@@ -49,7 +57,7 @@ def test_a_step_that_hangs_fails_soon_after_its_budget(capfd, failure):
     ):
         wait_forever()
 
-    assert time.monotonic() - started < 2
+    assert 0.2 <= time.monotonic() - started < SOON
     printed = capfd.readouterr().err
     assert "Watchdog: a hung step took longer than 0.2 s. It waits here:\n" in printed
     # The stack ends in the line that the step waits at.
@@ -183,7 +191,7 @@ async def test_a_phase_that_hangs_fails_soon_after_its_budget(capsys):
     with pytest.raises(Hung, match=r"^The phase realtime took longer than 0\.2 s$"):
         await watchdog.within("The phase realtime", 0.2, hung_phase(), Hung)
 
-    assert time.monotonic() - started < 2
+    assert 0.2 <= time.monotonic() - started < SOON
     printed = capsys.readouterr().out
     assert "Watchdog: The phase realtime took longer than 0.2 s. It waits here:" in (
         printed
@@ -259,7 +267,7 @@ def test_a_wait_in_playwright_ends_cancelled_and_playwright_goes_on(bridge, capf
     ):
         bridge.call(never())  # the line that the step waits at
 
-    assert time.monotonic() - started < 2
+    assert 0.2 <= time.monotonic() - started < SOON
     assert isinstance(raised.value.__cause__, asyncio.CancelledError)
     # The next call, such as a screenshot of the page, works.
     assert bridge.call(asyncio.sleep(0, "still there")) == "still there"
