@@ -42,8 +42,9 @@ HIGHEST = ("highest_visit", "highest_checkout")
 # file name or a message, and control characters break both.
 NAME_EXCLUDED = re.compile(r"[{}%#\x00-\x1f\x7f-\x9f]")
 # The entity ID of a person in Home Assistant, as Home Assistant checks entity
-# IDs: slugs without a double underscore, none at either end.
-PERSON = re.compile(r"^(?!.+__)person\.(?!_)[\da-z_]+(?<!_)$")
+# IDs: slugs without a double underscore, none at either end, and nothing after
+# them, not even the line break that `$` lets through.
+PERSON = re.compile(r"^(?!.+__)person\.(?!_)[\da-z_]+(?<!_)\Z")
 
 
 def match_summary(saved: object) -> dict[str, Any] | None:

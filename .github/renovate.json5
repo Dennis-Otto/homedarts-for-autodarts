@@ -16,8 +16,15 @@
       enabled: false,
     },
     {
+      // Home Assistant's own test plugin, which pins each new Home Assistant: it
+      // moves on its own, so that it holds up none of the other tools, as the rule
+      // of the blueprint for the test plugin that it replaced (decision 0031).
+      matchDepNames: ["pytest-homeassistant"],
+      groupName: "the Home Assistant test base",
+    },
+    {
       // Assist's packages in the tests are those of the conversation manifest of
-      // the Home Assistant that pytest-homeassistant-custom-component pins, which
+      // the Home Assistant that pytest-homeassistant pins, which
       // tests/test_voice_blueprints.py compares: they move with that Home
       // Assistant, by scripts/pin_assist.py, never on their own. The fix bot runs
       // it when the CI of the pull request for a new test base fails (the autofix of

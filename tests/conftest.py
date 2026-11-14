@@ -16,10 +16,11 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant.const import __version__ as HA_VERSION
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.setup import async_setup_component
 from hypothesis import Phase, settings
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 from syrupy.assertion import SnapshotAssertion
 from syrupy.extensions.amber import AmberSnapshotExtension
 
@@ -177,6 +178,26 @@ def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
 @pytest.fixture(autouse=True)
 def custom_integration(enable_custom_integrations):
     """Enable discovery of the real integration from this repository."""
+
+
+@pytest.fixture
+def hass_config_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
+    """Home Assistant's configuration folder: an empty, temporary one for each test.
+
+    pytest-homeassistant points every test at a folder testing_config beside the
+    tests, and the integration writes its backups, media and blueprints there. Not
+    tmp_path, which many tests fill with folders such as media of their own.
+    """
+    return str(tmp_path_factory.mktemp("config"))
+
+
+@pytest.fixture
+async def hass(hass: HomeAssistant) -> HomeAssistant:
+    """The Home Assistant of the test plugin, with its media folder in its own
+    configuration folder: the plugin names testing_config/media beside the tests,
+    whatever hass_config_dir says, and a removed board leaves its backup there."""
+    hass.config.media_dirs = {"local": hass.config.path("media")}
+    return hass
 
 
 @pytest.fixture(autouse=True)

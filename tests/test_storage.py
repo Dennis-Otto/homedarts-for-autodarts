@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import (
+from pytest_homeassistant.common import (
     MockConfigEntry,
     async_fire_time_changed,
 )
@@ -43,7 +43,7 @@ def test_the_store_is_private_and_named_after_the_entry(hass):
     assert store.key == storage_key("some-entry") == "homedarts.some-entry.training"
     assert (store.version, store.minor_version) == (1, 3)
     # Player names are stored, so the file is readable by Home Assistant only.
-    assert store._private is True
+    assert store._io._private is True
 
 
 async def test_the_current_layout_survives_a_restart(

@@ -1,4 +1,13 @@
-pytest-homeassistant-custom-component==0.13.375
+# Home Assistant's own test plugin, with the packages of its Bluetooth, which the
+# Granboard link uses in custom_components/homedarts/granboard.py, and of the usb
+# integration that Bluetooth depends on.
+pytest-homeassistant[bluetooth]==2026.11.1
+# The plugins of pytest that the test plugin of Home Assistant doesn't bring: the
+# coverage that scripts/check.sh measures, the time limit of each test in
+# pyproject.toml, and the annotations of a failed test in the CI.
+pytest-cov==7.1.0
+pytest-timeout==2.4.0
+pytest-github-actions-annotate-failures==0.4.2
 ruff==0.17.3
 PyTurboJPEG==2.6.1
 mypy==2.4.1
@@ -6,10 +15,5 @@ hypothesis==6.170.14
 # Assist, which the voice blueprints talk to in tests/test_voice_blueprints.py, at
 # the versions of the conversation manifest of the Home Assistant above.
 hassil==3.12.1
-home-assistant-intents==2026.10.6
+home-assistant-intents==2026.10.27
 gazetteer-matcher==1.1.0
-# Home Assistant's Bluetooth, which the Granboard link uses in
-# custom_components/homedarts/granboard.py, depends on its usb integration, whose
-# packages pytest-homeassistant-custom-component does not bring.
-aiousbwatcher==1.1.2
-serialx==1.15.1

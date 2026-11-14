@@ -1,7 +1,7 @@
 """The X01 practice game in Home Assistant: entities, events and restarts."""
 
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.homedarts.number import AutodartsStartScore
 from custom_components.homedarts.practice import MAX_PLAYERS, PARTY_PLAYERS

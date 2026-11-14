@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import aiohttp
 import pytest
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from pytest_homeassistant_custom_component.common import async_fire_time_changed
+from pytest_homeassistant.common import async_fire_time_changed
 
 from custom_components.homedarts.errors import AutodartsConnectionError
 from custom_components.homedarts.local_api import (
