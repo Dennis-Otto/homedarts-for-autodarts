@@ -112,6 +112,27 @@ def mock_board(
             mock.get(f"{base}{path}", json=recorded(recording, name))
 
 
+def reads_say(mock, state: dict[str, Any], base: str = BASE) -> None:
+    """The board answers its reads of the state with this one from now on.
+
+    A real board answers a read with what its last notification said. A test that
+    sends darts through `async_receive` and then moves the clock gives the board
+    the same answer: the clock makes a poll due, which Home Assistant runs as a
+    background task, and a read that disagreed with the notification would take
+    the darts off the board whenever that task happens to end in time."""
+    url = f"{base}/api/state"
+    # AiohttpClientMocker has no public way to replace an answer, so this takes
+    # the old one out of its private list `_mocks` (with the attributes `method`
+    # and `url` of each answer). When every test that calls reads_say fails after
+    # an update of pytest-homeassistant-custom-component, look here first.
+    mock._mocks[:] = [
+        answer
+        for answer in mock._mocks
+        if not (answer.method.lower() == "get" and str(answer.url) == url)
+    ]
+    mock.get(url, json=deepcopy(state))
+
+
 def local_entry_data(board_id="board-1", host="192.0.2.10"):
     return {"board_id": board_id, "host": host, "port": 3180}
 

@@ -1,8 +1,10 @@
 """Two boards in one home: their entities, events and actions stay apart, and
 a tournament on both boards plays a match on each of them."""
 
+import asyncio
 from datetime import timedelta
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
@@ -21,6 +23,7 @@ from .local_helpers import (
     T20,
     board,
     entity_id,
+    reads_say,
     record,
     setup_local,
     state,
@@ -405,7 +408,7 @@ def test_a_device_of_several_entries_names_each(device):
 
 
 async def test_a_board_with_darts_on_it_takes_its_match_with_the_takeout(
-    hass, board_and_dartboard, freezer
+    hass, aioclient_mock, board_and_dartboard, freezer
 ):
     entry, dartboard = board_and_dartboard
     host = entry.runtime_data.local
@@ -413,14 +416,60 @@ async def test_a_board_with_darts_on_it_takes_its_match_with_the_takeout(
     await enter(hass, dartboard, "T20", "S1", "D20")
     await throw(hass, host, *CHECKOUT)
     # Darts on the Autodarts board as the pause ends: the dartboard is the
-    # first free board and takes the next match.
+    # first free board and takes the next match. The board answers its reads
+    # with those darts as well.
+    reads_say(aioclient_mock, board(T20))
     host.async_receive("state", board(T20))
     await pause(hass, freezer)
     assert players(hass, DARTBOARD) == ["Kim", "Alex"]
     assert tournament(hass)["status"] == "waiting"
-    # Looked at again a few seconds later, and started with the takeout.
+    # Looked at again a few seconds later, and read: the darts are still there.
     await pause(hass, freezer, 5)
+    await host.async_refresh()
+    await hass.async_block_till_done()
     assert tournament(hass)["status"] == "waiting"
+    # Started with the takeout.
+    reads_say(aioclient_mock, board())
+    host.async_receive("state", board())
+    await hass.async_block_till_done()
+    assert players(hass) == ["Lea", "Sam"]
+    assert tournament(hass)["status"] == "playing"
+
+
+async def test_a_read_from_before_the_darts_starts_no_match_after_them(
+    hass, aioclient_mock, board_and_dartboard, freezer
+):
+    """A read asked while the board was empty and answered after the
+    notification of a dart: its empty board is older than the dart, so it is no
+    takeout, and the board keeps waiting for the real one."""
+    entry, dartboard = board_and_dartboard
+    host = entry.runtime_data.local
+    await start_on_both(hass, entry, dartboard)
+    await enter(hass, dartboard, "T20", "S1", "D20")
+    await throw(hass, host, *CHECKOUT)
+    read_state = host.client.get_state
+    asked, answered = asyncio.Event(), asyncio.Event()
+
+    async def state_on_the_way():
+        state = await read_state()
+        asked.set()
+        await answered.wait()
+        return state
+
+    with patch.object(host.client, "get_state", state_on_the_way):
+        poll = hass.async_create_task(host.async_refresh())
+        await asked.wait()
+        reads_say(aioclient_mock, board(T20))
+        host.async_receive("state", board(T20))
+        # The empty board arrives after the dart.
+        answered.set()
+        await poll
+    await hass.async_block_till_done()
+    assert host.data["local"]["numThrows"] == 1
+    await pause(hass, freezer)
+    assert players(hass, DARTBOARD) == ["Kim", "Alex"]
+    assert tournament(hass)["status"] == "waiting"
+    reads_say(aioclient_mock, board())
     host.async_receive("state", board())
     await hass.async_block_till_done()
     assert players(hass) == ["Lea", "Sam"]
