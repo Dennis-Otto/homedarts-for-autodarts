@@ -18,6 +18,7 @@ from .local_helpers import (
     entity_id,
     local_entry_data,
     mock_board,
+    reads_say,
     record,
     setup_local,
     state,
@@ -114,10 +115,14 @@ async def test_a_pause_ends_the_session_at_its_last_dart(hass, aioclient_mock, f
         blocking=True,
     )
     assert state(hass, "number", "training_idle_timeout") == "10"
+    # The board answers its reads with the darts as well: a takeout that a poll
+    # found would count as the last activity.
+    reads_say(aioclient_mock, board(T20))
     coordinator.async_receive("state", board(T20))
     freezer.tick(timedelta(minutes=9))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
+    reads_say(aioclient_mock, board(T20, S20))
     coordinator.async_receive("state", board(T20, S20))
     last_dart = dt_util.utcnow()
     # A timer that fires after a new dart only reschedules the end.

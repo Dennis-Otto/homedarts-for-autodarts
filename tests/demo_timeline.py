@@ -36,7 +36,7 @@ from pytest_homeassistant.common import (
 from custom_components.homedarts.bot import Bot
 from custom_components.homedarts.const import DOMAIN
 
-from .local_helpers import BASE, board, entity_id, setup_local, switch
+from .local_helpers import BASE, board, entity_id, reads_say, setup_local, switch
 
 # Raised when the shape of the file changes in a way docs/demo/demo.js must know.
 FORMAT = 1
@@ -136,9 +136,12 @@ def plain(value: Any) -> Any:
 class Recorder:
     """The board, the clock and the timeline of one recording."""
 
-    def __init__(self, hass: HomeAssistant, freezer: Any, entry: Any) -> None:
+    def __init__(
+        self, hass: HomeAssistant, freezer: Any, mock: Any, entry: Any
+    ) -> None:
         self.hass = hass
         self.freezer = freezer
+        self.mock = mock
         self.entry = entry
         self.coordinator = entry.runtime_data.local
         self.jitter = random.Random(7)
@@ -217,8 +220,10 @@ class Recorder:
         self.chapters.append({"key": key, "step": len(self.steps)})
 
     async def board(self, state: dict[str, Any], seconds: float) -> None:
-        """The board reports a state after the given time."""
+        """The board reports a state after the given time, and answers its reads
+        with it from then on."""
         await self.wait(seconds)
+        reads_say(self.mock, state)
         self.coordinator.async_receive("state", state)
         await self.hass.async_block_till_done()
         await self.snap()
@@ -337,7 +342,7 @@ async def record(hass: HomeAssistant, aioclient_mock: Any, freezer: Any) -> dict
     ):
         entry = await setup_local(hass, aioclient_mock, state=board())
         entry.runtime_data.local.games.bot = Bot(random.Random(1))
-        demo = Recorder(hass, freezer, entry)
+        demo = Recorder(hass, freezer, aioclient_mock, entry)
         await switch(hass, "training_session", True)
         demo.chapter("start")
         await demo.snap()

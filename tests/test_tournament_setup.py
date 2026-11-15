@@ -21,7 +21,7 @@ from .local_helpers import (
     T20,
     board,
     entity_id,
-    mock_board,
+    reads_say,
     record,
     setup_local,
     state,
@@ -61,12 +61,6 @@ def tournament(hass):
 
 def fired(events, kind: str) -> list[dict]:
     return [attributes for event, attributes in events if event == kind]
-
-
-def reads_of(aioclient_mock, state: dict) -> None:
-    """The board answers its next reads with the state."""
-    aioclient_mock.clear_requests()
-    mock_board(aioclient_mock, state=state)
 
 
 async def pass_pause(hass, seconds: float = 11) -> None:
@@ -123,13 +117,13 @@ async def test_a_round_robin_plays_through_with_pauses(hass, aioclient_mock, fre
     # The board answers its reads with those darts as well: the freezer moves the
     # clock of the loop on too, so a poll is due when the pause ends.
     await throw(hass, coordinator, T20, pull=False)
-    reads_of(aioclient_mock, board(T20))
+    reads_say(aioclient_mock, board(T20))
     freezer.tick(timedelta(seconds=19))
     await pass_pause(hass, 0)
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     assert tournament(hass).attributes["status"] == "waiting"
-    reads_of(aioclient_mock, board())
+    reads_say(aioclient_mock, board())
     coordinator.async_receive("state", board())
     await hass.async_block_till_done()
     assert tournament(hass).attributes["status"] == "playing"
