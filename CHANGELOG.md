@@ -4,6 +4,12 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.4.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.0...v2.4.1) (2026-11-15)
+
+### Bug fixes
+
+- **A profile links a person only by a complete entity ID:** an ID such as `person.alex` followed by a line break no longer counts as a person of a profile, as Home Assistant itself refuses it since 2026.11.
+
 ## [2.4.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.1...v2.4.0) (2026-11-13)
 
 ### Features
