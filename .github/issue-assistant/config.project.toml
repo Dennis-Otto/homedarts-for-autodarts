@@ -5,9 +5,9 @@
 [links]
 # Hosts that links in the assistant's comments may lead to, besides this repository and
 # the hosts of config.toml.
-hosts = []
+hosts = ["home-assistant.io", "autodarts.io", "docs.autodarts.io"]
 
 [transparency]
 # Files besides those of config.toml that tell reporters which AI reads their issue; the
 # check command makes sure they name the engine.
-files = []
+files = ["docs/troubleshooting.de.md"]

@@ -17,14 +17,7 @@ release_replies = 2
 
 [links]
 # Hosts that links in the assistant's comments may lead to, besides this repository.
-hosts = [
-  "www.home-assistant.io",
-  "home-assistant.io",
-  "developers.home-assistant.io",
-  "autodarts.io",
-  "docs.autodarts.io",
-  "hacs.xyz",
-]
+hosts = ["www.home-assistant.io", "developers.home-assistant.io", "hacs.xyz"]
 
 [forms]
 # The dropdown of the issue forms whose answer chooses an area label, and the
@@ -35,7 +28,7 @@ unmapped_options = ["Other"]
 [transparency]
 # Files that tell reporters which AI reads their issue; the check command makes sure
 # they name the engine.
-files = ["SUPPORT.md", "docs/troubleshooting.de.md"]
+files = ["SUPPORT.md"]
 
 [releases]
 # A merged pull request that fixes an issue labels it fixed-in-next-release; the
