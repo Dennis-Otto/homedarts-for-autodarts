@@ -121,6 +121,10 @@ def reads_say(mock, state: dict[str, Any], base: str = BASE) -> None:
     background task, and a read that disagreed with the notification would take
     the darts off the board whenever that task happens to end in time."""
     url = f"{base}/api/state"
+    # AiohttpClientMocker has no public way to replace an answer, so this takes
+    # the old one out of its private list `_mocks` (with the attributes `method`
+    # and `url` of each answer). When every test that calls reads_say fails after
+    # an update of pytest-homeassistant-custom-component, look here first.
     mock._mocks[:] = [
         answer
         for answer in mock._mocks
