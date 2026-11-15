@@ -124,7 +124,7 @@ def reads_say(mock, state: dict[str, Any], base: str = BASE) -> None:
     # AiohttpClientMocker has no public way to replace an answer, so this takes
     # the old one out of its private list `_mocks` (with the attributes `method`
     # and `url` of each answer). When every test that calls reads_say fails after
-    # an update of pytest-homeassistant-custom-component, look here first.
+    # an update of pytest-homeassistant, look here first.
     mock._mocks[:] = [
         answer
         for answer in mock._mocks
