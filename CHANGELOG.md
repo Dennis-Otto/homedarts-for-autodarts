@@ -4,6 +4,13 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.4.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.0...v2.4.1) (2026-11-15)
+
+
+### Bug fixes
+
+* **deps:** run the tests on Home Assistant's own test plugin, with Pillow 13 ([#736](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/736)) ([81ea638](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/81ea63827c08dee1caa833453b8bcf0d80f4d817))
+
 ## [2.4.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.3.1...v2.4.0) (2026-11-13)
 
 ### Features
