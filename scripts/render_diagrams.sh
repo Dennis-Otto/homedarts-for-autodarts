@@ -11,7 +11,7 @@ set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
-IMAGE="ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:11.17.1@sha256:7b18341ab7398a0cfd290fdbf066243151c0adb4cbf5b81d8cf074f82019ec6f"
+IMAGE="ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:12.0.1@sha256:18938e53497376d524e04b1fc0bf7b6d61a491ce9ff7032bb2855d57155acb10"
 # Keep container paths unchanged and mount the Windows path when running from Git Bash.
 export MSYS_NO_PATHCONV=1
 MOUNT="$(cd "${ROOT}" && (pwd -W 2>/dev/null || pwd))"
