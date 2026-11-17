@@ -513,6 +513,34 @@ def test_the_playwright_image_matches_the_playwright_package(script):
     assert images == [pinned(E2E / "requirements-browser.txt", "playwright")]
 
 
+def renovate_rules() -> list[dict[str, Any]]:
+    """The rules of the project in .github/renovate.json5, read as JSON: without its
+    lines of comments, with its keys quoted and without its trailing commas."""
+    text = (ROOT / ".github" / "renovate.json5").read_text(encoding="utf-8")
+    lines = [line for line in text.splitlines() if not line.lstrip().startswith("//")]
+    quoted = re.sub(r"^(\s*)([$\w]+):", r'\1"\2":', "\n".join(lines), flags=re.M)
+    return json.loads(re.sub(r",(\s*[\]}])", r"\1", quoted))["packageRules"]
+
+
+def test_playwright_and_its_image_come_at_the_same_time():
+    # mcr.microsoft.com gives Renovate no date of an image, so the image of
+    # Playwright comes at once; a package that waited its week would pair the new
+    # image with the older package, whose browsers the image lacks (the pull request
+    # #750 failed every browser test so). The rule that groups the two lifts the
+    # week for both, so that they move together.
+    rules = [
+        rule
+        for rule in renovate_rules()
+        if {"playwright", "mcr.microsoft.com/playwright/python"}
+        <= set(rule.get("matchDepNames", []))
+    ]
+    assert len(rules) == 1
+    assert rules[0]["groupName"] == "Playwright and its browsers"
+    assert rules[0]["matchFileNames"] == ["tests/e2e/**"]
+    assert "minimumReleaseAge" in rules[0]
+    assert rules[0]["minimumReleaseAge"] is None
+
+
 # A pull request runs the end-to-end tests only when it changes what they use.
 E2E_WORKFLOW = yaml.safe_load(
     (ROOT / ".github" / "workflows" / "e2e.yml").read_text(encoding="utf-8")

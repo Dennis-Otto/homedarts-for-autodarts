@@ -33,10 +33,17 @@
     },
     {
       // Playwright must match the browsers of its image in tests/e2e/browser.sh,
-      // so the two move in one pull request.
+      // so the two move in one pull request, and at the same time: the registry of
+      // the image, mcr.microsoft.com, gives Renovate no date, so the image comes at
+      // once (decision 0148 of the blueprint), and a package that waited its week
+      // would pair the new image with the older package, whose browsers the image
+      // lacks. The image already holds the package of its release, so the package
+      // comes without the week as well; its hashes and the digest of the image keep
+      // both what the checks of the pull request tested.
       matchFileNames: ["tests/e2e/**"],
       matchDepNames: ["playwright", "mcr.microsoft.com/playwright/python"],
       groupName: "Playwright and its browsers",
+      minimumReleaseAge: null,
     },
     {
       // The tools of the tests of the cards; nothing of it is shipped.
