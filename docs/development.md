@@ -593,6 +593,9 @@ and hassfest actions, which follow a branch instead of releases, and the images
 current, also the Playwright and Mermaid images that the scripts under `tests/e2e/`
 and `scripts/` start, and the digest of the dev container's image. It waits seven days
 after a release before it proposes a new version; security updates come at once.
+Playwright comes at once as well, its Python package together with its image: Microsoft's
+registry gives the image no date, so Renovate can't hold it a week, and the browsers of
+the image fit only the package of the same release.
 Dependabot keeps the dev container's Features. The pngquant packages of
 `tests/e2e/pngquant.sh` are updated by hand. Two checks deliberately run moving
 images: HACS validation and hassfest always apply the rules that HACS and Home
