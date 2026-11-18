@@ -340,7 +340,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/home
 
 [![Docker end-to-end test](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/e2e.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/e2e.yml)
 [![CodeQL](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/codeql.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/codeql.yml)
-[![Secret scan](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/secret-scan.yml)
+[![Secret scan and dependency review](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/quick-checks.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/quick-checks.yml)
 [![SBOM](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/sbom.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/sbom.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Dennis-Otto/homedarts-for-autodarts/badge)](https://scorecard.dev/viewer/?uri=github.com/Dennis-Otto/homedarts-for-autodarts)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14935/badge)](https://www.bestpractices.dev/projects/14935)
