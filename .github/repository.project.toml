@@ -18,9 +18,14 @@ topics = ["homedarts", "wled", "scoreboard", "darts-scoreboard", "x01"]
 required_checks = ["e2e", "release type"]
 
 # A beta of the next release after every change for users, for the testers
-# (release.yml of the blueprint).
+# (release.yml of the blueprint). And the releases go once a day by themselves, as
+# the maintainer decided on 2026-11-18: the release bot merges the release pull
+# request in its daily run once its checks pass, and a release reaches the users of
+# HACS with their next update. A release at once, for a fix that can't wait, is a
+# start of the workflow Release by hand.
 [variables]
 BETA_CHANNEL = "true"
+RELEASE_MERGE = "daily"
 
 # An environment of this project and the secrets it needs:
 # [environments.deploy]
