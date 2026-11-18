@@ -423,7 +423,7 @@ Texte, die in einer Sprache fehlen oder älter sind als ihr englisches Original,
 ## Qualität und Sicherheit
 
 [![CodeQL](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/codeql.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/codeql.yml)
-[![Secret scan](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/secret-scan.yml)
+[![Secret-Scan und Dependency Review](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/quick-checks.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/quick-checks.yml)
 [![SBOM](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/sbom.yml/badge.svg)](https://github.com/Dennis-Otto/homedarts-for-autodarts/actions/workflows/sbom.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Dennis-Otto/homedarts-for-autodarts/badge)](https://scorecard.dev/viewer/?uri=github.com/Dennis-Otto/homedarts-for-autodarts)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14935/badge)](https://www.bestpractices.dev/projects/14935)
