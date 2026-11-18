@@ -821,8 +821,9 @@ def test_what_only_the_release_carries_is_outside_the_key(name):
 
 def test_a_release_starts_the_screenshot_bot_once_and_not_the_visual_check():
     # A new major version changes an image that shows it, which reaches docs/images by
-    # the bot: it renders when the workflow Release of the release passed, and not on
-    # the push of the release as well, which would render every image a second time.
+    # the bot: the release bot starts it by hand once the run of the release passed
+    # (decision 0173 of the blueprint), and not the push of the release as well, which
+    # would render every image a second time.
     config = json.loads(
         (ROOT / "release-please-config.json").read_text(encoding="utf-8")
     )
@@ -831,7 +832,15 @@ def test_a_release_starts_the_screenshot_bot_once_and_not_the_visual_check():
     bot = ROOT / ".github" / "workflows" / "screenshot-bot.yml"
     # PyYAML reads the key "on" as True.
     trigger = yaml.safe_load(bot.read_text(encoding="utf-8"))[True]
-    assert trigger["workflow_run"]["workflows"] == ["Release"]
+    assert "workflow_run" not in trigger
+    assert "workflow_dispatch" in trigger
+    release = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    )
+    followers = release["jobs"]["followers"]
+    assert "needs.verify.result == 'success'" in followers["if"]
+    started = "\n".join(step.get("run", "") for step in followers["steps"])
+    assert "start screenshot-bot.yml Screenshots" in started
     for path in [
         *written,
         "CHANGELOG.md",
