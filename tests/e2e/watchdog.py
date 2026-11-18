@@ -207,9 +207,8 @@ def wake_playwright(frame: FrameType) -> FrameType | None:
     the main greenlet of the thread, the budget raises its failure there. In the
     dispatcher an exception would end it, and with it every later call, such as the
     screenshots of the failure; so this cancels the tasks of the calls, which
-    Playwright marks with ``__pw_stack__`` (playwright/_impl/_sync_base.py), and the
-    step gets the cancellation where it waits. Returns the frame where the step
-    waits, or None when the step itself runs."""
+    Playwright marks (CALL_MARKS), and the step gets the cancellation where it waits.
+    Returns the frame where the step waits, or None when the step itself runs."""
     import greenlet
 
     current = greenlet.getcurrent()
@@ -228,9 +227,16 @@ def wake_playwright(frame: FrameType) -> FrameType | None:
     return waiting
 
 
+# The attributes with which _sync() of playwright/_impl/_sync_base.py marks the task
+# of each call of the sync API: up to Playwright 1.64 the stack of the call, from 1.65
+# on the frame of its caller. Both, so that the watchdog works before and after an
+# update; the step "the watchdog" of browser.py fails when a release changes it again.
+CALL_MARKS = ("__pw_stack__", "__pw_caller_frame__")
+
+
 def _cancel_calls(loop: asyncio.AbstractEventLoop) -> None:
     for task in asyncio.all_tasks(loop):
-        if hasattr(task, "__pw_stack__"):
+        if any(hasattr(task, mark) for mark in CALL_MARKS):
             task.cancel()
 
 

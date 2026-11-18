@@ -2534,11 +2534,13 @@ def training_calendar(page: Page) -> None:
     """Home Assistant's calendar with the week of sessions and matches before today."""
     calendar = local_page(page)
     calendar.goto(f"{HA}/calendar")
-    calendar.locator(".fc-event").first.wait_for(timeout=60000)
+    # The classes of Home Assistant's own (ha-fc-*): since 2026.11, its FullCalendar 7
+    # gives its own elements hashed classes, such as fc-7Q, in place of fc-event.
+    calendar.locator(".ha-fc-event").first.wait_for(timeout=60000)
     # The list of seven days, one week back, shows every title in full.
     calendar.locator("ha-button[value=listWeek]").click()
     calendar.locator("ha-full-calendar .prev").click()
-    calendar.locator(".fc-list-event").first.wait_for(timeout=15000)
+    calendar.locator(".ha-fc-list-event").first.wait_for(timeout=15000)
     calendar.wait_for_timeout(1500)
     page_shot(calendar, "training-calendar")
     calendar.context.close()

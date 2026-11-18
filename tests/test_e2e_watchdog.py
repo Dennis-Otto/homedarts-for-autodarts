@@ -216,13 +216,20 @@ async def test_a_phase_that_fails_fails_as_it_did():
 # Playwright's sync API -----------------------------------------------------------
 
 
+# The attribute with which Playwright's sync API marks the task of each call: up to
+# 1.64 the stack of the call, from 1.65 on the frame of its caller. Spelled out here,
+# not taken from watchdog.CALL_MARKS, so that the test fails when the watchdog loses one.
+MARKS = ("__pw_stack__", "__pw_caller_frame__")
+
+
 class Bridge:
     """Playwright's sync API in small, as playwright/_impl/_sync_base.py runs it: the
     event loop in a greenlet of its own, the dispatcher, and every call a task, marked
-    with __pw_stack__, that the main greenlet waits for while the dispatcher runs."""
+    with ``mark`` (MARKS), that the main greenlet waits for while the dispatcher runs."""
 
-    def __init__(self, greenlet) -> None:
+    def __init__(self, greenlet, mark: str) -> None:
         self.greenlet = greenlet
+        self.mark = mark
         self.loop = asyncio.new_event_loop()
         self.stopped = self.loop.create_future()
         self.dispatcher = greenlet.greenlet(
@@ -232,7 +239,7 @@ class Bridge:
     def call(self, coroutine):
         caller = self.greenlet.getcurrent()
         task = self.loop.create_task(coroutine)
-        task.__pw_stack__ = []
+        setattr(task, self.mark, [])
         task.add_done_callback(lambda _: caller.switch())
         while not task.done():
             self.dispatcher.switch()
@@ -245,9 +252,9 @@ class Bridge:
         self.loop.close()
 
 
-@pytest.fixture
-def bridge():
-    playwright = Bridge(pytest.importorskip("greenlet"))
+@pytest.fixture(params=MARKS)
+def bridge(request):
+    playwright = Bridge(pytest.importorskip("greenlet"), request.param)
     yield playwright
     playwright.close()
 
