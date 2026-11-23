@@ -420,6 +420,30 @@ const translate = (hass, key) => TEXT[language(hass)][key] ?? key;
 // "{name} requires {remaining}" with its values.
 const fill = (text, values) => text.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
 
+// The words of a connection chip's state, by the device class of its entity, as Home
+// Assistant shows them; a missing link reads as Home Assistant's Unavailable or Unknown.
+const CHIP_WORDS = {
+  connectivity: { on: "chip_connected", off: "chip_disconnected" },
+  running: { on: "chip_running", off: "chip_not_running" },
+  switch: { on: "chip_on", off: "chip_off" },
+};
+const CHIP_MISSING = { unavailable: "chip_unavailable", unknown: "chip_unknown" };
+
+// A connection chip's class and accessible name. The class draws its dot: filled while
+// the entity is on, a ring while it is off, a dash while it is unavailable or unknown,
+// so the colour isn't the only sign; the name, "<label>: <state>", says the state.
+// An entity of the registry without a state yet, such as right after a reload, is
+// unknown: the chip doesn't claim that the link is off.
+function chipState(t, label, state = "unknown", words) {
+  const missing = state === "unavailable" || state === "unknown";
+  const on = state === "on";
+  const word = missing ? CHIP_MISSING[state] : CHIP_WORDS[words][on ? "on" : "off"];
+  return {
+    cls: on ? "on" : missing ? "off unavailable" : "off",
+    name: fill(t("chip_state"), { label, state: t(word) }),
+  };
+}
+
 // The caller speaks the card's language, in Home Assistant's regional variant where it has one.
 function voiceLanguage(hass) {
   const lang = language(hass);
@@ -6753,7 +6777,14 @@ const BASE_CSS = `
   }
   .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--chip, #9e9e9e); }
   .chip.on { --chip: ${STATUS_COLORS.ready}; }
-  .chip.off { --chip: #9e9e9e; }
+  /* Beside the colour, the shape says the state, 7 px wide so the text never moves: a
+     filled dot while a link is up, a ring while it is down, a dash while it is unavailable
+     or unknown. Ring and dash are borders, which High Contrast keeps; it gets the dot too. */
+  .chip.off::before {
+    box-sizing: border-box; background: none; border: 1.5px solid var(--secondary-text-color);
+  }
+  .chip.off.unavailable::before { height: 0; border-width: 2px 0 0; border-radius: 1px; }
+  @media (forced-colors: active) { .chip.on::before { forced-color-adjust: none; background: CanvasText; } }
   .chip.alert { --chip: ${STATUS_COLORS.problem}; color: var(--ad-error-text); }
   /* A finger needs about 36 px, more than a mouse pointer. */
   @media (any-pointer: coarse) { .chip { min-height: 40px; } }
@@ -9725,21 +9756,27 @@ function createElements(Base) {
 
     _updateChips() {
       if (!this._el.chips) return;
-      const t = (key) => escapeHtml(this._t(key));
-      const chip = (name, text, alert = false) => {
+      const t = (key) => this._t(key);
+      const button = (id, cls, text, name) =>
+        `<button class="chip ${cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}"` +
+        `${name ? ` aria-label="${escapeHtml(name)}"` : ""}>${escapeHtml(text)}</button>`;
+      // A link's chip says its state in its accessible name; the camera problem says
+      // itself in its text.
+      const chip = (name, label, words) => {
         const id = this._ids[name];
         if (!id) return "";
-        const state = this._hass.states[id]?.state;
-        const cls = alert ? "alert" : state === "on" ? "on" : "off";
-        return `<button class="chip ${cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}">${text}</button>`;
+        const told = chipState(t, t(label), this._hass.states[id]?.state, words);
+        return button(id, told.cls, t(label), told.name);
       };
       const problem = this._state("cameraProblem")?.state === "on";
       this._setHtml(
         this._el.chips,
         [
-          chip("connected", t("board")),
-          chip("realtime", t("realtime")),
-          problem ? chip("cameraProblem", t("camera_problem"), true) : chip("cameras", t("cameras")),
+          chip("connected", "board", "connectivity"),
+          chip("realtime", "realtime", "connectivity"),
+          problem
+            ? button(this._ids.cameraProblem, "alert", t("camera_problem"))
+            : chip("cameras", "cameras", "running"),
         ].join("")
       );
     }
@@ -10889,25 +10926,27 @@ function createElements(Base) {
 
     _updateChips() {
       if (!this._el.chips) return;
-      // Each chip says in a sentence what it measures, as its tooltip and its accessible
-      // name, which starts with the label that it shows.
-      const chip = (name, label, hint) => {
+      // Each chip says its state in its accessible name, which starts with the label that
+      // it shows, and in a sentence what it measures, as its tooltip.
+      const t = (key) => this._t(key);
+      const chip = (name, label, hint, words) => {
         const id = this._ids[name];
         if (!id) return "";
-        const cls = this._hass.states[id]?.state === "on" ? "on" : "off";
-        const told = escapeHtml(fill(this._t(hint), { label: this._t(label) }));
+        const told = chipState(t, t(label), this._hass.states[id]?.state, words);
+        const title = escapeHtml(fill(t(hint), { label: t(label) }));
         return (
-          `<button class="chip ${cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}"` +
-          ` title="${told}" aria-label="${told}">${escapeHtml(this._t(label))}</button>`
+          `<button class="chip ${told.cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}"` +
+          ` title="${title}" aria-label="${escapeHtml(told.name)}">${escapeHtml(t(label))}</button>`
         );
       };
+      // The board's own link to Autodarts; Board Manager 1 reports it as a switch.
+      const cloud = this._ids.cloudLink ? ["cloudLink", "connectivity"] : ["upstream", "switch"];
       this._setHtml(
         this._el.chips,
         [
-          chip("connected", "board", "board_hint"),
-          chip("realtime", "realtime", "realtime_hint"),
-          // The board's own link to Autodarts; Board Manager 1 reports it as a switch.
-          chip(this._ids.cloudLink ? "cloudLink" : "upstream", "cloud", "cloud_hint"),
+          chip("connected", "board", "board_hint", "connectivity"),
+          chip("realtime", "realtime", "realtime_hint", "connectivity"),
+          chip(cloud[0], "cloud", "cloud_hint", cloud[1]),
         ].join("")
       );
     }

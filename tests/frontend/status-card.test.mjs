@@ -120,15 +120,18 @@ test("connection chips show the board, realtime and cloud links and open more-in
       ["chip on", "Board cloud", "binary_sensor.dartboard_cloud_link"],
     ]
   );
-  // Each chip says what it measures, as its tooltip and as its accessible name, which
-  // starts with the label that it shows.
+  // Each chip says what it measures as its tooltip, and its state in its accessible name,
+  // which starts with the label that it shows.
   const told = [
     "Board Manager: Home Assistant reaches the Board Manager.",
     "Realtime: Live events arrive from the board.",
     "Board cloud: The board's own link to Autodarts, as the board reports it; HomeDarts doesn't use it.",
   ];
   assert.deepEqual($$(card, ".chip").map((chip) => chip.title), told);
-  assert.deepEqual($$(card, ".chip").map((chip) => chip.getAttribute("aria-label")), told);
+  assert.deepEqual(
+    $$(card, ".chip").map((chip) => chip.getAttribute("aria-label")),
+    ["Board Manager: Connected", "Realtime: Disconnected", "Board cloud: Connected"]
+  );
   const german = setup({}, {}, { language: "de" }).card;
   assert.deepEqual(
     $$(german, ".chip").map((chip) => [chip.textContent, chip.title]),
@@ -138,6 +141,49 @@ test("connection chips show the board, realtime and cloud links and open more-in
       ["Board-Cloud", "Board-Cloud: Die eigene Verbindung des Boards zu Autodarts, wie das Board sie meldet; HomeDarts nutzt sie nicht."],
     ]
   );
+
+  // Beside the colour, the class draws the dot's shape for every state, and the name says
+  // the state in the words that Home Assistant shows for a connectivity sensor.
+  const chips = (states, options) =>
+    $$(setup(states, {}, options).card, ".chip").map((chip) => [chip.className, chip.getAttribute("aria-label"), chip.title]);
+  const links = ["binary_sensor.local_connected", "binary_sensor.realtime_connected", "binary_sensor.cloud_link"];
+  const every = (state) => Object.fromEntries(links.map((id) => [id, state]));
+  const english = {
+    on: ["chip on", "Connected"],
+    off: ["chip off", "Disconnected"],
+    unavailable: ["chip off unavailable", "Unavailable"],
+    unknown: ["chip off unavailable", "Unknown"],
+  };
+  for (const [state, [cls, words]] of Object.entries(english)) {
+    assert.deepEqual(chips(every(state)), [
+      [cls, `Board Manager: ${words}`, told[0]],
+      [cls, `Realtime: ${words}`, told[1]],
+      [cls, `Board cloud: ${words}`, told[2]],
+    ]);
+  }
+  // French puts a no-break space before the colon, as its tooltips do.
+  const french = {
+    on: "Connecté",
+    off: "Déconnecté",
+    unavailable: "Indisponible",
+    unknown: "Inconnu",
+  };
+  for (const [state, words] of Object.entries(french)) {
+    assert.deepEqual(
+      chips(every(state), { language: "fr" }).map(([, name]) => name),
+      [`Board Manager\u00a0: ${words}`, `Temps réel\u00a0: ${words}`, `Cloud de la cible\u00a0: ${words}`]
+    );
+  }
+  // An entity of the registry that has no state yet, such as right after a reload, is
+  // unknown rather than off.
+  const reloaded = makeHass({ states: BOARD, cameras: CAMERAS });
+  delete reloaded.states["binary_sensor.dartboard_realtime_connected"];
+  const pending = $$(mount("homedarts-status-card", reloaded), ".chip")[1];
+  assert.deepEqual(
+    [pending.className, pending.getAttribute("aria-label")],
+    ["chip off unavailable", "Realtime: Unknown"]
+  );
+  assert.equal(chips({}, { language: "fr" })[1][2],"Temps réel\u00a0: Les événements en direct arrivent de la cible.");
   const opened = moreInfo(card);
   $$(card, ".chip")[2].click();
   $(card, ".chips").click();
@@ -148,18 +194,79 @@ test("connection chips show the board, realtime and cloud links and open more-in
     "homedarts-status-card",
     makeHass({ states: { ...without("binary_sensor.cloud_link"), "switch.upstream": "off" } })
   );
-  assert.deepEqual(
-    $$(upstream, ".chip").map((chip) => [chip.className, chip.textContent, chip.dataset.entity, chip.title]).at(-1),
-    ["chip off", "Board cloud", "switch.dartboard_upstream", told[2]]
-  );
+  const upstreamChip = (chip) => [
+    chip.className,
+    chip.textContent,
+    chip.dataset.entity,
+    chip.title,
+    chip.getAttribute("aria-label"),
+  ];
+  assert.deepEqual(upstreamChip($$(upstream, ".chip").at(-1)), [
+    "chip off",
+    "Board cloud",
+    "switch.dartboard_upstream",
+    told[2],
+    "Board cloud: Off",
+  ]);
   const upstreamOpened = moreInfo(upstream);
   $$(upstream, ".chip").at(-1).click();
   assert.deepEqual(upstreamOpened, ["switch.dartboard_upstream"]);
+  // A switch says the words of a switch, in every state.
+  for (const [state, cls, words] of [
+    ["on", "chip on", "On"],
+    ["unavailable", "chip off unavailable", "Unavailable"],
+    ["unknown", "chip off unavailable", "Unknown"],
+  ]) {
+    const hass = makeHass({ states: { ...without("binary_sensor.cloud_link"), "switch.upstream": state } });
+    const chip = $$(mount("homedarts-status-card", hass), ".chip").at(-1);
+    assert.deepEqual([chip.className, chip.getAttribute("aria-label"), chip.title], [cls, `Board cloud: ${words}`, told[2]]);
+  }
   const lean = mount("homedarts-status-card", makeHass({ states: without("binary_sensor.realtime_connected") }));
   assert.deepEqual(
     $$(lean, ".chip").map((chip) => chip.textContent),
     ["Board Manager", "Board cloud"]
   );
+});
+
+test("no connection chip of either card tells its state by colour alone", () => {
+  // Every chip of a link, in every state, has a shape of its own and a name that starts
+  // with its label and ends with the state, so a new chip can't go back to colour alone.
+  const WORDS = {
+    on: ["chip on", { link: "Connected", cameras: "Running", upstream: "On" }],
+    off: ["chip off", { link: "Disconnected", cameras: "Not running", upstream: "Off" }],
+    unavailable: ["chip off unavailable", { link: "Unavailable", cameras: "Unavailable", upstream: "Unavailable" }],
+    unknown: ["chip off unavailable", { link: "Unknown", cameras: "Unknown", upstream: "Unknown" }],
+  };
+  const kind = (id) => (id.endsWith("cameras_active") ? "cameras" : id.startsWith("switch.") ? "upstream" : "link");
+  let seen = 0;
+  for (const tag of ["homedarts-card", "homedarts-status-card"]) {
+    for (const cloud of ["binary_sensor.cloud_link", "switch.upstream"]) {
+      for (const [state, [cls, words]] of Object.entries(WORDS)) {
+        const links = ["binary_sensor.local_connected", "binary_sensor.realtime_connected", "binary_sensor.cameras_active", cloud];
+        const states = { ...without("binary_sensor.cloud_link"), ...Object.fromEntries(links.map((id) => [id, state])) };
+        const card = mount(tag, makeHass({ states }));
+        const chips = $$(card, ".chip:not(.alert)");
+        assert.equal(chips.length, 3, `${tag} ${state}`);
+        for (const chip of chips) {
+          const name = chip.getAttribute("aria-label");
+          assert.equal(chip.className, cls, `${tag} ${state}`);
+          assert.ok(name.startsWith(`${chip.textContent}: `), name);
+          assert.ok(name.endsWith(`: ${words[kind(chip.dataset.entity)]}`), name);
+          seen += 1;
+        }
+      }
+    }
+  }
+  assert.equal(seen, 48);
+  // The shapes, in the 7 px box of the dot: a ring while off, a dash while unavailable,
+  // drawn as borders, which High Contrast keeps, where the filled dot needs a system colour.
+  for (const tag of ["homedarts-card", "homedarts-status-card"]) {
+    const style = $(mount(tag, makeHass({ states: BOARD })), "style").textContent;
+    assert.match(style, /\.chip::before \{ content: ""; width: 7px; height: 7px; border-radius: 50%;/, tag);
+    assert.match(style, /\.chip\.off::before \{\s+box-sizing: border-box; background: none; border: 1\.5px solid var\(--secondary-text-color\);/, tag);
+    assert.match(style, /\.chip\.off\.unavailable::before \{ height: 0; border-width: 2px 0 0; border-radius: 1px; \}/, tag);
+    assert.match(style, /@media \(forced-colors: active\) \{ \.chip\.on::before \{ forced-color-adjust: none; background: CanvasText; \} \}/, tag);
+  }
 });
 
 test("the board PC tile shows load, memory, detection rate and the system", () => {
@@ -402,4 +509,8 @@ test("the keyboard focus stays on a calibration button while it asks for confirm
   card.hass = update(hass, { "binary_sensor.realtime_connected": "off" });
   assert.equal(card.shadowRoot.activeElement, $$(card, ".chip")[1]);
   assert.equal($$(card, ".chip")[1].className, "chip off");
+  card.hass = update(hass, { "binary_sensor.realtime_connected": "unavailable" });
+  assert.equal(card.shadowRoot.activeElement, $$(card, ".chip")[1]);
+  assert.equal($$(card, ".chip")[1].className, "chip off unavailable");
+  assert.equal($$(card, ".chip")[1].getAttribute("aria-label"), "Realtime: Unavailable");
 });
