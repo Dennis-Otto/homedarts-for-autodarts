@@ -506,6 +506,47 @@ async def test_an_ignored_discovery_gives_way_to_the_dartboard(hass, aioclient_m
     ] == [entry.entry_id]
 
 
+async def test_a_board_with_an_entry_of_its_own_joins_the_dartboard_once_deleted(
+    hass, aioclient_mock
+):
+    # The steps of "Autodarts later" in docs/without-autodarts.md, for a board that
+    # Home Assistant found and added before the dartboard was moved onto it.
+    entry = await setup_manual(hass)
+    await play_a_visit(hass)
+    mock_board(aioclient_mock)
+    own = MockConfigEntry(
+        domain="homedarts",
+        version=2,
+        unique_id="board-1",
+        data={"board_id": "board-1", "host": "192.0.2.10", "port": 3180},
+    )
+    own.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(own.entry_id)
+    await hass.async_block_till_done()
+    result = await reconfigure(hass, entry, "local")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"host": "192.0.2.10", "port": 3180}
+    )
+    assert result["reason"] == "already_configured"
+    # Delete the board's own entry, and ignore the discovery that comes back.
+    await hass.config_entries.async_remove(own.entry_id)
+    await hass.async_block_till_done()
+    ignore_board(hass)
+    result = await reconfigure(hass, entry, "local")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"host": "192.0.2.10", "port": 3180}
+    )
+    await hass.async_block_till_done()
+    assert result["reason"] == "board_connected"
+    assert entry.unique_id == "board-1" and entry.data["board_id"] == "board-1"
+    assert [
+        item.entry_id for item in hass.config_entries.async_entries("homedarts")
+    ] == [entry.entry_id]
+    # The dartboard's statistics stay, now on the board.
+    assert board_state(hass, "sensor", "training_darts") == "3"
+    assert board_state(hass, "sensor", "practice_remaining") == "161"
+
+
 async def test_the_board_search_offers_a_board_whose_discovery_was_ignored(
     hass, aioclient_mock
 ):

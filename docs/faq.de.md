@@ -40,6 +40,10 @@ Nein. HomeDarts for Autodarts ist ein inoffizielles Community-Projekt ohne Verbi
 
 Ja. Richte eine Dartscheibe ohne Autodarts ein und gib jeden Dart auf dem Tastenfeld der Anzeigetafel oder per Sprache ein. Alle Spiele, das Training und die Statistik funktionieren. Bekommt deine Dartscheibe später Autodarts, behält sie die Spiele, die Spieler und die Statistik. [Spielen ohne Autodarts](without-autodarts.de.md)
 
+### Mein Autodarts-Board hat noch keine Kameras. Kann ich die Darts von Hand eingeben?
+
+Ja, am Board selbst: Eine zweite Dartscheibe brauchst du nicht. Schalte *Übungsspiel manuelle Eingabe* in der Ansicht *Spieleinstellungen* des automatischen Dashboards ein und *Tastenfeld für von Hand eingegebene Darts* im Editor des Dashboards, in seinem Menü (⋮) → **Dashboard bearbeiten**, Abschnitt *Ansicht Anzeigetafel*. Die Ansicht *Anzeigetafel* zeigt dann das Tastenfeld, und die Erkennung muss nicht laufen. Seine Darts zählen für die Spiele, das Training und die Statistik des Boards, die beim Board bleiben, wenn die Kameras kommen; schalte *Übungsspiel manuelle Eingabe* dann aus, und die Kameras übernehmen. Eine Dartscheibe ohne Autodarts ist der Weg für ein Board ganz ohne Autodarts, und sie führt eigene Statistiken. [Darts korrigieren und eingeben](scoreboard.de.md#darts-korrigieren-und-eingeben)
+
 ### Kann ich online spielen?
 
 Ja, wie bisher auf play.autodarts.io. Die Integration sieht dabei die Darts auf deinem eigenen Board: `dart_detected`, `visit_thrown` und die Entnahme kommen wie gewohnt an. Überwerfen, gewonnene Legs und Matches passieren im Browser; die optionale Online-Brücke bringt sie mit der Browser-Erweiterung Tools for Autodarts nach Home Assistant *(experimentell)*. [Online-Matches](online-matches.de.md)

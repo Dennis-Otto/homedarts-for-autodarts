@@ -14,7 +14,7 @@ You play on an Autodarts board and have never used Home Assistant? This guide ta
 
 ## What you need
 
-- **Your Autodarts board,** set up and working. [Supported devices](README.md#supported-devices) lists the tested setups. No Autodarts? [Play without Autodarts](without-autodarts.md) on any dartboard, entering your darts on a keypad.
+- **Your Autodarts board,** set up and working. [Supported devices](README.md#supported-devices) lists the tested setups. No cameras yet? [Enter the darts by hand](faq.md#my-autodarts-board-has-no-cameras-yet-can-i-score-by-hand) on the board itself. No Autodarts? [Play without Autodarts](without-autodarts.md) on any dartboard, entering your darts on a keypad.
 - **A device for Home Assistant** that stays on, in the same network as the board: a Raspberry Pi 4 or 5, a mini PC, or a virtual machine on a computer that runs all the time. Home Assistant also sells ready-made devices. Use a device of its own: the board PC needs its power for the detection.
 - **A free GitHub account,** which HACS uses to download integrations.
 - **A screen for the scoreboard,** if you want one: a tablet, a TV with a browser or an old phone, with [a recent browser](scoreboard.md#browsers).

@@ -75,7 +75,7 @@ Coming from Autodarts Local, another integration for Autodarts or darts-caller? 
 
 - Matches of up to four players with legs and sets, two teams of two, handicap start scores and a bull-off, and a summary of every match
 - A bot from level 20 to 120 to play X01 and Cricket against
-- A tap corrects a dart the board read wrong; a keypad enters darts by hand, and the last visit can be undone
+- A tap corrects a dart the board read wrong; a keypad enters darts by hand, also on an Autodarts board [without cameras yet](https://dennis-otto.github.io/homedarts-for-autodarts/faq.html#my-autodarts-board-has-no-cameras-yet-can-i-score-by-hand), and the last visit can be undone
 - No Autodarts? Any dartboard plays along, with every dart entered on the keypad
 - Setup hints where no checkout is possible, such as T20 T20 S17 to leave 32
 

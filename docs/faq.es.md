@@ -40,6 +40,10 @@ No. HomeDarts for Autodarts es un proyecto no oficial de la comunidad, sin relac
 
 Sí. Configura una diana sin Autodarts e introduce cada dardo en el teclado numérico del marcador, o por voz. Todos los juegos, el entrenamiento y las estadísticas funcionan. Si tu diana recibe Autodarts más tarde, conserva las partidas, los jugadores y las estadísticas. [Play without Autodarts](without-autodarts.md)
 
+### Mi diana Autodarts aún no tiene cámaras. ¿Puedo anotar a mano?
+
+Sí, en la propia diana: no hace falta una segunda diana. Activa *Entrada manual de la partida* en la vista *Ajustes de juego* del panel automático, y *Teclado para dardos introducidos a mano* en el editor del panel, desde su menú (⋮) → **Editar panel**, sección *Vista del marcador*. La vista *Marcador* muestra entonces el teclado numérico, y la detección no tiene que estar en marcha. Sus dardos cuentan para las partidas, el entrenamiento y las estadísticas de la diana, que se quedan con ella cuando lleguen las cámaras; entonces desactiva *Entrada manual de la partida* y las cámaras toman el relevo. Una diana sin Autodarts es el camino para una diana que no tiene Autodarts en absoluto, y lleva sus propias estadísticas. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+
 ### ¿Puedo jugar partidos en línea?
 
 Sí, en play.autodarts.io como antes. La integración ve entonces los dardos de tu propia diana: `dart_detected`, `visit_thrown` y la retirada de dardos llegan como siempre. Los busts, los legs y los partidos ganados ocurren en el navegador; el puente en línea opcional los lleva a Home Assistant con la extensión de navegador Tools for Autodarts *(experimental)*. [Online matches](online-matches.md)

@@ -18,6 +18,8 @@ Kein Autodarts an deinem Board? Die Integration funktioniert mit jeder Steeldart
 - **Ein zweites Board,** etwa im Keller oder bei Freunden, neben einem Autodarts-Board im Wohnzimmer. Jedes Board führt eigene Statistiken.
 - **Zum Ausprobieren,** bevor ein Autodarts-System kommt. Nichts davon braucht ein Konto oder das Internet.
 
+Ein Autodarts-Board, dessen Kameras noch nicht da sind, braucht keine eigene Dartscheibe: [Gib seine Darts von Hand am Board selbst ein](faq.de.md#mein-autodarts-board-hat-noch-keine-kameras-kann-ich-die-darts-von-hand-eingeben), und sie zählen für seine eigene Statistik.
+
 ## Einrichten
 
 Installiere zuerst die Integration: Die Schritte 1 bis 3 von [Vom Start bis zur Anzeigetafel](getting-started.de.md) zeigen, wie es mit Home Assistant und HACS geht.
@@ -98,3 +100,11 @@ Bekommt deine Dartscheibe Autodarts, schließe das Board an sie an, statt ein ne
 3. Wähle **Boards im Netzwerk suchen** oder **Board-Adresse eingeben**, wie beim [Hinzufügen eines Boards](installation.de.md#board-hinzufügen).
 
 Die Dartscheibe hat danach die ID des Boards, die Erkennung, die Kameras, die Board-Einstellungen und die Steuerung, und das automatische Dashboard ihre Ansicht *Board*. *Übungsspiel manuelle Eingabe* bleibt an, sodass die Darts des Tastenfelds weiter zählen; schaltest du sie aus, zählen die Kameras. Findet Home Assistant das Board von selbst und bietet *Autodarts-Board gefunden* an, ignoriere das Angebot und konfiguriere die Dartscheibe neu: Als neuer Eintrag hinzugefügt, finge das Board mit eigenen Statistiken an.
+
+**Hat das Board schon einen eigenen Eintrag,** hinzugefügt, als Home Assistant es fand, bricht Neu konfigurieren mit *Dieses Autodarts-Board ist bereits eingerichtet* ab, denn die ID eines Boards gehört nur einem Eintrag.
+
+1. Lösche den Eintrag des Boards: unter **Einstellungen → Geräte & Dienste → HomeDarts for Autodarts** in seinem Menü (⋮) → **Löschen**. HomeDarts schreibt vorher ein [Backup](statistics.de.md#backups) dessen, was dieser Eintrag gespeichert hat.
+2. Bietet Home Assistant *Autodarts-Board gefunden* wieder an, ignoriere es.
+3. Konfiguriere die Dartscheibe wie oben neu.
+
+Die Dartscheibe hat danach die ID des Boards und behält ihre Spiele und Statistiken; die des gelöschten Eintrags bleiben in seinem Backup.
