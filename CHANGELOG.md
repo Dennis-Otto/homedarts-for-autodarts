@@ -4,6 +4,16 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.5.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.1...v2.5.0) (2026-11-23)
+
+### Features
+
+- **The Board view no longer looks like settings, and its last chip says whose link it is:** the tab of the Board view of the HomeDarts dashboard shows a heart with a pulse line, the state of the board, instead of the cog that Home Assistant uses for its Settings. The board status card calls its last chip *Board cloud*, since it is the board's own link to Autodarts, which HomeDarts doesn't use. Each of its three chips tells in a tooltip, and to a screen reader, what it measures. The entities, their IDs and their names stay as they are, so automations and dashboards keep working.
+
+### Bug fixes
+
+- **The connection chips show and say their state, not only by the colour of their dot:** on the board status card and the live card, a chip keeps its filled green dot while its link is up, shows a grey ring while it is down, and a grey dash while it is unavailable or unknown, so the states read for colour-blind players and in grey too. A screen reader now says each chip's label and its state, such as *Realtime: Disconnected* or *Cameras: Running*, in the words that Home Assistant shows for the entity, in all five languages of the cards. The tooltips stay as they are.
+
 ## [2.4.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.0...v2.4.1) (2026-11-15)
 
 ### Bug fixes
