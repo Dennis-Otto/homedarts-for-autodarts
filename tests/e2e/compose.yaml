@@ -1,7 +1,7 @@
 services:
   board-mock:
     # The Home Assistant image already provides aiohttp for the Board Manager double.
-    image: ${HOME_ASSISTANT_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.11.2@sha256:493a07e8f6530fc640223f4a0a5248f20a61ca2f718bb1d31efbf08a2c5ea28f}
+    image: ${HOME_ASSISTANT_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.11.3@sha256:24e541ddae5818bf8eb27898b9ba00d0c344a655aa5097e9e9bd4b19356be847}
     entrypoint: ["python3", "/e2e/board_mock.py"]
     environment:
       BOARD_MANAGER: ${BOARD_MANAGER:-1}
@@ -20,7 +20,7 @@ services:
       retries: 30
 
   homeassistant:
-    image: ${HOME_ASSISTANT_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.11.2@sha256:493a07e8f6530fc640223f4a0a5248f20a61ca2f718bb1d31efbf08a2c5ea28f}
+    image: ${HOME_ASSISTANT_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.11.3@sha256:24e541ddae5818bf8eb27898b9ba00d0c344a655aa5097e9e9bd4b19356be847}
     depends_on:
       board-mock:
         condition: service_healthy
