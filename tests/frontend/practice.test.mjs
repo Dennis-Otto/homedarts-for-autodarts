@@ -149,7 +149,7 @@ test("the game settings offer the practice controls and player names, the live v
     ["scoreboard", "Anzeigetafel", "mdi:scoreboard-outline"],
     ["training", "Training", "mdi:chart-box-outline"],
     ["games", "Spieleinstellungen", "mdi:tune-variant"],
-    ["board", "Board", "mdi:cog-outline"],
+    ["board", "Board", "mdi:heart-pulse"],
     ["overlay", "Stream-Overlay", "mdi:video-outline"],
   ]);
   assert.deepEqual(views[0].sections, [

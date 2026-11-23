@@ -80,9 +80,9 @@ Español, inglés, alemán, neerlandés y francés, según el idioma de Home Ass
 
 Nada, en el modo local. Solo lo que tú eliges habla con internet: la búsqueda de dianas pregunta una vez al servicio público de descubrimiento de Autodarts, y el puente en línea solo recibe las llamadas de Tools for Autodarts. Los secretos de la diana nunca se guardan, y los diagnósticos ocultan los ID de las dianas, las direcciones y los nombres de los jugadores. Algunos navegadores pronuncian los cantos del marcador con voces en línea; una voz sin conexión del dispositivo los mantiene en casa. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
 
-### El indicador Nube sigue en verde aunque cerré sesión en Autodarts
+### El indicador Nube de la diana sigue en verde aunque cerré sesión en Autodarts
 
-Ese indicador de la tarjeta de estado de la diana es la propia conexión de la diana con Autodarts, tal como la comunica el Board Manager: no dice si has iniciado sesión, y HomeDarts no la usa. El software de Autodarts del PC de la diana decide si esta mantiene esa conexión después de cerrar sesión. [Connections](cards.md#connections) · [¿Qué sale de mi red?](#qué-sale-de-mi-red)
+El indicador *Nube de la diana* de la tarjeta de estado de la diana es la propia conexión de la diana con Autodarts, tal como la comunica el Board Manager: no dice si has iniciado sesión, y HomeDarts no la usa. El software de Autodarts del PC de la diana decide si esta mantiene esa conexión después de cerrar sesión. [Connections](cards.md#connections) · [¿Qué sale de mi red?](#qué-sale-de-mi-red)
 
 ### ¿Dónde se guardan mis estadísticas?
 

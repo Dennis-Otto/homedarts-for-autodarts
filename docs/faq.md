@@ -80,9 +80,9 @@ English, German, Dutch, French and Spanish, following the language of Home Assis
 
 Nothing, in local mode. Only what you choose talks to the internet: the board search asks the public Autodarts discovery service once, and the online bridge only receives the calls of Tools for Autodarts. Board secrets are never stored, and diagnostics redact board IDs, addresses and player names. Some browsers speak the scoreboard's calls with online voices; an offline voice of the device keeps them at home. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
 
-### Cloud shows green although I signed out of Autodarts
+### Board cloud shows green although I signed out of Autodarts
 
-That chip of the board status card is the board's own link to Autodarts, as the Board Manager reports it: it doesn't say whether you are signed in, and HomeDarts doesn't use it. Whether the board keeps that link after a sign-out is up to the Autodarts software on the board PC. [Connections](cards.md#connections) · [What leaves my network?](#what-leaves-my-network)
+The chip *Board cloud* of the board status card is the board's own link to Autodarts, as the Board Manager reports it: it doesn't say whether you are signed in, and HomeDarts doesn't use it. Whether the board keeps that link after a sign-out is up to the Autodarts software on the board PC. [Connections](cards.md#connections) · [What leaves my network?](#what-leaves-my-network)
 
 ### Where are my statistics kept?
 

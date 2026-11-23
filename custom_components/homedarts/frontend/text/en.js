@@ -707,7 +707,10 @@ export default {
   // Status card
   "detection": "Detection",
   "connections": "Connections",
-  "cloud": "Cloud",
+  "cloud": "Board cloud",
+  "board_hint": "{label}: Home Assistant reaches the Board Manager.",
+  "realtime_hint": "{label}: Live events arrive from the board.",
+  "cloud_hint": "{label}: The board's own link to Autodarts, as the board reports it; HomeDarts doesn't use it.",
   "version": "Version",
   "update_available": "Update to",
   "up_to_date": "Up to date",
