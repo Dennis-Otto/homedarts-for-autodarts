@@ -174,7 +174,16 @@ test("connection chips show the board, realtime and cloud links and open more-in
       [`Board Manager\u00a0: ${words}`, `Temps réel\u00a0: ${words}`, `Cloud de la cible\u00a0: ${words}`]
     );
   }
-  assert.equal(chips({}, { language: "fr" })[1][2], "Temps réel\u00a0: Les événements en direct arrivent de la cible.");
+  // An entity of the registry that has no state yet, such as right after a reload, is
+  // unknown rather than off.
+  const reloaded = makeHass({ states: BOARD, cameras: CAMERAS });
+  delete reloaded.states["binary_sensor.dartboard_realtime_connected"];
+  const pending = $$(mount("homedarts-status-card", reloaded), ".chip")[1];
+  assert.deepEqual(
+    [pending.className, pending.getAttribute("aria-label")],
+    ["chip off unavailable", "Realtime: Unknown"]
+  );
+  assert.equal(chips({}, { language: "fr" })[1][2],"Temps réel\u00a0: Les événements en direct arrivent de la cible.");
   const opened = moreInfo(card);
   $$(card, ".chip")[2].click();
   $(card, ".chips").click();

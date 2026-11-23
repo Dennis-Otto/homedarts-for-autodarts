@@ -432,7 +432,9 @@ const CHIP_MISSING = { unavailable: "chip_unavailable", unknown: "chip_unknown" 
 // A connection chip's class and accessible name. The class draws its dot: filled while
 // the entity is on, a ring while it is off, a dash while it is unavailable or unknown,
 // so the colour isn't the only sign; the name, "<label>: <state>", says the state.
-function chipState(t, label, state, words) {
+// An entity of the registry without a state yet, such as right after a reload, is
+// unknown: the chip doesn't claim that the link is off.
+function chipState(t, label, state = "unknown", words) {
   const missing = state === "unavailable" || state === "unknown";
   const on = state === "on";
   const word = missing ? CHIP_MISSING[state] : CHIP_WORDS[words][on ? "on" : "off"];

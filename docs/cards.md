@@ -191,9 +191,9 @@ A [dartboard without Autodarts](without-autodarts.md) has none of these; the car
 
 ### Connections
 
-The tile *Connections* has a chip for each connection. A chip shows a filled green dot while its entity is on, a grey ring while it is off, and a grey dash while it is unavailable or unknown, so its state reads without the colour too, also in gray. Tap a chip to open its entity with its history, which shows when the connection changed. Hold the pointer over a chip, and its tooltip says in one sentence what it measures. A screen reader says the chip's label and its state in the words that Home Assistant shows for the entity, such as *Realtime: Disconnected* or *Board cloud: Unavailable*, and then the sentence of the tooltip.
+The tile *Connections* has a chip for each connection. A chip shows a filled green dot while its entity is on, a gray ring while it is off, and a gray dash while it is unavailable or unknown, so its state reads without the color too, also in gray. Tap a chip to open its entity with its history, which shows when the connection changed. Hold the pointer over a chip, and its tooltip says in one sentence what it measures. A screen reader says the chip's label and its state in the words that Home Assistant shows for the entity, such as *Realtime: Disconnected* or *Board cloud: Unavailable*, and then the sentence of the tooltip.
 
-| Chip | Entity | Filled green dot | Grey ring |
+| Chip | Entity | Filled green dot | Gray ring |
 | --- | --- | --- | --- |
 | **Board Manager** | [*Local connection*](entities.md#health-and-connections) | Home Assistant reaches the Board Manager in your network and reads its state. | Its reads keep failing while no realtime events arrive either, such as while the board PC is off or out of the network. One or two missed reads, a few seconds, keep it green. |
 | **Realtime** | [*Realtime connection*](entities.md#health-and-connections) | The connection for realtime events between Home Assistant and the Board Manager is open. | That connection is closed. Home Assistant then keeps reading the board, every 2 seconds while it answers. |
