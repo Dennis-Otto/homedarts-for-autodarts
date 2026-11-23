@@ -18,6 +18,8 @@ No Autodarts at your board? The integration works for any steel dartboard: you e
 - **A second board,** for example in the garage or at a friend's, next to an Autodarts board in the living room. Each board keeps statistics of its own.
 - **Trying it out** before an Autodarts system arrives. Nothing of it needs an account or the internet.
 
+An Autodarts board whose cameras haven't come yet needs no dartboard of its own: [enter its darts by hand on the board itself](faq.md#my-autodarts-board-has-no-cameras-yet-can-i-score-by-hand), and they count for its own statistics.
+
 ## Set up
 
 Install the integration first: steps 1 to 3 of [From zero to the scoreboard](getting-started.md) show how, with Home Assistant and HACS.
@@ -98,3 +100,11 @@ When your dartboard gets Autodarts, connect the board to it instead of adding a 
 3. Choose **Search for boards on this network** or **Enter board address**, as when [adding a board](installation.md#add-your-board).
 
 The dartboard then has the board's ID, the detection, the cameras, the board settings and the controls, and the automatic dashboard its *Board* view. *Practice manual entry* stays on, so the keypad's darts keep counting, and turning it off leaves the darts to the cameras. If Home Assistant finds the board on its own and offers *Autodarts board found*, ignore that offer and reconfigure the dartboard: added as a new entry, the board would start with statistics of its own.
+
+**When the board already has an entry of its own,** added when Home Assistant found it, Reconfigure stops with *This Autodarts board is already configured*, because a board's ID belongs to one entry only.
+
+1. Delete the board's entry: in **Settings → Devices & services → HomeDarts for Autodarts**, its menu (⋮) → **Delete**. HomeDarts first writes a [backup](statistics.md#backups) of what that entry stored.
+2. If Home Assistant offers *Autodarts board found* again, ignore it.
+3. Reconfigure the dartboard as above.
+
+The dartboard then has the board's ID and keeps its games and statistics; those of the deleted entry stay in its backup.

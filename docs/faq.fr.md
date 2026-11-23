@@ -40,6 +40,10 @@ Non. HomeDarts for Autodarts est un projet communautaire non officiel, sans lien
 
 Oui. Configurez une cible sans Autodarts et saisissez chaque fléchette sur le pavé numérique du tableau des scores, ou à la voix. Tous les jeux, l'entraînement et les statistiques fonctionnent. Si votre cible reçoit Autodarts plus tard, elle garde les parties, les joueurs et les statistiques. [Play without Autodarts](without-autodarts.md)
 
+### Ma cible Autodarts n'a pas encore de caméras. Puis-je compter à la main ?
+
+Oui, sur la cible elle-même : pas besoin d'une seconde cible. Activez *Saisie manuelle de la partie* dans la vue *Réglages des parties* du tableau de bord automatique, et *Pavé pour les fléchettes saisies à la main* dans l'éditeur du tableau de bord, depuis son menu (⋮), section *Vue du tableau des scores*. La vue *Tableau des scores* affiche alors le pavé numérique, et la détection n'a pas besoin de tourner. Ses fléchettes comptent pour les parties, l'entraînement et les statistiques de la cible, qui lui restent quand les caméras arrivent ; désactivez alors *Saisie manuelle de la partie*, et les caméras prennent le relais. Une cible sans Autodarts est la solution pour une cible sans aucun Autodarts, et elle tient ses propres statistiques. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+
 ### Puis-je jouer des matchs en ligne ?
 
 Oui, sur play.autodarts.io comme avant. L'intégration voit alors les fléchettes de votre propre cible : `dart_detected`, `visit_thrown` et le retrait arrivent comme d'habitude. Les busts, les manches et les matchs gagnés se passent dans le navigateur ; la passerelle en ligne facultative les amène dans Home Assistant avec l'extension de navigateur Tools for Autodarts *(expérimental)*. [Online matches](online-matches.md)

@@ -147,6 +147,32 @@ test("the live card of a board with Autodarts has the keypad as an option", () =
   assert.equal($(mount("homedarts-card", card._hass), ".pad-area").hidden, true);
 });
 
+// An Autodarts board without cameras yet, as Board Manager 2.1 reports it: no camera running,
+// the detection stopped. Its darts come from the keypad, as tests/test_board_manager_2_1.py
+// counts them for the board's training.
+test("the scoreboard of an Autodarts board without cameras enters darts with the keypad", () => {
+  const states = {
+    ...READY,
+    ...MANUAL,
+    ...visit(),
+    "binary_sensor.cameras_active": "off",
+    "switch.detection": "off",
+    "sensor.local_status": "stopped",
+    "switch.practice_manual_entry": "on",
+  };
+  const hass = makeHass({ states, device: { primary_config_entry: ENTRY } });
+  const card = mount("homedarts-scoreboard-card", hass, { keypad: true });
+  assert.equal($(card, ".pad-area").hidden, false);
+  assert.equal(text(card, ".pad .section-label"), "Enter a dart");
+  $(card, '[data-pad="multiplier"][data-value="3"]').click();
+  $(card, '.pad-number[data-value="T20"]').click();
+  assert.deepEqual(actions(hass), [["throw_dart", { config_entry_id: ENTRY, segment: "T20" }]]);
+  // Without Practice manual entry, or without the option, there is no keypad.
+  card.hass = update(hass, { "switch.practice_manual_entry": "off" });
+  assert.equal($(card, ".pad-area").hidden, true);
+  assert.equal($(mount("homedarts-scoreboard-card", hass), ".pad-area").hidden, true);
+});
+
 test("the status card of a dartboard without Autodarts says why it has nothing to show", () => {
   const card = mount("homedarts-status-card", board());
   assert.equal(text(card, ".pill"), "Enter your darts");

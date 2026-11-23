@@ -40,6 +40,10 @@ No. HomeDarts for Autodarts is an unofficial community project, not affiliated w
 
 Yes. Set up a dartboard without Autodarts and enter every dart on the keypad of the scoreboard, or by voice. Every game, the training and the statistics work. When your dartboard gets Autodarts later, it keeps the games, players and statistics. [Play without Autodarts](without-autodarts.md)
 
+### My Autodarts board has no cameras yet. Can I score by hand?
+
+Yes, on the board itself: no second dartboard is needed. Switch on *Practice manual entry* in the *Game settings* view of the automatic dashboard, and *Keypad for darts entered by hand* in the dashboard's editor, its menu (⋮) → **Edit dashboard**, section *Scoreboard view*. The *Scoreboard* view then shows the keypad, and the detection need not run. Its darts count for the board's games, its training and its statistics, which stay with the board when the cameras come; switch *Practice manual entry* off then, and the cameras take over. A dartboard without Autodarts is the way for a board without Autodarts at all, and it keeps statistics of its own. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+
 ### Can I play online matches?
 
 Yes, on play.autodarts.io as before. The integration sees the darts on your own board then: `dart_detected`, `visit_thrown` and the takeout arrive as usual. Busts, won legs and matches happen in the browser; the optional online bridge brings them into Home Assistant with the browser extension Tools for Autodarts *(experimental)*. [Online matches](online-matches.md)

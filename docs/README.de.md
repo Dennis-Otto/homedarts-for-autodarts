@@ -63,7 +63,7 @@ Du kommst von Autodarts Local, einer anderen Integration für Autodarts oder dar
 
 - Matches mit bis zu vier Spielern, Legs und Sätzen, zwei Teams zu zwei, Startpunkten als Handicap und Ausbullen, und eine Zusammenfassung jedes Matches
 - Ein Bot mit Stärke 20 bis 120 als Gegner bei X01 und Cricket
-- Ein Tipp korrigiert einen falsch erkannten Dart; ein Tastenfeld gibt Darts von Hand ein, und die letzte Aufnahme lässt sich zurücknehmen
+- Ein Tipp korrigiert einen falsch erkannten Dart; ein Tastenfeld gibt Darts von Hand ein, auch an einem Autodarts-Board [noch ohne Kameras](https://dennis-otto.github.io/homedarts-for-autodarts/de/faq.html#mein-autodarts-board-hat-noch-keine-kameras-kann-ich-die-darts-von-hand-eingeben), und die letzte Aufnahme lässt sich zurücknehmen
 - Kein Autodarts? Jede Dartscheibe spielt mit, jeder Dart auf dem Tastenfeld eingegeben
 - Stellwürfe, wo kein Checkout möglich ist, etwa T20 T20 S17 für Rest 32
 

@@ -44,6 +44,7 @@ from .local_helpers import (
     local_entry_data,
     mock_board,
     mock_board_v2,
+    record,
     recorded,
     setup_local,
     setup_v2,
@@ -956,3 +957,78 @@ async def test_a_new_wait_during_the_look_at_the_board_gets_its_whole_period(
     assert coordinator.diagnostics()["stuck_takeout"]["waiting"] is True
     await pass_time(hass, freezer, 11)
     assert resets(aioclient_mock) == 1
+
+
+# -- a board without cameras yet -----------------------------------------------------
+
+
+def without_cameras() -> dict:
+    """What the real board answers to /api/system with no camera: the status of the
+    frame of its second socket that says so, and the state of the cameras right after
+    it, opened but not running."""
+    path = RECORDINGS / "2.1.0" / "ws-system-frames.jsonl"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    sent = [json.loads(line) for line in lines]
+    at = next(
+        index
+        for index, frame in enumerate(sent)
+        if frame["type"] == "board" and frame["data"]["status"]["blocker"] == "noCamera"
+    )
+    cams = next(frame["data"] for frame in sent[at:] if frame["type"] == "cams")
+    system = recorded("2.1.0", "system.json")
+    system["status"] = sent[at]["data"]["status"]
+    system["camState"] = cams["camState"]
+    system["camStats"] = []
+    return system
+
+
+STOPPED = {
+    "connected": True,
+    "event": "stopped",
+    "running": False,
+    "status": "stopped",
+    "throws": [],
+}
+
+
+async def test_a_board_without_cameras_takes_darts_entered_by_hand(
+    hass, aioclient_mock
+):
+    entry = await setup_v2(
+        hass,
+        aioclient_mock,
+        recording="2.1.0",
+        system=without_cameras(),
+        state=STOPPED,
+    )
+    assert entry.state == ConfigEntryState.LOADED
+    coordinator = entry.runtime_data.local
+    problem = hass.states.get(entity_id(hass, "binary_sensor", "calibration_problem"))
+    assert problem.attributes["blocker"] == "noCamera"
+    assert state(hass, "switch", "detection") == "off"
+    assert state(hass, "binary_sensor", "cameras_active") == "off"
+    assert state(hass, "sensor", "local_status") == "stopped"
+    # The keypad's switch, which the Game settings view shows.
+    assert state(hass, "switch", "practice_manual_entry") == "off"
+    await switch(hass, "practice_manual_entry", True)
+    await hass.services.async_call(
+        "homedarts", "start_game", {"game": "301", "players": ["Alex"]}, blocking=True
+    )
+    aioclient_mock.mock_calls.clear()
+    events = record(hass, coordinator)
+    for bed in ("T20", "T20", "S20"):
+        await hass.services.async_call(
+            "homedarts", "throw_dart", {"segment": bed}, blocking=True
+        )
+    await hass.services.async_call("homedarts", "next_player", {}, blocking=True)
+    await hass.async_block_till_done()
+    assert [kind for kind, _ in events].count("dart_detected") == 3
+    completed = next(item for kind, item in events if kind == "visit_completed")
+    assert completed["score"] == 140 and completed["manual"] is True
+    assert state(hass, "sensor", "practice_remaining") == "161"
+    # The darts count for the board's own training session and statistics.
+    training = coordinator.games.training.snapshot()
+    assert training["darts"] == 3 and training["manual_darts"] == 3
+    assert state(hass, "sensor", "training_darts") == "3"
+    # Nothing asks the board to start a detection that has no camera.
+    assert all(call[0].upper() == "GET" for call in aioclient_mock.mock_calls)
