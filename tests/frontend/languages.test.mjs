@@ -25,6 +25,8 @@ const WORDS = {
     session: "Sessie loopt",
     endSession: "Sessie beëindigen",
     update: "Update naar 1.5.0",
+    chips: ["Board Manager: Verbonden", "Realtime: Verbroken", "Bordcloud: Niet beschikbaar"],
+    cameras: "Camera's: Niet actief",
     layout: "Indeling",
     layouts: ["Automatisch", "Bord rechts", "Bord onderaan", "Alleen bord"],
     scoreboard: "HomeDarts-scorebord",
@@ -45,6 +47,8 @@ const WORDS = {
     session: "Session en cours",
     endSession: "Terminer la session",
     update: "Mise à jour vers 1.5.0",
+    chips: ["Board Manager\u00a0: Connecté", "Temps réel\u00a0: Déconnecté", "Cloud de la cible\u00a0: Indisponible"],
+    cameras: "Caméras\u00a0: Arrêté",
     layout: "Disposition",
     layouts: ["Automatique", "Cible à droite", "Cible en dessous", "Cible seule"],
     scoreboard: "Tableau des scores HomeDarts",
@@ -65,6 +69,8 @@ const WORDS = {
     session: "Sesión en curso",
     endSession: "Terminar sesión",
     update: "Actualizar a 1.5.0",
+    chips: ["Board Manager: Conectado", "Tiempo real: Desconectado", "Nube de la diana: No disponible"],
+    cameras: "Cámaras: No se está ejecutando",
     layout: "Disposición",
     layouts: ["Automática", "Diana a la derecha", "Diana debajo", "Solo la diana"],
     scoreboard: "Marcador HomeDarts",
@@ -151,6 +157,46 @@ test("the training and status cards speak Dutch, French and Spanish", () => {
     assert.equal(raw(status, ".update-badge"), words.update, lang);
     training.remove();
     status.remove();
+    // The connection chips say their state in Home Assistant's words of that language.
+    const links = {
+      "binary_sensor.realtime_connected": "off",
+      "binary_sensor.cloud_link": "unavailable",
+      "binary_sensor.cameras_active": "off",
+    };
+    const chips = mount("homedarts-status-card", makeHass({ states: { ...BOARD, ...links }, language: lang }));
+    assert.deepEqual(
+      $$(chips, ".chip").map((chip) => chip.getAttribute("aria-label")),
+      words.chips,
+      lang
+    );
+    const live = mount("homedarts-card", makeHass({ states: { ...BOARD, ...links }, language: lang }));
+    assert.equal($$(live, ".chip").at(-1).getAttribute("aria-label"), words.cameras, lang);
+    chips.remove();
+    live.remove();
+  }
+});
+
+test("every language has the words of the connection chips' states", async () => {
+  const texts = {};
+  for (const lang of ["en", "de", ...LANGUAGES]) {
+    texts[lang] = (await import(`../../custom_components/homedarts/frontend/text/${lang}.js`)).default;
+  }
+  const keys = Object.keys(texts.en).filter((key) => key.startsWith("chip_"));
+  assert.deepEqual(keys, [
+    "chip_state",
+    "chip_connected",
+    "chip_disconnected",
+    "chip_running",
+    "chip_not_running",
+    "chip_on",
+    "chip_off",
+    "chip_unavailable",
+    "chip_unknown",
+  ]);
+  for (const [lang, text] of Object.entries(texts)) {
+    for (const key of keys) assert.equal(typeof text[key], "string", `${lang} ${key}`);
+    // The pattern names the label first, so the name starts with what the chip shows.
+    assert.match(text.chip_state, /^\{label\}(\u00a0)?: \{state\}$/, lang);
   }
 });
 

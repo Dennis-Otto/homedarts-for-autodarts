@@ -297,10 +297,42 @@ test("connection chips show the links and a camera problem, and open more-info",
   $(card, ".chips").click();
   assert.deepEqual(opened, ["binary_sensor.dartboard_realtime_connected"]);
 
+  // Beside the colour, the class draws the dot's shape for every state, and the name says
+  // the state in Home Assistant's words: those of connectivity, and of running for cameras.
+  const named = (states, options) =>
+    $$(setup(states, {}, options).card, ".chip").map((chip) => [chip.className, chip.getAttribute("aria-label")]);
+  const every = (state) => ({
+    "binary_sensor.local_connected": state,
+    "binary_sensor.realtime_connected": state,
+    "binary_sensor.cameras_active": state,
+  });
+  for (const [state, cls, link, cameras] of [
+    ["on", "chip on", "Connected", "Running"],
+    ["off", "chip off", "Disconnected", "Not running"],
+    ["unavailable", "chip off unavailable", "Unavailable", "Unavailable"],
+    ["unknown", "chip off unavailable", "Unknown", "Unknown"],
+  ]) {
+    assert.deepEqual(named(every(state)), [
+      [cls, `Board Manager: ${link}`],
+      [cls, `Realtime: ${link}`],
+      [cls, `Cameras: ${cameras}`],
+    ]);
+  }
+  assert.deepEqual(
+    named(every("off"), { language: "de" }).map(([, name]) => name),
+    ["Board Manager: Getrennt", "Echtzeit: Getrennt", "Kameras: Außer Betrieb"]
+  );
+  assert.deepEqual(
+    named(every("on"), { language: "fr" }).map(([, name]) => name),
+    ["Board Manager\u00a0: Connecté", "Temps réel\u00a0: Connecté", "Caméras\u00a0: En cours"]
+  );
+  // The live card's chips have no tooltip; the camera problem says itself in its text.
+  assert.equal($(card, ".chip").title, "");
+
   card.hass = update(hass, { "binary_sensor.camera_problem": "on" });
   assert.deepEqual(
-    $$(card, ".chip").map((chip) => [chip.className, chip.textContent]).at(-1),
-    ["chip alert", "Check cameras"]
+    $$(card, ".chip").map((chip) => [chip.className, chip.textContent, chip.getAttribute("aria-label")]).at(-1),
+    ["chip alert", "Check cameras", null]
   );
   assert.equal(text(card, ".pill"), "Check cameras");
 
