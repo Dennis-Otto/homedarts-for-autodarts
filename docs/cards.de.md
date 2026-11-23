@@ -182,12 +182,28 @@ Die Umschalter über der Scheibe wählen den Modus und wessen Darts das Trefferb
 
 - **Erkennung:** ein Schalter mit dem aktuellen Status, eingefärbt in der Statusfarbe. Boards ohne Erkennungsschalter starten und stoppen die Erkennung mit ihren Tasten; der Schalter folgt dann dem Board-Status.
 - **Board Manager:** die installierte Version. Mit Board Manager 2 zeigt ein Hinweis ein verfügbares Update an, *Update auf 2.0.2 ›*; ein Tipp darauf öffnet die Details.
-- **Verbindungen:** Board Manager, Echtzeit und die Cloud-Verbindung des Boards.
+- **Verbindungen:** ein Chip für jede Verbindung des Boards, grün, solange sie steht. [Verbindungen](#verbindungen) sagt, was jeder zeigt.
 - **Board-PC** (Board Manager 2): CPU- und Speicherlast, die Erkennungsbildrate und der Anteil der Darts, die das Board korrigiert hat, jeweils wenn du den Sensor aktiviert hast. Ein Wert mit Pfeil öffnet seinen Verlauf, ebenso die Systemzeile. Ohne Werte bleibt die Kachel verborgen.
 - **Kameras:** eine Kachel pro Kamera mit Status, Bildrate (wenn der Bildraten-Sensor aktiv ist) und eigener Kalibrierung. Ihr Name mit Pfeil öffnet die Kamera. Eine gestörte Kamera wird rot. Der Tastaturfokus bleibt auf der Kalibrieren-Taste, während sie um Bestätigung bittet.
 - **Wartung:** Alle kalibrieren, Erkennung zurücksetzen und Board Manager neu starten, jeweils mit zweitem Tipp zur Bestätigung.
 
 Eine [Dartscheibe ohne Autodarts](without-autodarts.de.md) hat nichts davon; die Karte sagt es in einem Satz unter ihrem Status.
+
+### Verbindungen
+
+Die Kachel *Verbindungen* hat einen Chip für jede Verbindung. Ein Chip ist grün, solange seine Entität an ist, und grau, solange sie aus oder nicht verfügbar ist. Ein Tipp auf einen Chip öffnet seine Entität mit ihrem Verlauf, der zeigt, wann sich die Verbindung geändert hat.
+
+| Chip | Entität | Grün | Grau |
+| --- | --- | --- | --- |
+| **Board Manager** | [*Lokale Verbindung*](entities.de.md#zustand-und-verbindungen) | Home Assistant erreicht den Board Manager in deinem Netzwerk und liest seinen Zustand. | Seine Lesevorgänge scheitern immer wieder, etwa solange der Board-PC aus oder nicht im Netzwerk ist. Ein oder zwei verpasste Lesevorgänge, also wenige Sekunden, lassen ihn grün. |
+| **Echtzeit** | [*Echtzeitverbindung*](entities.de.md#zustand-und-verbindungen) | Die Verbindung für Echtzeitereignisse zwischen Home Assistant und dem Board Manager steht. | Diese Verbindung ist getrennt. Home Assistant liest das Board dann weiter, alle 2 Sekunden, solange es antwortet. |
+| **Cloud** | [*Cloud-Verbindung*](entities.de.md#zustand-und-verbindungen), auf Board Manager 2 ein Binärsensor und auf Board Manager 1 ein [Schalter](entities.de.md#steuerung) | Der Board Manager meldet seine eigene Verbindung zu Autodarts als verbunden. | Das Board meldet seine Verbindung in einem anderen Zustand. Solange es keinen meldet oder Home Assistant das Board nicht erreicht, ist die Entität nicht verfügbar, und auch das ist grau. |
+
+**Nur auf Board Manager 1 kann Home Assistant die Verbindung des Boards schalten.** Dort ist *Cloud-Verbindung* ein Schalter: Ausschalten bittet das Board, seine Verbindung zu Autodarts zu trennen, Einschalten, sich wieder zu verbinden. Auf Board Manager 2.0 und 2.1 ist sie ein Binärsensor, der nur zeigt, was das Board meldet.
+
+**Der letzte Chip ist die eigene Verbindung des Boards zu Autodarts,** so wie der Board Manager sie meldet. HomeDarts nutzt diese Verbindung nicht: Es spricht mit dem Board Manager in deinem Netzwerk, und keine seiner Funktionen hängt an der Verbindung. Der Chip sagt nichts darüber, ob du bei Autodarts angemeldet bist. Ob das Board seine Verbindung nach dem Abmelden behält und ob es ohne sie arbeitet, entscheidet die Autodarts-Software auf dem Board-PC, etwa Autodarts Desktop, nicht HomeDarts. Ein Spieler hat beobachtet, dass Autodarts Desktop 2.0.2 unter Linux nach jedem Start wartet, bis es den Autodarts-Server einmal erreicht hat ([Von Autodarts 1.x auf 2.x](troubleshooting.de.md#von-autodarts-1x-auf-2x)). [Was verlässt mein Netzwerk?](faq.de.md#was-verlässt-mein-netzwerk) listet, was HomeDarts selbst sendet.
+
+Verwechsle die Entität *Cloud-Verbindung*, die eigene Verbindung des Boards, nicht mit der [Cloud-Verknüpfung](online-matches.de.md#die-cloud-verknüpfung), die HomeDarts nicht hat: HomeDarts selbst hat keine Verbindung zur Autodarts-Cloud.
 
 ### Optionen
 
@@ -482,17 +498,17 @@ Statt die Karten selbst anzuordnen, kann die Integration ein komplettes Dashboar
 1. Öffne **Einstellungen → Dashboards → Dashboard hinzufügen**.
 2. Wähle **HomeDarts**.
 
-Pro Board entstehen bis zu sechs Ansichten in den Tabs und das Stream-Overlay. Sie aktualisieren sich selbst, wenn du ein Board hinzufügst oder Entitäten aktivierst:
+Pro Board entstehen bis zu sechs Ansichten in den Tabs und das Stream-Overlay. Sie aktualisieren sich selbst, wenn du ein Board hinzufügst oder Entitäten aktivierst. Home Assistant zeigt jeden Tab nur mit seinem Symbol, ohne den Namen seiner Ansicht, wie auf den Bildern unten. Der Tab mit dem Zahnrad ist darum die Ansicht **Board**, mit dem Board-Status und, unter der Überschrift *Board-Einstellungen*, den Einstellungen des Boards.
 
-| Ansicht | Inhalt |
-| --- | --- |
-| **Live** | Die Live-Karte über die volle Breite, damit Board und Spiel auch auf dem Handy im Blick bleiben |
-| **Anzeigetafel** | Die [Anzeigetafel](#anzeigetafel) über den ganzen Bildschirm, für ein Tablet oder einen Fernseher am Board |
-| **Training** | Die Trainingskarte mit den Bestleistungen, die [Doubles-Karte](#doubles-karte), das Tagesziel mit den Darts von heute, die Serie und die letzte Bestleistung, Darts pro Tag der letzten 30 Tage (aus den Langzeitstatistiken, die Home Assistant stündlich berechnet), der 3-Dart-Average der letzten 7 Tage, Übungslegs pro Tag, First-9-Average, Checkout- und Doppelquote des Übungsspiels sowie die Trainingseinstellungen: Sessions automatisch starten und nach einer Pause beenden |
-| **Spieler** | Die [Spielerkarte](#spielerkarte) und die [Bestenliste](#bestenliste), sobald der erste benannte Spieler ein Profil hat |
-| **Spieleinstellungen** | Die Steuerung des Übungsspiels mit Teams und den Optionen für Golf, Count-Up, Bermuda, Round the World und Gotcha, die Spielernamen, ihre Startpunkte und das [Turnier](entities.de.md#turniere) mit seinen Einstellungen und Tasten, für alles, was die Spielauswahl der Anzeigetafel nicht einstellt |
-| **Board** | Der Board-Status, die Board-Einstellungen, das Board-Manager-Update, der Anteil der Darts, die das Board korrigiert hat, und auf Board Manager 2 sein *Kalibrierungsproblem* und seine *Kalibrierungsabweichung*; eine [Dartscheibe ohne Autodarts](without-autodarts.de.md) hat diese Ansicht nicht |
-| **Stream-Overlay** | Die Anzeigetafel als [Stream-Overlay](scoreboard.de.md#stream-overlay) einer Browserquelle in OBS, durchsichtig am unteren Rand des Bildes; bei den Tabs steht sie nicht, und ihre Adresse ist die des Dashboards mit `/overlay` am Ende |
+| Ansicht | Tab | Inhalt |
+| --- | --- | --- |
+| **Live** | Zielscheibe mit Pfeil, `mdi:bullseye-arrow` | Die Live-Karte über die volle Breite, damit Board und Spiel auch auf dem Handy im Blick bleiben |
+| **Anzeigetafel** | Anzeigetafel, `mdi:scoreboard-outline` | Die [Anzeigetafel](#anzeigetafel) über den ganzen Bildschirm, für ein Tablet oder einen Fernseher am Board |
+| **Training** | Diagramm in einem Kasten, `mdi:chart-box-outline` | Die Trainingskarte mit den Bestleistungen, die [Doubles-Karte](#doubles-karte), das Tagesziel mit den Darts von heute, die Serie und die letzte Bestleistung, Darts pro Tag der letzten 30 Tage (aus den Langzeitstatistiken, die Home Assistant stündlich berechnet), der 3-Dart-Average der letzten 7 Tage, Übungslegs pro Tag, First-9-Average, Checkout- und Doppelquote des Übungsspiels sowie die Trainingseinstellungen: Sessions automatisch starten und nach einer Pause beenden |
+| **Spieler** | Personengruppe, `mdi:account-group` | Die [Spielerkarte](#spielerkarte) und die [Bestenliste](#bestenliste), sobald der erste benannte Spieler ein Profil hat |
+| **Spieleinstellungen** | Schieberegler, `mdi:tune-variant` | Die Steuerung des Übungsspiels mit Teams und den Optionen für Golf, Count-Up, Bermuda, Round the World und Gotcha, die Spielernamen, ihre Startpunkte und das [Turnier](entities.de.md#turniere) mit seinen Einstellungen und Tasten, für alles, was die Spielauswahl der Anzeigetafel nicht einstellt |
+| **Board** | Zahnrad, `mdi:cog-outline` | Der Board-Status, die Board-Einstellungen, das Board-Manager-Update, der Anteil der Darts, die das Board korrigiert hat, und auf Board Manager 2 sein *Kalibrierungsproblem* und seine *Kalibrierungsabweichung*; eine [Dartscheibe ohne Autodarts](without-autodarts.de.md) hat diese Ansicht nicht |
+| **Stream-Overlay** | Keiner | Die Anzeigetafel als [Stream-Overlay](scoreboard.de.md#stream-overlay) einer Browserquelle in OBS, durchsichtig am unteren Rand des Bildes; bei den Tabs steht sie nicht, und ihre Adresse ist die des Dashboards mit `/overlay` am Ende |
 
 | Zum Spielen | Spieler, Einstellungen und Board |
 | --- | --- |

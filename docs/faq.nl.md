@@ -76,6 +76,10 @@ Nederlands, Engels, Duits, Frans en Spaans, volgens de taal van Home Assistant: 
 
 Niets, in de lokale modus. Alleen wat je zelf kiest, praat met het internet: de bordzoekfunctie raadpleegt de openbare zoekdienst van Autodarts één keer, en de onlinebrug ontvangt alleen de oproepen van Tools for Autodarts. Geheimen van het bord worden nooit opgeslagen, en de diagnose verbergt de ID's van borden, adressen en spelersnamen. Sommige browsers spreken de oproepen van het scorebord uit met online stemmen; een offline stem van het apparaat houdt ze thuis. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
 
+### Cloud blijft groen, hoewel ik me heb afgemeld bij Autodarts
+
+Die chip van de bordstatuskaart is de eigen verbinding van het bord met Autodarts, zoals de Board Manager die meldt: hij zegt niet of je bent aangemeld, en HomeDarts gebruikt die verbinding niet. Of het bord de verbinding na het afmelden houdt, bepaalt de Autodarts-software op de bord-pc. [Connections](cards.md#connections) · [Wat verlaat mijn netwerk?](#wat-verlaat-mijn-netwerk)
+
 ### Waar worden mijn statistieken bewaard?
 
 In de eigen opslag van Home Assistant, nooit in de cloud: de trainingssessies, het oefenspel, de persoonlijke records, de spelersprofielen met hun wedstrijden, en de trainingsagenda met een jaar aan sessies en wedstrijden. Wie het bord verwijdert, verwijdert ze ook, maar pas na een [back-up](statistics.md#backups) ervan, en [`homedarts.export`](entities.md#export-training-data-homedartsexport) schrijft ze weg voor een spreadsheet. [Stored data](how-it-works.md#stored-data)

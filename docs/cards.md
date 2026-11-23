@@ -182,12 +182,28 @@ The switches above the board choose the mode and whose darts the heatmap shows:
 
 - **Detection:** a switch with the current status, tinted in the status color. Boards without a detection switch start and stop detection with its buttons; the switch then follows the board status.
 - **Board Manager:** the installed version and, with Board Manager 2, a badge for an available update, *Update to 2.0.2 ›*. Tap it for its details.
-- **Connections:** Board Manager, realtime and the cloud connection of the board.
+- **Connections:** a chip for each connection of the board, green while it is up. [Connections](#connections) says what each one shows.
 - **Board PC** (Board Manager 2): CPU and memory load, the detection frame rate and the share of darts the board corrected, each if you enabled its sensor. A value with an arrow opens its history, and so does the system line. The tile stays hidden while it has nothing to show.
 - **Cameras:** a tile for every camera with its status and frame rate (if the frame-rate sensor is enabled) and its own calibration. Its name with an arrow opens the camera. A camera with a problem turns red. The keyboard focus stays on a calibration button while it asks for confirmation.
 - **Maintenance:** calibrate all cameras, reset detection and restart Board Manager. Each needs a second tap to confirm.
 
 A [dartboard without Autodarts](without-autodarts.md) has none of these; the card says so in a sentence below its status.
+
+### Connections
+
+The tile *Connections* has a chip for each connection. A chip is green while its entity is on, and grey while it is off or unavailable. Tap a chip to open its entity with its history, which shows when the connection changed.
+
+| Chip | Entity | Green | Grey |
+| --- | --- | --- | --- |
+| **Board Manager** | [*Local connection*](entities.md#health-and-connections) | Home Assistant reaches the Board Manager in your network and reads its state. | Its reads keep failing, such as while the board PC is off or out of the network. One or two missed reads, a few seconds, keep it green. |
+| **Realtime** | [*Realtime connection*](entities.md#health-and-connections) | The connection for realtime events between Home Assistant and the Board Manager is open. | That connection is closed. Home Assistant then keeps reading the board, every 2 seconds while it answers. |
+| **Cloud** | [*Cloud link*](entities.md#health-and-connections), a binary sensor on Board Manager 2 and a [switch](entities.md#controls) on Board Manager 1 | The Board Manager reports its own link to Autodarts as connected. | The board reports its link in any other state. While it reports none, or Home Assistant doesn't reach the board, the entity is unavailable, which is grey too. |
+
+**Only on Board Manager 1 can Home Assistant switch the board's link.** There, *Cloud link* is a switch: turning it off asks the board to end its link to Autodarts, turning it on to connect again. On Board Manager 2.0 and 2.1 it is a binary sensor, which only shows what the board reports.
+
+**The last chip is the board's own link to Autodarts,** as the Board Manager reports it. HomeDarts doesn't use that link: it talks to the Board Manager in your network, and none of its features depends on the link. The chip says nothing about whether you are signed in to Autodarts. Whether the board keeps its link after you sign out, and whether it works without it, is up to the Autodarts software on the board PC, such as Autodarts Desktop, not to HomeDarts. One player found that Autodarts Desktop 2.0.2 on Linux waits after every start until it has reached the Autodarts server once ([From Autodarts 1.x to 2.x](troubleshooting.md#from-autodarts-1x-to-2x)). [What leaves my network?](faq.md#what-leaves-my-network) lists what HomeDarts itself sends.
+
+Don't mix up the entity *Cloud link*, the board's own link, with the [cloud link](online-matches.md#the-cloud-link) that HomeDarts doesn't have: HomeDarts itself has no link to the Autodarts cloud.
 
 ### Options
 
@@ -482,17 +498,17 @@ Instead of arranging the cards yourself, let the integration build a whole dashb
 1. Go to **Settings → Dashboards → Add dashboard**.
 2. Choose **HomeDarts**.
 
-For every board, the dashboard gets up to six views in its tabs and the stream overlay, which update themselves when you add a board or enable entities:
+For every board, the dashboard gets up to six views in its tabs and the stream overlay, which update themselves when you add a board or enable entities. Home Assistant shows each tab by its icon alone, without the name of its view, as in the pictures below. So the tab with the cog is the **Board** view, with the board status card and, headed *Board settings*, the settings of the board.
 
-| View | Contents |
-| --- | --- |
-| **Live** | The live card across the full width, so the board and the game stay in sight on a phone too |
-| **Scoreboard** | The [scoreboard card](#scoreboard-card) across the whole screen, for a tablet or TV at the board |
-| **Training** | The training card with the personal bests, the [doubles card](#doubles-card), the daily goal with darts today, the streak and the last personal best, darts per day for the last 30 days (from long-term statistics, which Home Assistant compiles hourly), the 3-dart average of the last 7 days, practice legs per day, the first 9 average, checkout rate and doubles rate of the practice game, and the training settings: starting sessions automatically and ending them after a pause |
-| **Players** | The [players card](#players-card) and the [leaderboard](#leaderboard-card), once the first named player has a profile |
-| **Game settings** | The practice game controls with teams and the Golf, Count-Up, Bermuda, Round the World and Gotcha options, the player names, their start scores and the [tournament](entities.md#tournaments) with its settings and buttons, for what the scoreboard's new game screen leaves out |
-| **Board** | The board status card, the board settings, the Board Manager update, the share of darts the board corrected and, on Board Manager 2, its *Calibration problem* and *Calibration error*; a [dartboard without Autodarts](without-autodarts.md) has no such view |
-| **Stream overlay** | The scoreboard as the [stream overlay](scoreboard.md#stream-overlay) of a browser source in OBS, see-through along the bottom of the picture; the tabs leave it out, and its address is the one of the dashboard with `/overlay` at its end |
+| View | Tab | Contents |
+| --- | --- | --- |
+| **Live** | Bullseye with an arrow, `mdi:bullseye-arrow` | The live card across the full width, so the board and the game stay in sight on a phone too |
+| **Scoreboard** | Scoreboard, `mdi:scoreboard-outline` | The [scoreboard card](#scoreboard-card) across the whole screen, for a tablet or TV at the board |
+| **Training** | Chart in a box, `mdi:chart-box-outline` | The training card with the personal bests, the [doubles card](#doubles-card), the daily goal with darts today, the streak and the last personal best, darts per day for the last 30 days (from long-term statistics, which Home Assistant compiles hourly), the 3-dart average of the last 7 days, practice legs per day, the first 9 average, checkout rate and doubles rate of the practice game, and the training settings: starting sessions automatically and ending them after a pause |
+| **Players** | Group of people, `mdi:account-group` | The [players card](#players-card) and the [leaderboard](#leaderboard-card), once the first named player has a profile |
+| **Game settings** | Sliders, `mdi:tune-variant` | The practice game controls with teams and the Golf, Count-Up, Bermuda, Round the World and Gotcha options, the player names, their start scores and the [tournament](entities.md#tournaments) with its settings and buttons, for what the scoreboard's new game screen leaves out |
+| **Board** | Cog, `mdi:cog-outline` | The board status card, the board settings, the Board Manager update, the share of darts the board corrected and, on Board Manager 2, its *Calibration problem* and *Calibration error*; a [dartboard without Autodarts](without-autodarts.md) has no such view |
+| **Stream overlay** | None | The scoreboard as the [stream overlay](scoreboard.md#stream-overlay) of a browser source in OBS, see-through along the bottom of the picture; the tabs leave it out, and its address is the one of the dashboard with `/overlay` at its end |
 
 | For playing | Players, settings and the board |
 | --- | --- |
