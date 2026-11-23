@@ -4,6 +4,18 @@ All notable changes of HomeDarts for Autodarts, called Autodarts up to version 1
 
 ## Unreleased
 
+## [2.5.0](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.1...v2.5.0) (2026-11-23)
+
+
+### Features
+
+* **cards:** give the Board view a state icon and call its chip Board cloud ([#792](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/792)) ([46b8c5d](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/46b8c5d753186c20533e7b840c3d7917b245ded7))
+
+
+### Bug fixes
+
+* **cards:** show and say the state of every connection chip ([#796](https://github.com/Dennis-Otto/homedarts-for-autodarts/issues/796)) ([62ffaa8](https://github.com/Dennis-Otto/homedarts-for-autodarts/commit/62ffaa8a14ad968a241eae3e88adb270cc3c56f6))
+
 ## [2.4.1](https://github.com/Dennis-Otto/homedarts-for-autodarts/compare/v2.4.0...v2.4.1) (2026-11-15)
 
 ### Bug fixes
