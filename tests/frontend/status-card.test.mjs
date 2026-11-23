@@ -117,7 +117,25 @@ test("connection chips show the board, realtime and cloud links and open more-in
     [
       ["chip on", "Board Manager", "binary_sensor.dartboard_local_connected"],
       ["chip off", "Realtime", "binary_sensor.dartboard_realtime_connected"],
-      ["chip on", "Cloud", "binary_sensor.dartboard_cloud_link"],
+      ["chip on", "Board cloud", "binary_sensor.dartboard_cloud_link"],
+    ]
+  );
+  // Each chip says what it measures, as its tooltip and as its accessible name, which
+  // starts with the label that it shows.
+  const told = [
+    "Board Manager: Home Assistant reaches the Board Manager.",
+    "Realtime: Live events arrive from the board.",
+    "Board cloud: The board's own link to Autodarts, as the board reports it; HomeDarts doesn't use it.",
+  ];
+  assert.deepEqual($$(card, ".chip").map((chip) => chip.title), told);
+  assert.deepEqual($$(card, ".chip").map((chip) => chip.getAttribute("aria-label")), told);
+  const german = setup({}, {}, { language: "de" }).card;
+  assert.deepEqual(
+    $$(german, ".chip").map((chip) => [chip.textContent, chip.title]),
+    [
+      ["Board Manager", "Board Manager: Home Assistant erreicht den Board Manager."],
+      ["Echtzeit", "Echtzeit: Live-Ereignisse kommen vom Board an."],
+      ["Board-Cloud", "Board-Cloud: Die eigene Verbindung des Boards zu Autodarts, wie das Board sie meldet; HomeDarts nutzt sie nicht."],
     ]
   );
   const opened = moreInfo(card);
@@ -131,13 +149,16 @@ test("connection chips show the board, realtime and cloud links and open more-in
     makeHass({ states: { ...without("binary_sensor.cloud_link"), "switch.upstream": "off" } })
   );
   assert.deepEqual(
-    $$(upstream, ".chip").map((chip) => [chip.className, chip.dataset.entity]).at(-1),
-    ["chip off", "switch.dartboard_upstream"]
+    $$(upstream, ".chip").map((chip) => [chip.className, chip.textContent, chip.dataset.entity, chip.title]).at(-1),
+    ["chip off", "Board cloud", "switch.dartboard_upstream", told[2]]
   );
+  const upstreamOpened = moreInfo(upstream);
+  $$(upstream, ".chip").at(-1).click();
+  assert.deepEqual(upstreamOpened, ["switch.dartboard_upstream"]);
   const lean = mount("homedarts-status-card", makeHass({ states: without("binary_sensor.realtime_connected") }));
   assert.deepEqual(
     $$(lean, ".chip").map((chip) => chip.textContent),
-    ["Board Manager", "Cloud"]
+    ["Board Manager", "Board cloud"]
   );
 });
 

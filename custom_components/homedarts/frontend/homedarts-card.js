@@ -6198,7 +6198,8 @@ function boardDashboardView(board) {
   return {
     title: `${board.t("view_board")}${board.suffix}`,
     path: `board${board.slug}`,
-    icon: "mdi:cog-outline",
+    // The state of the board, not Home Assistant's cog of Settings beside the game settings.
+    icon: "mdi:heart-pulse",
     type: "sections",
     max_columns: 2,
     sections: [
@@ -10888,18 +10889,25 @@ function createElements(Base) {
 
     _updateChips() {
       if (!this._el.chips) return;
-      const chip = (name, text) => {
+      // Each chip says in a sentence what it measures, as its tooltip and its accessible
+      // name, which starts with the label that it shows.
+      const chip = (name, label, hint) => {
         const id = this._ids[name];
         if (!id) return "";
         const cls = this._hass.states[id]?.state === "on" ? "on" : "off";
-        return `<button class="chip ${cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}">${escapeHtml(text)}</button>`;
+        const told = escapeHtml(fill(this._t(hint), { label: this._t(label) }));
+        return (
+          `<button class="chip ${cls}" data-entity="${escapeHtml(id)}" data-focus="${escapeHtml(id)}"` +
+          ` title="${told}" aria-label="${told}">${escapeHtml(this._t(label))}</button>`
+        );
       };
       this._setHtml(
         this._el.chips,
         [
-          chip("connected", this._t("board")),
-          chip("realtime", this._t("realtime")),
-          this._ids.cloudLink ? chip("cloudLink", this._t("cloud")) : chip("upstream", this._t("cloud")),
+          chip("connected", "board", "board_hint"),
+          chip("realtime", "realtime", "realtime_hint"),
+          // The board's own link to Autodarts; Board Manager 1 reports it as a switch.
+          chip(this._ids.cloudLink ? "cloudLink" : "upstream", "cloud", "cloud_hint"),
         ].join("")
       );
     }
