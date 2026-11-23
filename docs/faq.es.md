@@ -42,7 +42,7 @@ Sí. Configura una diana sin Autodarts e introduce cada dardo en el teclado num�
 
 ### Mi diana Autodarts aún no tiene cámaras. ¿Puedo anotar a mano?
 
-Sí, en la propia diana: no hace falta una segunda diana. Activa *Entrada manual de la partida* en la vista *Ajustes de juego* del panel automático, y *Teclado para dardos introducidos a mano* en el editor del panel, desde su menú (⋮), en la sección *Vista del marcador*. La vista *Marcador* muestra entonces el teclado numérico, y la detección no tiene que estar en marcha. Sus dardos cuentan para las partidas, el entrenamiento y las estadísticas de la diana, que se quedan con ella cuando lleguen las cámaras; entonces desactiva *Entrada manual de la partida* y las cámaras toman el relevo. Una diana sin Autodarts es el camino para una diana que no tiene Autodarts en absoluto, y lleva sus propias estadísticas. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+Sí, en la propia diana: no hace falta una segunda diana. Activa *Entrada manual de la partida* en la vista *Ajustes de juego* del panel automático, y *Teclado para dardos introducidos a mano* en el editor del panel, desde su menú (⋮) → **Editar panel**, sección *Vista del marcador*. La vista *Marcador* muestra entonces el teclado numérico, y la detección no tiene que estar en marcha. Sus dardos cuentan para las partidas, el entrenamiento y las estadísticas de la diana, que se quedan con ella cuando lleguen las cámaras; entonces desactiva *Entrada manual de la partida* y las cámaras toman el relevo. Una diana sin Autodarts es el camino para una diana que no tiene Autodarts en absoluto, y lleva sus propias estadísticas. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
 
 ### ¿Puedo jugar partidos en línea?
 

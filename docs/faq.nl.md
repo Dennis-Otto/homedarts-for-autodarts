@@ -42,7 +42,7 @@ Ja. Stel een dartbord zonder Autodarts in en voer elke dart in op het toetsenblo
 
 ### Mijn Autodarts-bord heeft nog geen camera's. Kan ik met de hand scoren?
 
-Ja, op het bord zelf: een tweede dartbord is niet nodig. Zet *Oefenspel handmatige invoer* aan in de weergave *Spelinstellingen* van het automatische dashboard, en *Toetsenblok voor handmatig ingevoerde darts* in de editor van het dashboard, via zijn menu (⋮), in de sectie *Scorebordweergave*. De weergave *Scorebord* toont dan het toetsenblok, en de detectie hoeft niet te lopen. De darts ervan tellen voor de spellen, de training en de statistieken van het bord, die bij het bord blijven als de camera's komen; zet *Oefenspel handmatige invoer* dan uit, en de camera's nemen het over. Een dartbord zonder Autodarts is de weg voor een bord zonder enige Autodarts, en dat houdt eigen statistieken bij. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
+Ja, op het bord zelf: een tweede dartbord is niet nodig. Zet *Oefenspel handmatige invoer* aan in de weergave *Spelinstellingen* van het automatische dashboard, en *Toetsenblok voor handmatig ingevoerde darts* in de editor van het dashboard, via zijn menu (⋮) → **Dashboard bewerken**, sectie *Scorebordweergave*. De weergave *Scorebord* toont dan het toetsenblok, en de detectie hoeft niet te lopen. De darts ervan tellen voor de spellen, de training en de statistieken van het bord, die bij het bord blijven als de camera's komen; zet *Oefenspel handmatige invoer* dan uit, en de camera's nemen het over. Een dartbord zonder Autodarts is de weg voor een bord zonder enige Autodarts, en dat houdt eigen statistieken bij. [Correct and enter darts](scoreboard.md#correct-and-enter-darts)
 
 ### Kan ik onlinewedstrijden spelen?
 

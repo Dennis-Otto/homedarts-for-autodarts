@@ -1008,13 +1008,13 @@ async def test_a_board_without_cameras_takes_darts_entered_by_hand(
     assert state(hass, "switch", "detection") == "off"
     assert state(hass, "binary_sensor", "cameras_active") == "off"
     assert state(hass, "sensor", "local_status") == "stopped"
+    aioclient_mock.mock_calls.clear()
     # The keypad's switch, which the Game settings view shows.
     assert state(hass, "switch", "practice_manual_entry") == "off"
     await switch(hass, "practice_manual_entry", True)
     await hass.services.async_call(
         "homedarts", "start_game", {"game": "301", "players": ["Alex"]}, blocking=True
     )
-    aioclient_mock.mock_calls.clear()
     events = record(hass, coordinator)
     for bed in ("T20", "T20", "S20"):
         await hass.services.async_call(
