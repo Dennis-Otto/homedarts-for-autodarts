@@ -505,7 +505,7 @@ Der Recorder speichert weder `fixtures`, `standings`, `bracket`, `current`, `nex
 | Kamera *N* kalibrieren | Taste, *Konfiguration* | Kalibriert eine Kamera. |
 | Board Manager neu starten | Taste, *Konfiguration* | Startet den Board-Manager-Dienst neu. |
 | Kamerastreams starten, Kamerastreams stoppen | Tasten, *Konfiguration*, *Deaktiviert* | Steuert die Kamerastreams des Board Managers. Mit Board Manager 2.1 nicht verfügbar, weil er diese Befehle nicht mehr hat. |
-| Cloud-Verbindung | Schalter, **BM 1** | Stellt die eigene Verbindung des Boards zu Autodarts her oder trennt sie. |
+| Cloud-Verbindung | Schalter, **BM 1** | Stellt die eigene Verbindung des Boards zu Autodarts her oder trennt sie; HomeDarts nutzt sie nicht. Der [Board-Status](cards.de.md#verbindungen) zeigt sie als Chip. |
 | Cloud-Verbindung herstellen, Cloud-Verbindung trennen | Tasten, **BM 1**, *Deaktiviert* | Dasselbe als Tasten. |
 
 Jede Aktion wird **genau einmal** gesendet. Lehnt das Board sie ab oder antwortet es nicht, meldet Home Assistant einen Fehler, statt es erneut zu versuchen. So wird keine Aktion doppelt ausgeführt.
@@ -557,10 +557,10 @@ Auf Board Manager 2.1 kann ein Board ständig eine Hand sehen, die gar nicht da 
 
 | Entität | Typ | Beschreibung |
 | --- | --- | --- |
-| Lokale Verbindung | Binärsensor, *Diagnose* | Home Assistant erreicht den Board Manager. Ein oder zwei verpasste Lesevorgänge, also wenige Sekunden, lassen ihn an. |
+| Lokale Verbindung | Binärsensor, *Diagnose* | Home Assistant erreicht den Board Manager. Ein oder zwei verpasste Lesevorgänge, also wenige Sekunden, lassen ihn an. Der [Board-Status](cards.de.md#verbindungen) zeigt ihn als Chip. |
 | Granboard-Verbindung | Binärsensor, *Diagnose* | Nur auf einem [Granboard](granboard.de.md): Home Assistant ist über Bluetooth mit dem Board verbunden. |
-| Echtzeitverbindung | Binärsensor, *Diagnose* | Die Verbindung für Echtzeitereignisse steht. Bis darüber Ereignisse ankommen, liest die Integration alle 2 Sekunden. |
-| Cloud-Verbindung | Binärsensor, **BM 2**, *Diagnose* | Die Verbindung des Boards zu Autodarts. |
+| Echtzeitverbindung | Binärsensor, *Diagnose* | Die Verbindung für Echtzeitereignisse steht. Bis darüber Ereignisse ankommen, liest die Integration alle 2 Sekunden. Der [Board-Status](cards.de.md#verbindungen) zeigt sie als Chip. |
+| Cloud-Verbindung | Binärsensor, **BM 2**, *Diagnose* | Die eigene Verbindung des Boards zu Autodarts, so wie das Board sie meldet; nicht verfügbar, solange es keine meldet. HomeDarts nutzt sie nicht, und sie zeigt keine Anmeldung. [Verbindungen](cards.de.md#verbindungen) |
 | Kameras aktiv | Binärsensor | Die Kameras laufen. |
 | Kalibrierung läuft | Binärsensor | Eine Kalibrierung läuft. |
 | Kalibrierungsproblem | Binärsensor, **BM 2**, *Diagnose* | An, wenn das Board meldet, dass es nicht kalibriert ist, oder auf Board Manager 2.1, dass die Kalibrierung einer Kamera fehlt oder ihr Fit fehlgeschlagen ist. Eine laufende Kalibrierung zählt erst, wenn sie fertig ist. Eine [Reparatur](troubleshooting.de.md#reparaturen) schlägt vor zu kalibrieren, siehe [ein Kalibrierungsproblem](troubleshooting.de.md#das-board-meldet-ein-kalibrierungsproblem). Attribute: `blocker`, was das Board als seinen Blocker nennt, etwa `none`, in seinen eigenen Worten; `failed_cameras`, die Nummern der Kameras, deren Kalibrierung fehlt oder fehlgeschlagen ist. |

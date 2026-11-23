@@ -505,7 +505,7 @@ The recorder stores neither `fixtures`, `standings`, `bracket`, `current`, `next
 | Calibrate camera *N* | Button, *Configuration* | Calibrates one camera. |
 | Restart Board Manager | Button, *Configuration* | Restarts the Board Manager service. |
 | Start camera streams, Stop camera streams | Buttons, *Configuration*, *Disabled* | Controls the camera streams of the Board Manager. Unavailable on Board Manager 2.1, which no longer has these commands. |
-| Cloud link | Switch, **BM 1** | Connects or disconnects the board's own connection to Autodarts. |
+| Cloud link | Switch, **BM 1** | Connects or disconnects the board's own connection to Autodarts, which HomeDarts doesn't use. The [board status card](cards.md#connections) shows it as a chip. |
 | Connect cloud link, Disconnect cloud link | Buttons, **BM 1**, *Disabled* | The same as buttons. |
 
 Every action is sent **once**. If the board rejects it or does not answer, Home Assistant shows an error message instead of retrying, so an action is never executed twice.
@@ -557,10 +557,10 @@ A change is written to the Board Manager configuration; only the changed setting
 
 | Entity | Type | Description |
 | --- | --- | --- |
-| Local connection | Binary sensor, *Diagnostic* | Home Assistant reaches the Board Manager. One or two missed reads, a few seconds, keep it on. |
+| Local connection | Binary sensor, *Diagnostic* | Home Assistant reaches the Board Manager. One or two missed reads, a few seconds, keep it on. The [board status card](cards.md#connections) shows it as a chip. |
 | Granboard connection | Binary sensor, *Diagnostic* | Only on a [Granboard](granboard.md): Home Assistant is connected to the board over Bluetooth. |
-| Realtime connection | Binary sensor, *Diagnostic* | The connection for realtime events is open. Until events arrive over it, the integration reads every 2 seconds. |
-| Cloud link | Binary sensor, **BM 2**, *Diagnostic* | The board's connection to Autodarts. |
+| Realtime connection | Binary sensor, *Diagnostic* | The connection for realtime events is open. Until events arrive over it, the integration reads every 2 seconds. The [board status card](cards.md#connections) shows it as a chip. |
+| Cloud link | Binary sensor, **BM 2**, *Diagnostic* | The board's own connection to Autodarts, as the board reports it; unavailable while it reports none. HomeDarts doesn't use it, and it doesn't show a sign-in. [Connections](cards.md#connections) |
 | Cameras active | Binary sensor | The cameras are running. |
 | Calibration in progress | Binary sensor | A calibration is running. |
 | Calibration problem | Binary sensor, **BM 2**, *Diagnostic* | On when the board reports that it isn't calibrated, or on Board Manager 2.1 that the calibration of a camera is missing or its fit failed. A running calibration counts once it is done. A [repair](troubleshooting.md#repairs) suggests to calibrate, see [a calibration problem](troubleshooting.md#the-board-reports-a-calibration-problem). Attributes: `blocker`, what the board names as its blocker, such as `none`, in its own words; `failed_cameras`, the numbers of the cameras whose calibration is missing or failed. |

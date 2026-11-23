@@ -76,6 +76,10 @@ Le français, l'anglais, l'allemand, le néerlandais et l'espagnol, selon la lan
 
 Rien, en mode local. Seul ce que vous choisissez communique avec internet : la recherche de cibles interroge une fois le service de découverte public d'Autodarts, et la passerelle en ligne ne reçoit que les appels de Tools for Autodarts. Les secrets de la cible ne sont jamais enregistrés, et les diagnostics masquent les identifiants de cible, les adresses et les noms des joueurs. Certains navigateurs prononcent les annonces du tableau des scores avec des voix en ligne ; une voix hors ligne de l'appareil les garde à la maison. [Privacy](how-it-works.md#privacy) · [Security design](security.md)
 
+### Cloud reste vert alors que je me suis déconnecté d'Autodarts
+
+Cette pastille de la carte d'état de la cible est la liaison propre de la cible avec Autodarts, telle que le Board Manager la signale : elle n'indique pas si vous êtes connecté, et HomeDarts ne l'utilise pas. C'est le logiciel Autodarts du PC de la cible qui décide si la cible garde cette liaison après une déconnexion. [Connections](cards.md#connections) · [Privacy](how-it-works.md#privacy)
+
 ### Où sont gardées mes statistiques ?
 
 Dans le stockage propre de Home Assistant, jamais dans le cloud : les sessions d'entraînement, la partie, les records personnels, les profils des joueurs avec leurs matchs, et le calendrier d'entraînement avec un an de sessions et de matchs. Supprimer la cible les supprime, après une [sauvegarde](statistics.md#backups), et [`homedarts.export`](entities.md#export-training-data-homedartsexport) les exporte pour un tableur. [Stored data](how-it-works.md#stored-data)

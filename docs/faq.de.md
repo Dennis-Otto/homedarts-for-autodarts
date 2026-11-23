@@ -76,6 +76,10 @@ Englisch, Deutsch, Niederländisch, Französisch und Spanisch, in der Sprache vo
 
 Im lokalen Betrieb nichts. Nur was du wählst, spricht mit dem Internet: Die Board-Suche fragt einmal den öffentlichen Suchdienst von Autodarts, und die Online-Brücke nimmt nur die Aufrufe von Tools for Autodarts an. Geheimnisse des Boards werden nie gespeichert, und die Diagnosedaten schwärzen Board-IDs, Adressen und Spielernamen. Manche Browser sprechen die Ansagen der Anzeigetafel mit Online-Stimmen; eine Offline-Stimme des Geräts hält sie zu Hause. [Datenschutz](how-it-works.de.md#datenschutz) · [Sicherheit](security.de.md)
 
+### Cloud ist grün, obwohl ich mich bei Autodarts abgemeldet habe
+
+Dieser Chip des Board-Status ist die eigene Verbindung des Boards zu Autodarts, so wie der Board Manager sie meldet: Er sagt nicht, ob du angemeldet bist, und HomeDarts nutzt die Verbindung nicht. Ob das Board sie nach dem Abmelden behält, entscheidet die Autodarts-Software auf dem Board-PC. [Verbindungen](cards.de.md#verbindungen) · [Was verlässt mein Netzwerk?](#was-verlässt-mein-netzwerk)
+
 ### Wo liegt meine Statistik?
 
 Im eigenen Speicher von Home Assistant, nie in der Cloud: die Trainingssessions, das Übungsspiel, die Bestleistungen, die Spielerprofile mit ihren Matches und der Trainingskalender mit einem Jahr an Sessions und Matches. Löschst du das Board, wird all das nach einem [Backup](statistics.de.md#backups) gelöscht, und [`homedarts.export`](entities.de.md#trainingsdaten-exportieren-homedartsexport) schreibt es für eine Tabellenkalkulation heraus. [Gespeicherte Daten](how-it-works.de.md#gespeicherte-daten)
