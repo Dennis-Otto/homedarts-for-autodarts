@@ -1,7 +1,7 @@
 # Home Assistant's own test plugin, with the packages of its Bluetooth, which the
 # Granboard link uses in custom_components/homedarts/granboard.py, and of the usb
 # integration that Bluetooth depends on.
-pytest-homeassistant[bluetooth]==2026.11.1
+pytest-homeassistant[bluetooth]==2026.11.2
 # The plugins of pytest that the test plugin of Home Assistant doesn't bring: the
 # coverage that scripts/check.sh measures, the time limit of each test in
 # pyproject.toml, and the annotations of a failed test in the CI.
